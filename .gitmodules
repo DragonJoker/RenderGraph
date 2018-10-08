@@ -1,0 +1,18 @@
+[submodule "CMake"]
+	path = CMake
+	url = https://github.com/DragonJoker/CMakeUtils.git
+[submodule "external/glslang"]
+	path = external/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "external/Ashes"]
+	path = external/Ashes
+	url = https://github.com/DragonJoker/Ashes.git
+[submodule "external/zlib"]
+	path = external/zlib
+	url = https://github.com/DragonJoker/zlib.git
+[submodule "external/FreeType"]
+	path = external/FreeType
+	url = https://github.com/DragonJoker/FreeType.git
+[submodule "external/FreeImage"]
+	path = external/FreeImage
+	url = https://github.com/DragonJoker/FreeImage.git
