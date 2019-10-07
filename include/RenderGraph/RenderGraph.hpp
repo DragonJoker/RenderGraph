@@ -7,7 +7,7 @@ See LICENSE file in root folder.
 #include "Attachment.hpp"
 #include "ImageData.hpp"
 #include "ImageViewData.hpp"
-#include "RenderGraphNode.hpp"
+#include "GraphNode.hpp"
 #include "RenderPass.hpp"
 
 #include <map>
@@ -24,7 +24,7 @@ namespace crg
 		ImageId createImage( ImageData const & img );
 		ImageViewId createView( ImageViewData const & img );
 
-		inline RenderGraphNode const & getGraph()const
+		inline RootNode const & getGraph()const
 		{
 			return m_root;
 		}
@@ -34,7 +34,7 @@ namespace crg
 		AttachmentArray m_attachments;
 		std::map< ImageId, std::unique_ptr< ImageData > > m_images;
 		std::map< ImageViewId, std::unique_ptr< ImageViewData > > m_imageViews;
-		RenderGraphNodePtrArray m_nodes;
-		RenderGraphNode m_root;
+		GraphNodePtrArray m_nodes;
+		RootNode m_root;
 	};
 }

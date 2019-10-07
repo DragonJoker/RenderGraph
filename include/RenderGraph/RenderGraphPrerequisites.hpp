@@ -4,7 +4,6 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
@@ -21,20 +20,21 @@ namespace crg
 	struct Attachment;
 	struct ImageData;
 	struct ImageViewData;
-	struct RenderGraphNode;
+	struct GraphNode;
 	struct RenderPass;
 	struct RenderPassDependencies;
 
+	class GraphVisitor;
 	class RenderGraph;
 
 	using ImageId = Id < ImageData >;
 	using ImageViewId = Id < ImageViewData >;
 
 	using RenderPassPtr = std::unique_ptr< RenderPass >;
-	using RenderGraphNodePtr = std::unique_ptr< RenderGraphNode >;
+	using GraphNodePtr = std::unique_ptr< GraphNode >;
 
 	using AttachmentArray = std::vector< Attachment >;
 	using RenderPassPtrArray = std::vector< RenderPassPtr >;
-	using RenderGraphNodePtrArray = std::vector< RenderGraphNodePtr >;
+	using GraphNodePtrArray = std::vector< GraphNodePtr >;
 	using RenderPassDependenciesArray = std::vector< RenderPassDependencies >;
 }

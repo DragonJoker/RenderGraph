@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #include "RenderGraph/RenderGraph.hpp"
 
+#include "RenderGraph/Exception.hpp"
 #include "RenderGraph/RenderPass.hpp"
 
 #include <algorithm>
@@ -377,15 +378,31 @@ namespace crg
 				} );
 		}
 
-		RenderGraphNode * find( RenderPass const * root
-			, RenderGraphNode * graph )
+		RenderPassSet retrieveLeafs( RenderPassPtrArray const & passes
+			, RenderPassDependenciesArray const & dependencies )
 		{
-			RenderGraphNode * result{ nullptr };
+			return filterSet< RenderPass, RenderPassPtr >( passes
+				, [&dependencies]( RenderPassPtr const & pass )
+				{
+					// We want the passes that are not listed as source to other passes.
+					return dependencies.end() == std::find_if( dependencies.begin()
+						, dependencies.end()
+						, [&pass]( RenderPassDependencies const & lookup )
+						{
+							return lookup.srcPass == pass.get();
+						} );
+				} );
+		}
+
+		GraphNode * find( RenderPass const * root
+			, GraphNode * graph )
+		{
+			GraphNode * result{ nullptr };
 			auto it = std::find_if( graph->next.begin()
 				, graph->next.end()
-				, [&root, &result]( RenderGraphNode * lookup )
+				, [&root, &result]( GraphNode * lookup )
 				{
-					result = ( root == lookup->pass )
+					result = ( root == nodeCast< RenderPassNode >( *lookup ).pass )
 						? lookup
 						: find( root, lookup );
 					return result != nullptr;
@@ -395,11 +412,12 @@ namespace crg
 
 		void buildGraphRec( RenderPass const * root
 			, RenderPassDependenciesArray const & dependencies
-			, RenderGraphNodePtrArray & nodes
-			, RenderGraphNode & fullGraph
-			, RenderGraphNode *& graph )
+			, GraphNodePtrArray & nodes
+			, GraphNode & fullGraph
+			, GraphNode *& graph )
 		{
-			if ( root != graph->pass )
+			if ( graph->getKind() == GraphNode::Kind::Root
+				|| root != nodeCast< RenderPassNode >( *graph ).pass )
 			{
 				// We want the dependencies for which the current root is the source.
 				RenderPassDependenciesArray attaches;
@@ -422,7 +440,7 @@ namespace crg
 				else
 				{
 					auto end = std::unique( attaches.begin(), attaches.end() );
-					nodes.emplace_back( std::make_unique< RenderGraphNode >( RenderGraphNode
+					nodes.emplace_back( std::make_unique< RenderPassNode >( RenderPassNode
 						{
 							root,
 							{ attaches.begin(), end },
@@ -442,16 +460,33 @@ namespace crg
 			}
 		}
 
-		RenderGraphNode buildGraph( std::vector< RenderPassPtr > const & passes
+		RootNode buildGraph( std::vector< RenderPassPtr > const & passes
 			, RenderPassDependenciesArray const & dependencies
-			, RenderGraphNodePtrArray & nodes )
+			, GraphNodePtrArray & nodes )
 		{
 			// Retrieve root and leave passes.
 			auto roots = retrieveRoots( passes, dependencies );
 
+			if ( roots.empty() )
+			{
+				CRG_Exception( "No root to start with" );
+			}
+
+			auto leaves = retrieveLeafs( passes, dependencies );
+
+			if ( leaves.empty() )
+			{
+				CRG_Exception( "No leaf to end with" );
+			}
+
 			// Build paths from each root pass to leaf pass
-			RenderGraphNode graph{};
-			RenderGraphNode * curr{ &graph };
+			// When an existing graph node is to be added again,
+			// the node that was added is replaced by the existing one.
+			// This leads to a grouping of all paths to one node.
+			// This is not bad, but I'd rather keep that information (a single node per parent),
+			// and group them with some kind of "wrapper" node.
+			RootNode graph{};
+			GraphNode * curr{ &graph };
 
 			for ( auto & root : roots )
 			{
@@ -475,7 +510,7 @@ namespace crg
 				return lookup->name == pass.name;
 			} ) )
 		{
-			throw std::runtime_error{ "Duplicate RenderPass name detected." };
+			CRG_Exception( "Duplicate RenderPass name detected." );
 		}
 
 		m_passes.push_back( std::make_unique< RenderPass >( pass ) );
@@ -492,7 +527,7 @@ namespace crg
 
 		if ( m_passes.end() == it )
 		{
-			throw std::runtime_error{ "RenderPass was not found." };
+			CRG_Exception( "RenderPass was not found." );
 		}
 
 		m_passes.erase( it );
@@ -502,7 +537,7 @@ namespace crg
 	{
 		if ( m_passes.empty() )
 		{
-			throw std::runtime_error{ "No RenderPass registered." };
+			CRG_Exception( "No RenderPass registered." );
 		}
 
 		auto dependencies = details::buildDependencies( m_passes );
@@ -513,7 +548,7 @@ namespace crg
 	ImageId RenderGraph::createImage( ImageData const & img )
 	{
 		auto data = std::make_unique< ImageData >( img );
-		ImageId result{ uint32_t( m_images.size() ), data.get() };
+		ImageId result{ uint32_t( m_images.size() + 1u ), data.get() };
 		m_images.insert( { result, std::move( data ) } );
 		return result;
 	}
@@ -521,7 +556,7 @@ namespace crg
 	ImageViewId RenderGraph::createView( ImageViewData const & img )
 	{
 		auto data = std::make_unique< ImageViewData >( img );
-		ImageViewId result{ uint32_t( m_imageViews.size() ), data.get() };
+		ImageViewId result{ uint32_t( m_imageViews.size() + 1u ), data.get() };
 		m_imageViews.insert( { result, std::move( data ) } );
 		return result;
 	}

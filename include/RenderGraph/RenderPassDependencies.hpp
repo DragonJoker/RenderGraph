@@ -4,7 +4,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RenderGraphPrerequisites.hpp"
+#include "RenderGraph/Attachment.hpp"
 
 namespace crg
 {

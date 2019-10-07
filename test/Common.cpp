@@ -1,5 +1,6 @@
 #include "Common.hpp"
 
+#include <RenderGraph/GraphVisitor.hpp>
 #include <RenderGraph/ImageData.hpp>
 #include <RenderGraph/ImageViewData.hpp>
 #include <RenderGraph/RenderGraph.hpp>
@@ -92,98 +93,108 @@ namespace test
 		return stream;
 	}
 
-	std::ostream & displayDebug( std::ostream & stream
-		, std::set< crg::RenderGraphNode const * > & visited
-		, uint32_t index
-		, std::string prefix
-		, crg::RenderGraphNode const & value )
+	class DotOutVisitor
+		: public crg::GraphVisitor
 	{
-		stream << "\n" << prefix << "(" << index << ") " << ( *value.pass );
-		visited.insert( &value );
-
-		for ( auto & node : value.next )
+	public:
+		static void submit( std::ostream & stream
+			, crg::GraphNode * node
+			, std::set< crg::GraphNode const * > & visited )
 		{
-			stream << "\n  " << prefix << "(" << index + 1u << ") " << ( *node->pass );
-			auto duplicate = visited.end() != visited.find( node );
+			DotOutVisitor vis{ stream, visited };
+			node->accept( &vis );
+		}
 
-			if ( !duplicate )
+		static void submit( std::ostream & stream
+			, crg::RootNode const & node )
+		{
+			std::set< crg::GraphNode const * > visited;
+			stream << "digraph render {\n";
+
+			for ( auto & node : node.next )
 			{
-				displayDebug( stream, visited, index + 1, "  " + prefix, *node );
+				DotOutVisitor vis{ stream, visited };
+				node->accept( &vis );
+			}
+
+			stream << "}\n";
+		}
+
+	private:
+		DotOutVisitor( std::ostream & stream
+			, std::set< crg::GraphNode const * > & visited )
+			: m_stream{ stream }
+			, m_visited{ visited }
+		{
+		}
+
+		void submit( crg::GraphNode * node )
+		{
+			submit( m_stream
+				, node
+				, m_visited );
+		}
+
+		void visitRootNode( crg::RootNode * node )override
+		{
+			for ( auto & next : node->next )
+			{
+				submit( next );
 			}
 		}
 
-		return stream;
-	}
-
-	void displayDebug( std::ostream & stream
-		, crg::RenderGraph const & value )
-	{
-		std::set< crg::RenderGraphNode const * > visited;
-
-		for ( auto & node : value.getGraph().next )
+		void visitRenderPassNode( crg::RenderPassNode * node )override
 		{
-			displayDebug( stream, visited, 1u, "  |-", *node );
-		}
-	}
+			m_visited.insert( node );
 
-	std::ostream & displayDot( std::ostream & stream
-		, std::set< crg::RenderGraphNode const * > & visited
-		, crg::RenderGraphNode const & value )
-	{
-		visited.insert( &value );
-
-		for ( auto & node : value.next )
-		{
-			stream << "    " << ( *value.pass ) << " -> " << ( *node->pass ) << "[ label=\"";
-			std::string sep;
-
-			for ( auto & attach : node->attachesToPrev )
+			for ( auto & next : node->next )
 			{
-				if ( attach.srcPass == value.pass )
+				m_stream << "    " << ( *node->pass ) << " -> " << ( *crg::nodeCast< crg::RenderPassNode >( *next ).pass ) << "[ label=\"";
+				std::string sep;
+
+				for ( auto & attach : crg::nodeCast< crg::RenderPassNode >( *next ).attachesToPrev )
 				{
-					for ( auto & dep : attach.dependencies )
+					if ( attach.srcPass == node->pass )
 					{
-						stream << sep << dep.name;
-						sep = "\\n";
+						for ( auto & dep : attach.dependencies )
+						{
+							m_stream << sep << dep.name;
+							sep = "\\n";
+						}
 					}
 				}
-			}
 
-			stream << "\" ];\n";
-			auto duplicate = visited.end() != visited.find( node );
+				m_stream << "\" ];\n";
+				auto duplicate = m_visited.end() != m_visited.find( next );
 
-			if ( !duplicate )
-			{
-				displayDot( stream, visited, *node );
+				if ( !duplicate )
+				{
+					submit( next );
+				}
 			}
 		}
 
-		return stream;
-	}
-
-	void displayDot( std::ostream & stream
-		, crg::RenderGraph const & value )
-	{
-		std::set< crg::RenderGraphNode const * > visited;
-		std::string sep;
-		stream << "digraph render {\n";
-
-		for ( auto & node : value.getGraph().next )
+		void visitPhiNode( crg::PhiNode * node )override
 		{
-			displayDot( stream, visited, *node );
+			for ( auto & next : node->next )
+			{
+				submit( next );
+			}
 		}
 
-		stream << "}\n";
-	}
+	private:
+		std::ostream & m_stream;
+		std::set< crg::GraphNode const * > & m_visited;
+	};
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
 		, crg::RenderGraph const & value )
 	{
-		displayDot( stream, value );
+		DotOutVisitor::submit( stream, value.getGraph() );
 
 		std::ofstream file{ testCounts.testName + ".dot" };
-		displayDot( file, value );
+		DotOutVisitor::submit( file, value.getGraph() );
 	}
 
 	void display( TestCounts & testCounts
