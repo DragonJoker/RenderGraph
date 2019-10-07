@@ -6,9 +6,6 @@ See LICENSE file in root folder
 
 #include "Utils/UtilsPrerequisites.hpp"
 
-#include <Miscellaneous/Extent2D.hpp>
-#include <Miscellaneous/Offset2D.hpp>
-
 namespace utils
 {
 	//!
@@ -25,8 +22,8 @@ namespace utils
 	*/
 	struct Rectangle
 	{
-		ashes::Offset2D position;
-		ashes::Extent2D size;
+		Position position;
+		Size size;
 	};
 	/**
 	*\~english

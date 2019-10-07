@@ -6,8 +6,7 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Attachment.hpp"
 
-#include <RenderPass/RenderPass.hpp>
-#include <RenderPass/RenderPassCreateInfo.hpp>
+#include <optional>
 
 namespace crg
 {

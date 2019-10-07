@@ -198,13 +198,13 @@ namespace utils
 	/*!
 	\~english
 	\brief		Retrieves parameter type from c++ type.
-	\remarks	Specialisation for ashes::Format.
+	\remarks	Specialisation for VkFormat.
 	\~french
 	\brief		Récupère le type de paramètre à partir du type C++.
-	\remarks	Spécialisation pour ashes::Format.
+	\remarks	Spécialisation pour VkFormat.
 	*/
 	template<>
-	struct ParserValueTyper< ashes::Format >
+	struct ParserValueTyper< VkFormat >
 	{
 		static const ParameterType Type = ParameterType::ePixelFormat;
 	};

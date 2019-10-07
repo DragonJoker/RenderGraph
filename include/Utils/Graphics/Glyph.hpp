@@ -6,9 +6,6 @@ See LICENSE file in root folder
 
 #include "Utils/Design/Resource.hpp"
 
-#include <Miscellaneous/Extent2D.hpp>
-#include <Miscellaneous/Offset2D.hpp>
-
 namespace utils
 {
 	/*!

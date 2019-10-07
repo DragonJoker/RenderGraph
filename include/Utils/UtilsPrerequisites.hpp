@@ -26,9 +26,8 @@ See LICENSE file in root folder
 #include "Utils/Config/SmartPtr.hpp"
 #include "Utils/Log/ELogType.hpp"
 
-#include <Enum/Format.hpp>
-#include <Miscellaneous/Extent2D.hpp>
-#include <Miscellaneous/Offset2D.hpp>
+#define VK_NO_PROTOTYPES
+#include <vulkan/vulkan.h>
 
 #if defined( min )
 #	undef min
@@ -111,8 +110,8 @@ namespace utils
 	using Milliseconds = std::chrono::milliseconds;
 	using Microseconds = std::chrono::microseconds;
 	using Nanoseconds = std::chrono::nanoseconds;
-	using Position = ashes::Offset2D;
-	using Size = ashes::Extent2D;
+	using Position = VkOffset2D;
+	using Size = VkExtent2D;
 
 	/*!
 	\author		Sylvain DOREMUS
@@ -177,13 +176,13 @@ namespace utils
 	template< class Owmer >
 	class OwnedBy;
 	class ParserParameterBase;
-	template< ashes::Format FT >
+	template< VkFormat FT >
 	class Pixel;
 	class PlaneEquation;
 	template< typename T, uint32_t Count >
 	class Point;
 	class PxBufferBase;
-	template< ashes::Format FT >
+	template< VkFormat FT >
 	class PxBuffer;
 	template< typename T >
 	class QuaternionT;
@@ -210,7 +209,7 @@ namespace utils
 	class LoggerImpl;
 	class ProgramConsole;
 
-	using PixelBuffer = PxBuffer< ashes::Format::eR8G8B8A8_UNORM >;
+	using PixelBuffer = PxBuffer< VK_FORMAT_R8G8B8A8_UNORM >;
 	using DynamicBitset = DynamicBitsetT< uint32_t >;
 
 	template< typename T > using Point2 = Point< T, 2 >;
@@ -505,6 +504,6 @@ constexpr utils::Nanoseconds operator "" _ns( unsigned long long value )
 	return utils::Nanoseconds( int64_t( value ) );
 }
 
-#include <Utils/CallStack.hpp>
+#include "Utils/Miscellaneous/Debug.hpp"
 
 #endif

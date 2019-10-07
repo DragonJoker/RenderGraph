@@ -6,10 +6,6 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Attachment.hpp"
 
-#include <Image/Texture.hpp>
-#include <Image/TextureView.hpp>
-#include <RenderPass/RenderPassCreateInfo.hpp>
-
 namespace crg
 {
 	RenderPass::RenderPass( std::string const & name

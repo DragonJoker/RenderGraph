@@ -1,42 +1,20 @@
-#include "Window.hpp"
+#include "Common.hpp"
 
 #include <RenderGraph/Attachment.hpp>
+#include <RenderGraph/ImageData.hpp>
 #include <RenderGraph/RenderPass.hpp>
-
-#include <RenderPass/AttachmentDescription.hpp>
 
 namespace
 {
-	ashes::TexturePtr createImage( test::AppInstance const & inst
-		, ashes::Format format )
-	{
-		ashes::ImageCreateInfo imageCreate{};
-		imageCreate.extent = { inst.width, inst.height, 1u };
-		imageCreate.format = format;
-		imageCreate.imageType = ashes::TextureType::e2D;
-		imageCreate.usage = ashes::ImageUsageFlag::eColourAttachment
-			| ashes::ImageUsageFlag::eSampled;
-		return inst.device->createTexture( imageCreate, ashes::MemoryPropertyFlag::eDeviceLocal );
-	}
-
-	ashes::TextureViewPtr createView( ashes::Texture const & image )
-	{
-		ashes::ImageViewCreateInfo viewCreate{};
-		viewCreate.format = image.getFormat();
-		viewCreate.viewType = ashes::TextureViewType::e2D;
-		viewCreate.subresourceRange.aspectMask = getAspectMask( viewCreate.format );
-		return image.createView( viewCreate );
-	}
-
-	void testRenderPass_1C( test::AppInstance & inst )
+	void testRenderPass_1C( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C" );
-		auto rt = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv = createView( *rt );
+		auto rt = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv = test::makeId( test::createView( rt ) );
 		auto rtAttach = crg::Attachment::createColour( "RT"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv );
 
 		crg::RenderPass pass
 		{
@@ -53,22 +31,22 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_2C( test::AppInstance & inst )
+	void testRenderPass_2C( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_2C" );
-		auto rt1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv1 = createView( *rt1 );
+		auto rt1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv1 = test::makeId( test::createView( rt1) );
 		auto rtAttach1 = crg::Attachment::createColour( "RT1"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv1 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv1 );
 
-		auto rt2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv2 = createView( *rt2 );
+		auto rt2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv2 = test::makeId( test::createView( rt2) );
 		auto rtAttach2 = crg::Attachment::createColour( "RT2"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv2 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv2 );
 
 		crg::RenderPass pass
 		{
@@ -86,13 +64,13 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_0C_1I( test::AppInstance & inst )
+	void testRenderPass_0C_1I( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_0C_1I" );
-		auto in = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv = createView( *in );
+		auto in = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv = test::makeId( test::createView( in) );
 		auto inAttach = crg::Attachment::createInput( "IN"
-			, *inv );
+			, inv );
 
 		crg::RenderPass pass
 		{
@@ -109,18 +87,18 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_0C_2I( test::AppInstance & inst )
+	void testRenderPass_0C_2I( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_0C_2I" );
-		auto in1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv1 = createView( *in1 );
+		auto in1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv1 = test::makeId( test::createView( in1) );
 		auto inAttach1 = crg::Attachment::createInput( "IN1"
-			, *inv1 );
+			, inv1 );
 
-		auto in2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv2 = createView( *in2 );
+		auto in2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv2 = test::makeId( test::createView( in2) );
 		auto inAttach2 = crg::Attachment::createInput( "IN2"
-			, *inv2 );
+			, inv2 );
 
 		crg::RenderPass pass
 		{
@@ -138,20 +116,20 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_1C_1I( test::AppInstance & inst )
+	void testRenderPass_1C_1I( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C_1I" );
-		auto rt = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv = createView( *rt );
+		auto rt = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv = test::makeId( test::createView( rt) );
 		auto rtAttach = crg::Attachment::createColour( "RT"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv );
 
-		auto in = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv = createView( *in );
+		auto in = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv = test::makeId( test::createView( in) );
 		auto inAttach = crg::Attachment::createInput( "IN"
-			, *inv );
+			, inv );
 
 		crg::RenderPass pass
 		{
@@ -169,25 +147,25 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_1C_2I( test::AppInstance & inst )
+	void testRenderPass_1C_2I( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C_2I" );
-		auto rt = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv = createView( *rt );
+		auto rt = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv = test::makeId( test::createView( rt) );
 		auto rtAttach = crg::Attachment::createColour( "RT"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv );
 
-		auto in1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv1 = createView( *in1 );
+		auto in1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv1 = test::makeId( test::createView( in1) );
 		auto inAttach1 = crg::Attachment::createInput( "IN1"
-			, *inv1 );
+			, inv1 );
 
-		auto in2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv2 = createView( *in2 );
+		auto in2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv2 = test::makeId( test::createView( in2) );
 		auto inAttach2 = crg::Attachment::createInput( "IN2"
-			, *inv2 );
+			, inv2 );
 
 		crg::RenderPass pass
 		{
@@ -206,27 +184,27 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_2C_1I( test::AppInstance & inst )
+	void testRenderPass_2C_1I( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_2C_1I" );
-		auto rt1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv1 = createView( *rt1 );
+		auto rt1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv1 = test::makeId( test::createView( rt1) );
 		auto rtAttach1 = crg::Attachment::createColour( "RT1"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv1 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv1 );
 
-		auto rt2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv2 = createView( *rt2 );
+		auto rt2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv2 = test::makeId( test::createView( rt2) );
 		auto rtAttach2 = crg::Attachment::createColour( "RT2"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv2 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv2 );
 
-		auto in = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv = createView( *in );
+		auto in = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv = test::makeId( test::createView( in) );
 		auto inAttach = crg::Attachment::createInput( "IN"
-			, *inv );
+			, inv );
 
 		crg::RenderPass pass
 		{
@@ -245,32 +223,32 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_2C_2I( test::AppInstance & inst )
+	void testRenderPass_2C_2I( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_2C_2I" );
-		auto rt1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv1 = createView( *rt1 );
+		auto rt1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv1 = test::makeId( test::createView( rt1) );
 		auto rtAttach1 = crg::Attachment::createColour( "RT1"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv1 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv1 );
 
-		auto rt2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv2 = createView( *rt2 );
+		auto rt2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv2 = test::makeId( test::createView( rt2) );
 		auto rtAttach2 = crg::Attachment::createColour( "RT2"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv2 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv2 );
 
-		auto in1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv1 = createView( *in1 );
+		auto in1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv1 = test::makeId( test::createView( in1) );
 		auto inAttach1 = crg::Attachment::createInput( "IN1"
-			, *inv1 );
+			, inv1 );
 
-		auto in2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv2 = createView( *in2 );
+		auto in2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv2 = test::makeId( test::createView( in2) );
 		auto inAttach2 = crg::Attachment::createInput( "IN2"
-			, *inv2 );
+			, inv2 );
 
 		crg::RenderPass pass
 		{
@@ -290,17 +268,17 @@ namespace
 		testEnd();
 	}
 	
-	void testRenderPass_0C_DS( test::AppInstance & inst )
+	void testRenderPass_0C_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_0C_DS" );
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -318,24 +296,24 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_1C_DS( test::AppInstance & inst )
+	void testRenderPass_1C_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C_DS" );
-		auto rt = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv = createView( *rt );
+		auto rt = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv = test::makeId( test::createView( rt) );
 		auto rtAttach = crg::Attachment::createColour( "RT"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -354,31 +332,31 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_2C_DS( test::AppInstance & inst )
+	void testRenderPass_2C_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_2C_DS" );
-		auto rt1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv1 = createView( *rt1 );
+		auto rt1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv1 = test::makeId( test::createView( rt1) );
 		auto rtAttach1 = crg::Attachment::createColour( "RT1"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv1 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv1 );
 
-		auto rt2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv2 = createView( *rt2 );
+		auto rt2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv2 = test::makeId( test::createView( rt2) );
 		auto rtAttach2 = crg::Attachment::createColour( "RT2"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv2 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv2 );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -398,22 +376,22 @@ namespace
 		testEnd();
 	}
 	
-	void testRenderPass_0C_1I_DS( test::AppInstance & inst )
+	void testRenderPass_0C_1I_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_0C_1I_DS" );
-		auto in = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv = createView( *in );
+		auto in = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv = test::makeId( test::createView( in) );
 		auto inAttach = crg::Attachment::createInput( "IN"
-			, *inv );
+			, inv );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -432,27 +410,27 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_0C_2I_DS( test::AppInstance & inst )
+	void testRenderPass_0C_2I_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_0C_2I_DS" );
-		auto in1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv1 = createView( *in1 );
+		auto in1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv1 = test::makeId( test::createView( in1) );
 		auto inAttach1 = crg::Attachment::createInput( "IN1"
-			, *inv1 );
+			, inv1 );
 
-		auto in2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv2 = createView( *in2 );
+		auto in2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv2 = test::makeId( test::createView( in2) );
 		auto inAttach2 = crg::Attachment::createInput( "IN2"
-			, *inv2 );
+			, inv2 );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -472,29 +450,29 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_1C_1I_DS( test::AppInstance & inst )
+	void testRenderPass_1C_1I_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C_1I_DS" );
-		auto rt = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv = createView( *rt );
+		auto rt = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv = test::makeId( test::createView( rt) );
 		auto rtAttach = crg::Attachment::createColour( "RT"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv );
 
-		auto in = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv = createView( *in );
+		auto in = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv = test::makeId( test::createView( in) );
 		auto inAttach = crg::Attachment::createInput( "IN"
-			, *inv );
+			, inv );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -514,34 +492,34 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_1C_2I_DS( test::AppInstance & inst )
+	void testRenderPass_1C_2I_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C_2I_DS" );
-		auto rt = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv = createView( *rt );
+		auto rt = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv = test::makeId( test::createView( rt) );
 		auto rtAttach = crg::Attachment::createColour( "RT"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv );
 
-		auto in1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv1 = createView( *in1 );
+		auto in1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv1 = test::makeId( test::createView( in1) );
 		auto inAttach1 = crg::Attachment::createInput( "IN1"
-			, *inv1 );
+			, inv1 );
 
-		auto in2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv2 = createView( *in2 );
+		auto in2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv2 = test::makeId( test::createView( in2) );
 		auto inAttach2 = crg::Attachment::createInput( "IN2"
-			, *inv2 );
+			, inv2 );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -562,36 +540,36 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_2C_1I_DS( test::AppInstance & inst )
+	void testRenderPass_2C_1I_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_2C_1I_DS" );
-		auto rt1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv1 = createView( *rt1 );
+		auto rt1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv1 = test::makeId( test::createView( rt1) );
 		auto rtAttach1 = crg::Attachment::createColour( "RT1"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv1 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv1 );
 
-		auto rt2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv2 = createView( *rt2 );
+		auto rt2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv2 = test::makeId( test::createView( rt2) );
 		auto rtAttach2 = crg::Attachment::createColour( "RT2"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv2 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv2 );
 
-		auto in = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv = createView( *in );
+		auto in = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv = test::makeId( test::createView( in) );
 		auto inAttach = crg::Attachment::createInput( "IN"
-			, *inv );
+			, inv );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -612,41 +590,41 @@ namespace
 		testEnd();
 	}
 
-	void testRenderPass_2C_2I_DS( test::AppInstance & inst )
+	void testRenderPass_2C_2I_DS( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_2C_2I_DS" );
-		auto rt1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv1 = createView( *rt1 );
+		auto rt1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv1 = test::makeId( test::createView( rt1) );
 		auto rtAttach1 = crg::Attachment::createColour( "RT1"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv1 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv1 );
 
-		auto rt2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto rtv2 = createView( *rt2 );
+		auto rt2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto rtv2 = test::makeId( test::createView( rt2) );
 		auto rtAttach2 = crg::Attachment::createColour( "RT2"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *rtv2 );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, rtv2 );
 
-		auto in1 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv1 = createView( *in1 );
+		auto in1 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv1 = test::makeId( test::createView( in1) );
 		auto inAttach1 = crg::Attachment::createInput( "IN1"
-			, *inv1 );
+			, inv1 );
 
-		auto in2 = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto inv2 = createView( *in2 );
+		auto in2 = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto inv2 = test::makeId( test::createView( in2) );
 		auto inAttach2 = crg::Attachment::createInput( "IN2"
-			, *inv2 );
+			, inv2 );
 
-		auto ds = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsv = createView( *ds );
+		auto ds = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsv = test::makeId( test::createView( ds) );
 		auto dsAttach = crg::Attachment::createDepthStencil( "DS"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsv );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsv );
 
 		crg::RenderPass pass
 		{
@@ -671,24 +649,23 @@ namespace
 
 int main( int argc, char ** argv )
 {
-	test::AppInstance inst;
-	testSuiteBegin( "TestRenderPass", inst );
-	testRenderPass_1C( inst );
-	testRenderPass_2C( inst );
-	testRenderPass_0C_1I( inst );
-	testRenderPass_0C_2I( inst );
-	testRenderPass_1C_1I( inst );
-	testRenderPass_1C_2I( inst );
-	testRenderPass_2C_1I( inst );
-	testRenderPass_2C_2I( inst );
-	testRenderPass_0C_DS( inst );
-	testRenderPass_1C_DS( inst );
-	testRenderPass_2C_DS( inst );
-	testRenderPass_0C_1I_DS( inst );
-	testRenderPass_0C_2I_DS( inst );
-	testRenderPass_1C_1I_DS( inst );
-	testRenderPass_1C_2I_DS( inst );
-	testRenderPass_2C_1I_DS( inst );
-	testRenderPass_2C_2I_DS( inst );
+	testSuiteBegin( "TestRenderPass" );
+	testRenderPass_1C( testCounts );
+	testRenderPass_2C( testCounts );
+	testRenderPass_0C_1I( testCounts );
+	testRenderPass_0C_2I( testCounts );
+	testRenderPass_1C_1I( testCounts );
+	testRenderPass_1C_2I( testCounts );
+	testRenderPass_2C_1I( testCounts );
+	testRenderPass_2C_2I( testCounts );
+	testRenderPass_0C_DS( testCounts );
+	testRenderPass_1C_DS( testCounts );
+	testRenderPass_2C_DS( testCounts );
+	testRenderPass_0C_1I_DS( testCounts );
+	testRenderPass_0C_2I_DS( testCounts );
+	testRenderPass_1C_1I_DS( testCounts );
+	testRenderPass_1C_2I_DS( testCounts );
+	testRenderPass_2C_1I_DS( testCounts );
+	testRenderPass_2C_2I_DS( testCounts );
 	testSuiteEnd();
 }

@@ -7,41 +7,41 @@ See LICENSE file in root folder.
 namespace crg
 {
 	Attachment Attachment::createInput( std::string const & name
-		, ashes::TextureView const & view )
+		, ImageViewId view )
 	{
 		return
 		{
 			name,
-			ashes::AttachmentLoadOp::eDontCare,
-			ashes::AttachmentStoreOp::eDontCare,
-			ashes::AttachmentLoadOp::eDontCare,
-			ashes::AttachmentStoreOp::eDontCare,
-			view
+			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			view,
 		};
 	}
 
 	Attachment Attachment::createColour( std::string const & name
-		, ashes::AttachmentLoadOp loadOp
-		, ashes::AttachmentStoreOp storeOp
-		, ashes::TextureView const & view )
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, ImageViewId view )
 	{
 		return
 		{
 			name,
 			loadOp,
 			storeOp,
-			ashes::AttachmentLoadOp::eDontCare,
-			ashes::AttachmentStoreOp::eDontCare,
-			view
+			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			view,
 		};
 	}
 
 	Attachment Attachment::createDepthStencil( std::string const & name
-		, ashes::AttachmentLoadOp loadOp
-		, ashes::AttachmentStoreOp storeOp
-		, ashes::AttachmentLoadOp stencilLoadOp
-		, ashes::AttachmentStoreOp stencilStoreOp
-		, ashes::TextureView const & view )
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, VkAttachmentLoadOp stencilLoadOp
+		, VkAttachmentStoreOp stencilStoreOp
+		, ImageViewId view )
 	{
 		return
 		{
@@ -50,7 +50,7 @@ namespace crg
 			storeOp,
 			stencilLoadOp,
 			stencilStoreOp,
-			view
+			view,
 		};
 	}
 
@@ -61,6 +61,18 @@ namespace crg
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp
 			&& lhs.stencilStoreOp == rhs.stencilStoreOp
-			&& &lhs.view == &rhs.view;
+			&& lhs.view == rhs.view;
+	}
+
+	bool operator==( AttachmentArray const & lhs, AttachmentArray const & rhs )
+	{
+		auto result = lhs.size() == rhs.size();
+
+		for ( size_t i = 0; result && i < lhs.size(); ++i )
+		{
+			result = lhs[i] == rhs[i];
+		}
+
+		return result;
 	}
 }

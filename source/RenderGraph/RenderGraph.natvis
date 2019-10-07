@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+  <Type Name="crg::ImageData">
+    <DisplayString>{{fmt={format} mips={mipLevels}}}</DisplayString>
+    <Expand>
+      <Item Name="flags">flags</Item>
+      <Item Name="imageType">imageType</Item>
+      <Item Name="format">format</Item>
+      <Item Name="extent">extent</Item>
+      <Item Name="mipLevels">mipLevels</Item>
+      <Item Name="arrayLayers">arrayLayers</Item>
+      <Item Name="samples">samples</Item>
+      <Item Name="tiling">tiling</Item>
+      <Item Name="usage">usage</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::ImageViewData">
+    <DisplayString>{{fmt={format} mipLevel={subresourceRange.baseMipLevel} mipCount={subresourceRange.levelCount}}}</DisplayString>
+    <Expand>
+      <Item Name="image">image</Item>
+      <Item Name="flags">flags</Item>
+      <Item Name="viewType">viewType</Item>
+      <Item Name="format">format</Item>
+      <Item Name="baseArrayLayer">subresourceRange.baseArrayLayer</Item>
+      <Item Name="layerCount">subresourceRange.layerCount</Item>
+      <Item Name="baseMipLevel">subresourceRange.baseMipLevel</Item>
+      <Item Name="levelCount">subresourceRange.levelCount</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::Id&lt;*&gt;">
+    <DisplayString>{{{id}}}</DisplayString>
+    <Expand>
+      <Item Name="id">id</Item>
+      <Item Name="data">data</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::Attachment">
+    <DisplayString>{{{name}, view={view}}}</DisplayString>
+    <Expand>
+      <Item Name="name">name</Item>
+      <Item Name="view">view</Item>
+      <Item Name="loadOp">loadOp</Item>
+      <Item Name="storeOp">storeOp</Item>
+      <Item Name="stencilLoadOp">stencilLoadOp</Item>
+      <Item Name="stencilStoreOp">stencilStoreOp</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::RenderPass">
+    <DisplayString>{{{name}}}</DisplayString>
+    <Expand>
+      <Item Name="name">name</Item>
+      <Item Name="inputs">inputs</Item>
+      <Item Name="outputs">colourOutputs</Item>
+      <Item Condition="depthStencilOutput.has_value()" Name="depthStencilOutput">depthStencilOutput.value()</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::RenderGraphNode">
+    <DisplayString>{{{pass}, next={next}}}</DisplayString>
+    <Expand>
+      <Item Condition="pass" Name="pass">*pass</Item>
+      <Item Name="next">next</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::details::PassAttach">
+    <DisplayString>{{{*attach}, passes={passes}}}</DisplayString>
+    <Expand>
+      <Item Name="attach">attach</Item>
+      <Item Name="passes">passes</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::details::RenderPassDependencies">
+    <DisplayString>{{src={*srcPass}, dst={*dstPass}, deps={dependencies}}}</DisplayString>
+    <Expand>
+      <Item Name="srcPass">*srcPass</Item>
+      <Item Name="dstPass">*dstPass</Item>
+      <Item Name="dependencies">dependencies</Item>
+    </Expand>
+  </Type>
+
+</AutoVisualizer>

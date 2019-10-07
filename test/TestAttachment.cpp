@@ -1,78 +1,55 @@
-#include "Window.hpp"
+#include "Common.hpp"
 
 #include <RenderGraph/Attachment.hpp>
-
-#include <RenderPass/AttachmentDescription.hpp>
+#include <RenderGraph/ImageData.hpp>
 
 namespace
 {
-	ashes::TexturePtr createImage( test::AppInstance const & inst
-		, ashes::Format format )
-	{
-		ashes::ImageCreateInfo imageCreate{};
-		imageCreate.extent = { inst.width, inst.height, 1u };
-		imageCreate.format = format;
-		imageCreate.imageType = ashes::TextureType::e2D;
-		imageCreate.usage = ashes::ImageUsageFlag::eColourAttachment
-			| ashes::ImageUsageFlag::eSampled;
-		return inst.device->createTexture( imageCreate, ashes::MemoryPropertyFlag::eDeviceLocal );
-	}
-	
-	ashes::TextureViewPtr createView( ashes::Texture const & image )
-	{
-		ashes::ImageViewCreateInfo viewCreate{};
-		viewCreate.format = image.getFormat();
-		viewCreate.viewType = ashes::TextureViewType::e2D;
-		viewCreate.subresourceRange.aspectMask = getAspectMask( viewCreate.format );
-		return image.createView( viewCreate );
-	}
-
-	void testColourAttachment( test::AppInstance & inst )
+	void testColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testColourAttachment" );
-		auto colImage = createImage( inst, ashes::Format::eR32G32B32A32_SFLOAT );
-		auto colView = createView( *colImage );
+		auto colImage = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
+		auto colView = test::makeId( test::createView( colImage ) );
 		auto colAttachment = crg::Attachment::createColour( "Colour"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *colView );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, colView );
 
 		check( colAttachment.name == "Colour" );
-		check( colAttachment.loadOp == ashes::AttachmentLoadOp::eClear );
-		check( colAttachment.storeOp == ashes::AttachmentStoreOp::eStore );
-		check( colAttachment.stencilLoadOp == ashes::AttachmentLoadOp::eDontCare );
-		check( colAttachment.stencilStoreOp == ashes::AttachmentStoreOp::eDontCare );
-		check( &colAttachment.view == colView.get() );
+		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( colAttachment.view == colView );
 		testEnd();
 	}
 
-	void testDepthStencilAttachment( test::AppInstance & inst )
+	void testDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testDepthStencilAttachment" );
-		auto dsImage = createImage( inst, ashes::Format::eD32_SFLOAT );
-		auto dsView = createView( *dsImage );
+		auto dsImage = test::createImage( VK_FORMAT_D32_SFLOAT );
+		auto dsView = test::makeId( test::createView( dsImage ) );
 		auto dsAttachment = crg::Attachment::createDepthStencil( "DepthStencil"
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, ashes::AttachmentLoadOp::eClear
-			, ashes::AttachmentStoreOp::eStore
-			, *dsView );
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, VK_ATTACHMENT_LOAD_OP_CLEAR
+			, VK_ATTACHMENT_STORE_OP_STORE
+			, dsView );
 
 		check( dsAttachment.name == "DepthStencil" );
-		check( dsAttachment.loadOp == ashes::AttachmentLoadOp::eClear );
-		check( dsAttachment.storeOp == ashes::AttachmentStoreOp::eStore );
-		check( dsAttachment.stencilLoadOp == ashes::AttachmentLoadOp::eClear );
-		check( dsAttachment.stencilStoreOp == ashes::AttachmentStoreOp::eStore );
-		check( &dsAttachment.view == dsView.get() );
+		check( dsAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( dsAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( dsAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( dsAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( dsAttachment.view == dsView );
 		testEnd();
 	}
 }
 
 int main( int argc, char ** argv )
 {
-	test::AppInstance inst;
-	testSuiteBegin( "TestAttachment", inst );
-	testColourAttachment( inst );
-	testDepthStencilAttachment( inst );
+	testSuiteBegin( "TestAttachment" );
+	testColourAttachment( testCounts );
+	testDepthStencilAttachment( testCounts );
 	testSuiteEnd();
 }

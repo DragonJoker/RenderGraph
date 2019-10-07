@@ -52,7 +52,7 @@ namespace utils
 			static std::locale const loc{ "C" };
 			std::stringstream stream;
 			stream.imbue( loc );
-			stream << ashes::Debug::Backtrace{};
+			stream << utils::Debug::Backtrace{};
 			m_callStack = stream.str();
 		}
 		/**
