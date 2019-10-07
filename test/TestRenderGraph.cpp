@@ -753,120 +753,6 @@ namespace
 			, ofv );
 	}
 
-	template< bool EnableSsao >
-	void testDeferred( test::TestCounts & testCounts )
-	{
-		testBegin( "testDeferred" + ( EnableSsao ? std::string{ "Ssao" } : std::string{} ) );
-		crg::RenderGraph graph;
-		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dtv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dt1Attach = crg::Attachment::createDepthStencil( "DepthTarget1"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dtv );
-		auto dt2Attach = crg::Attachment::createDepthStencil( "DepthTarget2"
-			, VK_ATTACHMENT_LOAD_OP_LOAD
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dtv );
-		crg::RenderPass depthPrepass
-		{
-			"depthPrepass",
-			{},
-			{},
-			{ dt1Attach },
-		};
-		checkNoThrow( graph.add( depthPrepass ) );
-
-		auto dsv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT ) );
-		auto dsAttach = crg::Attachment::createInput( "DepthSampled"
-			, dsv );
-		auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vtAttach = crg::Attachment::createDepthStencil( "VelocityTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, vv );
-		auto dcsAttach = buildDeferred< EnableSsao >( testCounts
-			, depthPrepass
-			, dsAttach
-			, dt2Attach
-			, vtAttach
-			, graph );
-
-		auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
-			, vv );
-		auto o = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto otv = graph.createView( test::createView( o, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto otAttach = crg::Attachment::createDepthStencil( "FinalCombineTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, otv );
-		crg::RenderPass finalCombinePass
-		{
-			"finalCombinePass",
-			{ dcsAttach, vsAttach },
-			{ otAttach },
-		};
-		checkNoThrow( graph.add( finalCombinePass ) );
-
-		check( graph.compile() );
-		std::stringstream stream;
-		test::display( testCounts, stream, graph );
-
-		if constexpr ( EnableSsao )
-		{
-			std::string ref = R"(digraph render {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> ssaoRawPass[ label="Data2Target" ];
-    ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
-    ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
-    geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ssaoLinearisePass[ label="DepthTarget1" ];
-    ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass3 -> ssaoRawPass[ label="SSAOMinify3Target" ];
-    ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
-    ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
-}
-)";
-			checkEqualStr( stream.str(), ref );
-		}
-		else
-		{
-			std::string ref = R"(digraph render {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
-}
-)";
-			checkEqualStr( stream.str(), ref );
-		}
-
-		testEnd();
-	}
-
 	crg::Attachment buildWeightedBlended( test::TestCounts & testCounts
 		, crg::RenderPass const & depthPrepass
 		, crg::Attachment const & dsAttach
@@ -917,84 +803,6 @@ namespace
 			, cv );
 	}
 
-	void testWeightedBlended( test::TestCounts & testCounts )
-	{
-		testBegin( "testWeightedBlended" );
-		crg::RenderGraph graph;
-		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dtv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dt1Attach = crg::Attachment::createDepthStencil( "DepthTarget1"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dtv );
-		auto dt2Attach = crg::Attachment::createDepthStencil( "DepthTarget2"
-			, VK_ATTACHMENT_LOAD_OP_LOAD
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dtv );
-		crg::RenderPass depthPrepass
-		{
-			"depthPrepass",
-			{},
-			{},
-			{ dt1Attach },
-		};
-		checkNoThrow( graph.add( depthPrepass ) );
-
-		auto dsv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT ) );
-		auto dsAttach = crg::Attachment::createInput( "DepthSampled"
-			, dsv );
-		auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vtAttach = crg::Attachment::createDepthStencil( "VelocityTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, vv );
-		auto wbcsAttach = buildWeightedBlended( testCounts
-			, depthPrepass
-			, dsAttach
-			, dt2Attach
-			, vtAttach
-			, graph );
-
-		auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
-			, vv );
-		auto o = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto otv = graph.createView( test::createView( o, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto otAttach = crg::Attachment::createDepthStencil( "FinalCombineTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, otv );
-		crg::RenderPass finalCombinePass
-		{
-			"finalCombinePass",
-			{ wbcsAttach, vsAttach },
-			{ otAttach },
-		};
-		checkNoThrow( graph.add( finalCombinePass ) );
-
-		check( graph.compile() );
-		std::stringstream stream;
-		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
-    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget" ];
-    depthPrepass -> combinePass[ label="DepthTarget1" ];
-}
-)";
-		checkEqualStr( stream.str(), ref );
-		testEnd();
-	}
-
 	template< bool EnableOpaque
 		, bool EnableSsao
 		, bool EnableTransparent >
@@ -1031,22 +839,6 @@ namespace
 		auto dsv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT ) );
 		auto dsAttach = crg::Attachment::createInput( "DepthSampled"
 			, dsv );
-		auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vtAttach1 = crg::Attachment::createDepthStencil( "VelocityTarget1"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, vv );
-		auto vtAttach2 = crg::Attachment::createDepthStencil( "VelocityTarget2"
-			, VK_ATTACHMENT_LOAD_OP_LOAD
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, vv );
-		auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
-			, vv );
 		auto o = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto otv = graph.createView( test::createView( o, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto otAttach = crg::Attachment::createDepthStencil( "FinalCombineTarget"
@@ -1058,22 +850,38 @@ namespace
 
 		if constexpr ( EnableOpaque )
 		{
+			auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
+			auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
+			auto vt1Attach = crg::Attachment::createDepthStencil( "VelocityTarget1"
+				, VK_ATTACHMENT_LOAD_OP_CLEAR
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, vv );
 			auto dcsAttach = buildDeferred< EnableSsao >( testCounts
 				, depthPrepass
 				, dsAttach
 				, dt2Attach
-				, vtAttach1
+				, vt1Attach
 				, graph );
 
 			if constexpr ( EnableTransparent )
 			{
+				auto vt2Attach = crg::Attachment::createDepthStencil( "VelocityTarget2"
+					, VK_ATTACHMENT_LOAD_OP_LOAD
+					, VK_ATTACHMENT_STORE_OP_STORE
+					, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+					, VK_ATTACHMENT_STORE_OP_DONT_CARE
+					, vv );
 				auto wbcsAttach = buildWeightedBlended( testCounts
 					, depthPrepass
 					, dsAttach
 					, dt2Attach
-					, vtAttach2
+					, vt2Attach
 					, graph );
 
+				auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
+					, vv );
 				crg::RenderPass finalCombinePass
 				{
 					"finalCombinePass",
@@ -1084,6 +892,8 @@ namespace
 			}
 			else
 			{
+				auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
+					, vv );
 				crg::RenderPass finalCombinePass
 				{
 					"finalCombinePass",
@@ -1096,13 +906,23 @@ namespace
 		}
 		else if constexpr ( EnableTransparent )
 		{
+			auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
+			auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
+			auto vt1Attach = crg::Attachment::createDepthStencil( "VelocityTarget1"
+				, VK_ATTACHMENT_LOAD_OP_CLEAR
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, vv );
 			auto wbcsAttach = buildWeightedBlended( testCounts
 				, depthPrepass
 				, dsAttach
 				, dt2Attach
-				, vtAttach2
+				, vt1Attach
 				, graph );
 
+			auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
+				, vv );
 			crg::RenderPass finalCombinePass
 			{
 				"finalCombinePass",
@@ -1116,7 +936,7 @@ namespace
 			crg::RenderPass finalCombinePass
 			{
 				"finalCombinePass",
-				{ vsAttach },
+				{ dsAttach },
 				{ otAttach },
 			};
 			checkNoThrow( graph.add( finalCombinePass ) );
@@ -1127,11 +947,11 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
 
-		if constexpr ( EnableTransparent )
+		if constexpr ( EnableOpaque )
 		{
-			if constexpr ( EnableOpaque )
+			if constexpr ( EnableSsao )
 			{
-				if constexpr ( EnableSsao )
+				if constexpr ( EnableTransparent )
 				{
 					std::string ref = R"(digraph render {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
@@ -1172,44 +992,6 @@ namespace
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
     geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> accumulationPass[ label="VelocityTarget1" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
-    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
-    depthPrepass -> combinePass[ label="DepthTarget1" ];
-}
-)";
-					checkEqualStr( stream.str(), ref );
-				}
-			}
-			else
-			{
-				std::string ref = R"(digraph render {
-    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget2" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    depthPrepass -> combinePass[ label="DepthTarget1" ];
-}
-)";
-				checkEqualStr( stream.str(), ref );
-			}
-			
-		}
-		else if constexpr ( EnableOpaque )
-		{
-			if constexpr ( EnableSsao )
-			{
-				std::string ref = R"(digraph render {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
     ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
@@ -1227,11 +1009,35 @@ namespace
     depthPrepass -> ambientPass[ label="DepthTarget1" ];
 }
 )";
-				checkEqualStr( stream.str(), ref );
+					checkEqualStr( stream.str(), ref );
+				}
 			}
 			else
 			{
-				std::string ref = R"(digraph render {
+				if constexpr ( EnableTransparent )
+				{
+					std::string ref = R"(digraph render {
+    depthPrepass -> geometryPass[ label="DepthTarget1" ];
+    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
+    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
+    ambientPass -> finalCombinePass[ label="OutputTarget" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
+    geometryPass -> accumulationPass[ label="VelocityTarget1" ];
+    accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
+    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
+    combinePass -> finalCombinePass[ label="CombineTarget" ];
+    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
+    depthPrepass -> lightingPass[ label="DepthTarget1" ];
+    depthPrepass -> ambientPass[ label="DepthTarget1" ];
+    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
+    depthPrepass -> combinePass[ label="DepthTarget1" ];
+}
+)";
+					checkEqualStr( stream.str(), ref );
+				}
+				else
+				{
+					std::string ref = R"(digraph render {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
@@ -1242,15 +1048,32 @@ namespace
     depthPrepass -> ambientPass[ label="DepthTarget1" ];
 }
 )";
-				checkEqualStr( stream.str(), ref );
+					checkEqualStr( stream.str(), ref );
+				}
 			}
 		}
 		else
 		{
-			std::string ref = R"(digraph render {
+			if constexpr ( EnableTransparent )
+			{
+				std::string ref = R"(digraph render {
+    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
+    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
+    combinePass -> finalCombinePass[ label="CombineTarget" ];
+    accumulationPass -> finalCombinePass[ label="VelocityTarget1" ];
+    depthPrepass -> combinePass[ label="DepthTarget1" ];
 }
 )";
-			checkEqualStr( stream.str(), ref );
+				checkEqualStr( stream.str(), ref );
+			}
+			else
+			{
+				std::string ref = R"(digraph render {
+    depthPrepass -> finalCombinePass[ label="DepthTarget1" ];
+}
+)";
+				checkEqualStr( stream.str(), ref );
+			}
 		}
 
 		testEnd();
@@ -1260,19 +1083,16 @@ namespace
 int main( int argc, char ** argv )
 {
 	testSuiteBegin( "TestRenderGraph" );
-	// testNoPass( testCounts );
-	// testOnePass( testCounts );
-	// testDuplicateName( testCounts );
-	// testWrongRemove( testCounts );
-	// testOneDependency( testCounts );
-	// testChainedDependencies( testCounts );
-	// testSharedDependencies( testCounts );
-	// test2MipDependencies( testCounts );
-	// test3MipDependencies( testCounts );
-	// testSsaoPass( testCounts );
-	// testDeferred< false >( testCounts );
-	// testDeferred< true >( testCounts );
-	// testWeightedBlended( testCounts );
+	testNoPass( testCounts );
+	testOnePass( testCounts );
+	testDuplicateName( testCounts );
+	testWrongRemove( testCounts );
+	testOneDependency( testCounts );
+	testChainedDependencies( testCounts );
+	testSharedDependencies( testCounts );
+	test2MipDependencies( testCounts );
+	test3MipDependencies( testCounts );
+	testSsaoPass( testCounts );
 	testFullPass< false, false, false >( testCounts );
 	testFullPass< true, false, false >( testCounts );
 	testFullPass< true, true, false >( testCounts );
