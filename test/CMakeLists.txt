@@ -2,22 +2,10 @@ enable_testing()
 
 set( TEST_COMMON_HEADER_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/Common.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/DynamicLibrary.hpp
 )
 set( TEST_COMMON_SOURCE_FILES
 	${CMAKE_CURRENT_SOURCE_DIR}/Common.cpp
 )
-if ( WIN32 )
-	set( TEST_COMMON_SOURCE_FILES
-		${TEST_COMMON_SOURCE_FILES}
-		${CMAKE_CURRENT_SOURCE_DIR}/Win32/DynamicLibrary.cpp
-	)
-else ()
-	set( TEST_COMMON_SOURCE_FILES
-		${TEST_COMMON_SOURCE_FILES}
-		${CMAKE_CURRENT_SOURCE_DIR}/Linux/DynamicLibrary.cpp
-	)
-endif ()
 
 add_library( TestCommon
 	OBJECT
