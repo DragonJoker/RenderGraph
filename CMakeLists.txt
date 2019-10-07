@@ -92,10 +92,10 @@ set( IncludeDirs
 option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
 find_package( Vulkan )
 
-if ( VULKAN_INCLUDE_DIR )
+if ( Vulkan_INCLUDE_DIR )
 	set( IncludeDirs
 		${IncludeDirs}
-		${VULKAN_INCLUDE_DIR}
+		${Vulkan_INCLUDE_DIR}
 	)
 
 	if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
