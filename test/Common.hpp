@@ -193,9 +193,9 @@ namespace test
 		, MessageData const & data );
 	void display( TestCounts & testCounts
 		, std::ostream & stream
-		, crg::RenderGraph const & value );
+		, crg::RenderGraph & value );
 	void display( TestCounts & testCounts
-		, crg::RenderGraph const & graph );
+		, crg::RenderGraph & graph );
 
 	inline MessageData makeMessageData( std::string const & target
 		, std::string error

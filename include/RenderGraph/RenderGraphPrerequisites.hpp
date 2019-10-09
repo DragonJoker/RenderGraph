@@ -7,6 +7,7 @@ See LICENSE file in root folder.
 #include <vulkan/vulkan.h>
 
 #include <algorithm>
+#include <map>
 #include <memory>
 #include <string>
 #include <set>
@@ -32,9 +33,13 @@ namespace crg
 
 	using RenderPassPtr = std::unique_ptr< RenderPass >;
 	using GraphNodePtr = std::unique_ptr< GraphNode >;
+	using GraphAdjacentNode = GraphNode *;
+	using ConstGraphAdjacentNode = GraphNode const *;
 
 	using AttachmentArray = std::vector< Attachment >;
 	using RenderPassPtrArray = std::vector< RenderPassPtr >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
 	using RenderPassDependenciesArray = std::vector< RenderPassDependencies >;
+	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
+	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentArray >;
 }

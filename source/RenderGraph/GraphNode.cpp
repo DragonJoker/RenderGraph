@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/GraphNode.hpp"
 
 #include "RenderGraph/GraphVisitor.hpp"
+#include "RenderGraph/RenderPass.hpp"
 
 namespace crg
 {
@@ -14,18 +15,53 @@ namespace crg
 	{
 	}
 
-	GraphNode::GraphNode( Kind kind )
-		: m_kind{ kind }
+	GraphNode::GraphNode( Kind kind
+		, std::string name
+		, AttachmentsNodeMap attachments )
+		: kind{ kind }
+		, name{ std::move( name ) }
+		, next{}
+		, attachsToPrev{ std::move( attachments ) }
 	{
+	}
+
+	void GraphNode::attachNode( GraphAdjacentNode node, AttachmentArray attaches )
+	{
+		auto it = std::find( next.begin()
+			, next.end()
+			, node );
+		if ( it == next.end() )
+		{
+			next.push_back( node );
+			node->attachsToPrev[this] = std::move( attaches );
+		}
+	}
+
+	GraphAdjacentNode GraphNode::findInNext( RenderPass const & pass )const
+	{
+		auto it = std::find_if( next.begin()
+			, next.end()
+			, [&pass]( GraphAdjacentNode lookup )
+			{
+				return getRenderPass( *lookup ) == &pass;
+			} );
+		return ( next.end() != it )
+			? *it
+			: nullptr;
+	}
+
+	AttachmentArray const & GraphNode::getAttachsToPrev( ConstGraphAdjacentNode const pred )const
+	{
+		auto it = attachsToPrev.find( pred );
+		assert( it != attachsToPrev.end() );
+		return it->second;
 	}
 
 	//*********************************************************************************************
 
-	RenderPassNode::RenderPassNode( RenderPass const * pass
-		, RenderPassDependenciesArray attachesToPrev )
-		: GraphNode{ kind }
-		, pass{ std::move( pass ) }
-		, attachesToPrev{ std::move( attachesToPrev ) }
+	RenderPassNode::RenderPassNode( RenderPass const & pass )
+		: GraphNode{ MyKind, pass.name, {} }
+		, pass{ &pass }
 	{
 	}
 
@@ -36,8 +72,8 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RootNode::RootNode()
-		: GraphNode{ kind }
+	RootNode::RootNode( std::string name )
+		: GraphNode{ MyKind, std::move( name ), {} }
 	{
 	}
 
@@ -48,15 +84,14 @@ namespace crg
 
 	//*********************************************************************************************
 
-	PhiNode::PhiNode( std::vector< GraphNode * > nodes )
-		: GraphNode{ kind }
-		, nodes{ std::move( nodes ) }
+	RenderPass const * getRenderPass( GraphNode const & node )
 	{
-	}
+		if ( !isRenderPassNode( node ) )
+		{
+			return nullptr;
+		}
 
-	void PhiNode::accept( GraphVisitor * vis )
-	{
-		vis->visitPhiNode( this );
+		return &nodeCast< RenderPassNode >( node ).getRenderPass();
 	}
 
 	//*********************************************************************************************

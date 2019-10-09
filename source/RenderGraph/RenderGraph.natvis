@@ -60,11 +60,30 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::RenderGraphNode">
-    <DisplayString>{{{pass}, next={next}}}</DisplayString>
+  <Type Name="crg::GraphNode">
+    <DisplayString>{{{kind} {name} {next}}}</DisplayString>
     <Expand>
-      <Item Condition="pass" Name="pass">*pass</Item>
+      <Item Name="name">name</Item>
+      <Item Name="kind">kind</Item>
       <Item Name="next">next</Item>
+      <Item Name="attachsToPrev">attachsToPrev</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::RenderPassNode">
+    <DisplayString>{{{kind} {*pass}, {next}}}</DisplayString>
+    <Expand>
+      <Item Name="pass">*pass</Item>
+      <Item Name="next">next</Item>
+      <Item Name="attachsToPrev">attachsToPrev</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::RootNode">
+    <DisplayString>{{{kind} {name}, {next}}}</DisplayString>
+    <Expand>
+      <Item Name="name">name</Item>
+      <Item Name="next">nexts</Item>
     </Expand>
   </Type>
 
@@ -76,7 +95,7 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::details::RenderPassDependencies">
+  <Type Name="crg::RenderPassDependencies">
     <DisplayString>{{src={*srcPass}, dst={*dstPass}, deps={dependencies}}}</DisplayString>
     <Expand>
       <Item Name="srcPass">*srcPass</Item>

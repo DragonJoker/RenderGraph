@@ -53,7 +53,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
 }
 )";
 		checkEqualStr( stream.str(), ref );
@@ -147,7 +147,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
     pass1C -> pass2C[ label="RT" ];
 }
 )";
@@ -208,7 +208,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
     pass0 -> pass1[ label="D0Target" ];
     pass1 -> pass2[ label="D1Target" ];
 }
@@ -294,7 +294,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
     pass0 -> pass1[ label="D0Target\nDSTarget1" ];
     pass1 -> pass2[ label="D1Target" ];
 }
@@ -343,7 +343,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
     ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
 }
 )";
@@ -406,7 +406,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
     ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
     ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
 }
@@ -621,7 +621,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph render {
+		std::string ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
@@ -953,12 +953,12 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					std::string ref = R"(digraph render {
+					std::string ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData3Target\nData4Target" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
     ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
@@ -986,12 +986,12 @@ namespace
 				}
 				else
 				{
-					std::string ref = R"(digraph render {
+					std::string ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData3Target\nData4Target" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
     ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
@@ -1016,7 +1016,7 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					std::string ref = R"(digraph render {
+					std::string ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
@@ -1037,7 +1037,7 @@ namespace
 				}
 				else
 				{
-					std::string ref = R"(digraph render {
+					std::string ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
@@ -1056,7 +1056,7 @@ namespace
 		{
 			if constexpr ( EnableTransparent )
 			{
-				std::string ref = R"(digraph render {
+				std::string ref = R"(digraph RenderGraph {
     depthPrepass -> accumulationPass[ label="DepthTarget1" ];
     accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
     combinePass -> finalCombinePass[ label="CombineTarget" ];
@@ -1068,7 +1068,7 @@ namespace
 			}
 			else
 			{
-				std::string ref = R"(digraph render {
+				std::string ref = R"(digraph RenderGraph {
     depthPrepass -> finalCombinePass[ label="DepthTarget1" ];
 }
 )";

@@ -18,15 +18,16 @@ namespace crg
 	class RenderGraph
 	{
 	public:
+		RenderGraph( std::string name = "RenderGraph" );
 		void add( RenderPass const & pass );
 		void remove( RenderPass const & pass );
 		bool compile();
 		ImageId createImage( ImageData const & img );
 		ImageViewId createView( ImageViewData const & img );
 
-		inline RootNode const & getGraph()const
+		inline GraphAdjacentNode getGraph()
 		{
-			return m_root;
+			return &m_root;
 		}
 
 	private:

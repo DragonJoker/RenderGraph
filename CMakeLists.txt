@@ -90,6 +90,8 @@ set( IncludeDirs
 )
 
 option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
+option( CRG_BUILD_EXAMPLES "Build RenderGraph example applications" OFF )
+
 find_package( Vulkan )
 
 if ( Vulkan_INCLUDE_DIR )
@@ -105,12 +107,18 @@ if ( Vulkan_INCLUDE_DIR )
 			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.h
 			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp
 			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.inl
+			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.h
+			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.hpp
+			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.inl
 		)
 		file( GLOB ${PROJECT_NAME}_FOLDER_SOURCE_FILES
+			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.c
+			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.cpp
 			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.c
 			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.cpp
 		)
 		file( GLOB ${PROJECT_NAME}_FOLDER_NATVIS_FILES
+			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.natvis
 			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.natvis
 		)
 		source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
@@ -142,6 +150,10 @@ if ( Vulkan_INCLUDE_DIR )
 
 		if ( CRG_BUILD_TESTS )
 			add_subdirectory( test )
+		endif ()
+
+		if ( CRG_BUILD_EXAMPLES )
+			add_subdirectory( examples )
 		endif ()
 	else()
 		message( SEND_ERROR "Please select a build type (Debug or Release)" )

@@ -13,6 +13,9 @@
 #	include <pwd.h>
 #endif
 
+#include <functional>
+#include <map>
+
 namespace test
 {
 #if defined( _WIN32 )
@@ -98,7 +101,7 @@ namespace test
 	{
 	public:
 		static void submit( std::ostream & stream
-			, crg::GraphNode * node
+			, crg::GraphAdjacentNode node
 			, std::set< crg::GraphNode const * > & visited )
 		{
 			DotOutVisitor vis{ stream, visited };
@@ -106,18 +109,10 @@ namespace test
 		}
 
 		static void submit( std::ostream & stream
-			, crg::RootNode const & node )
+			, crg::GraphAdjacentNode node )
 		{
 			std::set< crg::GraphNode const * > visited;
-			stream << "digraph render {\n";
-
-			for ( auto & node : node.next )
-			{
-				DotOutVisitor vis{ stream, visited };
-				node->accept( &vis );
-			}
-
-			stream << "}\n";
+			submit( stream, node, visited );
 		}
 
 	private:
@@ -126,6 +121,42 @@ namespace test
 			: m_stream{ stream }
 			, m_visited{ visited }
 		{
+		}
+
+		template< typename TypeT >
+		void filter( std::vector< TypeT > const & inputs
+			, std::function< bool( TypeT const & ) > filterFunc
+			, std::function< void( TypeT const & ) > trueFunc
+			, std::function< void( TypeT const & ) > falseFunc = []( TypeT const & ){} )
+		{
+			for ( auto & input : inputs )
+			{
+				if ( filterFunc( input ) )
+				{
+					trueFunc( input );
+				}
+				else
+				{
+					falseFunc( input );
+				}
+			}
+		}
+
+		void printEdge( crg::GraphNode * lhs
+			, crg::GraphNode * rhs )
+		{
+			m_stream << "    " << lhs->getName() << " -> " << rhs->getName();
+			m_stream << "[ label=\"";
+			std::string sep;
+
+			for ( auto & attach : rhs->getAttachsToPrev( lhs ) )
+			{
+				m_stream << sep << attach.name;
+				sep = "\\n";
+			}
+
+			m_stream << "\" ]";
+			m_stream << ";\n";
 		}
 
 		void submit( crg::GraphNode * node )
@@ -137,48 +168,30 @@ namespace test
 
 		void visitRootNode( crg::RootNode * node )override
 		{
-			for ( auto & next : node->next )
+			m_stream << "digraph " << node->getName() << " {\n";
+
+			for ( auto & next : node->getNext() )
 			{
 				submit( next );
 			}
+
+			m_stream << "}\n";
 		}
 
 		void visitRenderPassNode( crg::RenderPassNode * node )override
 		{
 			m_visited.insert( node );
+			auto nexts = node->getNext();
 
-			for ( auto & next : node->next )
+			for ( auto & next : nexts )
 			{
-				m_stream << "    " << ( *node->pass ) << " -> " << ( *crg::nodeCast< crg::RenderPassNode >( *next ).pass ) << "[ label=\"";
-				std::string sep;
-
-				for ( auto & attach : crg::nodeCast< crg::RenderPassNode >( *next ).attachesToPrev )
-				{
-					if ( attach.srcPass == node->pass )
-					{
-						for ( auto & dep : attach.dependencies )
-						{
-							m_stream << sep << dep.name;
-							sep = "\\n";
-						}
-					}
-				}
-
-				m_stream << "\" ];\n";
+				printEdge( node, next );
 				auto duplicate = m_visited.end() != m_visited.find( next );
 
 				if ( !duplicate )
 				{
 					submit( next );
 				}
-			}
-		}
-
-		void visitPhiNode( crg::PhiNode * node )override
-		{
-			for ( auto & next : node->next )
-			{
-				submit( next );
 			}
 		}
 
@@ -189,7 +202,7 @@ namespace test
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
-		, crg::RenderGraph const & value )
+		, crg::RenderGraph & value )
 	{
 		DotOutVisitor::submit( stream, value.getGraph() );
 
@@ -198,7 +211,7 @@ namespace test
 	}
 
 	void display( TestCounts & testCounts
-		, crg::RenderGraph const & value )
+		, crg::RenderGraph & value )
 	{
 		display( testCounts, std::cout, value );
 	}

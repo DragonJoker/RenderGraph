@@ -14,6 +14,5 @@ namespace crg
 		virtual ~GraphVisitor() = default;
 		virtual void visitRootNode( RootNode * node ) = 0;
 		virtual void visitRenderPassNode( RenderPassNode * node ) = 0;
-		virtual void visitPhiNode( PhiNode * node ) = 0;
 	};
 }

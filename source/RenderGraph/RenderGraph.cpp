@@ -24,21 +24,43 @@ namespace crg
 
 		using PassAttachCont = std::vector< PassAttach >;
 
-		struct RenderPassPath
+		template< typename TypeT >
+		void filter( std::vector< TypeT > const & inputs
+			, std::function< bool( TypeT const & ) > filterFunc
+			, std::function< void( TypeT const & ) > trueFunc
+			, std::function< void( TypeT const & ) > falseFunc = []( TypeT const & )
+			{} )
 		{
-			RenderPass const * first;
-			RenderPass const * last;
-			RenderPassDependenciesArray path;
-		};
-
-		using RenderPassPathArray = std::vector< RenderPassPath >;
-
-		inline bool operator==( RenderPassPath const & lhs
-			, RenderPassPath const & rhs )
+			for ( auto & input : inputs )
+			{
+				if ( filterFunc( input ) )
+				{
+					trueFunc( input );
+				}
+				else
+				{
+					falseFunc( input );
+				}
+			}
+		}
+		
+		template< typename TypeT >
+		void filter( std::vector< TypeT > & inputs
+			, std::function< bool( TypeT & ) > filterFunc
+			, std::function< void( TypeT & ) > trueFunc
+			, std::function< void( TypeT & ) > falseFunc = []( TypeT & ){} )
 		{
-			return lhs.first == rhs.first
-				&& lhs.last == rhs.last
-				&& lhs.path == rhs.path;
+			for ( auto & input : inputs )
+			{
+				if ( filterFunc( input ) )
+				{
+					trueFunc( input );
+				}
+				else
+				{
+					falseFunc( input );
+				}
+			}
 		}
 
 		inline bool isInRange( uint32_t value
@@ -217,36 +239,49 @@ namespace crg
 		{
 			for ( auto & src : srcs )
 			{
+				std::vector< RenderPassDependencies * > srcDependencies;
+				filter< RenderPassDependencies >( dependencies
+					, [&src]( RenderPassDependencies & lookup )
+					{
+						return lookup.srcPass == src;
+					}
+					, [&srcDependencies]( RenderPassDependencies & lookup )
+					{
+						srcDependencies.push_back( &lookup );
+					} );
+
 				for ( auto & dst : dsts )
 				{
 					if ( src != dst )
 					{
-						auto it = std::find_if( dependencies.begin()
-							, dependencies.end()
-							, [&dst, &src]( RenderPassDependencies const & lookup )
+						auto it = std::find_if( srcDependencies.begin()
+							, srcDependencies.end()
+							, [&dst]( RenderPassDependencies * lookup )
 							{
-								return lookup.dstPass == dst
-									&& lookup.srcPass == src;
+								return lookup->dstPass == dst;
 							} );
 
-						if ( it == dependencies.end() )
+						if ( it == srcDependencies.end() )
 						{
 							dependencies.push_back( { src, dst } );
-							it = std::prev( dependencies.end() );
+							srcDependencies.push_back( &dependencies.back() );
+							it = std::prev( srcDependencies.end() );
 						}
 
-						if ( it->dependencies.end() == std::find( it->dependencies.begin()
-							, it->dependencies.end()
+						auto & dep = *it;
+
+						if ( dep->dependencies.end() == std::find( dep->dependencies.begin()
+							, dep->dependencies.end()
 							, attach ) )
 						{
-							it->dependencies.push_back( attach );
+							dep->dependencies.push_back( attach );
 						}
 					}
 				}
 			}
 		}
 
-		RenderPassDependenciesArray buildDependencies( std::vector< RenderPassPtr > const & passes )
+		RenderPassDependenciesArray buildPassDependencies( std::vector< RenderPassPtr > const & passes )
 		{
 			PassAttachCont inputs;
 			PassAttachCont outputs;
@@ -283,6 +318,50 @@ namespace crg
 			return result;
 		}
 
+		template< typename PredT >
+		GraphAdjacentNode findIf( GraphNodePtrArray const & nodes
+			, GraphNode::Kind kind
+			, PredT predicate )
+		{
+			GraphAdjacentNode result{ nullptr };
+			auto it = std::find_if( nodes.begin()
+				, nodes.end()
+				, [&kind, &predicate]( GraphNodePtr const & lookup )
+				{
+					return ( ( kind == GraphNode::Kind::Undefined || kind == lookup->getKind() )
+						&& predicate( lookup.get() ) );
+				} );
+
+			if ( it == nodes.end() )
+			{
+				return nullptr;
+			}
+
+			return it->get();
+		}
+
+		GraphAdjacentNode find( RenderPass const * pass
+			, GraphNodePtrArray const & nodes )
+		{
+			return findIf( nodes
+				, GraphNode::Kind::RenderPass
+				, [&pass]( GraphAdjacentNode lookup )
+				{
+					return ( pass == &nodeCast< RenderPassNode >( *lookup ).getRenderPass() );
+				} );
+		}
+
+		GraphAdjacentNode find( std::string const & name
+			, GraphNodePtrArray const & nodes )
+		{
+			return findIf( nodes
+				, GraphNode::Kind::Undefined
+				, [&name]( GraphAdjacentNode lookup )
+				{
+					return name == lookup->getName();
+				} );
+		}
+
 		template< typename TypeT >
 		TypeT * getPointer( std::unique_ptr< TypeT > const & v )
 		{
@@ -299,40 +378,6 @@ namespace crg
 		TypeT * getPointer( TypeT & v )
 		{
 			return &v;
-		}
-
-		template< typename OutputT, typename InputT >
-		std::set< OutputT const * > filterSet( std::vector< InputT > const & inputs
-			, std::function< bool( InputT const & ) > filterFunc )
-		{
-			std::set< OutputT const * > result;
-
-			for ( auto & input : inputs )
-			{
-				if ( filterFunc( input ) )
-				{
-					result.insert( getPointer( input ) );
-				}
-			}
-
-			return result;
-		}
-
-		template< typename TypeT >
-		std::vector< TypeT > filter( std::vector< TypeT > const & inputs
-			, std::function< bool( TypeT const & ) > filterFunc )
-		{
-			std::vector< TypeT > result;
-
-			for ( auto & input : inputs )
-			{
-				if ( filterFunc( input ) )
-				{
-					result.push_back( input );
-				}
-			}
-
-			return result;
 		}
 
 		template< typename TypeT >
@@ -365,7 +410,8 @@ namespace crg
 		RenderPassSet retrieveRoots( RenderPassPtrArray const & passes
 			, RenderPassDependenciesArray const & dependencies )
 		{
-			return filterSet< RenderPass, RenderPassPtr >( passes
+			RenderPassSet result;
+			filter< RenderPassPtr >( passes
 				, [&dependencies]( RenderPassPtr const & pass )
 				{
 					// We want the passes that are not listed as destination to other passes.
@@ -375,13 +421,19 @@ namespace crg
 						{
 							return lookup.dstPass == pass.get();
 						} );
+				}
+				, [&result]( RenderPassPtr const & lookup )
+				{
+					result.insert( lookup.get() );
 				} );
+			return result;
 		}
 
 		RenderPassSet retrieveLeafs( RenderPassPtrArray const & passes
 			, RenderPassDependenciesArray const & dependencies )
 		{
-			return filterSet< RenderPass, RenderPassPtr >( passes
+			RenderPassSet result;
+			filter< RenderPassPtr >( passes
 				, [&dependencies]( RenderPassPtr const & pass )
 				{
 					// We want the passes that are not listed as source to other passes.
@@ -391,79 +443,70 @@ namespace crg
 						{
 							return lookup.srcPass == pass.get();
 						} );
-				} );
-		}
-
-		GraphNode * find( RenderPass const * root
-			, GraphNode * graph )
-		{
-			GraphNode * result{ nullptr };
-			auto it = std::find_if( graph->next.begin()
-				, graph->next.end()
-				, [&root, &result]( GraphNode * lookup )
+				}
+				, [&result]( RenderPassPtr const & lookup )
 				{
-					result = ( root == nodeCast< RenderPassNode >( *lookup ).pass )
-						? lookup
-						: find( root, lookup );
-					return result != nullptr;
+					result.insert( lookup.get() );
 				} );
 			return result;
 		}
 
-		void buildGraphRec( RenderPass const * root
+		GraphAdjacentNode createNode( RenderPass const * pass
+			, GraphNodePtrArray & nodes )
+		{
+			auto result = find( pass, nodes );
+
+			if ( !result )
+			{
+				nodes.push_back( std::make_unique< RenderPassNode >( *pass ) );
+				result = nodes.back().get();
+			}
+
+			return result;
+		}
+
+		void buildGraphRec( RenderPass const * curr
+			, AttachmentArray prevAttaches
 			, RenderPassDependenciesArray const & dependencies
 			, GraphNodePtrArray & nodes
-			, GraphNode & fullGraph
-			, GraphNode *& graph )
+			, RootNode & fullGraph
+			, GraphAdjacentNode prevNode )
 		{
-			if ( graph->getKind() == GraphNode::Kind::Root
-				|| root != nodeCast< RenderPassNode >( *graph ).pass )
+			if ( prevNode->getKind() == GraphNode::Kind::Root
+				|| curr != getRenderPass( *prevNode ) )
 			{
-				// We want the dependencies for which the current root is the source.
-				RenderPassDependenciesArray attaches;
-				auto nexts = filter< RenderPassDependencies >( dependencies
-					, [&root, &attaches]( RenderPassDependencies const & lookup )
+				// We want the dependencies for which the current pass is the source.
+				std::set< RenderPassDependencies const * > attaches;
+				filter< RenderPassDependencies >( dependencies
+					, [&curr]( RenderPassDependencies const & lookup )
 					{
-						if ( root == lookup.dstPass )
-						{
-							attaches.push_back( lookup );
-						}
-
-						return root == lookup.srcPass;
+						return curr->name == lookup.srcPass->name;
+					}
+					, [&attaches]( RenderPassDependencies const & lookup )
+					{
+						attaches.insert( &lookup );
 					} );
 
-				if ( auto node = find( root, &fullGraph ) )
-				{
-					// If we hit an already added node, 
-					graph->next.push_back( node );
-				}
-				else
-				{
-					auto end = std::unique( attaches.begin(), attaches.end() );
-					nodes.emplace_back( std::make_unique< RenderPassNode >( RenderPassNode
-						{
-							root,
-							{ attaches.begin(), end },
-						} ) );
-					graph->next.push_back( nodes.back().get() );
-					auto it = std::prev( graph->next.end() );
+				GraphAdjacentNode result{ createNode( curr, nodes ) };
+				prevNode->attachNode( result, std::move( prevAttaches ) );
 
-					for ( auto & next : nexts )
-					{
-						buildGraphRec( next.dstPass
-							, dependencies
-							, nodes
-							, fullGraph
-							, *it );
-					}
+				for ( auto & dependency : attaches )
+				{
+					buildGraphRec( dependency->dstPass
+						, dependency->dependencies
+						, dependencies
+						, nodes
+						, fullGraph
+						, result );
 				}
 			}
 		}
 
-		RootNode buildGraph( std::vector< RenderPassPtr > const & passes
-			, RenderPassDependenciesArray const & dependencies
-			, GraphNodePtrArray & nodes )
+		GraphNodePtrArray buildGraph( std::vector< RenderPassPtr > const & passes
+			, RootNode & rootNode
+			, RenderPassDependenciesArray const & dependencies )
 		{
+			GraphNodePtrArray nodes;
 			// Retrieve root and leave passes.
 			auto roots = retrieveRoots( passes, dependencies );
 
@@ -481,24 +524,28 @@ namespace crg
 
 			// Build paths from each root pass to leaf pass
 			// When an existing graph node is to be added again,
-			// the node that was added is replaced by the existing one.
-			// This leads to a grouping of all paths to one node.
-			// This is not bad, but I'd rather keep that information (a single node per parent),
-			// and group them with some kind of "wrapper" node.
-			RootNode graph{};
-			GraphNode * curr{ &graph };
+			// the node that was added is replaced by a pi node which groups the nodes with the same name (render pass name).
+			// This leads to a grouping of all paths to one node,
+			// but lets each other kind of node to have a single next and a single previous.
+			GraphAdjacentNode curr{ &rootNode };
 
 			for ( auto & root : roots )
 			{
 				buildGraphRec( root
+					, {}
 					, dependencies
 					, nodes
-					, graph
+					, rootNode
 					, curr );
 			}
 
-			return graph;
+			return nodes;
 		}
+	}
+
+	RenderGraph::RenderGraph( std::string name )
+		: m_root{ std::move( name ) }
+	{
 	}
 
 	void RenderGraph::add( RenderPass const & pass )
@@ -540,8 +587,8 @@ namespace crg
 			CRG_Exception( "No RenderPass registered." );
 		}
 
-		auto dependencies = details::buildDependencies( m_passes );
-		m_root = details::buildGraph( m_passes, dependencies, m_nodes );
+		auto dependencies = details::buildPassDependencies( m_passes );
+		m_nodes = details::buildGraph( m_passes, m_root, dependencies );
 		return true;
 	}
 
