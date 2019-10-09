@@ -11,7 +11,7 @@ set( MAIN_PROJECT_NAME "RenderGraph" )
 set( VERSION_MAJOR 0 )
 set( VERSION_MINOR 1 )
 set( VERSION_BUILD 0 )
-set( VERSION_YEAR 2018 )
+set( VERSION_YEAR 2019 )
 
 # Used to look for external modules
 set( CMAKE_MODULE_PATH
@@ -21,12 +21,11 @@ set( CMAKE_MODULE_PATH
 )
 set( CMAKE_TEMPLATES_DIR ${CMAKE_SOURCE_DIR}/CMake/Templates )
 
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set( CMAKE_POSITION_INDEPENDENT_CODE ON )
+set( CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "The configuration types" FORCE )
 
 # Experimental Precompiled headers support for GCC
 include( PCHSupport )
-
-set( CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "The configuration types" FORCE )
 
 # Declare the project
 project( ${MAIN_PROJECT_NAME} )
@@ -69,17 +68,6 @@ set( CompileDefinitions
 	CRG_VERSION_BUILD=${VERSION_BUILD}
 	$<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
 )
-
-#--------------------------------------------------------------------------------------------------
-#	MSVC specifics
-#--------------------------------------------------------------------------------------------------
-if( MSVC )
-	# We remove the existing /Zm flag to replace it by /Zm300
-	string( REGEX REPLACE ".*(/Zm[0-9]+).*" "\\1" ZmFlag ${CMAKE_CXX_FLAGS} )
-	if( (NOT "${ZmFlag}" STREQUAL "") AND (NOT "${CMAKE_CXX_FLAGS}" STREQUAL "${ZmFlag}") )
-		string( REPLACE ${ZmFlag} "" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} )
-	endif()
-endif()
 
 #--------------------------------------------------------------------------------------------------
 #	Adding include dirs to include search path
@@ -143,9 +131,39 @@ if ( Vulkan_INCLUDE_DIR )
 			CXX_STANDARD 17
 			FOLDER "Core"
 		)
-		set( BinsDependencies
-			${BinsDependencies}
+		set( LinkLibraries
 			RenderGraph
+		)
+		install(
+			TARGETS ${PROJECT_NAME}
+			COMPONENT ${PROJECT_NAME}
+			CONFIGURATIONS Release
+			EXPORT ${PROJECT_NAME}
+			RUNTIME DESTINATION bin
+			ARCHIVE DESTINATION lib
+			LIBRARY DESTINATION lib
+		)
+		install(
+			TARGETS ${PROJECT_NAME}
+			COMPONENT ${PROJECT_NAME}_dev
+			CONFIGURATIONS RelWithDebInfo
+			EXPORT ${PROJECT_NAME}
+			RUNTIME DESTINATION bin/RelWithDebInfo
+			ARCHIVE DESTINATION lib/RelWithDebInfo
+			LIBRARY DESTINATION lib/RelWithDebInfo
+		)
+		install(
+			TARGETS ${PROJECT_NAME}
+			COMPONENT ${PROJECT_NAME}_dev
+			CONFIGURATIONS Debug
+			EXPORT ${PROJECT_NAME}
+			RUNTIME DESTINATION bin/Debug
+			ARCHIVE DESTINATION lib/Debug
+			LIBRARY DESTINATION lib/Debug
+		)
+		target_install_dir_headers( ${PROJECT_NAME}
+			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}
+			${PROJECT_NAME}
 		)
 
 		if ( CRG_BUILD_TESTS )
