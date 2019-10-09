@@ -1,4 +1,5 @@
 find_package( GLFW )
+find_package( Vulkan )
 
 if( GLFW_FOUND AND Vulkan_FOUND )
 	file( GLOB EXAMPLES_FOLDERS

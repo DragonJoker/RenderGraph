@@ -4,7 +4,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include "vulkan/vulkan.h"
 
 #include <algorithm>
 #include <map>

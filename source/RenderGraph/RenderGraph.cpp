@@ -477,6 +477,7 @@ namespace crg
 			{
 				// We want the dependencies for which the current pass is the source.
 				std::set< RenderPassDependencies const * > attaches;
+				RenderPassDependenciesArray nextDependencies;
 				filter< RenderPassDependencies >( dependencies
 					, [&curr]( RenderPassDependencies const & lookup )
 					{
@@ -485,6 +486,10 @@ namespace crg
 					, [&attaches]( RenderPassDependencies const & lookup )
 					{
 						attaches.insert( &lookup );
+					}
+					, [&nextDependencies]( RenderPassDependencies const & lookup )
+					{
+						nextDependencies.push_back( lookup );
 					} );
 
 				GraphAdjacentNode result{ createNode( curr, nodes ) };
@@ -494,7 +499,7 @@ namespace crg
 				{
 					buildGraphRec( dependency->dstPass
 						, dependency->dependencies
-						, dependencies
+						, nextDependencies
 						, nodes
 						, fullGraph
 						, result );

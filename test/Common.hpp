@@ -326,10 +326,10 @@ namespace test
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
-			, "COND"\
-			, std::string{ #x }\
-			, __FUNCTION__\
-			, __LINE__ ) );\
+				, "COND"\
+				, std::string{ #x }\
+				, __FUNCTION__\
+				, __LINE__ ) );\
 	}
 
 #define check( x )\
@@ -349,14 +349,23 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
+	catch ( std::exception & exc )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "REQCOND"\
+				, std::string{ #x } + " " + exc.what()\
+				, __FUNCTION__\
+				, __LINE__ ) );\
+	}\
 	catch ( ... )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
-			, "REQCOND"\
-			, std::string{ #x }\
-			, __FUNCTION__\
-			, __LINE__ ) );\
+				, "REQCOND"\
+				, std::string{ #x }\
+				, __FUNCTION__\
+				, __LINE__ ) );\
 	}
 
 #define checkEqual( x, y )\
@@ -375,6 +384,15 @@ namespace test
 	catch ( test::Exception & exc )\
 	{\
 		test::reportFailure( testCounts, exc.data );\
+	}\
+	catch ( std::exception & exc )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "EQUAL"\
+				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " ) " + exc.what()\
+				, __FUNCTION__\
+				, __LINE__ ) );\
 	}\
 	catch ( ... )\
 	{\
@@ -403,6 +421,15 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
+	catch ( std::exception & exc )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "EQUAL"\
+				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
+				, __FUNCTION__\
+				, __LINE__ ) );\
+	}\
 	catch ( ... )\
 	{\
 		test::reportUnhandled( testCounts\
@@ -430,6 +457,15 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
+	catch ( std::exception & exc )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "NEQUAL"\
+				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " ) " + exc.what()\
+				, __FUNCTION__\
+				, __LINE__ ) );\
+	}\
 	catch ( ... )\
 	{\
 		test::reportUnhandled( testCounts\
@@ -456,6 +492,15 @@ namespace test
 	catch ( test::Exception & exc )\
 	{\
 		test::reportFailure( testCounts, exc.data );\
+	}\
+	catch ( std::exception & exc )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "NEQUAL"\
+				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
+				, __FUNCTION__\
+				, __LINE__ ) );\
 	}\
 	catch ( ... )\
 	{\

@@ -80,102 +80,91 @@ set( IncludeDirs
 option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
 option( CRG_BUILD_EXAMPLES "Build RenderGraph example applications" OFF )
 
-find_package( Vulkan )
-
-if ( Vulkan_INCLUDE_DIR )
-	set( IncludeDirs
+if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
+	# RenderGraph library
+	project( RenderGraph )
+	file( GLOB ${PROJECT_NAME}_FOLDER_HEADER_FILES
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.h
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.inl
+		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.h
+		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.hpp
+		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.inl
+	)
+	file( GLOB ${PROJECT_NAME}_FOLDER_SOURCE_FILES
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.c
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.cpp
+		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.c
+		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.cpp
+	)
+	file( GLOB ${PROJECT_NAME}_FOLDER_NATVIS_FILES
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.natvis
+		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.natvis
+	)
+	source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
+	source_group( "Source Files" FILES ${${PROJECT_NAME}_FOLDER_SOURCE_FILES} )
+	source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_FOLDER_NATVIS_FILES} )
+	add_library( ${PROJECT_NAME} STATIC
+		${${PROJECT_NAME}_FOLDER_HEADER_FILES}
+		${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
+		${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
+	)
+	target_compile_options( ${PROJECT_NAME} PUBLIC
+		${CompileOptions}
+	)
+	target_compile_definitions( ${PROJECT_NAME} PUBLIC
+		${CompileDefinitions}
+	)
+	target_include_directories( ${PROJECT_NAME} PUBLIC
 		${IncludeDirs}
-		${Vulkan_INCLUDE_DIR}
+		${VULKAN_INCLUDE_DIR}
+	)
+	set_target_properties( ${PROJECT_NAME} PROPERTIES
+		CXX_STANDARD 17
+		FOLDER "Core"
+	)
+	set( LinkLibraries
+		RenderGraph
+	)
+	install(
+		TARGETS ${PROJECT_NAME}
+		COMPONENT ${PROJECT_NAME}
+		CONFIGURATIONS Release
+		EXPORT ${PROJECT_NAME}
+		RUNTIME DESTINATION bin
+		ARCHIVE DESTINATION lib
+		LIBRARY DESTINATION lib
+	)
+	install(
+		TARGETS ${PROJECT_NAME}
+		COMPONENT ${PROJECT_NAME}_dev
+		CONFIGURATIONS RelWithDebInfo
+		EXPORT ${PROJECT_NAME}
+		RUNTIME DESTINATION bin/RelWithDebInfo
+		ARCHIVE DESTINATION lib/RelWithDebInfo
+		LIBRARY DESTINATION lib/RelWithDebInfo
+	)
+	install(
+		TARGETS ${PROJECT_NAME}
+		COMPONENT ${PROJECT_NAME}_dev
+		CONFIGURATIONS Debug
+		EXPORT ${PROJECT_NAME}
+		RUNTIME DESTINATION bin/Debug
+		ARCHIVE DESTINATION lib/Debug
+		LIBRARY DESTINATION lib/Debug
+	)
+	target_install_dir_headers( ${PROJECT_NAME}
+		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}
+		${PROJECT_NAME}
 	)
 
-	if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
-		# RenderGraph library
-		project( RenderGraph )
-		file( GLOB ${PROJECT_NAME}_FOLDER_HEADER_FILES
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.h
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.inl
-			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.h
-			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.hpp
-			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.inl
-		)
-		file( GLOB ${PROJECT_NAME}_FOLDER_SOURCE_FILES
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.c
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.cpp
-			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.c
-			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.cpp
-		)
-		file( GLOB ${PROJECT_NAME}_FOLDER_NATVIS_FILES
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.natvis
-			${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.natvis
-		)
-		source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
-		source_group( "Source Files" FILES ${${PROJECT_NAME}_FOLDER_SOURCE_FILES} )
-		source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_FOLDER_NATVIS_FILES} )
-		add_library( ${PROJECT_NAME} STATIC
-			${${PROJECT_NAME}_FOLDER_HEADER_FILES}
-			${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
-			${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
-		)
-		target_compile_options( ${PROJECT_NAME} PUBLIC
-			${CompileOptions}
-		)
-		target_compile_definitions( ${PROJECT_NAME} PUBLIC
-			${CompileDefinitions}
-		)
-		target_include_directories( ${PROJECT_NAME} PUBLIC
-			${IncludeDirs}
-			${VULKAN_INCLUDE_DIR}
-		)
-		set_target_properties( ${PROJECT_NAME} PROPERTIES
-			CXX_STANDARD 17
-			FOLDER "Core"
-		)
-		set( LinkLibraries
-			RenderGraph
-		)
-		install(
-			TARGETS ${PROJECT_NAME}
-			COMPONENT ${PROJECT_NAME}
-			CONFIGURATIONS Release
-			EXPORT ${PROJECT_NAME}
-			RUNTIME DESTINATION bin
-			ARCHIVE DESTINATION lib
-			LIBRARY DESTINATION lib
-		)
-		install(
-			TARGETS ${PROJECT_NAME}
-			COMPONENT ${PROJECT_NAME}_dev
-			CONFIGURATIONS RelWithDebInfo
-			EXPORT ${PROJECT_NAME}
-			RUNTIME DESTINATION bin/RelWithDebInfo
-			ARCHIVE DESTINATION lib/RelWithDebInfo
-			LIBRARY DESTINATION lib/RelWithDebInfo
-		)
-		install(
-			TARGETS ${PROJECT_NAME}
-			COMPONENT ${PROJECT_NAME}_dev
-			CONFIGURATIONS Debug
-			EXPORT ${PROJECT_NAME}
-			RUNTIME DESTINATION bin/Debug
-			ARCHIVE DESTINATION lib/Debug
-			LIBRARY DESTINATION lib/Debug
-		)
-		target_install_dir_headers( ${PROJECT_NAME}
-			${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}
-			${PROJECT_NAME}
-		)
+	if ( CRG_BUILD_TESTS )
+		add_subdirectory( test )
+	endif ()
 
-		if ( CRG_BUILD_TESTS )
-			add_subdirectory( test )
-		endif ()
-
-		if ( CRG_BUILD_EXAMPLES )
-			add_subdirectory( examples )
-		endif ()
-	else()
-		message( SEND_ERROR "Please select a build type (Debug or Release)" )
-	endif()
+	if ( CRG_BUILD_EXAMPLES )
+		add_subdirectory( examples )
+	endif ()
 else()
-	message( SEND_ERROR "Vulkan not found." )
+	message( SEND_ERROR "Please select a build type (Debug or Release)" )
 endif()
