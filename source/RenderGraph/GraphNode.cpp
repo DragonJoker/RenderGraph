@@ -25,16 +25,35 @@ namespace crg
 	{
 	}
 
-	void GraphNode::attachNode( GraphAdjacentNode node, AttachmentArray attaches )
+	void GraphNode::addAttaches( GraphAdjacentNode prev, AttachmentArray attaches )
 	{
-		auto it = std::find( next.begin()
-			, next.end()
-			, node );
-		if ( it == next.end() )
+		auto & mine = attachsToPrev[prev];
+
+		for ( auto & attach : attaches )
 		{
-			next.push_back( node );
-			node->attachsToPrev[this] = std::move( attaches );
+			auto it = std::find( mine.begin()
+				, mine.end()
+				, attach );
+
+			if ( it == mine.end() )
+			{
+				mine.push_back( std::move( attach ) );
+			}
 		}
+	}
+
+	void GraphNode::attachNode( GraphAdjacentNode next, AttachmentArray attaches )
+	{
+		auto it = std::find( this->next.begin()
+			, this->next.end()
+			, next );
+
+		if ( it == this->next.end() )
+		{
+			this->next.push_back( next );
+		}
+
+		next->addAttaches( this, std::move( attaches ) );
 	}
 
 	GraphAdjacentNode GraphNode::findInNext( RenderPass const & pass )const

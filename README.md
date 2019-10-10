@@ -21,5 +21,7 @@ The graph is generated.
 Todo
 ----
 
+Support blend loops (first pass clears/loads, other passes blend to the result of the first pass).
 Handling of "variants" (paths of a single pass that are triggered by specific conditions) if needed.
 Generate the VkRenderPassCreateInfo, VkFramebufferCreateInfo, VkImageCreateInfo and VkImageViewCreateInfo from the graph status (for each variant if needed).
+Sort of run the graph, given variants, and a number of queues.

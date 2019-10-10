@@ -148,8 +148,15 @@ namespace test
 			m_stream << "    " << lhs->getName() << " -> " << rhs->getName();
 			m_stream << "[ label=\"";
 			std::string sep;
+			auto attaches = rhs->getAttachsToPrev( lhs );
+			std::sort( attaches.begin()
+				, attaches.end()
+				, []( crg::Attachment const & lhs, crg::Attachment const & rhs )
+				{
+					return lhs.name < rhs.name;
+				} );
 
-			for ( auto & attach : rhs->getAttachsToPrev( lhs ) )
+			for ( auto & attach : attaches )
 			{
 				m_stream << sep << attach.name;
 				sep = "\\n";
@@ -186,9 +193,8 @@ namespace test
 			for ( auto & next : nexts )
 			{
 				printEdge( node, next );
-				auto duplicate = m_visited.end() != m_visited.find( next );
 
-				if ( !duplicate )
+				if ( m_visited.end() == m_visited.find( next ) )
 				{
 					submit( next );
 				}

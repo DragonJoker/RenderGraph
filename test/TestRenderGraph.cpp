@@ -7,6 +7,27 @@
 
 namespace
 {
+	std::string sort( std::string const & value )
+	{
+		std::stringstream stream{ value };
+		std::multiset< std::string > sorted;
+		std::string line;
+
+		while ( std::getline( stream, line ) )
+		{
+			sorted.insert( line );
+		}
+
+		std::stringstream result;
+
+		for ( auto & v : sorted )
+		{
+			result << v << std::endl;
+		}
+
+		return result.str();
+	}
+
 	void testNoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testNoPass" );
@@ -781,7 +802,7 @@ namespace
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
     ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
     geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> ambientPass[ label="Data2Target\nData1Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     depthPrepass -> ssaoLinearisePass[ label="DepthTarget1" ];
     ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
     ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
@@ -959,9 +980,9 @@ namespace
 		, bool EnableOpaque
 		, bool EnableSsao
 		, bool EnableTransparent >
-	void testFullPass( test::TestCounts & testCounts )
+	void testRender( test::TestCounts & testCounts )
 	{
-		testBegin( "test"
+		testBegin( "testRender"
 			+ ( EnableDepthPrepass ? std::string{ "Prepass" } : std::string{} )
 			+ ( EnableOpaque ? std::string{ "Opaque" } : std::string{} )
 			+ ( EnableSsao ? std::string{ "Ssao" } : std::string{} )
@@ -1103,6 +1124,7 @@ namespace
 		check( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
+		std::string ref;
 
 		if constexpr ( EnableDepthPrepass )
 		{
@@ -1112,12 +1134,12 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						std::string ref = R"(digraph RenderGraph {
+						ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
     ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
@@ -1141,16 +1163,15 @@ namespace
     depthPrepass -> combinePass[ label="DepthTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 					else
 					{
-						std::string ref = R"(digraph RenderGraph {
+						ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
     ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
@@ -1168,14 +1189,13 @@ namespace
     depthPrepass -> ambientPass[ label="DepthTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 				}
 				else
 				{
 					if constexpr ( EnableTransparent )
 					{
-						std::string ref = R"(digraph RenderGraph {
+						ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
@@ -1192,11 +1212,10 @@ namespace
     depthPrepass -> combinePass[ label="DepthTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 					else
 					{
-						std::string ref = R"(digraph RenderGraph {
+						ref = R"(digraph RenderGraph {
     depthPrepass -> geometryPass[ label="DepthTarget1" ];
     geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
@@ -1207,7 +1226,6 @@ namespace
     depthPrepass -> ambientPass[ label="DepthTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 				}
 			}
@@ -1215,7 +1233,7 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					std::string ref = R"(digraph RenderGraph {
+					ref = R"(digraph RenderGraph {
     depthPrepass -> accumulationPass[ label="DepthTarget1" ];
     accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
     combinePass -> finalCombinePass[ label="CombineTarget" ];
@@ -1223,15 +1241,13 @@ namespace
     depthPrepass -> combinePass[ label="DepthTarget1" ];
 }
 )";
-					checkEqualStr( stream.str(), ref );
 				}
 				else
 				{
-					std::string ref = R"(digraph RenderGraph {
+					ref = R"(digraph RenderGraph {
     depthPrepass -> finalCombinePass[ label="DepthTarget1" ];
 }
 )";
-					checkEqualStr( stream.str(), ref );
 				}
 			}
 		}
@@ -1243,8 +1259,8 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						std::string ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="DepthTarget1\nData1Target\nData2Target\nData3Target\nData4Target" ];
+						ref = R"(digraph RenderGraph {
+    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
     geometryPass -> ssaoLinearisePass[ label="DepthTarget1" ];
@@ -1257,7 +1273,7 @@ namespace
     ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
     ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
     ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    geometryPass -> ambientPass[ label="DepthTarget1\nData1Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     geometryPass -> accumulationPass[ label="DepthTarget1\nVelocityTarget1" ];
     accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
     accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
@@ -1268,12 +1284,11 @@ namespace
     geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 					else
 					{
-						std::string ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="DepthTarget1\nData1Target\nData2Target\nData3Target\nData4Target" ];
+						ref = R"(digraph RenderGraph {
+    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
     geometryPass -> ssaoLinearisePass[ label="DepthTarget1" ];
@@ -1286,24 +1301,23 @@ namespace
     ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
     ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
     ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    geometryPass -> ambientPass[ label="DepthTarget1\nData1Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     geometryPass -> ssaoRawPass[ label="Data2Target" ];
     geometryPass -> ssaoBlurPass[ label="Data2Target" ];
     geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 				}
 				else
 				{
 					if constexpr ( EnableTransparent )
 					{
-						std::string ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="DepthTarget1\nData1Target\nData2Target\nData3Target\nData4Target" ];
+						ref = R"(digraph RenderGraph {
+    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="DepthTarget1\nData1Target\nData2Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     geometryPass -> accumulationPass[ label="DepthTarget1\nVelocityTarget1" ];
     accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
     accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
@@ -1312,19 +1326,17 @@ namespace
     geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 					else
 					{
-						std::string ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="DepthTarget1\nData1Target\nData2Target\nData3Target\nData4Target" ];
+						ref = R"(digraph RenderGraph {
+    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
     ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="DepthTarget1\nData1Target\nData2Target\nData3Target\nData4Target" ];
+    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
     geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
 }
 )";
-						checkEqualStr( stream.str(), ref );
 					}
 				}
 			}
@@ -1332,24 +1344,23 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					std::string ref = R"(digraph RenderGraph {
+					ref = R"(digraph RenderGraph {
     accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
     combinePass -> finalCombinePass[ label="CombineTarget" ];
     accumulationPass -> finalCombinePass[ label="VelocityTarget1" ];
 }
 )";
-					checkEqualStr( stream.str(), ref );
 				}
 				else
 				{
-				std::string ref = R"(digraph RenderGraph {
+					ref = R"(digraph RenderGraph {
 }
 )";
-					checkEqualStr( stream.str(), ref );
 				}
 			}
 		}
 
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 }
@@ -1370,17 +1381,17 @@ int main( int argc, char ** argv )
 	testLoopDependenciesWithRoot( testCounts );
 	testLoopDependenciesWithRootAndLeaf( testCounts );
 	testSsaoPass( testCounts );
-	testFullPass< false, false, false, false >( testCounts );
-	testFullPass< false, true, false, false >( testCounts );
-	testFullPass< false, true, true, false >( testCounts );
-	testFullPass< false, false, false, true >( testCounts );
-	testFullPass< false, true, false, true >( testCounts );
-	testFullPass< false, true, true, true >( testCounts );
-	testFullPass< true, false, false, false >( testCounts );
-	testFullPass< true, true, false, false >( testCounts );
-	testFullPass< true, true, true, false >( testCounts );
-	testFullPass< true, false, false, true >( testCounts );
-	testFullPass< true, true, false, true >( testCounts );
-	testFullPass< true, true, true, true >( testCounts );
+	testRender< false, false, false, false >( testCounts );
+	testRender< false, true, false, false >( testCounts );
+	testRender< false, true, true, false >( testCounts );
+	testRender< false, false, false, true >( testCounts );
+	testRender< false, true, false, true >( testCounts );
+	testRender< false, true, true, true >( testCounts );
+	testRender< true, false, false, false >( testCounts );
+	testRender< true, true, false, false >( testCounts );
+	testRender< true, true, true, false >( testCounts );
+	testRender< true, false, false, true >( testCounts );
+	testRender< true, true, false, true >( testCounts );
+	testRender< true, true, true, true >( testCounts );
 	testSuiteEnd();
 }

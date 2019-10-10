@@ -43,5 +43,5 @@ test_script:
 after_build:
   - ps: if ($isLinux) {cd /home/appveyor/projects/rendergraph}
   - ps: if (!$isLinux) {cd C:\projects\rendergraph}
-  - ps: 7z a rendergraph-$OS_NAME-$PLATFORM_NAME.zip ./package/rendergraph/*
-  - ps: Push-AppveyorArtifact rendergraph-$OS_NAME-$PLATFORM_NAME.zip
+  - ps: 7z a RenderGraph-$OS_NAME-$PLATFORM_NAME.zip ./package/rendergraph/*
+  - ps: Push-AppveyorArtifact RenderGraph-$OS_NAME-$PLATFORM_NAME.zip
