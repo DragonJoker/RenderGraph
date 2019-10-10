@@ -12,6 +12,9 @@ See LICENSE file in root folder.
 #include <iostream>
 #include <stdexcept>
 
+#define CRG_DebugPassAttaches 0
+#define CRG_DebugPassDependencies 0
+
 namespace crg
 {
 	namespace details
@@ -19,10 +22,75 @@ namespace crg
 		struct PassAttach
 		{
 			Attachment const attach;
-			std::vector< RenderPass const * > passes;
+			std::set< RenderPass const * > passes;
 		};
 
 		using PassAttachCont = std::vector< PassAttach >;
+
+		std::ostream & operator<<( std::ostream & stream, PassAttach const & attach )
+		{
+			stream << attach.attach.name;
+			std::string sep{ " -> " };
+
+			for ( auto & pass : attach.passes )
+			{
+				stream << sep << pass->name;
+				sep = ", ";
+			}
+
+			return stream;
+		}
+
+		std::ostream & operator<<( std::ostream & stream, PassAttachCont const & attaches )
+		{
+			for ( auto & attach : attaches )
+			{
+				stream << attach << std::endl;
+			}
+
+			return stream;
+		}
+
+		std::ostream & operator<<( std::ostream & stream, RenderPassDependencies const & dependency )
+		{
+			stream << dependency.srcPass->name << " -> " << dependency.dstPass->name;
+			std::string sep = " [";
+
+			for ( auto & attach : dependency.dependencies )
+			{
+				stream << sep << attach.name;
+				sep = ", ";
+			}
+
+			stream << "]";
+			return stream;
+		}
+
+		std::ostream & operator<<( std::ostream & stream, RenderPassDependenciesArray const & dependencies )
+		{
+			for ( auto & dependency : dependencies )
+			{
+				stream << dependency << std::endl;
+			}
+
+			return stream;
+		}
+
+		void printDebug( PassAttachCont const & inputs
+			, PassAttachCont const & outputs
+			, RenderPassDependenciesArray const & dependencies )
+		{
+#if CRG_DebugPassAttaches
+			std::clog << "Inputs" << std::endl;
+			std::clog << inputs << std::endl;
+			std::clog << "Outputs" << std::endl;
+			std::clog << outputs << std::endl;
+#endif
+#if CRG_DebugPassDependencies
+			std::clog << "Dependencies" << std::endl;
+			std::clog << dependencies << std::endl;
+#endif
+		}
 
 		template< typename TypeT >
 		void filter( std::vector< TypeT > const & inputs
@@ -116,7 +184,7 @@ namespace crg
 						, lookup.passes.end()
 						, &pass ) )
 					{
-						lookup.passes.push_back( &pass );
+						lookup.passes.insert( &pass );
 					}
 
 					found = true;
@@ -137,7 +205,7 @@ namespace crg
 				it = std::prev( cont.end() );
 			}
 
-			it->passes.push_back( &pass );
+			it->passes.insert( &pass );
 		}
 
 		void processTargetAttach( Attachment const & attach
@@ -233,48 +301,37 @@ namespace crg
 		}
 
 		void addDependency( Attachment const & attach
-			, std::vector< RenderPass const * > const & srcs
-			, std::vector< RenderPass const * > const & dsts
+			, std::set< RenderPass const * > const & srcs
+			, std::set< RenderPass const * > const & dsts
 			, RenderPassDependenciesArray & dependencies )
 		{
 			for ( auto & src : srcs )
 			{
-				std::vector< RenderPassDependencies * > srcDependencies;
-				filter< RenderPassDependencies >( dependencies
-					, [&src]( RenderPassDependencies & lookup )
-					{
-						return lookup.srcPass == src;
-					}
-					, [&srcDependencies]( RenderPassDependencies & lookup )
-					{
-						srcDependencies.push_back( &lookup );
-					} );
-
 				for ( auto & dst : dsts )
 				{
 					if ( src != dst )
 					{
-						auto it = std::find_if( srcDependencies.begin()
-							, srcDependencies.end()
-							, [&dst]( RenderPassDependencies * lookup )
+						auto it = std::find_if( dependencies.begin()
+							, dependencies.end()
+							, [&dst, &src]( RenderPassDependencies & lookup )
 							{
-								return lookup->dstPass == dst;
+								return lookup.srcPass == src
+									&& lookup.dstPass == dst;
 							} );
 
-						if ( it == srcDependencies.end() )
+						if ( it == dependencies.end() )
 						{
 							dependencies.push_back( { src, dst } );
-							srcDependencies.push_back( &dependencies.back() );
-							it = std::prev( srcDependencies.end() );
+							it = std::prev( dependencies.end() );
 						}
 
 						auto & dep = *it;
 
-						if ( dep->dependencies.end() == std::find( dep->dependencies.begin()
-							, dep->dependencies.end()
+						if ( dep.dependencies.end() == std::find( dep.dependencies.begin()
+							, dep.dependencies.end()
 							, attach ) )
 						{
-							dep->dependencies.push_back( attach );
+							dep.dependencies.push_back( attach );
 						}
 					}
 				}
@@ -315,6 +372,7 @@ namespace crg
 				}
 			}
 
+			printDebug( inputs, outputs, result );
 			return result;
 		}
 
@@ -477,6 +535,7 @@ namespace crg
 			{
 				// We want the dependencies for which the current pass is the source.
 				std::set< RenderPassDependencies const * > attaches;
+				RenderPassDependenciesArray nextDependencies;
 				filter< RenderPassDependencies >( dependencies
 					, [&curr]( RenderPassDependencies const & lookup )
 					{
@@ -485,6 +544,10 @@ namespace crg
 					, [&attaches]( RenderPassDependencies const & lookup )
 					{
 						attaches.insert( &lookup );
+					}
+					, [&nextDependencies]( RenderPassDependencies const & lookup )
+					{
+						nextDependencies.push_back( lookup );
 					} );
 
 				GraphAdjacentNode result{ createNode( curr, nodes ) };
@@ -494,7 +557,7 @@ namespace crg
 				{
 					buildGraphRec( dependency->dstPass
 						, dependency->dependencies
-						, dependencies
+						, nextDependencies
 						, nodes
 						, fullGraph
 						, result );
@@ -523,10 +586,6 @@ namespace crg
 			}
 
 			// Build paths from each root pass to leaf pass
-			// When an existing graph node is to be added again,
-			// the node that was added is replaced by a pi node which groups the nodes with the same name (render pass name).
-			// This leads to a grouping of all paths to one node,
-			// but lets each other kind of node to have a single next and a single previous.
 			GraphAdjacentNode curr{ &rootNode };
 
 			for ( auto & root : roots )

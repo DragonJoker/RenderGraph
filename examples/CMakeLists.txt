@@ -1,4 +1,5 @@
 find_package( GLFW )
+find_package( Vulkan )
 
 if( GLFW_FOUND AND Vulkan_FOUND )
 	file( GLOB EXAMPLES_FOLDERS
@@ -16,8 +17,6 @@ if( GLFW_FOUND AND Vulkan_FOUND )
 
 	set( LinkLibraries
 		${LinkLibraries}
-		RenderGraph
-		${BinLibraries}
 		${GLFW_LIBRARIES}
 		${Vulkan_LIBRARY}
 	)
@@ -35,23 +34,21 @@ if( GLFW_FOUND AND Vulkan_FOUND )
 				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/*.c
 			)
 			file( GLOB ${TARGET_NAME}_GLSL_SHADER_FILES
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.vert
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.frag
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.comp
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.geom
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.tesc
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.tese
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.glsl
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.vert
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.frag
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.comp
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.geom
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.tesc
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.tese
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.glsl
 			)
 			file( GLOB ${TARGET_NAME}_SHADER_FILES
-				${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.*
+				${CMAKE_CURRENT_SOURCE_DIR}/${FOLDER_NAME}/Shaders/*.*
 			)
 
+			source_group( "Header Files" FILES ${${TARGET_NAME}_HEADER_FILES} )
+			source_group( "Source Files" FILES ${${TARGET_NAME}_SOURCE_FILES} )
 			source_group( "Shader Files" FILES ${${TARGET_NAME}_SHADER_FILES} )
-
-			set( ${TARGET_NAME}_VERSION_MAJOR 0 )
-			set( ${TARGET_NAME}_VERSION_MINOR 1 )
-			set( ${TARGET_NAME}_VERSION_BUILD 0 )
 
 			add_executable( ${TARGET_NAME}
 				${${TARGET_NAME}_HEADER_FILES}
@@ -74,9 +71,26 @@ if( GLFW_FOUND AND Vulkan_FOUND )
 				CXX_STANDARD 17
 				FOLDER "Examples"
 			)
-			add_test(
-				NAME ${TARGET_NAME}
-				COMMAND ${TARGET_NAME}
+			install(
+				TARGETS ${TARGET_NAME}
+				COMPONENT ${TARGET_NAME}
+				CONFIGURATIONS Release
+				EXPORT ${TARGET_NAME}
+				RUNTIME DESTINATION bin
+			)
+			install(
+				TARGETS ${TARGET_NAME}
+				COMPONENT ${TARGET_NAME}_dev
+				CONFIGURATIONS RelWithDebInfo
+				EXPORT ${TARGET_NAME}
+				RUNTIME DESTINATION bin/RelWithDebInfo
+			)
+			install(
+				TARGETS ${TARGET_NAME}
+				COMPONENT ${TARGET_NAME}_dev
+				CONFIGURATIONS Debug
+				EXPORT ${TARGET_NAME}
+				RUNTIME DESTINATION bin/Debug
 			)
 		endif ()
 	endforeach ()

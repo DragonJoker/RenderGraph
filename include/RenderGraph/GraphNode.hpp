@@ -27,7 +27,8 @@ namespace crg
 		};
 
 		virtual ~GraphNode();
-		void attachNode( GraphAdjacentNode node, AttachmentArray attaches );
+		void addAttaches( GraphAdjacentNode prev, AttachmentArray attaches );
+		void attachNode( GraphAdjacentNode next, AttachmentArray attaches );
 		GraphAdjacentNode findInNext( RenderPass const & pass )const;
 		virtual void accept( GraphVisitor * vis ) = 0;
 		virtual AttachmentArray const & getAttachsToPrev( ConstGraphAdjacentNode pred = nullptr )const;
