@@ -77,7 +77,7 @@ namespace
 		std::string ref = R"(digraph RenderGraph {
 }
 )";
-		checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -172,7 +172,7 @@ namespace
     pass1C -> pass2C[ label="RT" ];
 }
 )";
-		checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -234,7 +234,7 @@ namespace
     pass1 -> pass2[ label="D1Target" ];
 }
 )";
-		checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -320,7 +320,7 @@ namespace
     pass1 -> pass2[ label="D1Target" ];
 }
 )";
-		checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -368,7 +368,7 @@ namespace
     ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
 }
 )";
-		checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -432,7 +432,7 @@ namespace
     ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
 }
 )";
-		checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -587,6 +587,15 @@ namespace
 		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
+		std::string ref = R"(digraph RenderGraph {
+    pass0 -> pass1[ label="Img0Target" ];
+    pass0 -> pass2[ label="Img0Target" ];
+    pass0 -> pass3[ label="Img0Target" ];
+    pass1 -> pass2[ label="Img1Target" ];
+    pass2 -> pass1[ label="Img2Target" ];
+}
+)";
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -814,7 +823,7 @@ namespace
     depthPrepass -> ambientPass[ label="DepthTarget1" ];
 }
 )";
-			checkEqualStr( stream.str(), ref );
+		checkEqualStr( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
