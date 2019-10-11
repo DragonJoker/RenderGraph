@@ -17,6 +17,7 @@ Current status
 
 The user can register its passes.  
 The graph is generated.  
+The image view transitions are explicited in the graph, and can be used to determine render pass sequence.  
 
 Todo
 ----

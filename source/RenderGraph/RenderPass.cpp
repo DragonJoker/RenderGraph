@@ -9,13 +9,13 @@ See LICENSE file in root folder.
 namespace crg
 {
 	RenderPass::RenderPass( std::string const & name
-		, AttachmentArray const & inputs
-		, AttachmentArray const & colourOutputs
-		, std::optional< Attachment > const & depthStencilOutput )
+		, AttachmentArray const & sampled
+		, AttachmentArray const & colourInOuts
+		, std::optional< Attachment > const & depthStencilInOut )
 		: name{ name }
-		, inputs{ inputs }
-		, colourOutputs{ colourOutputs }
-		, depthStencilOutput{ depthStencilOutput }
+		, sampled{ sampled }
+		, colourInOuts{ colourInOuts }
+		, depthStencilInOut{ depthStencilInOut }
 	{
 	}
 }

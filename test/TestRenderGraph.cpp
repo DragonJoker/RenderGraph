@@ -31,14 +31,12 @@ namespace
 	void testNoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testNoPass" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		checkThrow( graph.compile() );
 
 		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createColour( "RT"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rtAttach = crg::Attachment::createOutputColour( "RT"
 			, rtv );
 		crg::RenderPass pass
 		{
@@ -56,12 +54,10 @@ namespace
 	void testOnePass( test::TestCounts & testCounts )
 	{
 		testBegin( "testOnePass" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createColour( "RT"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rtAttach = crg::Attachment::createOutputColour( "RT"
 			, rtv );
 		crg::RenderPass pass
 		{
@@ -71,25 +67,23 @@ namespace
 		};
 
 		checkNoThrow( graph.add( pass ) );
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
 	void testDuplicateName( test::TestCounts & testCounts )
 	{
 		testBegin( "testDuplicateName" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createColour( "RT"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rtAttach = crg::Attachment::createOutputColour( "RT"
 			, rtv );
 		crg::RenderPass pass
 		{
@@ -106,12 +100,10 @@ namespace
 	void testWrongRemove( test::TestCounts & testCounts )
 	{
 		testBegin( "testWrongRemove" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createColour( "RT"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rtAttach = crg::Attachment::createOutputColour( "RT"
 			, rtv );
 		crg::RenderPass pass1
 		{
@@ -134,12 +126,10 @@ namespace
 	void testOneDependency( test::TestCounts & testCounts )
 	{
 		testBegin( "testOneDependency" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createColour( "RT"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rtAttach = crg::Attachment::createOutputColour( "RT"
 			, rtv );
 		crg::RenderPass pass1
 		{
@@ -149,13 +139,11 @@ namespace
 		};
 		checkNoThrow( graph.add( pass1 ) );
 
-		auto inAttach = crg::Attachment::createInput( "IN"
+		auto inAttach = crg::Attachment::createSampled( "IN"
 			, rtv );
 		auto out = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto outv = graph.createView( test::createView( out, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto outAttach = crg::Attachment::createColour( "OUT"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto outAttach = crg::Attachment::createOutputColour( "OUT"
 			, outv );
 		crg::RenderPass pass2
 		{
@@ -165,26 +153,26 @@ namespace
 		};
 		checkNoThrow( graph.add( pass2 ) );
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    pass1C -> pass2C[ label="RT" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "RT\nto\nIN" [ shape=square ];
+    "pass1C" -> "RT\nto\nIN" [ label="RT" ];
+    "RT\nto\nIN" -> "pass2C" [ label="IN" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
 	void testChainedDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testChainedDependencies" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto d0 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d0v = graph.createView( test::createView( d0, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d0tAttach = crg::Attachment::createColour( "D0Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d0tAttach = crg::Attachment::createOutputColour( "D0Tg"
 			, d0v );
 		crg::RenderPass pass0
 		{
@@ -194,13 +182,11 @@ namespace
 		};
 		checkNoThrow( graph.add( pass0 ) );
 
-		auto d0sAttach = crg::Attachment::createInput( "D0Sampled"
+		auto d0sAttach = crg::Attachment::createSampled( "D0Sp"
 			, d0v );
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d1tAttach = crg::Attachment::createColour( "D1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d1tAttach = crg::Attachment::createOutputColour( "D1Tg"
 			, d1v );
 		crg::RenderPass pass1
 		{
@@ -210,13 +196,11 @@ namespace
 		};
 		checkNoThrow( graph.add( pass1 ) );
 
-		auto d1sAttach = crg::Attachment::createInput( "D1Sampled"
+		auto d1sAttach = crg::Attachment::createSampled( "D1Sp"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d2tAttach = crg::Attachment::createColour( "D2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d2tAttach = crg::Attachment::createOutputColour( "D2Tg"
 			, d2v );
 		crg::RenderPass pass2
 		{
@@ -226,49 +210,37 @@ namespace
 		};
 		checkNoThrow( graph.add( pass2 ) );
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    pass0 -> pass1[ label="D0Target" ];
-    pass1 -> pass2[ label="D1Target" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "D0Tg\nto\nD0Sp" [ shape=square ];
+    "pass0" -> "D0Tg\nto\nD0Sp" [ label="D0Tg" ];
+    "D0Tg\nto\nD0Sp" -> "pass1" [ label="D0Sp" ];
+    "D1Tg\nto\nD1Sp" [ shape=square ];
+    "pass1" -> "D1Tg\nto\nD1Sp" [ label="D1Tg" ];
+    "D1Tg\nto\nD1Sp" -> "pass2" [ label="D1Sp" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
 	void testSharedDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testSharedDependencies" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dstv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT, 1u ) );
-		auto dstAttach1 = crg::Attachment::createDepthStencil( "DSTarget1"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dstv );
-		auto dstAttach2 = crg::Attachment::createDepthStencil( "DSTarget2"
-			, VK_ATTACHMENT_LOAD_OP_LOAD
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dstv );
-		auto dssv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT, 1u ) );
-		auto dssAttach = crg::Attachment::createDepthStencil( "DSSampled"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dssv );
+		auto dstv1 = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT, 1u ) );
+		auto dstAttach1 = crg::Attachment::createOutputDepth( "DSTarget1"
+			, dstv1 );
+		auto dstv2 = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT, 1u ) );
+		auto dstAttach2 = crg::Attachment::createOutputDepth( "DSTarget2"
+			, dstv2 );
 
 		auto d0 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d0v = graph.createView( test::createView( d0, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d0tAttach = crg::Attachment::createColour( "D0Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d0tAttach = crg::Attachment::createOutputColour( "D0Tg"
 			, d0v );
 		crg::RenderPass pass0
 		{
@@ -279,13 +251,11 @@ namespace
 		};
 		checkNoThrow( graph.add( pass0 ) );
 
-		auto d0sAttach = crg::Attachment::createInput( "D0Sampled"
+		auto d0sAttach = crg::Attachment::createSampled( "D0Sp"
 			, d0v );
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d1tAttach = crg::Attachment::createColour( "D1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d1tAttach = crg::Attachment::createOutputColour( "D1Tg"
 			, d1v );
 		crg::RenderPass pass1
 		{
@@ -296,13 +266,11 @@ namespace
 		};
 		checkNoThrow( graph.add( pass1 ) );
 
-		auto d1sAttach = crg::Attachment::createInput( "D1Sampled"
+		auto d1sAttach = crg::Attachment::createSampled( "D1Sp"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d2tAttach = crg::Attachment::createColour( "D2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d2tAttach = crg::Attachment::createOutputColour( "D2Tg"
 			, d2v );
 		crg::RenderPass pass2
 		{
@@ -312,31 +280,33 @@ namespace
 		};
 		checkNoThrow( graph.add( pass2 ) );
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    pass0 -> pass1[ label="D0Target\nDSTarget1" ];
-    pass1 -> pass2[ label="D1Target" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "D0Tg\nto\nD0Sp" [ shape=square ];
+    "pass0" -> "D0Tg\nto\nD0Sp" [ label="D0Tg" ];
+    "D0Tg\nto\nD0Sp" -> "pass1" [ label="D0Sp" ];
+    "D1Tg\nto\nD1Sp" [ shape=square ];
+    "pass1" -> "D1Tg\nto\nD1Sp" [ label="D1Tg" ];
+    "D1Tg\nto\nD1Sp" -> "pass2" [ label="D1Sp" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
 	void test2MipDependencies( test::TestCounts & testCounts )
 	{
-		testBegin( "testMip2Dependencies" );
-		crg::RenderGraph graph;
+		testBegin( "test2MipDependencies" );
+		crg::RenderGraph graph{ testCounts.testName };
 		auto lp = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
 		auto m0v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 0u ) );
 
-		auto m0sAttach = crg::Attachment::createInput( "SSAOLineariseSampled"
+		auto m0sAttach = crg::Attachment::createSampled( "SSAOLinSp"
 			, m0v );
 		auto m1v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto m1tAttach = crg::Attachment::createColour( "SSAOMinify1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m1tAttach = crg::Attachment::createOutputColour( "SSAOMin1Tg"
 			, m1v );
 		crg::RenderPass ssaoMinifyPass1
 		{
@@ -346,12 +316,10 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass1 ) );
 
-		auto m1sAttach = crg::Attachment::createInput( "SSAOMinify1Sampled"
+		auto m1sAttach = crg::Attachment::createSampled( "SSAOMin1Sp"
 			, m1v );
 		auto m2v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
-		auto m2tAttach = crg::Attachment::createColour( "SSAOMinify2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m2tAttach = crg::Attachment::createOutputColour( "SSAOMin2Tg"
 			, m2v );
 		crg::RenderPass ssaoMinifyPass2
 		{
@@ -361,30 +329,30 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass2 ) );
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
 	void test3MipDependencies( test::TestCounts & testCounts )
 	{
-		testBegin( "testMip3Dependencies" );
-		crg::RenderGraph graph;
+		testBegin( "test3MipDependencies" );
+		crg::RenderGraph graph{ testCounts.testName };
 		auto lp = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 0u ) );
 
-		auto m0sAttach = crg::Attachment::createInput( "SSAOLineariseSampled"
+		auto m0sAttach = crg::Attachment::createSampled( "SSAOLinSp"
 			, m0v );
 		auto m1v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto m1tAttach = crg::Attachment::createColour( "SSAOMinify1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m1tAttach = crg::Attachment::createOutputColour( "SSAOMin1Tg"
 			, m1v );
 		crg::RenderPass ssaoMinifyPass1
 		{
@@ -394,12 +362,10 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass1 ) );
 
-		auto m1sAttach = crg::Attachment::createInput( "SSAOMinify1Sampled"
+		auto m1sAttach = crg::Attachment::createSampled( "SSAOMin1Sp"
 			, m1v );
 		auto m2v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
-		auto m2tAttach = crg::Attachment::createColour( "SSAOMinify2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m2tAttach = crg::Attachment::createOutputColour( "SSAOMin2Tg"
 			, m2v );
 		crg::RenderPass ssaoMinifyPass2
 		{
@@ -409,12 +375,10 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass2 ) );
 
-		auto m2sAttach = crg::Attachment::createInput( "SSAOMinify2Sampled"
+		auto m2sAttach = crg::Attachment::createSampled( "SSAOMin2Sp"
 			, m2v );
 		auto m3v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
-		auto m3tAttach = crg::Attachment::createColour( "SSAOMinify3Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m3tAttach = crg::Attachment::createOutputColour( "SSAOMin3Tg"
 			, m3v );
 		crg::RenderPass ssaoMinifyPass3
 		{
@@ -424,32 +388,34 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass3 ) );
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoMinifyPass3" [ label="SSAOMin2Sp" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
 	void testLoopDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependencies" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto atAttach = crg::Attachment::createColour( "Img1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto atAttach = crg::Attachment::createOutputColour( "Img1Tg"
 			, av );
 
 		auto b = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto bsAttach = crg::Attachment::createInput( "Img2Sampled"
+		auto bsAttach = crg::Attachment::createSampled( "Img2Sp"
 			, bv );
 		crg::RenderPass pass1
 		{
@@ -459,11 +425,9 @@ namespace
 		};
 		checkNoThrow( graph.add( pass1 ) );
 
-		auto asAttach = crg::Attachment::createInput( "Img1Sampled"
+		auto asAttach = crg::Attachment::createSampled( "Img1Sp"
 			, av );
-		auto btAttach = crg::Attachment::createColour( "Img2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto btAttach = crg::Attachment::createOutputColour( "Img2Tg"
 			, bv );
 		crg::RenderPass pass2
 		{
@@ -480,12 +444,10 @@ namespace
 	void testLoopDependenciesWithRoot( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependenciesWithRoot" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto b = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto btAttach = crg::Attachment::createColour( "Img2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto btAttach = crg::Attachment::createOutputColour( "Img2Tg"
 			, bv );
 		crg::RenderPass pass0
 		{
@@ -496,11 +458,9 @@ namespace
 
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto atAttach = crg::Attachment::createColour( "Img1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto atAttach = crg::Attachment::createOutputColour( "Img1Tg"
 			, av );
-		auto bsAttach = crg::Attachment::createInput( "Img2Sampled"
+		auto bsAttach = crg::Attachment::createSampled( "Img2Sp"
 			, bv );
 		crg::RenderPass pass1
 		{
@@ -510,7 +470,7 @@ namespace
 		};
 		checkNoThrow( graph.add( pass1 ) );
 
-		auto asAttach = crg::Attachment::createInput( "Img1Sampled"
+		auto asAttach = crg::Attachment::createSampled( "Img1Sp"
 			, av );
 		crg::RenderPass pass2
 		{
@@ -527,12 +487,10 @@ namespace
 	void testLoopDependenciesWithRootAndLeaf( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependenciesWithRootAndLeaf" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto c = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( c, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto ctAttach = crg::Attachment::createColour( "Img0Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto ctAttach = crg::Attachment::createOutputColour( "Img0Tg"
 			, cv );
 		crg::RenderPass pass0
 		{
@@ -544,15 +502,13 @@ namespace
 
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto atAttach = crg::Attachment::createColour( "Img1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto atAttach = crg::Attachment::createOutputColour( "Img1Tg"
 			, av );
 		auto b = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto bsAttach = crg::Attachment::createInput( "Img2Sampled"
+		auto bsAttach = crg::Attachment::createSampled( "Img2Sp"
 			, bv );
-		auto csAttach = crg::Attachment::createInput( "Img0Sampled"
+		auto csAttach = crg::Attachment::createSampled( "Img0Sp"
 			, cv );
 		crg::RenderPass pass1
 		{
@@ -562,11 +518,9 @@ namespace
 		};
 		checkNoThrow( graph.add( pass1 ) );
 
-		auto asAttach = crg::Attachment::createInput( "Img1Sampled"
+		auto asAttach = crg::Attachment::createSampled( "Img1Sp"
 			, av );
-		auto btAttach = crg::Attachment::createColour( "Img2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto btAttach = crg::Attachment::createOutputColour( "Img2Tg"
 			, bv );
 		crg::RenderPass pass2
 		{
@@ -587,15 +541,25 @@ namespace
 		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    pass0 -> pass1[ label="Img0Target" ];
-    pass0 -> pass2[ label="Img0Target" ];
-    pass0 -> pass3[ label="Img0Target" ];
-    pass1 -> pass2[ label="Img1Target" ];
-    pass2 -> pass1[ label="Img2Target" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "Img0Tg\nto\nImg0Sp" [ shape=square ];
+    "pass0" -> "Img0Tg\nto\nImg0Sp" [ label="Img0Tg" ];
+    "Img0Tg\nto\nImg0Sp" -> "pass1" [ label="Img0Sp" ];
+    "Img1Tg\nto\nImg1Sp" [ shape=square ];
+    "pass1" -> "Img1Tg\nto\nImg1Sp" [ label="Img1Tg" ];
+    "Img1Tg\nto\nImg1Sp" -> "pass2" [ label="Img1Sp" ];
+    "Img2Tg\nto\nImg2Sp" [ shape=square ];
+    "pass2" -> "Img2Tg\nto\nImg2Sp" [ label="Img2Tg" ];
+    "Img2Tg\nto\nImg2Sp" -> "pass1" [ label="Img2Sp" ];
+    "Img0Tg\nto\nImg0Sp" [ shape=square ];
+    "pass0" -> "Img0Tg\nto\nImg0Sp" [ label="Img0Tg" ];
+    "Img0Tg\nto\nImg0Sp" -> "pass2" [ label="Img0Sp" ];
+    "Img0Tg\nto\nImg0Sp" [ shape=square ];
+    "pass0" -> "Img0Tg\nto\nImg0Sp" [ label="Img0Tg" ];
+    "Img0Tg\nto\nImg0Sp" -> "pass3" [ label="Img0Sp" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -607,9 +571,7 @@ namespace
 	{
 		auto lp = graph.createImage( test::createImage( VK_FORMAT_R32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 0u ) );
-		auto m0tAttach = crg::Attachment::createColour( "SSAOLineariseTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m0tAttach = crg::Attachment::createOutputColour( "SSAOLinTg"
 			, m0v );
 		crg::RenderPass ssaoLinearisePass
 		{
@@ -619,12 +581,10 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoLinearisePass ) );
 
-		auto m0sAttach = crg::Attachment::createInput( "SSAOMinify0Sampled"
+		auto m0sAttach = crg::Attachment::createSampled( "SSAOMin0Sp"
 			, m0v );
 		auto m1v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 1u ) );
-		auto m1tAttach = crg::Attachment::createColour( "SSAOMinify1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m1tAttach = crg::Attachment::createOutputColour( "SSAOMin1Tg"
 			, m1v );
 		crg::RenderPass ssaoMinifyPass1
 		{
@@ -634,12 +594,10 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass1 ) );
 
-		auto m1sAttach = crg::Attachment::createInput( "SSAOMinify1Sampled"
+		auto m1sAttach = crg::Attachment::createSampled( "SSAOMin1Sp"
 			, m1v );
 		auto m2v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 2u ) );
-		auto m2tAttach = crg::Attachment::createColour( "SSAOMinify2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto m2tAttach = crg::Attachment::createOutputColour( "SSAOMin2Tg"
 			, m2v );
 		crg::RenderPass ssaoMinifyPass2
 		{
@@ -649,14 +607,10 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoMinifyPass2 ) );
 
-		auto m2sAttach = crg::Attachment::createInput( "SSAOMinify2Sampled"
+		auto m2sAttach = crg::Attachment::createSampled( "SSAOMin2Sp"
 			, m2v );
 		auto m3v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 3u ) );
-		auto m3tAttach = crg::Attachment::createColour( "SSAOMinify3Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, m3v );
-		auto m3sAttach = crg::Attachment::createInput( "SSAOMinify3Sampled"
+		auto m3tAttach = crg::Attachment::createOutputColour( "SSAOMin3Tg"
 			, m3v );
 		crg::RenderPass ssaoMinifyPass3
 		{
@@ -667,13 +621,11 @@ namespace
 		checkNoThrow( graph.add( ssaoMinifyPass3 ) );
 
 		auto mv = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 0u, 4u ) );
-		auto msAttach = crg::Attachment::createInput( "SSAOMinifySampled"
+		auto msAttach = crg::Attachment::createSampled( "SSAOMinSp"
 			, mv );
 		auto rs = graph.createImage( test::createImage( VK_FORMAT_R32_SFLOAT ) );
 		auto rsv = graph.createView( test::createView( rs, VK_FORMAT_R32_SFLOAT ) );
-		auto rstAttach = crg::Attachment::createColour( "SSAORawTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rstAttach = crg::Attachment::createOutputColour( "SSAORawTg"
 			, rsv );
 		crg::RenderPass ssaoRawPass
 		{
@@ -683,13 +635,11 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoRawPass ) );
 
-		auto rssAttach = crg::Attachment::createInput( "SSAORawSampled"
+		auto rssAttach = crg::Attachment::createSampled( "SSAORawSp"
 			, rsv );
 		auto bl = graph.createImage( test::createImage( VK_FORMAT_R32_SFLOAT ) );
 		auto blv = graph.createView( test::createView( bl, VK_FORMAT_R32_SFLOAT ) );
-		auto bltAttach = crg::Attachment::createColour( "SSAOBlurTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto bltAttach = crg::Attachment::createOutputColour( "SSAOBlurTg"
 			, blv );
 		crg::RenderPass ssaoBlurPass
 		{
@@ -699,82 +649,51 @@ namespace
 		};
 		checkNoThrow( graph.add( ssaoBlurPass ) );
 
-		return crg::Attachment::createInput( "SSAOBlurSampled"
+		return crg::Attachment::createSampled( "SSAOBlurSp"
 			, blv );
 	}
 
 	void testSsaoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testSsaoPass" );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dtv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dt1Attach = crg::Attachment::createDepthStencil( "DepthTarget1"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+		auto dtAttach = crg::Attachment::createOutputDepth( "DepthTg"
 			, dtv );
-		auto dt2Attach = crg::Attachment::createDepthStencil( "DepthTarget2"
-			, VK_ATTACHMENT_LOAD_OP_LOAD
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, dtv );
-		crg::RenderPass depthPrepass
-		{
-			"depthPrepass",
-			{},
-			{},
-			{ dt1Attach },
-		};
-		checkNoThrow( graph.add( depthPrepass ) );
-
-		auto dsv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT ) );
-		auto dsAttach = crg::Attachment::createInput( "DepthSampled"
-			, dsv );
 		auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vtAttach = crg::Attachment::createDepthStencil( "VelocityTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+		auto vtAttach = crg::Attachment::createOutputColour( "VelocityTg"
 			, vv );
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto d1tAttach = crg::Attachment::createColour( "Data1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d1tAttach = crg::Attachment::createOutputColour( "Data1Tg"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d2tAttach = crg::Attachment::createColour( "Data2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d2tAttach = crg::Attachment::createOutputColour( "Data2Tg"
 			, d2v );
 		auto d3 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d3v = graph.createView( test::createView( d3, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d3tAttach = crg::Attachment::createColour( "Data3Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d3tAttach = crg::Attachment::createOutputColour( "Data3Tg"
 			, d3v );
 		auto d4 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4v = graph.createView( test::createView( d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d4tAttach = crg::Attachment::createColour( "Data4Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d4tAttach = crg::Attachment::createOutputColour( "Data4Tg"
 			, d4v );
 		crg::RenderPass geometryPass
 		{
 			"geometryPass",
 			{},
 			{ d1tAttach, d2tAttach, d3tAttach, d4tAttach, vtAttach },
-			{ dt2Attach },
+			{ dtAttach },
 		};
 		checkNoThrow( graph.add( geometryPass ) );
 
-		auto d2sAttach = crg::Attachment::createInput( "Data2Sampled"
+		auto dsv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT ) );
+		auto dsAttach = crg::Attachment::createSampled( "DepthSp"
+			, dsv );
+		auto d2sAttach = crg::Attachment::createSampled( "Data2Sp"
 			, d2v );
 		auto ssaosAttach = buildSsaoPass( testCounts
 			, geometryPass
@@ -782,17 +701,15 @@ namespace
 			, d2sAttach
 			, graph );
 
-		auto d1sAttach = crg::Attachment::createInput( "Data1Sampled"
+		auto d1sAttach = crg::Attachment::createSampled( "Data1Sp"
 			, d1v );
-		auto d3sAttach = crg::Attachment::createInput( "Data3Sampled"
+		auto d3sAttach = crg::Attachment::createSampled( "Data3Sp"
 			, d3v );
-		auto d4sAttach = crg::Attachment::createInput( "Data4Sampled"
+		auto d4sAttach = crg::Attachment::createSampled( "Data4Sp"
 			, d4v );
 		auto of = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto ofv = graph.createView( test::createView( of, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto oftAttach = crg::Attachment::createColour( "OutputTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto oftAttach = crg::Attachment::createOutputColour( "OutputTg"
 			, ofv );
 		crg::RenderPass ambientPass
 		{
@@ -802,28 +719,73 @@ namespace
 		};
 		checkNoThrow( graph.add( ambientPass ) );
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
-		std::string ref = R"(digraph RenderGraph {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> ssaoRawPass[ label="Data2Target" ];
-    ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
-    ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
-    geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    depthPrepass -> ssaoLinearisePass[ label="DepthTarget1" ];
-    ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass3 -> ssaoRawPass[ label="SSAOMinify3Target" ];
-    ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
-    ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
+		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "DepthTg\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg\nto\nDepthSp" [ label="DepthTg" ];
+    "DepthTg\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoRawPass" [ label="Data2Sp" ];
+    "SSAORawTg\nto\nSSAORawSp" [ shape=square ];
+    "ssaoRawPass" -> "SSAORawTg\nto\nSSAORawSp" [ label="SSAORawTg" ];
+    "SSAORawTg\nto\nSSAORawSp" -> "ssaoBlurPass" [ label="SSAORawSp" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" [ shape=square ];
+    "ssaoBlurPass" -> "SSAOBlurTg\nto\nSSAOBlurSp" [ label="SSAOBlurTg" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" -> "ambientPass" [ label="SSAOBlurSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoBlurPass" [ label="Data2Sp" ];
+    "DepthTg\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg\nto\nDepthSp" [ label="DepthTg" ];
+    "DepthTg\nto\nDepthSp" -> "ssaoLinearisePass" [ label="DepthSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoMinifyPass1" [ label="SSAOMin0Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoMinifyPass3" [ label="SSAOMin2Sp" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass3" -> "SSAOMin3Tg\nto\nSSAOMinSp" [ label="SSAOMin3Tg" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoRawPass" [ label="SSAOMin2Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMinSp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoRawPass" [ label="SSAOMin1Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMinSp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoRawPass" [ label="SSAOMin0Sp" ];
+    "SSAOLinTg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMinSp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
 }
 )";
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 
@@ -836,27 +798,19 @@ namespace
 	{
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto d1tAttach = crg::Attachment::createColour( "Data1Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d1tAttach = crg::Attachment::createOutputColour( "Data1Tg"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d2tAttach = crg::Attachment::createColour( "Data2Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d2tAttach = crg::Attachment::createOutputColour( "Data2Tg"
 			, d2v );
 		auto d3 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d3v = graph.createView( test::createView( d3, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d3tAttach = crg::Attachment::createColour( "Data3Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d3tAttach = crg::Attachment::createOutputColour( "Data3Tg"
 			, d3v );
 		auto d4 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4v = graph.createView( test::createView( d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d4tAttach = crg::Attachment::createColour( "Data4Target"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto d4tAttach = crg::Attachment::createOutputColour( "Data4Tg"
 			, d4v );
 		crg::RenderPass geometryPass
 		{
@@ -867,25 +821,21 @@ namespace
 		};
 		checkNoThrow( graph.add( geometryPass ) );
 
-		auto d1sAttach = crg::Attachment::createInput( "Data1Sampled"
+		auto d1sAttach = crg::Attachment::createSampled( "Data1Sp"
 			, d1v );
-		auto d2sAttach = crg::Attachment::createInput( "Data2Sampled"
+		auto d2sAttach = crg::Attachment::createSampled( "Data2Sp"
 			, d2v );
-		auto d3sAttach = crg::Attachment::createInput( "Data3Sampled"
+		auto d3sAttach = crg::Attachment::createSampled( "Data3Sp"
 			, d3v );
-		auto d4sAttach = crg::Attachment::createInput( "Data4Sampled"
+		auto d4sAttach = crg::Attachment::createSampled( "Data4Sp"
 			, d4v );
 		auto df = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto dfv = graph.createView( test::createView( df, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto dftAttach = crg::Attachment::createColour( "DiffuseTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto dftAttach = crg::Attachment::createOutputColour( "DiffuseTg"
 			, dfv );
 		auto sp = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto spv = graph.createView( test::createView( sp, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto sptAttach = crg::Attachment::createColour( "SpecularTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto sptAttach = crg::Attachment::createOutputColour( "SpecularTg"
 			, spv );
 		crg::RenderPass lightingPass
 		{
@@ -895,15 +845,13 @@ namespace
 		};
 		checkNoThrow( graph.add( lightingPass ) );
 
-		auto dfsAttach = crg::Attachment::createInput( "DiffuseSampled"
+		auto dfsAttach = crg::Attachment::createSampled( "DiffuseSp"
 			, dfv );
-		auto spsAttach = crg::Attachment::createInput( "SpecularSampled"
+		auto spsAttach = crg::Attachment::createSampled( "SpecularSp"
 			, spv );
 		auto of = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto ofv = graph.createView( test::createView( of, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto oftAttach = crg::Attachment::createColour( "OutputTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto oftAttach = crg::Attachment::createOutputColour( "OutputTg"
 			, ofv );
 
 		if constexpr ( EnableSsao )
@@ -932,7 +880,7 @@ namespace
 			checkNoThrow( graph.add( ambientPass ) );
 		}
 
-		return crg::Attachment::createInput( "OutputSampled"
+		return crg::Attachment::createSampled( "OutputSp"
 			, ofv );
 	}
 
@@ -944,15 +892,11 @@ namespace
 	{
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto atAttach = crg::Attachment::createColour( "AccumulationTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto atAttach = crg::Attachment::createInOutColour( "AccumulationTg"
 			, av );
 		auto r = graph.createImage( test::createImage( VK_FORMAT_R16_SFLOAT ) );
 		auto rv = graph.createView( test::createView( r, VK_FORMAT_R16_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createColour( "RevealageTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto rtAttach = crg::Attachment::createInOutColour( "RevealageTg"
 			, rv );
 		crg::RenderPass accumulationPass
 		{
@@ -963,15 +907,13 @@ namespace
 		};
 		checkNoThrow( graph.add( accumulationPass ) );
 
-		auto asAttach = crg::Attachment::createInput( "AccumulationSampled"
+		auto asAttach = crg::Attachment::createSampled( "AccumulationSp"
 			, av );
-		auto rsAttach = crg::Attachment::createInput( "RevealageSampled"
+		auto rsAttach = crg::Attachment::createSampled( "RevealageSp"
 			, rv );
 		auto c = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( c, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto ctAttach = crg::Attachment::createColour( "CombineTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
+		auto ctAttach = crg::Attachment::createOutputColour( "CombineTg"
 			, cv );
 		crg::RenderPass combinePass
 		{
@@ -981,7 +923,7 @@ namespace
 		};
 		checkNoThrow( graph.add( combinePass ) );
 
-		return crg::Attachment::createInput( "CombineSampled"
+		return crg::Attachment::createSampled( "CombineSp"
 			, cv );
 	}
 
@@ -996,20 +938,12 @@ namespace
 			+ ( EnableOpaque ? std::string{ "Opaque" } : std::string{} )
 			+ ( EnableSsao ? std::string{ "Ssao" } : std::string{} )
 			+ ( EnableTransparent ? std::string{ "Transparent" } : std::string{} ) );
-		crg::RenderGraph graph;
+		crg::RenderGraph graph{ testCounts.testName };
 		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dtv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dt1Attach = crg::Attachment::createDepthStencil( "DepthTarget1"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+		auto dt1Attach = crg::Attachment::createOutputDepth( "DepthTg1"
 			, dtv );
-		auto dt2Attach = crg::Attachment::createDepthStencil( "DepthTarget2"
-			, VK_ATTACHMENT_LOAD_OP_LOAD
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+		auto dt2Attach = crg::Attachment::createInputDepth( "DepthTg2"
 			, dtv );
 		auto opaqueDTAttach = &dt1Attach;
 
@@ -1027,27 +961,19 @@ namespace
 		}
 
 		auto dsv = graph.createView( test::createView( d, VK_FORMAT_R32_SFLOAT ) );
-		auto dsAttach = crg::Attachment::createInput( "DepthSampled"
+		auto dsAttach = crg::Attachment::createSampled( "DepthSp"
 			, dsv );
 		auto o = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto otv = graph.createView( test::createView( o, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto otAttach = crg::Attachment::createDepthStencil( "FinalCombineTarget"
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+		auto otAttach = crg::Attachment::createOutputColour( "FinalCombineTg"
 			, otv );
 
 		if constexpr ( EnableOpaque )
 		{
 			auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto vt1Attach = crg::Attachment::createDepthStencil( "VelocityTarget1"
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, vv );
+			auto vv1 = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
+			auto vt1Attach = crg::Attachment::createOutputColour( "VelocityTg1"
+				, vv1 );
 			auto dcsAttach = buildDeferred< EnableSsao >( testCounts
 				, dsAttach
 				, *opaqueDTAttach
@@ -1056,20 +982,17 @@ namespace
 
 			if constexpr ( EnableTransparent )
 			{
-				auto vt2Attach = crg::Attachment::createDepthStencil( "VelocityTarget2"
-					, VK_ATTACHMENT_LOAD_OP_LOAD
-					, VK_ATTACHMENT_STORE_OP_STORE
-					, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-					, VK_ATTACHMENT_STORE_OP_DONT_CARE
-					, vv );
+				auto vv2 = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
+				auto vt2Attach = crg::Attachment::createInOutColour( "VelocityTg2"
+					, vv2 );
 				auto wbcsAttach = buildWeightedBlended( testCounts
 					, dsAttach
 					, dt2Attach
 					, vt2Attach
 					, graph );
 
-				auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
-					, vv );
+				auto vsAttach = crg::Attachment::createSampled( "VelocitySp"
+					, vv2 );
 				crg::RenderPass finalCombinePass
 				{
 					"finalCombinePass",
@@ -1080,8 +1003,8 @@ namespace
 			}
 			else
 			{
-				auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
-					, vv );
+				auto vsAttach = crg::Attachment::createSampled( "VelocitySp"
+					, vv1 );
 				crg::RenderPass finalCombinePass
 				{
 					"finalCombinePass",
@@ -1096,11 +1019,7 @@ namespace
 		{
 			auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 			auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto vt1Attach = crg::Attachment::createDepthStencil( "VelocityTarget1"
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			auto vt1Attach = crg::Attachment::createOutputColour( "VelocityTg1"
 				, vv );
 			auto wbcsAttach = buildWeightedBlended( testCounts
 				, dsAttach
@@ -1108,7 +1027,7 @@ namespace
 				, vt1Attach
 				, graph );
 
-			auto vsAttach = crg::Attachment::createInput( "VelocitySampled"
+			auto vsAttach = crg::Attachment::createSampled( "VelocitySp"
 				, vv );
 			crg::RenderPass finalCombinePass
 			{
@@ -1130,7 +1049,7 @@ namespace
 		}
 		
 
-		check( graph.compile() );
+		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
 		std::string ref;
@@ -1143,59 +1062,217 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph RenderGraph {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> ssaoRawPass[ label="Data2Target" ];
-    ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
-    ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
-    geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> accumulationPass[ label="VelocityTarget1" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ssaoLinearisePass[ label="DepthTarget1" ];
-    ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass3 -> ssaoRawPass[ label="SSAOMinify3Target" ];
-    ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
-    ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
-    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
-    depthPrepass -> combinePass[ label="DepthTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "accumulationPass" [ label="DepthTg2" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "VelocityTg2\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg2\nto\nVelocitySp" [ label="VelocityTg2" ];
+    "VelocityTg2\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "AccumulationTg\nto\nAccumulationSp" [ shape=square ];
+    "accumulationPass" -> "AccumulationTg\nto\nAccumulationSp" [ label="AccumulationTg" ];
+    "AccumulationTg\nto\nAccumulationSp" -> "combinePass" [ label="AccumulationSp" ];
+    "RevealageTg\nto\nRevealageSp" [ shape=square ];
+    "accumulationPass" -> "RevealageTg\nto\nRevealageSp" [ label="RevealageTg" ];
+    "RevealageTg\nto\nRevealageSp" -> "combinePass" [ label="RevealageSp" ];
+    "CombineTg\nto\nCombineSp" [ shape=square ];
+    "combinePass" -> "CombineTg\nto\nCombineSp" [ label="CombineTg" ];
+    "CombineTg\nto\nCombineSp" -> "finalCombinePass" [ label="CombineSp" ];
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "geometryPass" [ label="DepthTg2" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoRawPass" [ label="Data2Sp" ];
+    "SSAORawTg\nto\nSSAORawSp" [ shape=square ];
+    "ssaoRawPass" -> "SSAORawTg\nto\nSSAORawSp" [ label="SSAORawTg" ];
+    "SSAORawTg\nto\nSSAORawSp" -> "ssaoBlurPass" [ label="SSAORawSp" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" [ shape=square ];
+    "ssaoBlurPass" -> "SSAOBlurTg\nto\nSSAOBlurSp" [ label="SSAOBlurTg" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" -> "ambientPass" [ label="SSAOBlurSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoBlurPass" [ label="Data2Sp" ];
+    "VelocityTg1\nto\nVelocityTg2" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocityTg2" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocityTg2" -> "accumulationPass" [ label="VelocityTg2" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "combinePass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ssaoLinearisePass" [ label="DepthSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoMinifyPass1" [ label="SSAOMin0Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoMinifyPass3" [ label="SSAOMin2Sp" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass3" -> "SSAOMin3Tg\nto\nSSAOMinSp" [ label="SSAOMin3Tg" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoRawPass" [ label="SSAOMin2Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMinSp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoRawPass" [ label="SSAOMin1Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMinSp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoRawPass" [ label="SSAOMin0Sp" ];
+    "SSAOLinTg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMinSp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
 }
 )";
 					}
 					else
 					{
-						ref = R"(digraph RenderGraph {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> ssaoRawPass[ label="Data2Target" ];
-    ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
-    ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
-    geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ssaoLinearisePass[ label="DepthTarget1" ];
-    ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass3 -> ssaoRawPass[ label="SSAOMinify3Target" ];
-    ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
-    ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "geometryPass" [ label="DepthTg2" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoRawPass" [ label="Data2Sp" ];
+    "SSAORawTg\nto\nSSAORawSp" [ shape=square ];
+    "ssaoRawPass" -> "SSAORawTg\nto\nSSAORawSp" [ label="SSAORawTg" ];
+    "SSAORawTg\nto\nSSAORawSp" -> "ssaoBlurPass" [ label="SSAORawSp" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" [ shape=square ];
+    "ssaoBlurPass" -> "SSAOBlurTg\nto\nSSAOBlurSp" [ label="SSAOBlurTg" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" -> "ambientPass" [ label="SSAOBlurSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoBlurPass" [ label="Data2Sp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ssaoLinearisePass" [ label="DepthSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoMinifyPass1" [ label="SSAOMin0Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoMinifyPass3" [ label="SSAOMin2Sp" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass3" -> "SSAOMin3Tg\nto\nSSAOMinSp" [ label="SSAOMin3Tg" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoRawPass" [ label="SSAOMin2Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMinSp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoRawPass" [ label="SSAOMin1Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMinSp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoRawPass" [ label="SSAOMin0Sp" ];
+    "SSAOLinTg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMinSp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
 }
 )";
 					}
@@ -1204,35 +1281,127 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph RenderGraph {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> accumulationPass[ label="VelocityTarget1" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
-    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
-    depthPrepass -> combinePass[ label="DepthTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "accumulationPass" [ label="DepthTg2" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "VelocityTg2\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg2\nto\nVelocitySp" [ label="VelocityTg2" ];
+    "VelocityTg2\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "AccumulationTg\nto\nAccumulationSp" [ shape=square ];
+    "accumulationPass" -> "AccumulationTg\nto\nAccumulationSp" [ label="AccumulationTg" ];
+    "AccumulationTg\nto\nAccumulationSp" -> "combinePass" [ label="AccumulationSp" ];
+    "RevealageTg\nto\nRevealageSp" [ shape=square ];
+    "accumulationPass" -> "RevealageTg\nto\nRevealageSp" [ label="RevealageTg" ];
+    "RevealageTg\nto\nRevealageSp" -> "combinePass" [ label="RevealageSp" ];
+    "CombineTg\nto\nCombineSp" [ shape=square ];
+    "combinePass" -> "CombineTg\nto\nCombineSp" [ label="CombineTg" ];
+    "CombineTg\nto\nCombineSp" -> "finalCombinePass" [ label="CombineSp" ];
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "geometryPass" [ label="DepthTg2" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "VelocityTg1\nto\nVelocityTg2" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocityTg2" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocityTg2" -> "accumulationPass" [ label="VelocityTg2" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "combinePass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
 }
 )";
 					}
 					else
 					{
-						ref = R"(digraph RenderGraph {
-    depthPrepass -> geometryPass[ label="DepthTarget1" ];
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
-    depthPrepass -> lightingPass[ label="DepthTarget1" ];
-    depthPrepass -> ambientPass[ label="DepthTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "geometryPass" [ label="DepthTg2" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
 }
 )";
 					}
@@ -1242,19 +1411,34 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					ref = R"(digraph RenderGraph {
-    depthPrepass -> accumulationPass[ label="DepthTarget1" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1" ];
-    depthPrepass -> combinePass[ label="DepthTarget1" ];
+					ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "accumulationPass" [ label="DepthTg2" ];
+    "AccumulationTg\nto\nAccumulationSp" [ shape=square ];
+    "accumulationPass" -> "AccumulationTg\nto\nAccumulationSp" [ label="AccumulationTg" ];
+    "AccumulationTg\nto\nAccumulationSp" -> "combinePass" [ label="AccumulationSp" ];
+    "RevealageTg\nto\nRevealageSp" [ shape=square ];
+    "accumulationPass" -> "RevealageTg\nto\nRevealageSp" [ label="RevealageTg" ];
+    "RevealageTg\nto\nRevealageSp" -> "combinePass" [ label="RevealageSp" ];
+    "CombineTg\nto\nCombineSp" [ shape=square ];
+    "combinePass" -> "CombineTg\nto\nCombineSp" [ label="CombineTg" ];
+    "CombineTg\nto\nCombineSp" -> "finalCombinePass" [ label="CombineSp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "combinePass" [ label="DepthSp" ];
 }
 )";
 				}
 				else
 				{
-					ref = R"(digraph RenderGraph {
-    depthPrepass -> finalCombinePass[ label="DepthTarget1" ];
+					ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "depthPrepass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "finalCombinePass" [ label="DepthSp" ];
 }
 )";
 				}
@@ -1268,52 +1452,211 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ssaoLinearisePass[ label="DepthTarget1" ];
-    ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass3 -> ssaoRawPass[ label="SSAOMinify3Target" ];
-    ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
-    ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
-    ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
-    ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    geometryPass -> accumulationPass[ label="DepthTarget1\nVelocityTarget1" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    geometryPass -> combinePass[ label="DepthTarget1" ];
-    geometryPass -> ssaoRawPass[ label="Data2Target" ];
-    geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoRawPass" [ label="Data2Sp" ];
+    "SSAORawTg\nto\nSSAORawSp" [ shape=square ];
+    "ssaoRawPass" -> "SSAORawTg\nto\nSSAORawSp" [ label="SSAORawTg" ];
+    "SSAORawTg\nto\nSSAORawSp" -> "ssaoBlurPass" [ label="SSAORawSp" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" [ shape=square ];
+    "ssaoBlurPass" -> "SSAOBlurTg\nto\nSSAOBlurSp" [ label="SSAOBlurTg" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" -> "ambientPass" [ label="SSAOBlurSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoBlurPass" [ label="Data2Sp" ];
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "accumulationPass" [ label="DepthTg2" ];
+    "VelocityTg1\nto\nVelocityTg2" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocityTg2" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocityTg2" -> "accumulationPass" [ label="VelocityTg2" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "VelocityTg2\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg2\nto\nVelocitySp" [ label="VelocityTg2" ];
+    "VelocityTg2\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "AccumulationTg\nto\nAccumulationSp" [ shape=square ];
+    "accumulationPass" -> "AccumulationTg\nto\nAccumulationSp" [ label="AccumulationTg" ];
+    "AccumulationTg\nto\nAccumulationSp" -> "combinePass" [ label="AccumulationSp" ];
+    "RevealageTg\nto\nRevealageSp" [ shape=square ];
+    "accumulationPass" -> "RevealageTg\nto\nRevealageSp" [ label="RevealageTg" ];
+    "RevealageTg\nto\nRevealageSp" -> "combinePass" [ label="RevealageSp" ];
+    "CombineTg\nto\nCombineSp" [ shape=square ];
+    "combinePass" -> "CombineTg\nto\nCombineSp" [ label="CombineTg" ];
+    "CombineTg\nto\nCombineSp" -> "finalCombinePass" [ label="CombineSp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "combinePass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ssaoLinearisePass" [ label="DepthSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoMinifyPass1" [ label="SSAOMin0Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoMinifyPass3" [ label="SSAOMin2Sp" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass3" -> "SSAOMin3Tg\nto\nSSAOMinSp" [ label="SSAOMin3Tg" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoRawPass" [ label="SSAOMin2Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMinSp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoRawPass" [ label="SSAOMin1Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMinSp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoRawPass" [ label="SSAOMin0Sp" ];
+    "SSAOLinTg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMinSp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
 }
 )";
 					}
 					else
 					{
-						ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ssaoLinearisePass[ label="DepthTarget1" ];
-    ssaoLinearisePass -> ssaoMinifyPass1[ label="SSAOLineariseTarget" ];
-    ssaoMinifyPass1 -> ssaoMinifyPass2[ label="SSAOMinify1Target" ];
-    ssaoMinifyPass2 -> ssaoMinifyPass3[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass3 -> ssaoRawPass[ label="SSAOMinify3Target" ];
-    ssaoRawPass -> ssaoBlurPass[ label="SSAORawTarget" ];
-    ssaoBlurPass -> ambientPass[ label="SSAOBlurTarget" ];
-    ssaoMinifyPass2 -> ssaoRawPass[ label="SSAOMinify2Target" ];
-    ssaoMinifyPass1 -> ssaoRawPass[ label="SSAOMinify1Target" ];
-    ssaoLinearisePass -> ssaoRawPass[ label="SSAOLineariseTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    geometryPass -> ssaoRawPass[ label="Data2Target" ];
-    geometryPass -> ssaoBlurPass[ label="Data2Target" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoRawPass" [ label="Data2Sp" ];
+    "SSAORawTg\nto\nSSAORawSp" [ shape=square ];
+    "ssaoRawPass" -> "SSAORawTg\nto\nSSAORawSp" [ label="SSAORawTg" ];
+    "SSAORawTg\nto\nSSAORawSp" -> "ssaoBlurPass" [ label="SSAORawSp" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" [ shape=square ];
+    "ssaoBlurPass" -> "SSAOBlurTg\nto\nSSAOBlurSp" [ label="SSAOBlurTg" ];
+    "SSAOBlurTg\nto\nSSAOBlurSp" -> "ambientPass" [ label="SSAOBlurSp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ssaoBlurPass" [ label="Data2Sp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ssaoLinearisePass" [ label="DepthSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoMinifyPass1" [ label="SSAOMin0Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoMinifyPass2" [ label="SSAOMin1Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoMinifyPass3" [ label="SSAOMin2Sp" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass3" -> "SSAOMin3Tg\nto\nSSAOMinSp" [ label="SSAOMin3Tg" ];
+    "SSAOMin3Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMin2Sp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMin2Sp" -> "ssaoRawPass" [ label="SSAOMin2Sp" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass2" -> "SSAOMin2Tg\nto\nSSAOMinSp" [ label="SSAOMin2Tg" ];
+    "SSAOMin2Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMin1Sp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMin1Sp" -> "ssaoRawPass" [ label="SSAOMin1Sp" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoMinifyPass1" -> "SSAOMin1Tg\nto\nSSAOMinSp" [ label="SSAOMin1Tg" ];
+    "SSAOMin1Tg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMin0Sp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMin0Sp" -> "ssaoRawPass" [ label="SSAOMin0Sp" ];
+    "SSAOLinTg\nto\nSSAOMinSp" [ shape=square ];
+    "ssaoLinearisePass" -> "SSAOLinTg\nto\nSSAOMinSp" [ label="SSAOLinTg" ];
+    "SSAOLinTg\nto\nSSAOMinSp" -> "ssaoRawPass" [ label="SSAOMinSp" ];
 }
 )";
 					}
@@ -1322,28 +1665,121 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    geometryPass -> accumulationPass[ label="DepthTarget1\nVelocityTarget1" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1\nVelocityTarget2" ];
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    geometryPass -> combinePass[ label="DepthTarget1" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
+    "DepthTg1\nto\nDepthTg2" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthTg2" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthTg2" -> "accumulationPass" [ label="DepthTg2" ];
+    "VelocityTg1\nto\nVelocityTg2" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocityTg2" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocityTg2" -> "accumulationPass" [ label="VelocityTg2" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "VelocityTg2\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg2\nto\nVelocitySp" [ label="VelocityTg2" ];
+    "VelocityTg2\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "AccumulationTg\nto\nAccumulationSp" [ shape=square ];
+    "accumulationPass" -> "AccumulationTg\nto\nAccumulationSp" [ label="AccumulationTg" ];
+    "AccumulationTg\nto\nAccumulationSp" -> "combinePass" [ label="AccumulationSp" ];
+    "RevealageTg\nto\nRevealageSp" [ shape=square ];
+    "accumulationPass" -> "RevealageTg\nto\nRevealageSp" [ label="RevealageTg" ];
+    "RevealageTg\nto\nRevealageSp" -> "combinePass" [ label="RevealageSp" ];
+    "CombineTg\nto\nCombineSp" [ shape=square ];
+    "combinePass" -> "CombineTg\nto\nCombineSp" [ label="CombineTg" ];
+    "CombineTg\nto\nCombineSp" -> "finalCombinePass" [ label="CombineSp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "combinePass" [ label="DepthSp" ];
 }
 )";
 					}
 					else
 					{
-						ref = R"(digraph RenderGraph {
-    geometryPass -> lightingPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    lightingPass -> ambientPass[ label="DiffuseTarget\nSpecularTarget" ];
-    ambientPass -> finalCombinePass[ label="OutputTarget" ];
-    geometryPass -> ambientPass[ label="Data1Target\nData2Target\nData3Target\nData4Target\nDepthTarget1" ];
-    geometryPass -> finalCombinePass[ label="VelocityTarget1" ];
+						ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "lightingPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "lightingPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "lightingPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "lightingPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "lightingPass" [ label="DepthSp" ];
+    "DiffuseTg\nto\nDiffuseSp" [ shape=square ];
+    "lightingPass" -> "DiffuseTg\nto\nDiffuseSp" [ label="DiffuseTg" ];
+    "DiffuseTg\nto\nDiffuseSp" -> "ambientPass" [ label="DiffuseSp" ];
+    "SpecularTg\nto\nSpecularSp" [ shape=square ];
+    "lightingPass" -> "SpecularTg\nto\nSpecularSp" [ label="SpecularTg" ];
+    "SpecularTg\nto\nSpecularSp" -> "ambientPass" [ label="SpecularSp" ];
+    "OutputTg\nto\nOutputSp" [ shape=square ];
+    "ambientPass" -> "OutputTg\nto\nOutputSp" [ label="OutputTg" ];
+    "OutputTg\nto\nOutputSp" -> "finalCombinePass" [ label="OutputSp" ];
+    "Data1Tg\nto\nData1Sp" [ shape=square ];
+    "geometryPass" -> "Data1Tg\nto\nData1Sp" [ label="Data1Tg" ];
+    "Data1Tg\nto\nData1Sp" -> "ambientPass" [ label="Data1Sp" ];
+    "Data2Tg\nto\nData2Sp" [ shape=square ];
+    "geometryPass" -> "Data2Tg\nto\nData2Sp" [ label="Data2Tg" ];
+    "Data2Tg\nto\nData2Sp" -> "ambientPass" [ label="Data2Sp" ];
+    "Data3Tg\nto\nData3Sp" [ shape=square ];
+    "geometryPass" -> "Data3Tg\nto\nData3Sp" [ label="Data3Tg" ];
+    "Data3Tg\nto\nData3Sp" -> "ambientPass" [ label="Data3Sp" ];
+    "Data4Tg\nto\nData4Sp" [ shape=square ];
+    "geometryPass" -> "Data4Tg\nto\nData4Sp" [ label="Data4Tg" ];
+    "Data4Tg\nto\nData4Sp" -> "ambientPass" [ label="Data4Sp" ];
+    "DepthTg1\nto\nDepthSp" [ shape=square ];
+    "geometryPass" -> "DepthTg1\nto\nDepthSp" [ label="DepthTg1" ];
+    "DepthTg1\nto\nDepthSp" -> "ambientPass" [ label="DepthSp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "geometryPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
 }
 )";
 					}
@@ -1353,23 +1789,32 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					ref = R"(digraph RenderGraph {
-    accumulationPass -> combinePass[ label="AccumulationTarget\nRevealageTarget" ];
-    combinePass -> finalCombinePass[ label="CombineTarget" ];
-    accumulationPass -> finalCombinePass[ label="VelocityTarget1" ];
+					ref = R"(digraph ")" + testCounts.testName + R"(" {
+    "AccumulationTg\nto\nAccumulationSp" [ shape=square ];
+    "accumulationPass" -> "AccumulationTg\nto\nAccumulationSp" [ label="AccumulationTg" ];
+    "AccumulationTg\nto\nAccumulationSp" -> "combinePass" [ label="AccumulationSp" ];
+    "RevealageTg\nto\nRevealageSp" [ shape=square ];
+    "accumulationPass" -> "RevealageTg\nto\nRevealageSp" [ label="RevealageTg" ];
+    "RevealageTg\nto\nRevealageSp" -> "combinePass" [ label="RevealageSp" ];
+    "CombineTg\nto\nCombineSp" [ shape=square ];
+    "combinePass" -> "CombineTg\nto\nCombineSp" [ label="CombineTg" ];
+    "CombineTg\nto\nCombineSp" -> "finalCombinePass" [ label="CombineSp" ];
+    "VelocityTg1\nto\nVelocitySp" [ shape=square ];
+    "accumulationPass" -> "VelocityTg1\nto\nVelocitySp" [ label="VelocityTg1" ];
+    "VelocityTg1\nto\nVelocitySp" -> "finalCombinePass" [ label="VelocitySp" ];
 }
 )";
 				}
 				else
 				{
-					ref = R"(digraph RenderGraph {
+					ref = R"(digraph ")" + testCounts.testName + R"(" {
 }
 )";
 				}
 			}
 		}
 
-		checkEqualStr( sort( stream.str() ), sort( ref ) );
+		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
 }

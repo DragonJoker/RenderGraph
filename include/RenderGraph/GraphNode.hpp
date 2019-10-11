@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #pragma once
 
 #include "RenderGraph/RenderPassDependencies.hpp"
+#include "RenderGraph/AttachmentTransition.hpp"
 
 #include <cassert>
 #include <map>
@@ -27,11 +28,12 @@ namespace crg
 		};
 
 		virtual ~GraphNode();
-		void addAttaches( GraphAdjacentNode prev, AttachmentArray attaches );
-		void attachNode( GraphAdjacentNode next, AttachmentArray attaches );
+		void addAttaches( GraphAdjacentNode prev, AttachmentTransitionArray attachsToPrev );
+		void attachNode( GraphAdjacentNode next, AttachmentTransitionArray attachsToNext );
 		GraphAdjacentNode findInNext( RenderPass const & pass )const;
+		AttachmentTransitionArray const & getAttachsToPrev( ConstGraphAdjacentNode pred = nullptr )const;
+
 		virtual void accept( GraphVisitor * vis ) = 0;
-		virtual AttachmentArray const & getAttachsToPrev( ConstGraphAdjacentNode pred = nullptr )const;
 
 		template< typename NodeT >
 		NodeT const & cast()const

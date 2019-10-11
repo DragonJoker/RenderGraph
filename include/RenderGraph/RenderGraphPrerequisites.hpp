@@ -19,6 +19,7 @@ namespace crg
 	struct Id;
 
 	struct Attachment;
+	struct AttachmentTransition;
 	struct ImageData;
 	struct ImageViewData;
 	struct GraphNode;
@@ -37,9 +38,10 @@ namespace crg
 	using ConstGraphAdjacentNode = GraphNode const *;
 
 	using AttachmentArray = std::vector< Attachment >;
+	using AttachmentTransitionArray = std::vector< AttachmentTransition >;
 	using RenderPassPtrArray = std::vector< RenderPassPtr >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
 	using RenderPassDependenciesArray = std::vector< RenderPassDependencies >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
-	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentArray >;
+	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
 }

@@ -21,7 +21,7 @@ namespace crg
 		RenderGraph( std::string name = "RenderGraph" );
 		void add( RenderPass const & pass );
 		void remove( RenderPass const & pass );
-		bool compile();
+		void compile();
 		ImageId createImage( ImageData const & img );
 		ImageViewId createView( ImageViewData const & img );
 
@@ -30,12 +30,18 @@ namespace crg
 			return &m_root;
 		}
 
+		inline AttachmentTransitionArray const & getTransitions()
+		{
+			return m_transitions;
+		}
+
 	private:
 		std::vector< RenderPassPtr > m_passes;
 		AttachmentArray m_attachments;
 		std::map< ImageId, std::unique_ptr< ImageData > > m_images;
 		std::map< ImageViewId, std::unique_ptr< ImageViewData > > m_imageViews;
 		GraphNodePtrArray m_nodes;
+		AttachmentTransitionArray m_transitions;
 		RootNode m_root;
 	};
 }
