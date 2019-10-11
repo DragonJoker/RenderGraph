@@ -6,17 +6,18 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	Attachment Attachment::createInput( std::string const & name
+	Attachment Attachment::createSampled( std::string const & name
 		, ImageViewId view )
 	{
 		return
 		{
 			name,
-			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			VK_ATTACHMENT_STORE_OP_DONT_CARE,
 			view,
+			true,
+			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			VK_ATTACHMENT_STORE_OP_DONT_CARE,
+			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+			VK_ATTACHMENT_STORE_OP_DONT_CARE,
 		};
 	}
 
@@ -28,11 +29,12 @@ namespace crg
 		return
 		{
 			name,
+			view,
+			false,
 			loadOp,
 			storeOp,
 			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
 			VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			view,
 		};
 	}
 
@@ -46,33 +48,23 @@ namespace crg
 		return
 		{
 			name,
+			view,
+			false,
 			loadOp,
 			storeOp,
 			stencilLoadOp,
 			stencilStoreOp,
-			view,
 		};
 	}
 
 	bool operator==( Attachment const & lhs, Attachment const & rhs )
 	{
 		return lhs.name == rhs.name
+			&& lhs.view == rhs.view
+			&& lhs.isSampled == rhs.isSampled
 			&& lhs.loadOp == rhs.loadOp
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp
-			&& lhs.stencilStoreOp == rhs.stencilStoreOp
-			&& lhs.view == rhs.view;
-	}
-
-	bool operator==( AttachmentArray const & lhs, AttachmentArray const & rhs )
-	{
-		auto result = lhs.size() == rhs.size();
-
-		for ( size_t i = 0; result && i < lhs.size(); ++i )
-		{
-			result = lhs[i] == rhs[i];
-		}
-
-		return result;
+			&& lhs.stencilStoreOp == rhs.stencilStoreOp;
 	}
 }

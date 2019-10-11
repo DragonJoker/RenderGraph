@@ -25,24 +25,31 @@ namespace crg
 	{
 	}
 
-	void GraphNode::addAttaches( GraphAdjacentNode prev, AttachmentArray attaches )
+	void GraphNode::addAttaches( GraphAdjacentNode prev, AttachmentTransitionArray attachsToPrev )
 	{
-		auto & mine = attachsToPrev[prev];
+		bool dirty = false;
+		auto * mine = &this->attachsToPrev[prev];
 
-		for ( auto & attach : attaches )
+		for ( auto & attach : attachsToPrev )
 		{
-			auto it = std::find( mine.begin()
-				, mine.end()
+			auto it = std::find( mine->begin()
+				, mine->end()
 				, attach );
 
-			if ( it == mine.end() )
+			if ( it == mine->end() )
 			{
-				mine.push_back( std::move( attach ) );
+				mine->push_back( std::move( attach ) );
+				dirty = true;
 			}
+		}
+
+		if ( dirty )
+		{
+			*mine = mergeIdenticalTransitions( std::move( *mine ) );
 		}
 	}
 
-	void GraphNode::attachNode( GraphAdjacentNode next, AttachmentArray attaches )
+	void GraphNode::attachNode( GraphAdjacentNode next, AttachmentTransitionArray attachsToNext )
 	{
 		auto it = std::find( this->next.begin()
 			, this->next.end()
@@ -53,7 +60,7 @@ namespace crg
 			this->next.push_back( next );
 		}
 
-		next->addAttaches( this, std::move( attaches ) );
+		next->addAttaches( this, std::move( attachsToNext ) );
 	}
 
 	GraphAdjacentNode GraphNode::findInNext( RenderPass const & pass )const
@@ -69,7 +76,7 @@ namespace crg
 			: nullptr;
 	}
 
-	AttachmentArray const & GraphNode::getAttachsToPrev( ConstGraphAdjacentNode const pred )const
+	AttachmentTransitionArray const & GraphNode::getAttachsToPrev( ConstGraphAdjacentNode const pred )const
 	{
 		auto it = attachsToPrev.find( pred );
 		assert( it != attachsToPrev.end() );

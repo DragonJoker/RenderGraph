@@ -13,13 +13,13 @@ namespace crg
 	struct RenderPass
 	{
 		RenderPass( std::string const & name
-			, AttachmentArray const & inputs
-			, AttachmentArray const & colourOutputs
-			, std::optional< Attachment > const & depthStencilOutput = std::nullopt );
+			, AttachmentArray const & sampled
+			, AttachmentArray const & colourInOuts
+			, std::optional< Attachment > const & depthStencilInOut = std::nullopt );
 
 		std::string const name;
-		AttachmentArray const inputs;
-		AttachmentArray const colourOutputs;
-		std::optional< Attachment > const depthStencilOutput;
+		AttachmentArray const sampled;
+		AttachmentArray const colourInOuts;
+		std::optional< Attachment > const depthStencilInOut;
 	};
 }

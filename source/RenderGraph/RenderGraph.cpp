@@ -4,378 +4,19 @@ See LICENSE file in root folder.
 */
 #include "RenderGraph/RenderGraph.hpp"
 
+#include "RenderPassDependenciesBuilder.hpp"
+
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/RenderPass.hpp"
 
 #include <algorithm>
-#include <functional>
 #include <iostream>
 #include <stdexcept>
-
-#define CRG_DebugPassAttaches 0
-#define CRG_DebugPassDependencies 0
 
 namespace crg
 {
 	namespace details
 	{
-		struct PassAttach
-		{
-			Attachment const attach;
-			std::set< RenderPass const * > passes;
-		};
-
-		using PassAttachCont = std::vector< PassAttach >;
-
-		std::ostream & operator<<( std::ostream & stream, PassAttach const & attach )
-		{
-			stream << attach.attach.name;
-			std::string sep{ " -> " };
-
-			for ( auto & pass : attach.passes )
-			{
-				stream << sep << pass->name;
-				sep = ", ";
-			}
-
-			return stream;
-		}
-
-		std::ostream & operator<<( std::ostream & stream, PassAttachCont const & attaches )
-		{
-			for ( auto & attach : attaches )
-			{
-				stream << attach << std::endl;
-			}
-
-			return stream;
-		}
-
-		std::ostream & operator<<( std::ostream & stream, RenderPassDependencies const & dependency )
-		{
-			stream << dependency.srcPass->name << " -> " << dependency.dstPass->name;
-			std::string sep = " [";
-
-			for ( auto & attach : dependency.dependencies )
-			{
-				stream << sep << attach.name;
-				sep = ", ";
-			}
-
-			stream << "]";
-			return stream;
-		}
-
-		std::ostream & operator<<( std::ostream & stream, RenderPassDependenciesArray const & dependencies )
-		{
-			for ( auto & dependency : dependencies )
-			{
-				stream << dependency << std::endl;
-			}
-
-			return stream;
-		}
-
-		void printDebug( PassAttachCont const & inputs
-			, PassAttachCont const & outputs
-			, RenderPassDependenciesArray const & dependencies )
-		{
-#if CRG_DebugPassAttaches
-			std::clog << "Inputs" << std::endl;
-			std::clog << inputs << std::endl;
-			std::clog << "Outputs" << std::endl;
-			std::clog << outputs << std::endl;
-#endif
-#if CRG_DebugPassDependencies
-			std::clog << "Dependencies" << std::endl;
-			std::clog << dependencies << std::endl;
-#endif
-		}
-
-		template< typename TypeT >
-		void filter( std::vector< TypeT > const & inputs
-			, std::function< bool( TypeT const & ) > filterFunc
-			, std::function< void( TypeT const & ) > trueFunc
-			, std::function< void( TypeT const & ) > falseFunc = []( TypeT const & )
-			{} )
-		{
-			for ( auto & input : inputs )
-			{
-				if ( filterFunc( input ) )
-				{
-					trueFunc( input );
-				}
-				else
-				{
-					falseFunc( input );
-				}
-			}
-		}
-		
-		template< typename TypeT >
-		void filter( std::vector< TypeT > & inputs
-			, std::function< bool( TypeT & ) > filterFunc
-			, std::function< void( TypeT & ) > trueFunc
-			, std::function< void( TypeT & ) > falseFunc = []( TypeT & ){} )
-		{
-			for ( auto & input : inputs )
-			{
-				if ( filterFunc( input ) )
-				{
-					trueFunc( input );
-				}
-				else
-				{
-					falseFunc( input );
-				}
-			}
-		}
-
-		inline bool isInRange( uint32_t value
-			, uint32_t left
-			, uint32_t count )
-		{
-			return value >= left && value < left + count;
-		}
-
-		inline bool areIntersecting( uint32_t lhsLBound
-			, uint32_t lhsCount
-			, uint32_t rhsLBound
-			, uint32_t rhsCount )
-		{
-			return isInRange( lhsLBound, rhsLBound, rhsCount )
-				|| isInRange( rhsLBound, lhsLBound, lhsCount );
-		}
-		
-		inline bool areIntersecting( VkImageSubresourceRange const & lhs
-			, VkImageSubresourceRange const & rhs )
-		{
-			return areIntersecting( lhs.baseMipLevel
-					, lhs.levelCount
-					, rhs.baseMipLevel
-					, rhs.levelCount )
-				&& areIntersecting( lhs.baseArrayLayer
-					, lhs.layerCount
-					, rhs.baseArrayLayer
-					, lhs.layerCount );
-		}
-
-		inline bool areOverlapping( ImageViewId const & lhs
-			, ImageViewId const & rhs )
-		{
-			return lhs.data->image == rhs.data->image
-				&& areIntersecting( lhs.data->subresourceRange
-					, rhs.data->subresourceRange );
-		}
-
-		void processAttach( Attachment const & attach
-			, RenderPass const & pass
-			, PassAttachCont & cont
-			, std::function< bool( Attachment const & ) > processAttach )
-		{
-			bool found{ false };
-			std::vector< RenderPass const * > passes;
-
-			for ( auto & lookup : cont )
-			{
-				if ( processAttach( lookup.attach ) )
-				{
-					if ( lookup.passes.end() == std::find( lookup.passes.begin()
-						, lookup.passes.end()
-						, &pass ) )
-					{
-						lookup.passes.insert( &pass );
-					}
-
-					found = true;
-				}
-			}
-
-			auto it = std::find_if( cont.begin()
-				, cont.end()
-				, [&attach]( PassAttach const & lookup )
-				{
-					return lookup.attach.name == attach.name
-						&& lookup.attach.view == attach.view;
-				} );
-
-			if ( cont.end() == it )
-			{
-				cont.push_back( PassAttach{ attach } );
-				it = std::prev( cont.end() );
-			}
-
-			it->passes.insert( &pass );
-		}
-
-		void processTargetAttach( Attachment const & attach
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			if ( attach.storeOp == VK_ATTACHMENT_STORE_OP_STORE )
-			{
-				return processAttach( attach
-					, pass
-					, cont
-					, [&attach]( Attachment const & lookup )
-					{
-						return areOverlapping( lookup.view, attach.view );
-					} );
-			}
-		}
-
-		void processDepthStencilTargetAttach( Attachment const & attach
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			if ( attach.storeOp == VK_ATTACHMENT_STORE_OP_STORE
-				|| attach.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE )
-			{
-				processAttach( attach
-					, pass
-					, cont
-					, [&attach]( Attachment const & lookup )
-					{
-						return areOverlapping( lookup.view, attach.view );
-					} );
-			}
-		}
-
-		void processTargetAsInputAttach( Attachment const & attach
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			if ( attach.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD )
-			{
-				processAttach( attach
-					, pass
-					, cont
-					, [&attach]( Attachment const & lookup )
-					{
-						return areOverlapping( lookup.view, attach.view );
-					} );
-			}
-		}
-
-		void processInputAttach( Attachment const & attach
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			return processAttach( attach
-				, pass
-				, cont
-				, [&attach]( Attachment const & lookup )
-				{
-					return areOverlapping( lookup.view, attach.view );
-				} );
-		}
-
-		void processTargetAttachs( AttachmentArray const & attachs
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			for ( auto & attach : attachs )
-			{
-				processTargetAttach( attach, pass, cont );
-			}
-		}
-
-		void processTargetAsInputAttachs( AttachmentArray const & attachs
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			for ( auto & attach : attachs )
-			{
-				processTargetAsInputAttach( attach, pass, cont );
-			}
-		}
-
-		void processInputAttachs( AttachmentArray const & attachs
-			, RenderPass const & pass
-			, PassAttachCont & cont )
-		{
-			for ( auto & attach : attachs )
-			{
-				processInputAttach( attach, pass, cont );
-			}
-		}
-
-		void addDependency( Attachment const & attach
-			, std::set< RenderPass const * > const & srcs
-			, std::set< RenderPass const * > const & dsts
-			, RenderPassDependenciesArray & dependencies )
-		{
-			for ( auto & src : srcs )
-			{
-				for ( auto & dst : dsts )
-				{
-					if ( src != dst )
-					{
-						auto it = std::find_if( dependencies.begin()
-							, dependencies.end()
-							, [&dst, &src]( RenderPassDependencies & lookup )
-							{
-								return lookup.srcPass == src
-									&& lookup.dstPass == dst;
-							} );
-
-						if ( it == dependencies.end() )
-						{
-							dependencies.push_back( { src, dst } );
-							it = std::prev( dependencies.end() );
-						}
-
-						auto & dep = *it;
-
-						if ( dep.dependencies.end() == std::find( dep.dependencies.begin()
-							, dep.dependencies.end()
-							, attach ) )
-						{
-							dep.dependencies.push_back( attach );
-						}
-					}
-				}
-			}
-		}
-
-		RenderPassDependenciesArray buildPassDependencies( std::vector< RenderPassPtr > const & passes )
-		{
-			PassAttachCont inputs;
-			PassAttachCont outputs;
-
-			for ( auto & pass : passes )
-			{
-				processInputAttachs( pass->inputs, *pass, inputs );
-				processTargetAttachs( pass->colourOutputs, *pass, outputs );
-				processTargetAsInputAttachs( pass->colourOutputs, *pass, inputs );
-
-				if ( pass->depthStencilOutput )
-				{
-					processDepthStencilTargetAttach( *pass->depthStencilOutput, *pass, outputs );
-					processTargetAsInputAttach( *pass->depthStencilOutput, *pass, inputs );
-				}
-			}
-
-			RenderPassDependenciesArray result;
-
-			for ( auto & input : inputs )
-			{
-				for ( auto & output : outputs )
-				{
-					if ( areOverlapping( output.attach.view, input.attach.view ) )
-					{
-						addDependency( output.attach
-							, output.passes
-							, input.passes
-							, result );
-					}
-				}
-			}
-
-			printDebug( inputs, outputs, result );
-			return result;
-		}
-
 		template< typename PredT >
 		GraphAdjacentNode findIf( GraphNodePtrArray const & nodes
 			, GraphNode::Kind kind
@@ -418,49 +59,6 @@ namespace crg
 				{
 					return name == lookup->getName();
 				} );
-		}
-
-		template< typename TypeT >
-		TypeT * getPointer( std::unique_ptr< TypeT > const & v )
-		{
-			return v.get();
-		}
-
-		template< typename TypeT >
-		TypeT * getPointer( TypeT * const v )
-		{
-			return v;
-		}
-
-		template< typename TypeT >
-		TypeT * getPointer( TypeT & v )
-		{
-			return &v;
-		}
-
-		template< typename TypeT >
-		std::vector< TypeT > filterOut( std::vector< TypeT > & inputs
-			, std::function< bool( TypeT & ) > filterFunc )
-		{
-			std::vector< TypeT > result;
-			auto it = inputs.begin();
-
-			while ( it != inputs.end() )
-			{
-				auto & input = *it;
-
-				if ( filterFunc( input ) )
-				{
-					result.push_back( std::move( input ) );
-					it = inputs.erase( it );
-				}
-				else
-				{
-					++it;
-				}
-			}
-
-			return result;
 		}
 
 		using RenderPassSet = std::set< RenderPass const * >;
@@ -523,11 +121,39 @@ namespace crg
 			return result;
 		}
 
+		AttachmentTransitionArray buildTransitions( AttachmentArray const & srcOutputs
+			, AttachmentArray const & dstInputs
+			, RenderPass const * srcPass
+			, RenderPass const * dstPass )
+		{
+			assert( srcOutputs.size() == dstInputs.size() );
+			AttachmentTransitionArray result;
+			auto srcOutputIt = srcOutputs.begin();
+			auto end = srcOutputs.end();
+			auto dstInputIt = dstInputs.begin();
+			std::set< RenderPass const * > srcPasses{ srcPass };
+			std::set< RenderPass const * > dstPasses{ dstPass };
+
+			while ( srcOutputIt != end )
+			{
+				result.push_back( AttachmentTransition
+					{
+						{ { *srcOutputIt, srcPasses } },
+						{ *dstInputIt, dstPasses },
+					} );
+				++srcOutputIt;
+				++dstInputIt;
+			}
+
+			return mergeIdenticalTransitions( std::move( result ) );
+		}
+
 		void buildGraphRec( RenderPass const * curr
-			, AttachmentArray prevAttaches
+			, AttachmentTransitionArray prevAttaches
 			, RenderPassDependenciesArray const & dependencies
 			, GraphNodePtrArray & nodes
 			, RootNode & fullGraph
+			, AttachmentTransitionArray & allAttaches
 			, GraphAdjacentNode prevNode )
 		{
 			if ( prevNode->getKind() == GraphNode::Kind::Root
@@ -551,15 +177,23 @@ namespace crg
 					} );
 
 				GraphAdjacentNode result{ createNode( curr, nodes ) };
-				prevNode->attachNode( result, std::move( prevAttaches ) );
+				allAttaches.insert( allAttaches.end()
+					, prevAttaches.begin()
+					, prevAttaches.end() );
+				prevNode->attachNode( result
+					, std::move( prevAttaches ) );
 
 				for ( auto & dependency : attaches )
 				{
 					buildGraphRec( dependency->dstPass
-						, dependency->dependencies
+						, buildTransitions( dependency->srcOutputs
+							, dependency->dstInputs
+							, curr
+							, dependency->dstPass )
 						, nextDependencies
 						, nodes
 						, fullGraph
+						, allAttaches
 						, result );
 				}
 			}
@@ -567,6 +201,7 @@ namespace crg
 
 		GraphNodePtrArray buildGraph( std::vector< RenderPassPtr > const & passes
 			, RootNode & rootNode
+			, AttachmentTransitionArray & allAttaches
 			, RenderPassDependenciesArray const & dependencies )
 		{
 			GraphNodePtrArray nodes;
@@ -595,9 +230,13 @@ namespace crg
 					, dependencies
 					, nodes
 					, rootNode
+					, allAttaches
 					, curr );
 			}
 
+			allAttaches = mergeIdenticalTransitions( std::move( allAttaches ) );
+			allAttaches = mergeTransitionsPerInput( std::move( allAttaches ) );
+			allAttaches = reduceDirectPaths( std::move( allAttaches ) );
 			return nodes;
 		}
 	}
@@ -639,7 +278,7 @@ namespace crg
 		m_passes.erase( it );
 	}
 
-	bool RenderGraph::compile()
+	void RenderGraph::compile()
 	{
 		if ( m_passes.empty() )
 		{
@@ -647,8 +286,7 @@ namespace crg
 		}
 
 		auto dependencies = details::buildPassDependencies( m_passes );
-		m_nodes = details::buildGraph( m_passes, m_root, dependencies );
-		return true;
+		m_nodes = details::buildGraph( m_passes, m_root, m_transitions, dependencies );
 	}
 
 	ImageId RenderGraph::createImage( ImageData const & img )

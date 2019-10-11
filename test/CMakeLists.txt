@@ -3,9 +3,11 @@ enable_testing()
 set( TEST_NAME TestCommon )
 
 set( ${TEST_NAME}_HEADER_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/BaseTest.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Common.hpp
 )
 set( ${TEST_NAME}_SOURCE_FILES
+	${CMAKE_CURRENT_SOURCE_DIR}/BaseTest.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/Common.cpp
 )
 

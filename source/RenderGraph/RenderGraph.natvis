@@ -43,10 +43,11 @@
     <Expand>
       <Item Name="name">name</Item>
       <Item Name="view">view</Item>
-      <Item Name="loadOp">loadOp</Item>
-      <Item Name="storeOp">storeOp</Item>
-      <Item Name="stencilLoadOp">stencilLoadOp</Item>
-      <Item Name="stencilStoreOp">stencilStoreOp</Item>
+      <Item Condition="isSampled" Name="sampled">isSampled</Item>
+      <Item Condition="!isSampled" Name="loadOp">loadOp</Item>
+      <Item Condition="!isSampled" Name="storeOp">storeOp</Item>
+      <Item Condition="!isSampled" Name="stencilLoadOp">stencilLoadOp</Item>
+      <Item Condition="!isSampled" Name="stencilStoreOp">stencilStoreOp</Item>
     </Expand>
   </Type>
 
