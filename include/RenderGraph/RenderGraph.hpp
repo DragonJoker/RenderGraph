@@ -36,12 +36,14 @@ namespace crg
 		}
 
 	private:
-		std::vector< RenderPassPtr > m_passes;
+		RenderPassPtrArray m_passes;
 		AttachmentArray m_attachments;
-		std::map< ImageId, std::unique_ptr< ImageData > > m_images;
-		std::map< ImageViewId, std::unique_ptr< ImageViewData > > m_imageViews;
+		ImageIdDataOwnerCont m_images;
+		ImageViewIdDataOwnerCont m_imageViews;
 		GraphNodePtrArray m_nodes;
 		AttachmentTransitionArray m_transitions;
 		RootNode m_root;
+		ImageIdAliasMap m_imageAliases;
+		ImageViewIdAliasMap m_imageViewAliases;
 	};
 }

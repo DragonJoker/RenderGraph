@@ -25,6 +25,7 @@ namespace crg
 	struct GraphNode;
 	struct RenderPass;
 	struct RenderPassDependencies;
+	struct RootNode;
 
 	class GraphVisitor;
 	class RenderGraph;
@@ -44,4 +45,14 @@ namespace crg
 	using RenderPassDependenciesArray = std::vector< RenderPassDependencies >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
+
+	template< typename DataT >
+	using IdAliasMap = std::map< Id< DataT >, Id< DataT > >;
+	using ImageIdAliasMap = IdAliasMap< ImageData >;
+	using ImageViewIdAliasMap = IdAliasMap< ImageViewData >;
+
+	template< typename DataT >
+	using IdDataOwnerCont = std::map< Id< DataT >, std::unique_ptr< DataT > >;
+	using ImageIdDataOwnerCont = IdDataOwnerCont< ImageData >;
+	using ImageViewIdDataOwnerCont = IdDataOwnerCont< ImageViewData >;
 }

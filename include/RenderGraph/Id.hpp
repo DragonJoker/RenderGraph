@@ -32,21 +32,4 @@ namespace crg
 	{
 		return lhs.id == rhs.id;
 	}
-
-	template< typename TypeT >
-	inline bool operator==( std::vector< Id< TypeT > > const & lhs
-		, std::vector< Id< TypeT > > const & rhs )
-	{
-		auto result = lhs.size() == rhs.size();
-
-		if ( result )
-		{
-			for ( size_t i = 0u; result && i < lhs.size(); ++i )
-			{
-				result = lhs[i] == rhs[i];
-			}
-		}
-
-		return result;
-	}
 }
