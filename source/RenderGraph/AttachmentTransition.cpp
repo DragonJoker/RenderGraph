@@ -22,6 +22,7 @@ namespace crg
 
 	AttachmentTransitionArray mergeIdenticalTransitions( AttachmentTransitionArray transitions )
 	{
+		// Merges the transitions for which the attachements (first in, and out) are the same.
 		AttachmentTransitionArray result;
 		auto findSrcAttach = [&result]( auto it )
 		{
@@ -100,9 +101,11 @@ namespace crg
 
 	AttachmentTransitionArray reduceDirectPaths( AttachmentTransitionArray transitions )
 	{
+		// Currently, just removes from the transitions the sampled attachments to a pass
+		// that doesn't directly need them.
 		for ( auto & transition : transitions )
 		{
-			if ( transition.dstInput.attachment.isSampled )
+			if ( transition.dstInput.attachment.isSampled() )
 			{
 				auto passIt = transition.dstInput.passes.begin();
 

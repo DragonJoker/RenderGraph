@@ -17,9 +17,9 @@ namespace crg
 			, AttachmentArray const & colourInOuts
 			, std::optional< Attachment > const & depthStencilInOut = std::nullopt );
 
-		std::string const name;
-		AttachmentArray const sampled;
-		AttachmentArray const colourInOuts;
-		std::optional< Attachment > const depthStencilInOut;
+		std::string name;
+		AttachmentArray sampled;
+		AttachmentArray colourInOuts;
+		std::optional< Attachment > depthStencilInOut;
 	};
 }

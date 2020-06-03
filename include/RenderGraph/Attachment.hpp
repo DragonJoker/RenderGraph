@@ -16,6 +16,133 @@ namespace crg
 	{
 		/**
 		*\brief
+		*	The flags qualifying an Attachment.
+		*/
+		using FlagKind = uint16_t;
+		enum class Flag : FlagKind
+		{
+			None = 0x00,
+			Unique = 0x01 << 0,
+			Sampled = 0x01 << 1,
+			Depth = 0x01 << 2,
+			Clearing = 0x01 << 3,
+			Input = 0x01 << 4,
+			Output = 0x01 << 5,
+			StencilClearing = 0x01 << 6,
+			StencilInput = 0x01 << 7,
+			StencilOutput = 0x01 << 8,
+		};
+		/**
+		*\name
+		*	Mutators.
+		*/
+		/**@{*/
+		inline void setUnique()
+		{
+			setFlag( Flag::Unique, true );
+		}
+		/**@}*/
+		/**
+		*\name
+		*	Getters.
+		*/
+		/**@{*/
+		inline bool hasFlag( Flag flag )const
+		{
+			return Flag( flags & FlagKind( flag ) ) == flag;
+		}
+
+		inline bool isUnique()const
+		{
+			return hasFlag( Flag::Unique );
+		}
+
+		inline bool isSampled()const
+		{
+			return hasFlag( Flag::Sampled );
+		}
+
+		inline bool isAttachment()const
+		{
+			return !isSampled();
+		}
+
+		inline bool isColourClearing()const
+		{
+			return hasFlag( Flag::Clearing )
+				&& !hasFlag( Flag::Depth );
+		}
+
+		inline bool isColourInput()const
+		{
+			return hasFlag( Flag::Input )
+				&& !hasFlag( Flag::Depth );
+		}
+
+		inline bool isColourOutput()const
+		{
+			return hasFlag( Flag::Output )
+				&& !hasFlag( Flag::Depth );
+		}
+
+		inline bool isColourInOut()const
+		{
+			return isColourInput()
+				&& isColourOutput();
+		}
+
+		inline bool isDepthClearing()const
+		{
+			return hasFlag( Flag::Clearing )
+				&& hasFlag( Flag::Depth );
+		}
+
+		inline bool isDepthInput()const
+		{
+			return hasFlag( Flag::Input )
+				&& hasFlag( Flag::Depth );
+		}
+
+		inline bool isDepthOutput()const
+		{
+			return hasFlag( Flag::Output )
+				&& hasFlag( Flag::Depth );
+		}
+
+		inline bool isDepthInOut()const
+		{
+			return isDepthInput()
+				&& isDepthOutput();
+		}
+
+		inline bool isStencilClearing()const
+		{
+			return hasFlag( Flag::StencilClearing );
+		}
+
+		inline bool isStencilInput()const
+		{
+			return hasFlag( Flag::StencilInput );
+		}
+
+		inline bool isStencilOutput()const
+		{
+			return hasFlag( Flag::StencilOutput );
+		}
+
+		inline bool isStencilInOut()const
+		{
+			return isStencilInput()
+				&& isStencilOutput();
+		}
+		/**@}*/
+		/**
+		*\name
+		*	Named constructor.
+		*/
+		/**@[*/
+		/**
+		*\brief
 		*	Creates a sampled image attachment.
 		*/
 		static Attachment createSampled( std::string const & name
@@ -200,14 +327,45 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, view );
 		}
-
+		/**@}*/
+		/**
+		*\name
+		*	Members.
+		*/
+		/**@[*/
 		std::string name;
 		ImageViewId view;
-		bool isSampled;
 		VkAttachmentLoadOp loadOp;
 		VkAttachmentStoreOp storeOp;
 		VkAttachmentLoadOp stencilLoadOp;
 		VkAttachmentStoreOp stencilStoreOp;
+		/**@}*/
+
+	private:
+		Attachment( FlagKind flags
+			, std::string name
+			, ImageViewId view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkAttachmentLoadOp stencilLoadOp
+			, VkAttachmentStoreOp stencilStoreOp );
+
+		inline void setFlag( Flag flag, bool set )
+		{
+			if ( set )
+			{
+				flags |= FlagKind( flag );
+			}
+			else
+			{
+				flags &= ~FlagKind( flag );
+			}
+		}
+
+		FlagKind flags;
+
+		friend bool operator==( Attachment const & lhs, Attachment const & rhs );
 	};
+
 	bool operator==( Attachment const & lhs, Attachment const & rhs );
 }
