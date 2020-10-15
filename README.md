@@ -1,6 +1,6 @@
-|         Server     | Result |
-|:------------------:|--------|
-| AppVeyor           | [![Build Status](https://ci.appveyor.com/api/projects/status/github/DragonJoker/rendergraph?branch=master&svg=true)](https://ci.appveyor.com/project/DragonJoker/rendergraph) |
+<p align="center">
+  <a href="https://github.com/DragonJoker/RenderGraph/actions?query=workflow%3ABuild+event%3Apush"><img alt="Build status" src="https://github.com/DragonJoker/RenderGraph/workflows/Build/badge.svg?event=push"></a>
+</p>
 
 
 RenderGraph
