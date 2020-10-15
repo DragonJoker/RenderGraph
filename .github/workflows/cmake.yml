@@ -1,0 +1,67 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+  release:
+    types:
+      - created
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [[ubuntu-latest,x64-linux], [windows-latest,x64-windows], [macos-latest,x64-osx]]
+        buildType: [Release]
+
+    runs-on: ${{ matrix.os[0] }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Checkout submodules
+      run: git submodule update --init -- "CMake"
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
+
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_USE_PRECOMPILED_HEADERS=ON -DCRG_BUILD_TESTS=ON
+
+    - name: Configure CMake (Non Windows)
+      if: runner.os != 'Windows'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_USE_PRECOMPILED_HEADERS=OFF -DCRG_BUILD_TESTS=ON
+
+    - name: Build
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: cmake --build . --parallel 2 --config ${{ matrix.buildType }}
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: ctest -C ${{ matrix.buildType }}
+
+    - name: Prepare package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --install . --config ${{ matrix.buildType }}
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+
+    - name: Upload package
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v2
+      with:
+        name: RenderGraph-${{ matrix.os[1] }}.zip
+        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}.zip

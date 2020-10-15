@@ -51,12 +51,6 @@ else ()
 	)
 endif ()
 
-find_package( Doxygen )
-
-if( DOXYGEN_FOUND )
-	message( STATUS "+ Found Doxygen (version ${DOXYGEN_VERSION})" )
-endif ()
-
 set( CompileOptions
 	$<$<CXX_COMPILER_ID:MSVC>:/MP>
 	$<$<CXX_COMPILER_ID:MSVC>:/Zm300>
