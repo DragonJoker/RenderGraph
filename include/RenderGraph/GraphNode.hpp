@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -27,7 +27,7 @@ namespace crg
 			RenderPass,
 		};
 
-		virtual ~GraphNode();
+		virtual ~GraphNode() = default;
 		void addAttaches( GraphAdjacentNode prev, AttachmentTransitionArray attachsToPrev );
 		void attachNode( GraphAdjacentNode next, AttachmentTransitionArray attachsToNext );
 		GraphAdjacentNode findInNext( RenderPass const & pass )const;

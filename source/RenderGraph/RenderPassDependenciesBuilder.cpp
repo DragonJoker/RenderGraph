@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -32,7 +32,7 @@ namespace crg
 
 			std::ostream & operator<<( std::ostream & stream, PassAttach const & attach )
 			{
-				stream << attach.attach.name;
+				stream << attach.attach.viewData.name;
 				std::string sep{ " -> " };
 
 				for ( auto & pass : attach.passes )
@@ -61,13 +61,13 @@ namespace crg
 
 				for ( auto & attach : dependency.srcOutputs )
 				{
-					stream << sep << attach.name;
+					stream << sep << attach.viewData.name;
 					sep = ", ";
 				}
 
 				for ( auto & attach : dependency.dstInputs )
 				{
-					stream << sep << attach.name;
+					stream << sep << attach.viewData.name;
 					sep = ", ";
 				}
 
@@ -133,12 +133,12 @@ namespace crg
 						, lhs.layerCount );
 			}
 
-			inline bool areOverlapping( ImageViewId const & lhs
-				, ImageViewId const & rhs )
+			inline bool areOverlapping( ImageViewData const & lhs
+				, ImageViewData const & rhs )
 			{
-				return lhs.data->image == rhs.data->image
-					&& areIntersecting( lhs.data->subresourceRange
-						, rhs.data->subresourceRange );
+				return lhs.image == rhs.image
+					&& areIntersecting( lhs.subresourceRange
+						, rhs.subresourceRange );
 			}
 
 			void processAttach( Attachment const & attach
@@ -168,8 +168,7 @@ namespace crg
 					, cont.end()
 					, [&attach]( PassAttach const & lookup )
 					{
-						return lookup.attach.name == attach.name
-							&& lookup.attach.view == attach.view;
+						return lookup.attach.viewData == attach.viewData;
 					} );
 
 				if ( cont.end() == it )
@@ -192,7 +191,7 @@ namespace crg
 						, cont
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.view, attach.view );
+							return areOverlapping( lookup.viewData, attach.viewData );
 						} );
 				}
 			}
@@ -208,7 +207,7 @@ namespace crg
 						, cont
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.view, attach.view );
+							return areOverlapping( lookup.viewData, attach.viewData );
 						} );
 				}
 			}
@@ -224,7 +223,7 @@ namespace crg
 						, cont
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.view, attach.view );
+							return areOverlapping( lookup.viewData, attach.viewData );
 						} );
 				}
 			}
@@ -241,7 +240,7 @@ namespace crg
 						, cont
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.view, attach.view );
+							return areOverlapping( lookup.viewData, attach.viewData );
 						} );
 				}
 			}
@@ -258,7 +257,7 @@ namespace crg
 						, cont
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.view, attach.view );
+							return areOverlapping( lookup.viewData, attach.viewData );
 						} );
 				}
 			}
@@ -362,7 +361,7 @@ namespace crg
 			{
 				for ( auto & input : inputs )
 				{
-					if ( areOverlapping( output.attach.view, input.attach.view ) )
+					if ( areOverlapping( output.attach.viewData, input.attach.viewData ) )
 					{
 						addDependency( output.attach
 							, input.attach
@@ -374,7 +373,7 @@ namespace crg
 
 				for ( auto & sample : sampled )
 				{
-					if ( areOverlapping( output.attach.view, sample.attach.view ) )
+					if ( areOverlapping( output.attach.viewData, sample.attach.viewData ) )
 					{
 						addDependency( output.attach
 							, sample.attach

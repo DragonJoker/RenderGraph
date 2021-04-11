@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -10,10 +10,6 @@ See LICENSE file in root folder.
 namespace crg
 {
 	//*********************************************************************************************
-
-	GraphNode::~GraphNode()
-	{
-	}
 
 	GraphNode::GraphNode( Kind kind
 		, std::string name

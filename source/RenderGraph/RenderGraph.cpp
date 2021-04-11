@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -57,6 +57,11 @@ namespace crg
 		if ( m_passes.empty() )
 		{
 			CRG_Exception( "No RenderPass registered." );
+		}
+
+		for ( auto & attach : m_attachments )
+		{
+			m_attachViews.emplace( attach.viewData.name, createView( attach.viewData ) );
 		}
 
 		auto dependencies = builder::buildPassDependencies( m_passes );

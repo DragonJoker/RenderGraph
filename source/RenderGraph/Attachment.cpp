@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -9,14 +9,14 @@ See LICENSE file in root folder.
 namespace crg
 {
 	Attachment::Attachment( FlagKind flags
-		, std::string name
-		, ImageViewId view
+		, ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp )
-		: name{ std::move( name ) }
-		, view{ std::move( view ) }
+		, VkAttachmentStoreOp stencilStoreOp
+		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout )
+		: viewData{ std::move( viewData ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
@@ -40,6 +40,8 @@ namespace crg
 			| ( stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
+		, initialLayout{ initialLayout }
+		, finalLayout{ finalLayout }
 	{
 		assert( !isSampled()
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
@@ -48,68 +50,67 @@ namespace crg
 				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
 	}
 
-	Attachment Attachment::createSampled( std::string const & name
-		, ImageViewId view )
+	Attachment Attachment::createSampled( ImageViewData viewData
+		, VkImageLayout initialLayout )
 	{
-		return
-		{
-			FlagKind( Flag::Sampled ),
-			name,
-			view,
-			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			VK_ATTACHMENT_STORE_OP_DONT_CARE,
-			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		};
+		return { FlagKind( Flag::Sampled )
+			, viewData
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, initialLayout };
 	}
 
-	Attachment Attachment::createColour( std::string const & name
+	Attachment Attachment::createColour( ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
-		, ImageViewId view )
+		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout )
 	{
-		return
-		{
-			FlagKind( Flag::None ),
-			name,
-			view,
-			loadOp,
-			storeOp,
-			VK_ATTACHMENT_LOAD_OP_DONT_CARE,
-			VK_ATTACHMENT_STORE_OP_DONT_CARE,
-		};
+		return { FlagKind( Flag::None )
+			, viewData
+			, loadOp
+			, storeOp
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, finalLayout };
 	}
 
-	Attachment Attachment::createDepthStencil( std::string const & name
+	Attachment Attachment::createDepthStencil( ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, ImageViewId view )
+		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout )
 	{
-		return
-		{
-			( ( ( loadOp != VK_ATTACHMENT_LOAD_OP_DONT_CARE )
-					|| ( storeOp != VK_ATTACHMENT_STORE_OP_DONT_CARE ) )
-				? FlagKind( Flag::Depth )
-				: FlagKind( Flag::None ) ),
-			name,
-			view,
-			loadOp,
-			storeOp,
-			stencilLoadOp,
-			stencilStoreOp,
-		};
+		return { FlagKind( Flag::Depth )
+			, viewData
+			, loadOp
+			, storeOp
+			, stencilLoadOp
+			, stencilStoreOp
+			, initialLayout
+			, finalLayout };
 	}
 
-	bool operator==( Attachment const & lhs, Attachment const & rhs )
+	bool operator==( Attachment const & lhs
+		, Attachment const & rhs )
 	{
 		return lhs.flags == rhs.flags
-			&& lhs.name == rhs.name
-			&& lhs.view == rhs.view
+			&& lhs.viewData == rhs.viewData
 			&& lhs.loadOp == rhs.loadOp
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp
 			&& lhs.stencilStoreOp == rhs.stencilStoreOp;
+	}
+
+	bool operator!=( Attachment const & lhs
+		, Attachment const & rhs )
+	{
+		return !( lhs == rhs );
 	}
 }

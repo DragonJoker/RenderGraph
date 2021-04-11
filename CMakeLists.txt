@@ -66,34 +66,77 @@ set( CompileDefinitions
 #--------------------------------------------------------------------------------------------------
 #	Adding include dirs to include search path
 #--------------------------------------------------------------------------------------------------
+set( CRG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
+set( CRG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
+
 set( IncludeDirs
-	${CMAKE_SOURCE_DIR}/include
-	${CMAKE_BINARY_DIR}/include
+	${CRG_SOURCE_DIR}/include
+	${CRG_BINARY_DIR}/include
 )
 
-option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
-option( CRG_BUILD_EXAMPLES "Build RenderGraph example applications" OFF )
+if ( NOT DEFINED CRG_BUILD_TESTS )
+	option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
+endif ()
+if ( NOT DEFINED CRG_BUILD_EXAMPLES )
+	option( CRG_BUILD_EXAMPLES "Build RenderGraph example applications" OFF )
+endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
+	if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/external/Vulkan-Headers/include/ )
+		if ( VCPKG_PACKAGE_BUILD )
+			set( Vulkan_INCLUDE_DIR ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include )
+		elseif ( VCPKG_TOOLCHAIN )
+			find_path( Vulkan_INCLUDE_DIR "vulkan/vulkan.h" )
+		else ()
+			find_package( Vulkan REQUIRED )
+		endif ()
+	else ()
+		set( Vulkan_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/Vulkan-Headers/include )
+	endif ()
+
 	# RenderGraph library
 	project( RenderGraph )
-	file( GLOB ${PROJECT_NAME}_FOLDER_HEADER_FILES
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.h
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.hpp
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.inl
-		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.h
-		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.hpp
-		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.inl
+	set( ${PROJECT_NAME}_FOLDER_HEADER_FILES
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Attachment.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/AttachmentTransition.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/CallStack.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Exception.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphContext.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphNode.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphVisitor.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Id.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageData.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageViewData.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderGraph.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderGraphPrerequisites.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderPass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderPassDependencies.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderQuad.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.hpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.hpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPassDependenciesBuilder.hpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.hpp
 	)
 	file( GLOB ${PROJECT_NAME}_FOLDER_SOURCE_FILES
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.c
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.cpp
-		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.c
-		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/Attachment.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/CallStack.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphContext.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphNode.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderGraph.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPass.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPassDependenciesBuilder.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderQuad.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePass.cpp
 	)
 	file( GLOB ${PROJECT_NAME}_FOLDER_NATVIS_FILES
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}/*.natvis
-		${CMAKE_SOURCE_DIR}/source/${PROJECT_NAME}/*.natvis
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderGraph.natvis
 	)
 	source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
 	source_group( "Source Files" FILES ${${PROJECT_NAME}_FOLDER_SOURCE_FILES} )
@@ -103,19 +146,29 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
 		${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
 	)
-	target_compile_options( ${PROJECT_NAME} PUBLIC
-		${CompileOptions}
+	add_library( crg::${PROJECT_NAME}
+		ALIAS
+		${PROJECT_NAME}
 	)
-	target_compile_definitions( ${PROJECT_NAME} PUBLIC
-		${CompileDefinitions}
+	target_compile_options( ${PROJECT_NAME}
+		PUBLIC
+			${CompileOptions}
 	)
-	target_include_directories( ${PROJECT_NAME} PUBLIC
-		${IncludeDirs}
-		${VULKAN_INCLUDE_DIR}
+	target_compile_definitions( ${PROJECT_NAME}
+		PUBLIC
+			${CompileDefinitions}
 	)
-	set_target_properties( ${PROJECT_NAME} PROPERTIES
-		CXX_STANDARD 17
-		FOLDER "Core"
+	target_include_directories( ${PROJECT_NAME}
+		PUBLIC
+			$<BUILD_INTERFACE:${CRG_SOURCE_DIR}/include>
+			$<BUILD_INTERFACE:${CRG_BINARY_DIR}/include>
+			$<BUILD_INTERFACE:${Vulkan_INCLUDE_DIR}>
+			$<INSTALL_INTERFACE:include>
+	)
+	set_target_properties( ${PROJECT_NAME}
+		PROPERTIES
+			CXX_STANDARD 17
+			FOLDER "${CRG_BASE_DIR}/Core"
 	)
 	set( LinkLibraries
 		RenderGraph
@@ -123,33 +176,25 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	install(
 		TARGETS ${PROJECT_NAME}
 		COMPONENT ${PROJECT_NAME}
-		CONFIGURATIONS Release
 		EXPORT ${PROJECT_NAME}
 		RUNTIME DESTINATION bin
 		ARCHIVE DESTINATION lib
 		LIBRARY DESTINATION lib
 	)
-	install(
-		TARGETS ${PROJECT_NAME}
-		COMPONENT ${PROJECT_NAME}_dev
-		CONFIGURATIONS RelWithDebInfo
-		EXPORT ${PROJECT_NAME}
-		RUNTIME DESTINATION bin/RelWithDebInfo
-		ARCHIVE DESTINATION lib/RelWithDebInfo
-		LIBRARY DESTINATION lib/RelWithDebInfo
-	)
-	install(
-		TARGETS ${PROJECT_NAME}
-		COMPONENT ${PROJECT_NAME}_dev
-		CONFIGURATIONS Debug
-		EXPORT ${PROJECT_NAME}
-		RUNTIME DESTINATION bin/Debug
-		ARCHIVE DESTINATION lib/Debug
-		LIBRARY DESTINATION lib/Debug
-	)
 	target_install_dir_headers( ${PROJECT_NAME}
-		${CMAKE_SOURCE_DIR}/include/${PROJECT_NAME}
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}
 		${PROJECT_NAME}
+	)
+	install( EXPORT ${PROJECT_NAME}
+		COMPONENT ${PROJECT_NAME}
+		FILE ${PROJECT_NAME}Config.cmake
+		NAMESPACE crg::
+		DESTINATION lib/cmake/${PROJECT_NAME}
+	)
+	include(CMakePackageConfigHelpers)
+	write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
+		VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_BUILD}
+		COMPATIBILITY AnyNewerVersion
 	)
 
 	if ( CRG_BUILD_TESTS )

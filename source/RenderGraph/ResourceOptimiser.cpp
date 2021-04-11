@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -60,12 +60,13 @@ namespace crg
 			}
 
 			template< typename DataT >
-			using IdDataMap = std::map< DataT *, std::vector< Id< DataT > >;
+			using IdDataMap = std::map< DataT *, std::vector< Id< DataT > > >;
 
 			template< typename DataT >
 			IdDataMap< DataT > sortPerData( IdDataOwnerCont< DataT > const & images )
 			{
-				IdDataMap< DataT >;
+				IdDataMap< DataT > result;
+				return result;
 			}
 		}
 
@@ -86,7 +87,7 @@ namespace crg
 			// and their flags.
 			sortPerData( images );
 
-			return result;
+			return ImageIdAliasMap{};
 		}
 
 		ImageViewIdAliasMap optimiseImageViews( ImageViewIdDataOwnerCont const & imageViews
