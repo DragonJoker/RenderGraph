@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -14,6 +14,7 @@ namespace crg
 	*/
 	struct ImageViewData
 	{
+		std::string name;
 		ImageId image;
 		VkImageViewCreateFlags flags;
 		VkImageViewType viewType;
@@ -32,9 +33,15 @@ namespace crg
 
 	inline bool operator==( ImageViewData const & lhs, ImageViewData const & rhs )
 	{
-		return lhs.flags == rhs.flags
+		return lhs.name == rhs.name
+			&& lhs.flags == rhs.flags
 			&& lhs.viewType == rhs.viewType
 			&& lhs.format == rhs.format
 			&& lhs.subresourceRange == rhs.subresourceRange;
+	}
+
+	inline bool operator!=( ImageViewData const & lhs, ImageViewData const & rhs )
+	{
+		return !( lhs == rhs );
 	}
 }

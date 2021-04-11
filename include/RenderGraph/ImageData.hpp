@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -14,6 +14,7 @@ namespace crg
 	*/
 	struct ImageData
 	{
+		std::string name;
 		VkImageCreateFlags flags;
 		VkImageType imageType;
 		VkFormat format;
@@ -24,9 +25,11 @@ namespace crg
 		VkImageTiling tiling;
 		VkImageUsageFlags usage;
 	};
+
 	inline bool operator==( ImageData const & lhs, ImageData const & rhs )
 	{
-		return lhs.flags == rhs.flags
+		return lhs.name == rhs.name
+			&& lhs.flags == rhs.flags
 			&& lhs.imageType == rhs.imageType
 			&& lhs.format == rhs.format
 			&& lhs.mipLevels == rhs.mipLevels
@@ -34,5 +37,10 @@ namespace crg
 			&& lhs.samples == rhs.samples
 			&& lhs.tiling == rhs.tiling
 			&& lhs.usage == rhs.usage;
+	}
+
+	inline bool operator!=( ImageData const & lhs, ImageData const & rhs )
+	{
+		return !( lhs == rhs );
 	}
 }
