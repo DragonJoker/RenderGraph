@@ -17,7 +17,11 @@ namespace crg
 			, GraphContext context );
 		~RunnableGraph();
 
-		VkSemaphore run( VkSemaphore toWait );
+		void record()const;
+		void recordInto( VkCommandBuffer commandBuffer )const;
+		SemaphoreWait run( SemaphoreWait toWait
+			, VkQueue queue );
+		VkImage getImage( Attachment const & attach )const;
 		VkImageView getImageView( Attachment const & attach )const;
 
 	private:

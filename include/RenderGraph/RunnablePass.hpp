@@ -10,6 +10,11 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	struct SemaphoreWait
+	{
+		VkSemaphore semaphore;
+		VkPipelineStageFlags dstStageMask;
+	};
 	struct WriteDescriptorSet
 	{
 		WriteDescriptorSet( uint32_t dstBinding
@@ -187,6 +192,18 @@ namespace crg
 		*	The command buffer.
 		*/
 		virtual void recordInto( VkCommandBuffer commandBuffer )const;
+		/**
+		*\brief
+		*	Submits this pass' command buffer to the givent queue.
+		*\param[in] toWait
+		*	The semaphore to wait for.
+		*\param[out] queue
+		*	The queue to submit to.
+		*\return
+		*	This pass' semaphore.
+		*/
+		SemaphoreWait run( SemaphoreWait toWait
+			, VkQueue queue )const;
 
 	private:
 		void doCreateSampler();

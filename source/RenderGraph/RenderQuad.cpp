@@ -126,14 +126,6 @@ namespace crg
 		}
 	}
 
-	void RenderQuad::recordInto( VkCommandBuffer commandBuffer )const
-	{
-		static VkDeviceSize const offsets = 0u;
-		RunnablePass::recordInto( commandBuffer );
-		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer, &offsets );
-		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
-	}
-
 	void RenderQuad::doInitialise()
 	{
 		doCreateVertexBuffer();
@@ -141,6 +133,22 @@ namespace crg
 		doCreateRenderPass();
 		doCreatePipeline();
 		doCreateFramebuffer();
+	}
+
+	void RenderQuad::doRecordInto( VkCommandBuffer commandBuffer )const
+	{
+		VkDeviceSize offset{};
+		VkClearValue clearValue{};
+		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
+			, nullptr
+			, m_renderPass
+			, m_frameBuffer
+			, m_renderArea
+			, 1u
+			, &clearValue };
+		m_context.vkCmdBeginRenderPass( commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
+		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer, &offset );
+		m_context.vkCmdEndRenderPass( commandBuffer );
 	}
 
 	void RenderQuad::doCreateVertexBuffer()
@@ -298,6 +306,15 @@ namespace crg
 			, 0u
 			, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP
 			, VK_FALSE };
+		VkPipelineMultisampleStateCreateInfo msState{ VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO
+			, nullptr
+			, 0u
+			, VK_SAMPLE_COUNT_1_BIT
+			, VK_FALSE
+			, 0.0f
+			, nullptr
+			, VK_FALSE
+			, VK_FALSE };
 		VkPipelineRasterizationStateCreateInfo rsState{ VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO
 			, nullptr
 			, 0u
@@ -321,7 +338,7 @@ namespace crg
 			, nullptr
 			, &vpState
 			, &rsState
-			, nullptr
+			, &msState
 			, &m_baseConfig.dsState
 			, &cbState
 			, nullptr
@@ -421,6 +438,8 @@ namespace crg
 			height = attach.viewData.image.data->extent.height;
 		}
 
+		m_renderArea.extent.width = width;
+		m_renderArea.extent.height = height;
 		VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
 			, nullptr
 			, 0u

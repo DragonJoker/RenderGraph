@@ -135,11 +135,44 @@ namespace crg
 		doCreateSemaphore();
 	}
 
+	void RunnablePass::record()const
+	{
+		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+			, nullptr
+			, 0u
+			, nullptr };
+		m_context.vkBeginCommandBuffer( m_commandBuffer, &beginInfo );
+		recordInto( m_commandBuffer );
+		m_context.vkEndCommandBuffer( m_commandBuffer );
+	}
+
 	void RunnablePass::recordInto( VkCommandBuffer commandBuffer )const
 	{
 		m_context.vkCmdBindPipeline( commandBuffer, m_bindingPoint, m_pipeline );
 		m_context.vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSet, 0u, nullptr );
 		doRecordInto( commandBuffer );
+	}
+
+	SemaphoreWait RunnablePass::run( SemaphoreWait toWait
+		, VkQueue queue )const
+	{
+		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
+			, nullptr
+			, 1u
+			, &toWait.semaphore
+			, & toWait.dstStageMask
+			, 1u
+			, &m_commandBuffer
+			, 1u
+			, &m_semaphore };
+		m_context.vkQueueSubmit( queue
+			, 1u
+			, &submitInfo
+			, VK_NULL_HANDLE );
+		return { m_semaphore
+			, VkPipelineStageFlags( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
+				? VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
+				: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT ) };
 	}
 
 	void RunnablePass::doCreateSampler()
@@ -189,7 +222,7 @@ namespace crg
 			? VK_SHADER_STAGE_FRAGMENT_BIT
 			: VK_SHADER_STAGE_COMPUTE_BIT );
 		auto imageDescriptor = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
-			? VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+			? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 			: VK_DESCRIPTOR_TYPE_STORAGE_IMAGE );
 		auto imageSampler = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
 			? m_sampler
