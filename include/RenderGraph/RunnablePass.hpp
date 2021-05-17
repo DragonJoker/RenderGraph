@@ -208,8 +208,8 @@ namespace crg
 		GraphContext const & m_context;
 		RunnableGraph const & m_graph;
 		VkPipelineBindPoint m_bindingPoint;
-		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
 		WriteDescriptorSetArray m_descriptorWrites;
+		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
 		VkSampler m_sampler{ VK_NULL_HANDLE };
 		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
 		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };

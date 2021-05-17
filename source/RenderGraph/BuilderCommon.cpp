@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -25,7 +25,8 @@ namespace crg
 						, dependencies.end()
 						, [&pass]( RenderPassDependencies const & lookup )
 						{
-							return lookup.dstPass == pass.get();
+							return lookup.srcPass
+								&& lookup.dstPass == pass.get();
 						} );
 				}
 				, [&result]( RenderPassPtr const & lookup )
@@ -47,7 +48,8 @@ namespace crg
 						, dependencies.end()
 						, [&pass]( RenderPassDependencies const & lookup )
 						{
-							return lookup.srcPass == pass.get();
+							return lookup.dstPass
+								&& lookup.srcPass == pass.get();
 						} );
 				}
 				, [&result]( RenderPassPtr const & lookup )

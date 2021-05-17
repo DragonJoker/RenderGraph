@@ -119,7 +119,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPassDependenciesBuilder.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.hpp
 	)
-	file( GLOB ${PROJECT_NAME}_FOLDER_SOURCE_FILES
+	set( ${PROJECT_NAME}_FOLDER_SOURCE_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/Attachment.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.cpp
@@ -135,7 +135,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePass.cpp
 	)
-	file( GLOB ${PROJECT_NAME}_FOLDER_NATVIS_FILES
+	set( ${PROJECT_NAME}_FOLDER_NATVIS_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderGraph.natvis
 	)
 	source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )

@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -79,83 +79,122 @@ namespace crg
 				, RenderPass const * srcPass
 				, RenderPass const * dstPass )
 			{
-				assert( srcOutputs.size() == dstInputs.size() );
 				AttachmentTransitionArray result;
-				auto srcOutputIt = srcOutputs.begin();
-				auto end = srcOutputs.end();
-				auto dstInputIt = dstInputs.begin();
-				std::set< RenderPass const * > srcPasses{ srcPass };
-				std::set< RenderPass const * > dstPasses{ dstPass };
 
-				while ( srcOutputIt != end )
+				if ( srcPass == nullptr )
 				{
-					result.push_back( AttachmentTransition
-						{
-							{ { *srcOutputIt, srcPasses } },
-							{ *dstInputIt, dstPasses },
-						} );
-					++srcOutputIt;
-					++dstInputIt;
+					auto dstInputIt = dstInputs.begin();
+					auto end = dstInputs.end();
+					std::set< RenderPass const * > dstPasses{ dstPass };
+
+					while ( dstInputIt != end )
+					{
+						result.push_back( AttachmentTransition
+							{
+								{},
+								{ *dstInputIt, dstPasses },
+							} );
+						++dstInputIt;
+					}
+				}
+				else if ( dstPass == nullptr )
+				{
+					auto srcOutputIt = srcOutputs.begin();
+					auto end = srcOutputs.end();
+					std::set< RenderPass const * > srcPasses{ srcPass };
+
+					while ( srcOutputIt != end )
+					{
+						result.push_back( AttachmentTransition
+							{
+								{ { *srcOutputIt, srcPasses } },
+								{ Attachment::createDefault(), {} },
+							} );
+						++srcOutputIt;
+					}
+				}
+				else
+				{
+					assert( srcOutputs.size() == dstInputs.size() );
+					auto srcOutputIt = srcOutputs.begin();
+					auto end = srcOutputs.end();
+					auto dstInputIt = dstInputs.begin();
+					std::set< RenderPass const * > srcPasses{ srcPass };
+					std::set< RenderPass const * > dstPasses{ dstPass };
+
+					while ( srcOutputIt != end )
+					{
+						result.push_back( AttachmentTransition
+							{
+								{ { *srcOutputIt, srcPasses } },
+								{ *dstInputIt, dstPasses },
+							} );
+						++srcOutputIt;
+						++dstInputIt;
+					}
 				}
 
 				return mergeIdenticalTransitions( std::move( result ) );
 			}
 
 			void buildGraphRec( RenderPass const * curr
-				, AttachmentTransitionArray prevAttaches
+				, AttachmentTransitionArray prevTransitions
 				, RenderPassDependenciesArray const & dependencies
 				, GraphNodePtrArray & nodes
 				, RootNode & fullGraph
-				, AttachmentTransitionArray & allAttaches
+				, AttachmentTransitionArray & allTransitions
 				, GraphAdjacentNode prevNode )
 			{
-				if ( prevNode->getKind() == GraphNode::Kind::Root
-					|| curr != getRenderPass( *prevNode ) )
-				{
-					// We want the dependencies for which the current pass is the source.
-					std::set< RenderPassDependencies const * > attaches;
-					RenderPassDependenciesArray nextDependencies;
-					filter< RenderPassDependencies >( dependencies
-						, [&curr]( RenderPassDependencies const & lookup )
-						{
-							return curr->name == lookup.srcPass->name;
-						}
-						, [&attaches]( RenderPassDependencies const & lookup )
-						{
-							attaches.insert( &lookup );
-						}
-							, [&nextDependencies]( RenderPassDependencies const & lookup )
-						{
-							nextDependencies.push_back( lookup );
-						} );
-
-					GraphAdjacentNode result{ createNode( curr, nodes ) };
-					allAttaches.insert( allAttaches.end()
-						, prevAttaches.begin()
-						, prevAttaches.end() );
-					prevNode->attachNode( result
-						, std::move( prevAttaches ) );
-
-					for ( auto & dependency : attaches )
+				// We want the dependencies for which the current pass is the source.
+				std::set< RenderPassDependencies const * > attaches;
+				RenderPassDependenciesArray nextDependencies;
+				filter< RenderPassDependencies >( dependencies
+					, [&curr]( RenderPassDependencies const & lookup )
 					{
-						buildGraphRec( dependency->dstPass
-							, buildTransitions( dependency->srcOutputs
-								, dependency->dstInputs
-								, curr
-								, dependency->dstPass )
-							, nextDependencies
-							, nodes
-							, fullGraph
-							, allAttaches
-							, result );
+						return lookup.srcPass
+							&& curr->name == lookup.srcPass->name;
 					}
+					, [&attaches]( RenderPassDependencies const & lookup )
+					{
+						attaches.insert( &lookup );
+					}
+					, [&nextDependencies]( RenderPassDependencies const & lookup )
+					{
+						nextDependencies.push_back( lookup );
+					} );
+
+				GraphAdjacentNode result{ createNode( curr, nodes ) };
+				allTransitions.insert( allTransitions.end()
+					, prevTransitions.begin()
+					, prevTransitions.end() );
+
+				if ( curr != getRenderPass( *prevNode ) )
+				{
+					prevNode->attachNode( result
+						, std::move( prevTransitions ) );
+				}
+
+				for ( auto & dependency : attaches )
+				{
+					buildGraphRec( ( dependency->dstPass
+							? dependency->dstPass
+							: dependency->srcPass )
+						, buildTransitions( dependency->srcOutputs
+							, dependency->dstInputs
+							, curr
+							, dependency->dstPass )
+						, nextDependencies
+						, nodes
+						, fullGraph
+						, allTransitions
+						, result );
 				}
 			}
 		}
 
 		GraphNodePtrArray buildGraph( std::vector< RenderPassPtr > const & passes
 			, RootNode & rootNode
-			, AttachmentTransitionArray & allAttaches
+			, AttachmentTransitionArray & transitions
 			, RenderPassDependenciesArray const & dependencies )
 		{
 			GraphNodePtrArray nodes;
@@ -184,13 +223,13 @@ namespace crg
 					, dependencies
 					, nodes
 					, rootNode
-					, allAttaches
+					, transitions
 					, curr );
 			}
 
-			allAttaches = mergeIdenticalTransitions( std::move( allAttaches ) );
-			allAttaches = mergeTransitionsPerInput( std::move( allAttaches ) );
-			allAttaches = reduceDirectPaths( std::move( allAttaches ) );
+			transitions = mergeIdenticalTransitions( std::move( transitions ) );
+			transitions = mergeTransitionsPerInput( std::move( transitions ) );
+			transitions = reduceDirectPaths( std::move( transitions ) );
 			return nodes;
 		}
 	}

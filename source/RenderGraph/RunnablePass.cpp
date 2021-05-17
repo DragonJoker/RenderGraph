@@ -46,13 +46,14 @@ namespace crg
 		, RunnableGraph const & graph
 		, rp::Config config
 		, VkPipelineBindPoint bindingPoint )
-		: m_pass{ pass }
-		, m_context{ context }
-		, m_graph{ graph }
-		, m_baseConfig{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > )
+		: m_baseConfig{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > )
 			, std::move( config.pushRanges ? *config.pushRanges : defaultV< VkPushConstantRangeArray > )
 			, std::move( config.dsState ? *config.dsState : defaultV< VkPipelineDepthStencilStateCreateInfo > )
 			, std::move( config.descriptorWrites ? *config.descriptorWrites : defaultV< WriteDescriptorSetArray > ) }
+		, m_pass{ pass }
+		, m_context{ context }
+		, m_graph{ graph }
+		, m_bindingPoint{ bindingPoint }
 		, m_descriptorWrites{ m_baseConfig.descriptorWrites }
 	{
 	}

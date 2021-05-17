@@ -8,6 +8,10 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	Attachment::Attachment()
+	{
+	}
+
 	Attachment::Attachment( FlagKind flags
 		, ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
