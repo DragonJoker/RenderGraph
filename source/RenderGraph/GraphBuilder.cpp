@@ -168,7 +168,23 @@ namespace crg
 					, prevTransitions.begin()
 					, prevTransitions.end() );
 
-				if ( curr != getRenderPass( *prevNode ) )
+				if ( prevNode->getKind() == GraphNode::Kind::Root )
+				{
+					prevNode->attachNode( result
+						, std::move( prevTransitions ) );
+
+					for ( auto & dependency : nextDependencies )
+					{
+						auto transitions = buildTransitions( dependency.srcOutputs
+							, dependency.dstInputs
+							, dependency.srcPass
+							, dependency.dstPass );
+						allTransitions.insert( allTransitions.end()
+							, transitions.begin()
+							, transitions.end() );
+					}
+				}
+				else if ( curr != getRenderPass( *prevNode ) )
 				{
 					prevNode->attachNode( result
 						, std::move( prevTransitions ) );
@@ -176,18 +192,27 @@ namespace crg
 
 				for ( auto & dependency : attaches )
 				{
-					buildGraphRec( ( dependency->dstPass
-							? dependency->dstPass
-							: dependency->srcPass )
-						, buildTransitions( dependency->srcOutputs
-							, dependency->dstInputs
-							, curr
-							, dependency->dstPass )
-						, nextDependencies
-						, nodes
-						, fullGraph
-						, allTransitions
-						, result );
+					auto transitions = buildTransitions( dependency->srcOutputs
+						, dependency->dstInputs
+						, curr
+						, dependency->dstPass );
+
+					if ( dependency->dstPass )
+					{
+						buildGraphRec( dependency->dstPass
+							, std::move( transitions )
+							, nextDependencies
+							, nodes
+							, fullGraph
+							, allTransitions
+							, result );
+					}
+					else
+					{
+						allTransitions.insert( allTransitions.end()
+							, transitions.begin()
+							, transitions.end() );
+					}
 				}
 			}
 		}

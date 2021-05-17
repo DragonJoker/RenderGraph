@@ -88,7 +88,7 @@ namespace crg
 #endif
 		static std::string const & getName()
 		{
-			static std::string result{ "VkDecriptorPool" };
+			static std::string result{ "VkDescriptorPool" };
 			return result;
 		}
 	};
@@ -485,6 +485,9 @@ namespace crg
 		DECL_vkFunction( CreateSemaphore );
 		DECL_vkFunction( DestroySemaphore );
 		DECL_vkFunction( UpdateDescriptorSets );
+		DECL_vkFunction( BeginCommandBuffer );
+		DECL_vkFunction( EndCommandBuffer );
+		DECL_vkFunction( QueueSubmit );
 
 		DECL_vkFunction( CmdBindPipeline );
 		DECL_vkFunction( CmdBindDescriptorSets );

@@ -66,6 +66,9 @@ namespace crg
 		DECL_vkFunction( CreateSemaphore );
 		DECL_vkFunction( DestroySemaphore );
 		DECL_vkFunction( UpdateDescriptorSets );
+		DECL_vkFunction( BeginCommandBuffer );
+		DECL_vkFunction( EndCommandBuffer );
+		DECL_vkFunction( QueueSubmit );
 
 		DECL_vkFunction( CmdBindPipeline );
 		DECL_vkFunction( CmdBindDescriptorSets );

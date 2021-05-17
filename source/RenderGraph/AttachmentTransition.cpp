@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -30,7 +30,8 @@ namespace crg
 				, result.end()
 				, [&it]( AttachmentTransition const & lookup )
 				{
-					return lookup.srcOutputs.front().attachment == it->srcOutputs.front().attachment
+					return ( !lookup.srcOutputs.empty() )
+						&& lookup.srcOutputs.front().attachment == it->srcOutputs.front().attachment
 						&& lookup.dstInput.attachment == it->dstInput.attachment;
 				} );
 		};

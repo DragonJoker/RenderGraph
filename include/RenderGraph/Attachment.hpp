@@ -175,139 +175,183 @@ namespace crg
 		*\brief
 		*	Creates an input colour attachment.
 		*/
-		static inline Attachment createInputColour( ImageViewData viewData )
+		static inline Attachment createInputColour( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createColour( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE );
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an in/out colour attachment.
 		*/
-		static inline Attachment createInOutColour( ImageViewData viewData )
+		static inline Attachment createInOutColour( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createColour( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE );
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an output colour attachment.
 		*/
-		static inline Attachment createOutputColour( ImageViewData viewData )
+		static inline Attachment createOutputColour( ImageViewData viewData
+			, VkImageLayout finalLayout )
 		{
 			return createColour( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE );
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an input depth attachment.
 		*/
-		static inline Attachment createInputDepth( ImageViewData viewData )
+		static inline Attachment createInputDepth( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE );
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an in/out depth attachment.
 		*/
-		static inline Attachment createInOutDepth( ImageViewData viewData )
+		static inline Attachment createInOutDepth( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE );
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an output depth attachment.
 		*/
-		static inline Attachment createOutputDepth( ImageViewData viewData )
+		static inline Attachment createOutputDepth( ImageViewData viewData
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE );
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an input depth and stencil attachment.
 		*/
-		static inline Attachment createInputDepthStencil( ImageViewData viewData )
+		static inline Attachment createInputDepthStencil( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE );
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an in/out depth and stencil attachment.
 		*/
-		static inline Attachment createInOutDepthStencil( ImageViewData viewData )
+		static inline Attachment createInOutDepthStencil( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE );
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an output depth and stencil attachment.
 		*/
-		static inline Attachment createOutputDepthStencil( ImageViewData viewData )
+		static inline Attachment createOutputDepthStencil( ImageViewData viewData
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE );
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an input stencil attachment.
 		*/
-		static inline Attachment createInputStencil( ImageViewData viewData )
+		static inline Attachment createInputStencil( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE );
+				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an in/out stencil attachment.
 		*/
-		static inline Attachment createInOutStencil( ImageViewData viewData )
+		static inline Attachment createInOutStencil( ImageViewData viewData
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE );
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, initialLayout
+				, finalLayout );
 		}
 		/**
 		*\brief
 		*	Creates an output stencil attachment.
 		*/
-		static inline Attachment createOutputStencil( ImageViewData viewData )
+		static inline Attachment createOutputStencil( ImageViewData viewData
+			, VkImageLayout finalLayout )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE );
+				, VK_ATTACHMENT_STORE_OP_STORE
+				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout );
 		}
 		/**
 		*\brief

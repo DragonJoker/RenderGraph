@@ -135,16 +135,45 @@ namespace crg
 		}
 	}
 
-	VkSemaphore RunnableGraph::run( VkSemaphore toWait )
+	void RunnableGraph::record()const
+	{
+		for ( auto & pass : m_passes )
+		{
+			pass->record();
+		}
+	}
+
+	void RunnableGraph::recordInto( VkCommandBuffer commandBuffer )const
+	{
+		for ( auto & pass : m_passes )
+		{
+			pass->recordInto( commandBuffer );
+		}
+	}
+
+	SemaphoreWait RunnableGraph::run( SemaphoreWait toWait
+		, VkQueue queue )
 	{
 		auto result = toWait;
 
-		//for ( auto & pass : m_passes )
-		//{
-		//	result = pass->run( result );
-		//}
+		for ( auto & pass : m_passes )
+		{
+			result = pass->run( result, queue );
+		}
 
 		return result;
+	}
+
+	VkImage RunnableGraph::getImage( Attachment const & attach )const
+	{
+		auto it = m_images.find( attach.viewData.image );
+
+		if ( it == m_images.end() )
+		{
+			return VK_NULL_HANDLE;
+		}
+
+		return it->second.first;
 	}
 
 	VkImageView RunnableGraph::getImageView( Attachment const & attach )const

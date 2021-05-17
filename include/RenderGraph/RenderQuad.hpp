@@ -109,13 +109,10 @@ namespace crg
 			, RunnableGraph const & graph
 			, rq::Config config );
 		~RenderQuad();
-		/**
-		*\copydoc crg::RunnablePass::registerPass
-		*/
-		void recordInto( VkCommandBuffer commandBuffer )const override;
 
 	private:
 		void doInitialise()override;
+		void doRecordInto( VkCommandBuffer commandBuffer )const override;
 		void doCreateVertexBuffer();
 		void doCreateVertexMemory();
 		void doCreateRenderPass();
@@ -136,12 +133,14 @@ namespace crg
 		VkDeviceMemory m_vertexMemory{ VK_NULL_HANDLE };
 		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
 		VkFramebuffer m_frameBuffer{ VK_NULL_HANDLE };
+		VkRect2D m_renderArea{};
 	};
 
 	template< typename ConfigT, typename BuilderT >
 	class RenderQuadBuilderT
 		: public RunnablePassBuilderT< RenderQuadBuilderT< ConfigT, BuilderT > >
 	{
+		using ParentBuilder = RunnablePassBuilderT< RenderQuadBuilderT< ConfigT, BuilderT > >;
 		static_assert( std::is_same_v< ConfigT, rq::Config >
 			|| std::is_base_of_v< rq::Config, ConfigT >
 			, "RenderQuadBuilderT::ConfigT must derive from crg::rq::Config" );
@@ -187,6 +186,7 @@ namespace crg
 			, GraphContext const & context
 			, RunnableGraph const & graph )
 		{
+			m_config.baseConfig = std::move( ParentBuilder::m_config );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph
