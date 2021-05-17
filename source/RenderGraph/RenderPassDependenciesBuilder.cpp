@@ -24,7 +24,7 @@ namespace crg
 		{
 			struct PassAttach
 			{
-				Attachment const attach;
+				Attachment attach;
 				std::set< RenderPass const * > passes;
 			};
 
@@ -141,9 +141,30 @@ namespace crg
 						, rhs.subresourceRange );
 			}
 
+			void insertAttach( Attachment const & attach
+				, RenderPass const & pass
+				, PassAttachCont & cont )
+			{
+				auto it = std::find_if( cont.begin()
+					, cont.end()
+					, [&attach]( PassAttach const & lookup )
+					{
+						return lookup.attach.viewData == attach.viewData;
+					} );
+
+				if ( cont.end() == it )
+				{
+					cont.push_back( PassAttach{ attach } );
+					it = std::prev( cont.end() );
+				}
+
+				it->passes.insert( &pass );
+			}
+
 			void processAttach( Attachment const & attach
 				, RenderPass const & pass
 				, PassAttachCont & cont
+				, PassAttachCont & all
 				, std::function< bool( Attachment const & ) > processAttach )
 			{
 				bool found{ false };
@@ -164,31 +185,21 @@ namespace crg
 					}
 				}
 
-				auto it = std::find_if( cont.begin()
-					, cont.end()
-					, [&attach]( PassAttach const & lookup )
-					{
-						return lookup.attach.viewData == attach.viewData;
-					} );
-
-				if ( cont.end() == it )
-				{
-					cont.push_back( PassAttach{ attach } );
-					it = std::prev( cont.end() );
-				}
-
-				it->passes.insert( &pass );
+				insertAttach( attach, pass, cont );
+				insertAttach( attach, pass, all );
 			}
 
 			void processSampledAttach( Attachment const & attach
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				if ( attach.isSampled() )
 				{
 					processAttach( attach
 						, pass
 						, cont
+						, all
 						, [&attach]( Attachment const & lookup )
 						{
 							return areOverlapping( lookup.viewData, attach.viewData );
@@ -198,13 +209,15 @@ namespace crg
 
 			void processColourInputAttach( Attachment const & attach
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				if ( attach.isColourInput() )
 				{
 					processAttach( attach
 						, pass
 						, cont
+						, all
 						, [&attach]( Attachment const & lookup )
 						{
 							return areOverlapping( lookup.viewData, attach.viewData );
@@ -214,13 +227,15 @@ namespace crg
 
 			void processColourOutputAttach( Attachment const & attach
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				if ( attach.isColourOutput() )
 				{
 					return processAttach( attach
 						, pass
 						, cont
+						, all
 						, [&attach]( Attachment const & lookup )
 						{
 							return areOverlapping( lookup.viewData, attach.viewData );
@@ -230,7 +245,8 @@ namespace crg
 
 			void processDepthOrStencilInputAttach( Attachment const & attach
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				if ( attach.isDepthInput()
 					|| attach.isStencilInput() )
@@ -238,6 +254,7 @@ namespace crg
 					processAttach( attach
 						, pass
 						, cont
+						, all
 						, [&attach]( Attachment const & lookup )
 						{
 							return areOverlapping( lookup.viewData, attach.viewData );
@@ -247,7 +264,8 @@ namespace crg
 
 			void processDepthOrStencilOutputAttach( Attachment const & attach
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				if ( attach.isDepthOutput()
 					|| attach.isStencilOutput() )
@@ -255,6 +273,7 @@ namespace crg
 					processAttach( attach
 						, pass
 						, cont
+						, all
 						, [&attach]( Attachment const & lookup )
 						{
 							return areOverlapping( lookup.viewData, attach.viewData );
@@ -264,31 +283,100 @@ namespace crg
 
 			void processSampledAttachs( AttachmentArray const & attachs
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processSampledAttach( attach, pass, cont );
+					processSampledAttach( attach, pass, cont, all );
 				}
 			}
 
 			void processColourInputAttachs( AttachmentArray const & attachs
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processColourInputAttach( attach, pass, cont );
+					processColourInputAttach( attach, pass, cont, all );
 				}
 			}
 
 			void processColourOutputAttachs( AttachmentArray const & attachs
 				, RenderPass const & pass
-				, PassAttachCont & cont )
+				, PassAttachCont & cont
+				, PassAttachCont & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processColourOutputAttach( attach, pass, cont );
+					processColourOutputAttach( attach, pass, cont, all );
+				}
+			}
+
+			void addRemainingDependency( Attachment const & attach
+				, std::set< RenderPass const * > const & passes
+				, RenderPassDependenciesArray & dependencies )
+			{
+				assert( passes.size() == 1u );
+				auto pass = *passes.begin();
+
+				if ( attach.isColourInOut() )
+				{
+					auto it = std::find_if( dependencies.begin()
+						, dependencies.end()
+						, [pass]( RenderPassDependencies & lookup )
+						{
+							return lookup.dstPass == pass
+								&& lookup.srcPass == pass;
+						} );
+
+					if ( it == dependencies.end() )
+					{
+						dependencies.push_back( { pass, pass } );
+						it = std::prev( dependencies.end() );
+					}
+
+					auto & dep = *it;
+					dep.srcOutputs.push_back( attach );
+					dep.dstInputs.push_back( attach );
+				}
+				else if ( attach.isColourInput()
+						|| attach.isSampled() )
+				{
+					auto it = std::find_if( dependencies.begin()
+						, dependencies.end()
+						, [pass]( RenderPassDependencies & lookup )
+						{
+							return lookup.dstPass == pass;
+						} );
+
+					if ( it == dependencies.end() )
+					{
+						dependencies.push_back( { nullptr, pass } );
+						it = std::prev( dependencies.end() );
+					}
+
+					auto & dep = *it;
+					dep.dstInputs.push_back( attach );
+				}
+				else
+				{
+					auto it = std::find_if( dependencies.begin()
+						, dependencies.end()
+						, [pass]( RenderPassDependencies & lookup )
+						{
+							return lookup.srcPass == pass;
+						} );
+
+					if ( it == dependencies.end() )
+					{
+						dependencies.push_back( { pass, nullptr } );
+						it = std::prev( dependencies.end() );
+					}
+
+					auto & dep = *it;
+					dep.srcOutputs.push_back( attach );
 				}
 			}
 
@@ -321,8 +409,8 @@ namespace crg
 							auto & dep = *it;
 
 							if ( dep.srcOutputs.end() == std::find( dep.srcOutputs.begin()
-								, dep.srcOutputs.end()
-								, outAttach )
+									, dep.srcOutputs.end()
+									, outAttach )
 								|| dep.dstInputs.end() == std::find( dep.dstInputs.begin()
 									, dep.dstInputs.end()
 									, inAttach ) )
@@ -341,17 +429,18 @@ namespace crg
 			PassAttachCont sampled;
 			PassAttachCont inputs;
 			PassAttachCont outputs;
+			PassAttachCont all;
 
 			for ( auto & pass : passes )
 			{
-				processSampledAttachs( pass->sampled, *pass, sampled );
-				processColourInputAttachs( pass->colourInOuts, *pass, inputs );
-				processColourOutputAttachs( pass->colourInOuts, *pass, outputs );
+				processSampledAttachs( pass->sampled, *pass, sampled, all );
+				processColourInputAttachs( pass->colourInOuts, *pass, inputs, all );
+				processColourOutputAttachs( pass->colourInOuts, *pass, outputs, all );
 
 				if ( pass->depthStencilInOut )
 				{
-					processDepthOrStencilInputAttach( *pass->depthStencilInOut, *pass, inputs );
-					processDepthOrStencilOutputAttach( *pass->depthStencilInOut, *pass, outputs );
+					processDepthOrStencilInputAttach( *pass->depthStencilInOut, *pass, inputs, all );
+					processDepthOrStencilOutputAttach( *pass->depthStencilInOut, *pass, outputs, all );
 				}
 			}
 
@@ -368,6 +457,18 @@ namespace crg
 							, output.passes
 							, input.passes
 							, result );
+
+						auto it = std::find_if( all.begin()
+							, all.end()
+							, [&input]( PassAttach const & lookup )
+							{
+								return lookup.attach.viewData == input.attach.viewData;
+							} );
+
+						if ( all.end() != it )
+						{
+							all.erase( it );
+						}
 					}
 				}
 
@@ -380,8 +481,28 @@ namespace crg
 							, output.passes
 							, sample.passes
 							, result );
+
+						auto it = std::find_if( all.begin()
+							, all.end()
+							, [&output]( PassAttach const & lookup )
+							{
+								return lookup.attach.viewData == output.attach.viewData;
+							} );
+
+						if ( all.end() != it )
+						{
+							all.erase( it );
+						}
 					}
 				}
+			}
+
+			// `all` should now only contain sampled/input/output from/to nothing attaches.
+			for ( auto & remaining : all )
+			{
+				addRemainingDependency( remaining.attach
+					, remaining.passes
+					, result );
 			}
 
 			printDebug( sampled, inputs, outputs, result );

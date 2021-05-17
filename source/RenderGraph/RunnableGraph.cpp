@@ -106,7 +106,7 @@ namespace crg
 		m_graph.compile();
 		doCreateImages();
 		doCreateImageViews();
-		auto dfsNodes = DfsVisitor::submit( graph.getGraph() );
+		auto dfsNodes = DfsVisitor::submit( m_graph.getGraph() );
 
 		for ( auto & node : dfsNodes )
 		{
@@ -182,7 +182,7 @@ namespace crg
 				, image
 				, &requirements );
 			uint32_t deduced = m_context.deduceMemoryType( requirements.memoryTypeBits
-				, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT );
+				, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 			VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
 				, nullptr
 				, requirements.size

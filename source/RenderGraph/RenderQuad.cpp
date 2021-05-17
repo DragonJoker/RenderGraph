@@ -16,7 +16,7 @@ namespace crg
 	namespace
 	{
 		VkAttachmentReference addAttach( Attachment const & attach
-			, VkAttachmentDescriptionArray attaches )
+			, VkAttachmentDescriptionArray & attaches )
 		{
 			VkImageLayout attachLayout;
 

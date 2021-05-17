@@ -136,7 +136,7 @@ namespace crg
 			::SymSetOptions( SYMOPT_UNDNAME | SYMOPT_LOAD_LINES );
 			doGetInitialisationStatus() = ( TRUE == ::SymInitialize( doGetProcess()
 				, nullptr
-				, TRUE ) );
+				, FALSE ) );
 
 			if ( !doGetInitialisationStatus() )
 			{

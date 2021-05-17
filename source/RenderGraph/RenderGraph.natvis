@@ -39,15 +39,16 @@
   </Type>
 
   <Type Name="crg::Attachment">
-    <DisplayString>{{{name}, view={view}}}</DisplayString>
+    <DisplayString>view={view}</DisplayString>
     <Expand>
-      <Item Name="name">name</Item>
-      <Item Name="view">view</Item>
-      <Item Condition="isSampled" Name="sampled">isSampled</Item>
-      <Item Condition="!isSampled" Name="loadOp">loadOp</Item>
-      <Item Condition="!isSampled" Name="storeOp">storeOp</Item>
-      <Item Condition="!isSampled" Name="stencilLoadOp">stencilLoadOp</Item>
-      <Item Condition="!isSampled" Name="stencilStoreOp">stencilStoreOp</Item>
+      <Item Name="view">viewData</Item>
+      <Item Condition="(flags &amp; crg::Attachment::Sampled)" Name="sampled">true</Item>
+      <Item Condition="!(flags &amp; crg::Attachment::Sampled)" Name="loadOp">loadOp</Item>
+      <Item Condition="!(flags &amp; crg::Attachment::Sampled)" Name="storeOp">storeOp</Item>
+      <Item Condition="!(flags &amp; crg::Attachment::Sampled)" Name="stencilLoadOp">stencilLoadOp</Item>
+      <Item Condition="!(flags &amp; crg::Attachment::Sampled)" Name="stencilStoreOp">stencilStoreOp</Item>
+      <Item Name="initialLayout">initialLayout</Item>
+      <Item Name="finalLayout">finalLayout</Item>
     </Expand>
   </Type>
 
@@ -55,9 +56,9 @@
     <DisplayString>{{{name}}}</DisplayString>
     <Expand>
       <Item Name="name">name</Item>
-      <Item Name="inputs">inputs</Item>
-      <Item Name="outputs">colourOutputs</Item>
-      <Item Condition="depthStencilOutput.has_value()" Name="depthStencilOutput">depthStencilOutput.value()</Item>
+      <Item Name="sampled">sampled</Item>
+      <Item Name="inouts">colourInOuts</Item>
+      <Item Condition="depthStencilInOut.has_value()" Name="depthStencilInOut">depthStencilInOut.value()</Item>
     </Expand>
   </Type>
 
@@ -97,11 +98,12 @@
   </Type>
 
   <Type Name="crg::RenderPassDependencies">
-    <DisplayString>{{src={*srcPass}, dst={*dstPass}, deps={dependencies}}}</DisplayString>
+    <DisplayString>{{src={*srcPass}, dst={*dstPass}, in={dstInputs}, out={srcOutputs}}}</DisplayString>
     <Expand>
       <Item Name="srcPass">*srcPass</Item>
       <Item Name="dstPass">*dstPass</Item>
-      <Item Name="dependencies">dependencies</Item>
+      <Item Name="srcOutputs">srcOutputs</Item>
+      <Item Name="dstInputs">dstInputs</Item>
     </Expand>
   </Type>
 

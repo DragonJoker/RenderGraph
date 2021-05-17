@@ -309,22 +309,31 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE );
 		}
+		/**
+		*\brief
+		*	Creates a default empty attachment.
+		*/
+		static inline Attachment createDefault()
+		{
+			return Attachment{};
+		}
 		/**@}*/
 		/**
 		*\name
 		*	Members.
 		*/
 		/**@[*/
-		ImageViewData viewData;
-		VkAttachmentLoadOp loadOp;
-		VkAttachmentStoreOp storeOp;
-		VkAttachmentLoadOp stencilLoadOp;
-		VkAttachmentStoreOp stencilStoreOp;
-		VkImageLayout initialLayout;
-		VkImageLayout finalLayout;
+		ImageViewData viewData{};
+		VkAttachmentLoadOp loadOp{};
+		VkAttachmentStoreOp storeOp{};
+		VkAttachmentLoadOp stencilLoadOp{};
+		VkAttachmentStoreOp stencilStoreOp{};
+		VkImageLayout initialLayout{};
+		VkImageLayout finalLayout{};
 		/**@}*/
 
 	private:
+		Attachment();
 		Attachment( FlagKind flags
 			, ImageViewData viewData
 			, VkAttachmentLoadOp loadOp
@@ -346,7 +355,7 @@ namespace crg
 			}
 		}
 
-		FlagKind flags;
+		FlagKind flags{};
 
 		friend bool operator==( Attachment const & lhs, Attachment const & rhs );
 	};

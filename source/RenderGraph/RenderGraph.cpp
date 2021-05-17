@@ -32,6 +32,21 @@ namespace crg
 			CRG_Exception( "Duplicate RenderPass name detected." );
 		}
 
+		for ( auto & attach : pass.sampled )
+		{
+			m_attachments.emplace_back( attach );
+		}
+
+		for ( auto & attach : pass.colourInOuts )
+		{
+			m_attachments.emplace_back( attach );
+		}
+
+		if ( pass.depthStencilInOut )
+		{
+			m_attachments.emplace_back( *pass.depthStencilInOut );
+		}
+
 		m_passes.push_back( std::make_unique< RenderPass >( pass ) );
 	}
 

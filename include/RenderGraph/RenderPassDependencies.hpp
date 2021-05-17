@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to RenderGraph.
 See LICENSE file in root folder.
 */
@@ -10,10 +10,10 @@ namespace crg
 {
 	struct RenderPassDependencies
 	{
-		RenderPass const * srcPass;
-		RenderPass const * dstPass;
-		AttachmentArray srcOutputs;
-		AttachmentArray dstInputs;
+		RenderPass const * srcPass{};
+		RenderPass const * dstPass{};
+		AttachmentArray srcOutputs{};
+		AttachmentArray dstInputs{};
 	};
 
 	inline bool operator==( RenderPassDependencies const & lhs
