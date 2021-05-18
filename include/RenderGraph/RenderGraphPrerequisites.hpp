@@ -93,4 +93,13 @@ namespace crg
 	};
 
 	using VertexBufferPtr = std::unique_ptr< VertexBuffer >;
+
+	static constexpr VkPipelineColorBlendAttachmentState DefaultBlendState{ VK_FALSE
+		, VK_BLEND_FACTOR_ONE
+		, VK_BLEND_FACTOR_ZERO
+		, VK_BLEND_OP_ADD
+		, VK_BLEND_FACTOR_ONE
+		, VK_BLEND_FACTOR_ZERO
+		, VK_BLEND_OP_ADD
+		, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT };
 }

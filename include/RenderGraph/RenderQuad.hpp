@@ -104,7 +104,7 @@ namespace crg
 		void doCreateFramebuffer();
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
-		VkPipelineColorBlendStateCreateInfo doCreateBlendState( VkPipelineColorBlendAttachmentStateArray & blendAttachs );
+		VkPipelineColorBlendStateCreateInfo doCreateBlendState();
 
 	protected:
 		rq::ConfigData m_config;
@@ -115,6 +115,8 @@ namespace crg
 		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
 		VkFramebuffer m_frameBuffer{ VK_NULL_HANDLE };
 		VkRect2D m_renderArea{};
+		std::vector< VkClearValue > m_clearValues;
+		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
 	};
 
 	template< typename ConfigT, typename BuilderT >

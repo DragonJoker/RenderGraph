@@ -55,7 +55,8 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkClearValue clearValue = {} );
+			, VkClearValue clearValue = {}
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		/**
 		*\brief
 		*	Creates a depth and/or stencil output attachment.
@@ -88,13 +89,16 @@ namespace crg
 		*/
 		Attachment createInOutColour( ImageViewData viewData
 			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
 			return createColour( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, initialLayout
-				, finalLayout );
+				, finalLayout
+				, {}
+				, std::move( blendState ) );
 		}
 		/**
 		*\brief
@@ -141,7 +145,8 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, initialLayout
-				, finalLayout );
+				, finalLayout
+				, {} );
 		}
 		/**
 		*\brief
@@ -190,7 +195,8 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, initialLayout
-				, finalLayout );
+				, finalLayout
+				, {} );
 		}
 		/**
 		*\brief
@@ -239,7 +245,8 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, initialLayout
-				, finalLayout );
+				, finalLayout
+				, {} );
 		}
 		/**
 		*\brief

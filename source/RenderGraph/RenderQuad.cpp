@@ -16,7 +16,8 @@ namespace crg
 	namespace
 	{
 		VkAttachmentReference addAttach( Attachment const & attach
-			, VkAttachmentDescriptionArray & attaches )
+			, VkAttachmentDescriptionArray & attaches
+			, std::vector< VkClearValue > & clearValues )
 		{
 			VkImageLayout attachLayout;
 
@@ -71,7 +72,17 @@ namespace crg
 				, attach.stencilStoreOp
 				, attach.initialLayout
 				, attach.finalLayout } );
+			clearValues.push_back( attach.clearValue );
 			return result;
+		}
+
+		VkAttachmentReference addAttach( Attachment const & attach
+			, VkAttachmentDescriptionArray & attaches
+			, std::vector< VkClearValue > & clearValues
+			, VkPipelineColorBlendAttachmentStateArray & blendAttachs )
+		{
+			blendAttachs.push_back( attach.blendState );
+			return addAttach( attach, attaches, clearValues );
 		}
 	}
 
@@ -123,14 +134,13 @@ namespace crg
 	void RenderQuad::doRecordInto( VkCommandBuffer commandBuffer )const
 	{
 		VkDeviceSize offset{};
-		VkClearValue clearValue{};
 		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
 			, nullptr
 			, m_renderPass
 			, m_frameBuffer
 			, m_renderArea
-			, 1u
-			, &clearValue };
+			, uint32_t( m_clearValues.size() )
+			, m_clearValues.data() };
 		m_context.vkCmdBeginRenderPass( commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
@@ -145,12 +155,17 @@ namespace crg
 
 		if ( m_pass.depthStencilInOut )
 		{
-			depthReference = addAttach( *m_pass.depthStencilInOut, attaches );
+			depthReference = addAttach( *m_pass.depthStencilInOut
+				, attaches
+				, m_clearValues );
 		}
 
 		for ( auto & attach : m_pass.colourInOuts )
 		{
-			colorReferences.push_back( addAttach( attach, attaches ) );
+			colorReferences.push_back( addAttach( attach
+				, attaches
+				, m_clearValues
+				, m_blendAttachs ) );
 		}
 
 		VkSubpassDescription subpassDesc{ 0u
@@ -201,9 +216,8 @@ namespace crg
 		VkVertexInputBindingDescriptionArray vertexBindings;
 		VkViewportArray viewports;
 		VkScissorArray scissors;
-		VkPipelineColorBlendAttachmentStateArray blendAttachs;
 		auto vpState = doCreateViewportState( viewports, scissors );
-		auto cbState = doCreateBlendState( blendAttachs );
+		auto cbState = doCreateBlendState();
 		VkPipelineInputAssemblyStateCreateInfo iaState{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
 			, nullptr
 			, 0u
@@ -280,24 +294,15 @@ namespace crg
 			, scissors.data() };
 	}
 
-	VkPipelineColorBlendStateCreateInfo RenderQuad::doCreateBlendState( VkPipelineColorBlendAttachmentStateArray & blendAttachs )
+	VkPipelineColorBlendStateCreateInfo RenderQuad::doCreateBlendState()
 	{
-		VkPipelineColorBlendAttachmentState attach{};
-		attach.colorBlendOp = VK_BLEND_OP_ADD;
-		attach.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-		attach.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-		attach.alphaBlendOp = VK_BLEND_OP_ADD;
-		attach.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		attach.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-		attach.colorWriteMask = { VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT };
-		blendAttachs.resize( m_pass.colourInOuts.size(), attach );
 		return { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
 			, nullptr
 			, 0u
 			, VK_FALSE
 			, VK_LOGIC_OP_COPY
-			, uint32_t( blendAttachs.size() )
-			, blendAttachs.data() };
+			, uint32_t( m_blendAttachs.size() )
+			, m_blendAttachs.data() };
 	}
 
 	void RenderQuad::doCreateFramebuffer()

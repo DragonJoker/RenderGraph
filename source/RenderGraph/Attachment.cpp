@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/Attachment.hpp"
 
 #include <cassert>
+#include <cstring>
 
 namespace crg
 {
@@ -21,7 +22,8 @@ namespace crg
 		, VkImageLayout initialLayout
 		, VkImageLayout finalLayout
 		, VkFilter filter
-		, VkClearValue clearValue )
+		, VkClearValue clearValue
+		, VkPipelineColorBlendAttachmentState blendState )
 		: viewData{ std::move( viewData ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
@@ -50,6 +52,7 @@ namespace crg
 		, finalLayout{ finalLayout }
 		, filter{ filter }
 		, clearValue{ std::move( clearValue ) }
+		, blendState{ std::move( blendState ) }
 	{
 		assert( !isSampled()
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
@@ -71,6 +74,7 @@ namespace crg
 			, initialLayout
 			, initialLayout
 			, filter
+			, {}
 			, {} };
 	}
 
@@ -79,7 +83,8 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
 		, VkImageLayout finalLayout
-		, VkClearValue clearValue )
+		, VkClearValue clearValue
+		, VkPipelineColorBlendAttachmentState blendState )
 	{
 		return { FlagKind( Flag::None )
 			, viewData
@@ -90,7 +95,8 @@ namespace crg
 			, initialLayout
 			, finalLayout
 			, {}
-			, std::move( clearValue ) };
+			, std::move( clearValue )
+			, std::move( blendState ) };
 	}
 
 	Attachment Attachment::createDepthStencil( ImageViewData viewData
@@ -111,7 +117,27 @@ namespace crg
 			, initialLayout
 			, finalLayout
 			, {}
-			, std::move( clearValue ) };
+			, std::move( clearValue )
+			, {} };
+	}
+
+	bool operator==( VkClearValue const & lhs
+		, VkClearValue const & rhs )
+	{
+		return std::memcmp( &lhs, &rhs, sizeof( VkClearValue ) ) == 0;
+	}
+
+	bool operator==( VkPipelineColorBlendAttachmentState const & lhs
+		, VkPipelineColorBlendAttachmentState const & rhs )
+	{
+		return lhs.blendEnable == rhs.blendEnable
+			&& lhs.srcColorBlendFactor == rhs.srcColorBlendFactor
+			&& lhs.dstColorBlendFactor == rhs.dstColorBlendFactor
+			&& lhs.colorBlendOp == rhs.colorBlendOp
+			&& lhs.srcAlphaBlendFactor == rhs.srcAlphaBlendFactor
+			&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
+			&& lhs.alphaBlendOp == rhs.alphaBlendOp
+			&& lhs.colorWriteMask == rhs.colorWriteMask;
 	}
 
 	bool operator==( Attachment const & lhs
@@ -122,7 +148,10 @@ namespace crg
 			&& lhs.loadOp == rhs.loadOp
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp
-			&& lhs.stencilStoreOp == rhs.stencilStoreOp;
+			&& lhs.stencilStoreOp == rhs.stencilStoreOp
+			&& lhs.filter == rhs.filter
+			&& lhs.clearValue == rhs.clearValue
+			&& lhs.blendState == rhs.blendState;
 	}
 
 	bool operator!=( Attachment const & lhs

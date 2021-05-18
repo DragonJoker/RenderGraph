@@ -60,14 +60,16 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
 		, VkImageLayout finalLayout
-		, VkClearValue clearValue )
+		, VkClearValue clearValue
+		, VkPipelineColorBlendAttachmentState blendState )
 	{
 		auto result = Attachment::createColour( viewData
 			, loadOp
 			, storeOp
 			, initialLayout
 			, finalLayout
-			, clearValue );
+			, std::move( clearValue )
+			, std::move( blendState ) );
 		colourInOuts.push_back( result );
 		return result;
 	}
@@ -88,7 +90,7 @@ namespace crg
 			, stencilStoreOp
 			, initialLayout
 			, finalLayout
-			, clearValue );
+			, std::move( clearValue ) );
 		depthStencilInOut = result;
 		return result;
 	}
