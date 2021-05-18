@@ -206,7 +206,6 @@ namespace crg
 			, VkQueue queue )const;
 
 	private:
-		void doCreateSampler();
 		void doFillDescriptorBindings();
 		void doCreateDescriptorSetLayout();
 		void doCreatePipelineLayout();
@@ -227,7 +226,6 @@ namespace crg
 		VkPipelineBindPoint m_bindingPoint;
 		WriteDescriptorSetArray m_descriptorWrites;
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
-		VkSampler m_sampler{ VK_NULL_HANDLE };
 		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
 		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
 		VkPipeline m_pipeline{ VK_NULL_HANDLE };

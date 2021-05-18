@@ -71,13 +71,21 @@ namespace crg
 				, m_context.allocator );
 		}
 
-		if ( m_semaphore )
+		if ( m_commandBuffer )
 		{
 			crgUnregisterObject( m_context, m_commandBuffer );
 			m_context.vkFreeCommandBuffers( m_context.device
 				, m_commandPool
 				, 1u
 				, &m_commandBuffer );
+		}
+
+		if ( m_commandPool )
+		{
+			crgUnregisterObject( m_context, m_commandPool );
+			m_context.vkDestroyCommandPool( m_context.device
+				, m_commandPool
+				, m_context.allocator );
 		}
 
 		if ( m_descriptorSetPool )
@@ -111,19 +119,10 @@ namespace crg
 				, m_descriptorSetLayout
 				, m_context.allocator );
 		}
-
-		if ( m_sampler )
-		{
-			crgUnregisterObject( m_context, m_sampler );
-			m_context.vkDestroySampler( m_context.device
-				, m_sampler
-				, m_context.allocator );
-		}
 	}
 
 	void RunnablePass::initialise()
 	{
-		doCreateSampler();
 		doFillDescriptorBindings();
 		doCreateDescriptorSetLayout();
 		doCreatePipelineLayout();
@@ -175,37 +174,6 @@ namespace crg
 				: VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT ) };
 	}
 
-	void RunnablePass::doCreateSampler()
-	{
-		if ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS )
-		{
-			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
-				, nullptr
-				, 0u
-				, VK_FILTER_LINEAR
-				, VK_FILTER_LINEAR
-				, VK_SAMPLER_MIPMAP_MODE_LINEAR
-				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-				, 0.0f // mipLodBias
-				, VK_FALSE // anisotropyEnable
-				, 0.0f // maxAnisotropy
-				, VK_FALSE // compareEnable
-				, VK_COMPARE_OP_ALWAYS // compareOp
-				, -1000.0f
-				, 1000.0f
-				, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
-				, VK_FALSE };
-			auto res = m_context.vkCreateSampler( m_context.device
-				, &createInfo
-				, m_context.allocator
-				, &m_sampler );
-			checkVkResult( res, "Sampler creation" );
-			crgRegisterObject( m_context, m_pass.name, m_sampler );
-		}
-	}
-
 	void RunnablePass::doFillDescriptorBindings()
 	{
 		auto descriptorWrites = m_descriptorWrites;
@@ -224,9 +192,6 @@ namespace crg
 		auto imageDescriptor = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
 			? VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 			: VK_DESCRIPTOR_TYPE_STORAGE_IMAGE );
-		auto imageSampler = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
-			? m_sampler
-			: VK_NULL_HANDLE );
 
 		for ( auto & write : descriptorWrites )
 		{
@@ -241,7 +206,7 @@ namespace crg
 				m_descriptorWrites.push_back( WriteDescriptorSet{ index
 					, 0u
 					, imageDescriptor
-					, VkDescriptorImageInfo{ imageSampler
+					, VkDescriptorImageInfo{ m_graph.createSampler( itSampled->filter )
 					, m_graph.getImageView( *itSampled )
 					, itSampled->initialLayout } } );
 				++itSampled;
@@ -271,7 +236,7 @@ namespace crg
 			m_descriptorWrites.push_back( WriteDescriptorSet{ index
 				, 0u
 				, imageDescriptor
-				, VkDescriptorImageInfo{ imageSampler
+				, VkDescriptorImageInfo{ m_graph.createSampler( itSampled->filter )
 					, m_graph.getImageView( *itSampled )
 					, itSampled->initialLayout } } );
 			++index;

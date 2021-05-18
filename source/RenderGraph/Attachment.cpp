@@ -19,7 +19,9 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout )
+		, VkImageLayout finalLayout
+		, VkFilter filter
+		, VkClearValue clearValue )
 		: viewData{ std::move( viewData ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
@@ -46,6 +48,8 @@ namespace crg
 				: FlagKind( Flag::None ) ) ) }
 		, initialLayout{ initialLayout }
 		, finalLayout{ finalLayout }
+		, filter{ filter }
+		, clearValue{ std::move( clearValue ) }
 	{
 		assert( !isSampled()
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
@@ -55,7 +59,8 @@ namespace crg
 	}
 
 	Attachment Attachment::createSampled( ImageViewData viewData
-		, VkImageLayout initialLayout )
+		, VkImageLayout initialLayout
+		, VkFilter filter )
 	{
 		return { FlagKind( Flag::Sampled )
 			, viewData
@@ -64,14 +69,17 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
-			, initialLayout };
+			, initialLayout
+			, filter
+			, {} };
 	}
 
 	Attachment Attachment::createColour( ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout )
+		, VkImageLayout finalLayout
+		, VkClearValue clearValue )
 	{
 		return { FlagKind( Flag::None )
 			, viewData
@@ -80,7 +88,9 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
-			, finalLayout };
+			, finalLayout
+			, {}
+			, std::move( clearValue ) };
 	}
 
 	Attachment Attachment::createDepthStencil( ImageViewData viewData
@@ -89,7 +99,8 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout )
+		, VkImageLayout finalLayout
+		, VkClearValue clearValue )
 	{
 		return { FlagKind( Flag::Depth )
 			, viewData
@@ -98,7 +109,9 @@ namespace crg
 			, stencilLoadOp
 			, stencilStoreOp
 			, initialLayout
-			, finalLayout };
+			, finalLayout
+			, {}
+			, std::move( clearValue ) };
 	}
 
 	bool operator==( Attachment const & lhs
