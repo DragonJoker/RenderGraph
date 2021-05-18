@@ -79,12 +79,127 @@ namespace crg
 
 #if VK_EXT_debug_utils
 		DECL_vkFunction( SetDebugUtilsObjectNameEXT );
+		DECL_vkFunction( CmdBeginDebugUtilsLabelEXT );
+		DECL_vkFunction( CmdEndDebugUtilsLabelEXT );
 #endif
 #if VK_EXT_debug_marker
 		DECL_vkFunction( DebugMarkerSetObjectNameEXT );
+		DECL_vkFunction( CmdDebugMarkerBeginEXT );
+		DECL_vkFunction( CmdDebugMarkerEndEXT );
+		DECL_vkFunction( CmdDebugMarkerInsertEXT );
 #endif
 
 #undef DECL_vkFunction
+	}
+
+#if VK_EXT_debug_utils || VK_EXT_debug_marker
+
+	void GraphContext::vkCmdBeginDebugBlock( VkCommandBuffer commandBuffer
+		, DebugBlockInfo const & labelInfo )const
+	{
+#if VK_EXT_debug_utils
+		doBeginDebugUtilsLabel( commandBuffer
+			, { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT
+				, nullptr
+				, labelInfo.markerName.c_str()
+				, { labelInfo.colour[0]
+					, labelInfo.colour[1]
+					, labelInfo.colour[2]
+					, labelInfo.colour[3] } } );
+#endif
+#if VK_EXT_debug_marker
+		doDebugMarkerBegin( commandBuffer
+			, { VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT
+				, nullptr
+				, labelInfo.markerName.c_str()
+				, { labelInfo.colour[0]
+					, labelInfo.colour[1]
+					, labelInfo.colour[2]
+					, labelInfo.colour[3] } } );
+#endif
+	}
+
+	void GraphContext::vkCmdEndDebugBlock( VkCommandBuffer commandBuffer )const
+	{
+#if VK_EXT_debug_utils
+		doEndDebugUtilsLabel( commandBuffer );
+#endif
+#if VK_EXT_debug_marker
+		doDebugMarkerEnd( commandBuffer );
+#endif
+	}
+
+	void GraphContext::vkCmdInsertDebugBlock( VkCommandBuffer commandBuffer
+		, DebugBlockInfo const & labelInfo )const
+	{
+#if VK_EXT_debug_utils
+		doInsertDebugUtilsLabel( commandBuffer
+			, { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT
+				, nullptr
+				, labelInfo.markerName.c_str()
+				, { labelInfo.colour[0]
+					, labelInfo.colour[1]
+					, labelInfo.colour[2]
+					, labelInfo.colour[3] } } );
+#endif
+#if VK_EXT_debug_marker
+		doDebugMarkerInsert( commandBuffer
+			, { VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT
+				, nullptr
+				, labelInfo.markerName.c_str()
+				, { labelInfo.colour[0]
+					, labelInfo.colour[1]
+					, labelInfo.colour[2]
+					, labelInfo.colour[3] } } );
+#endif
+	}
+
+#endif
+
+	std::array< float, 4u > GraphContext::getNextRainbowColour()const
+	{
+		static float currentColourHue{ 0.0f };
+		currentColourHue += 0.05f;
+
+		if ( currentColourHue > 1.0f )
+		{
+			currentColourHue = 0.0f;
+		}
+
+		float brightness = 1.0f;
+		float saturation = 1.0f;
+		float h = currentColourHue == 1.0f ? 0 : currentColourHue * 6.0f;
+		float f = h - ( int )h;
+		float p = brightness * ( 1.0f - saturation );
+		float q = brightness * ( 1.0f - saturation * f );
+		float t = brightness * ( 1.0f - ( saturation * ( 1.0f - f ) ) );
+
+		if ( h < 1 )
+		{
+			return { brightness, t, p, 1.0f };
+		}
+
+		if ( h < 2 )
+		{
+			return { q, brightness, p, 1.0f };
+		}
+
+		if ( h < 3 )
+		{
+			return { p, brightness, t, 1.0f };
+		}
+
+		if ( h < 4 )
+		{
+			return { p, q, brightness, 1.0f };
+		}
+
+		if ( h < 5 )
+		{
+			return { t, p, brightness, 1.0f };
+		}
+
+		return { brightness, p, q, 1.0f };
 	}
 
 	uint32_t GraphContext::deduceMemoryType( uint32_t typeBits
@@ -106,6 +221,64 @@ namespace crg
 		throw std::runtime_error{ "Could not deduce memory type" };
 	}
 
+#if VK_EXT_debug_utils
+
+	void GraphContext::doBeginDebugUtilsLabel( VkCommandBuffer commandBuffer
+		, VkDebugUtilsLabelEXT const & labelInfo )const
+	{
+		if ( vkCmdBeginDebugUtilsLabelEXT )
+		{
+			vkCmdBeginDebugUtilsLabelEXT( commandBuffer, &labelInfo );
+		}
+	}
+
+	void GraphContext::doEndDebugUtilsLabel( VkCommandBuffer commandBuffer )const
+	{
+		if ( vkCmdEndDebugUtilsLabelEXT )
+		{
+			vkCmdEndDebugUtilsLabelEXT( commandBuffer );
+		}
+	}
+
+	void GraphContext::doInsertDebugUtilsLabel( VkCommandBuffer commandBuffer
+		, VkDebugUtilsLabelEXT const & labelInfo )const
+	{
+		if ( vkCmdBeginDebugUtilsLabelEXT )
+		{
+			vkCmdBeginDebugUtilsLabelEXT( commandBuffer, &labelInfo );
+		}
+	}
+
+#endif
+#if VK_EXT_debug_marker
+
+	void GraphContext::doDebugMarkerBegin( VkCommandBuffer commandBuffer
+		, VkDebugMarkerMarkerInfoEXT const & labelInfo )const
+	{
+		if ( vkCmdDebugMarkerBeginEXT )
+		{
+			vkCmdDebugMarkerBeginEXT( commandBuffer, &labelInfo );
+		}
+	}
+
+	void GraphContext::doDebugMarkerEnd( VkCommandBuffer commandBuffer )const
+	{
+		if ( vkCmdDebugMarkerEndEXT )
+		{
+			vkCmdDebugMarkerEndEXT( commandBuffer );
+		}
+	}
+
+	void GraphContext::doDebugMarkerInsert( VkCommandBuffer commandBuffer
+		, VkDebugMarkerMarkerInfoEXT const & labelInfo )const
+	{
+		if ( vkCmdDebugMarkerInsertEXT )
+		{
+			vkCmdDebugMarkerInsertEXT( commandBuffer, &labelInfo );
+		}
+	}
+
+#endif
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
 
 	void GraphContext::doRegisterObject( uint64_t object
