@@ -63,8 +63,8 @@ namespace crg
 			VkAttachmentReference result{ uint32_t( attaches.size() )
 				, attachLayout };
 			attaches.push_back( { 0u
-				, attach.viewData.format
-				, attach.viewData.image.data->samples
+				, attach.viewData.info.format
+				, attach.viewData.image.data->info.samples
 				, attach.loadOp
 				, attach.storeOp
 				, attach.stencilLoadOp
@@ -77,7 +77,7 @@ namespace crg
 
 	RenderQuad::RenderQuad( RenderPass const & pass
 		, GraphContext const & context
-		, RunnableGraph const & graph
+		, RunnableGraph & graph
 		, rq::Config config )
 		: RunnablePass{ pass
 			, context
@@ -93,22 +93,6 @@ namespace crg
 
 	RenderQuad::~RenderQuad()
 	{
-		if ( m_vertexMemory )
-		{
-			crgUnregisterObject( m_context, m_vertexMemory );
-			m_context.vkFreeMemory( m_context.device
-				, m_vertexMemory
-				, m_context.allocator );
-		}
-
-		if ( m_vertexBuffer )
-		{
-			crgUnregisterObject( m_context, m_vertexBuffer );
-			m_context.vkDestroyBuffer( m_context.device
-				, m_vertexBuffer
-				, m_context.allocator );
-		}
-
 		if ( m_frameBuffer )
 		{
 			crgUnregisterObject( m_context, m_frameBuffer );
@@ -128,8 +112,9 @@ namespace crg
 
 	void RenderQuad::doInitialise()
 	{
-		doCreateVertexBuffer();
-		doCreateVertexMemory();
+		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
+			, m_config.texcoordConfig.invertU
+			, m_config.texcoordConfig.invertV );
 		doCreateRenderPass();
 		doCreatePipeline();
 		doCreateFramebuffer();
@@ -147,90 +132,9 @@ namespace crg
 			, 1u
 			, &clearValue };
 		m_context.vkCmdBeginRenderPass( commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
-		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer, &offset );
+		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer, &offset );
+		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
 		m_context.vkCmdEndRenderPass( commandBuffer );
-	}
-
-	void RenderQuad::doCreateVertexBuffer()
-	{
-		VkBufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
-			, nullptr
-			, 0u
-			, 4u * sizeof( Quad::Vertex )
-			, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
-			, VK_SHARING_MODE_EXCLUSIVE
-			, 0u
-			, nullptr };
-		auto res = m_context.vkCreateBuffer( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_vertexBuffer );
-		checkVkResult( res, "Buffer creation" );
-		crgRegisterObject( m_context, m_pass.name, m_vertexBuffer );
-	}
-
-	void RenderQuad::doCreateVertexMemory()
-	{
-		VkMemoryRequirements requirements{};
-		m_context.vkGetBufferMemoryRequirements( m_context.device
-			, m_vertexBuffer
-			, &requirements );
-		uint32_t deduced = m_context.deduceMemoryType( requirements.memoryTypeBits
-			, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT );
-		VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
-			, nullptr
-			, requirements.size
-			, deduced };
-		auto res = m_context.vkAllocateMemory( m_context.device
-			, &allocateInfo
-			, m_context.allocator
-			, &m_vertexMemory );
-		checkVkResult( res, "Buffer memory allocation" );
-		crgRegisterObject( m_context, m_pass.name, m_vertexMemory );
-
-		res = m_context.vkBindBufferMemory( m_context.device
-			, m_vertexBuffer
-			, m_vertexMemory
-			, 0u );
-		checkVkResult( res, "Buffer memory binding" );
-
-		Quad::Vertex * buffer{};
-		res = m_context.vkMapMemory( m_context.device
-			, m_vertexMemory
-			, 0u
-			, VK_WHOLE_SIZE
-			, 0u
-			, reinterpret_cast< void ** >( &buffer ) );
-		checkVkResult( res, "Buffer memory mapping" );
-
-		if ( buffer )
-		{
-			std::array< Quad::Vertex, 4u > vertexData{ Quad::Vertex{ { -1.0, -1.0 }
-					, ( m_useTexCoord
-						? Quad::Data{ ( m_config.texcoordConfig.invertU ? 1.0f : 0.0f ), ( m_config.texcoordConfig.invertV ? 1.0f : 0.0f ) }
-						: Quad::Data{ 0.0f, 0.0f } ) }
-				, Quad::Vertex{ { -1.0, +1.0 }
-					, ( m_useTexCoord
-						? Quad::Data{ ( m_config.texcoordConfig.invertU ? 1.0f : 0.0f ), ( m_config.texcoordConfig.invertV ? 0.0f : 1.0f ) }
-						: Quad::Data{ 0.0f, 0.0f } ) }
-				, Quad::Vertex{ { +1.0f, -1.0f }
-					, ( m_useTexCoord
-						? Quad::Data{ ( m_config.texcoordConfig.invertU ? 0.0f : 1.0f ), ( m_config.texcoordConfig.invertV ? 1.0f : 0.0f ) }
-						: Quad::Data{ 0.0f, 0.0f } ) }
-				, Quad::Vertex{ { +1.0f, +1.0f }
-					, ( m_useTexCoord
-						? Quad::Data{ ( m_config.texcoordConfig.invertU ? 0.0f : 1.0f ), ( m_config.texcoordConfig.invertV ? 0.0f : 1.0f ) }
-						: Quad::Data{ 0.0f, 0.0f } ) } };
-			std::copy( vertexData.begin(), vertexData.end(), buffer );
-
-			VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
-				, 0u
-				, m_vertexMemory
-				, 0u
-				, VK_WHOLE_SIZE };
-			m_context.vkFlushMappedMemoryRanges( m_context.device, 1u, &memoryRange );
-			m_context.vkUnmapMemory( m_context.device, m_vertexMemory );
-		}
 	}
 
 	void RenderQuad::doCreateRenderPass()
@@ -298,7 +202,6 @@ namespace crg
 		VkViewportArray viewports;
 		VkScissorArray scissors;
 		VkPipelineColorBlendAttachmentStateArray blendAttachs;
-		auto viState = doCreateVertexInputState( vertexAttribs, vertexBindings );
 		auto vpState = doCreateViewportState( viewports, scissors );
 		auto cbState = doCreateBlendState( blendAttachs );
 		VkPipelineInputAssemblyStateCreateInfo iaState{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
@@ -333,7 +236,7 @@ namespace crg
 			, 0u
 			, uint32_t( m_baseConfig.program.size() )
 			, m_baseConfig.program.data()
-			, &viState
+			, &m_vertexBuffer->inputState
 			, &iaState
 			, nullptr
 			, &vpState
@@ -355,26 +258,6 @@ namespace crg
 			, &m_pipeline );
 		checkVkResult( res, "Pipeline creation" );
 		crgRegisterObject( m_context, m_pass.name, m_pipeline );
-	}
-
-	VkPipelineVertexInputStateCreateInfo RenderQuad::doCreateVertexInputState( VkVertexInputAttributeDescriptionArray & vertexAttribs
-		, VkVertexInputBindingDescriptionArray & vertexBindings )
-	{
-		vertexAttribs.push_back( { 0u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( Quad::Vertex, position ) } );
-
-		if ( m_useTexCoord )
-		{
-			vertexAttribs.push_back( { 1u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( Quad::Vertex, texture ) } );
-		}
-
-		vertexBindings.push_back( { 0u, sizeof( Quad::Vertex ), VK_VERTEX_INPUT_RATE_VERTEX } );
-		return { VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
-			, nullptr
-			, 0u
-			, uint32_t( vertexBindings.size() )
-			, vertexBindings.data()
-			, uint32_t( vertexAttribs.size() )
-			, vertexAttribs.data() };
 	}
 
 	VkPipelineViewportStateCreateInfo RenderQuad::doCreateViewportState( VkViewportArray & viewports
@@ -427,15 +310,15 @@ namespace crg
 		if ( m_pass.depthStencilInOut )
 		{
 			attachments.push_back( m_graph.getImageView( *m_pass.depthStencilInOut ) );
-			width = m_pass.depthStencilInOut->viewData.image.data->extent.width;
-			height = m_pass.depthStencilInOut->viewData.image.data->extent.height;
+			width = m_pass.depthStencilInOut->viewData.image.data->info.extent.width;
+			height = m_pass.depthStencilInOut->viewData.image.data->info.extent.height;
 		}
 
 		for ( auto & attach : m_pass.colourInOuts )
 		{
 			attachments.push_back( m_graph.getImageView( attach ) );
-			width = attach.viewData.image.data->extent.width;
-			height = attach.viewData.image.data->extent.height;
+			width = attach.viewData.image.data->info.extent.width;
+			height = attach.viewData.image.data->info.extent.height;
 		}
 
 		m_renderArea.extent.width = width;

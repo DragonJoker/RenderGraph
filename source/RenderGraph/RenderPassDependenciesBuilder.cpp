@@ -137,8 +137,8 @@ namespace crg
 				, ImageViewData const & rhs )
 			{
 				return lhs.image == rhs.image
-					&& areIntersecting( lhs.subresourceRange
-						, rhs.subresourceRange );
+					&& areIntersecting( lhs.info.subresourceRange
+						, rhs.info.subresourceRange );
 			}
 
 			void insertAttach( Attachment const & attach

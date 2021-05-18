@@ -10,6 +10,16 @@ See LICENSE file in root folder.
 namespace crg
 {
 	RenderPass::RenderPass( std::string const & name
+		, RunnablePassCreator runnableCreator )
+		: RenderPass{ name
+			, {}
+			, {}
+			, std::nullopt
+			, runnableCreator }
+	{
+	}
+	
+	RenderPass::RenderPass( std::string const & name
 		, AttachmentArray const & sampled
 		, AttachmentArray const & colourInOuts
 		, RunnablePassCreator runnableCreator )
@@ -34,8 +44,51 @@ namespace crg
 	{
 	}
 
+	Attachment RenderPass::createSampled( ImageViewData viewData
+		, VkImageLayout initialLayout )
+	{
+		auto result = Attachment::createSampled( viewData
+			, initialLayout );
+		sampled.push_back( result );
+		return result;
+	}
+
+	Attachment RenderPass::createColour( ImageViewData viewData
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout )
+	{
+		auto result = Attachment::createColour( viewData
+			, loadOp
+			, storeOp
+			, initialLayout
+			, finalLayout );
+		colourInOuts.push_back( result );
+		return result;
+	}
+
+	Attachment RenderPass::createDepthStencil( ImageViewData viewData
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, VkAttachmentLoadOp stencilLoadOp
+		, VkAttachmentStoreOp stencilStoreOp
+		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout )
+	{
+		auto result = Attachment::createDepthStencil( viewData
+			, loadOp
+			, storeOp
+			, stencilLoadOp
+			, stencilStoreOp
+			, initialLayout
+			, finalLayout );
+		depthStencilInOut = result;
+		return result;
+	}
+
 	RunnablePassPtr RenderPass::createRunnable( GraphContext const & context
-		, RunnableGraph const & graph )const
+		, RunnableGraph & graph )const
 	{
 		auto result = runnableCreator( *this, context, graph );
 		result->initialise();

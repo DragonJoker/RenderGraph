@@ -82,4 +82,15 @@ namespace crg
 	using VkVertexInputBindingDescriptionArray = std::vector< VkVertexInputBindingDescription >;
 	using VkViewportArray = std::vector< VkViewport >;
 	using VkWriteDescriptorSetArray = std::vector< VkWriteDescriptorSet >;
+
+	struct VertexBuffer
+	{
+		VkBuffer buffer{ VK_NULL_HANDLE };
+		VkDeviceMemory memory{ VK_NULL_HANDLE };
+		VkVertexInputAttributeDescriptionArray vertexAttribs{};
+		VkVertexInputBindingDescriptionArray vertexBindings{};
+		VkPipelineVertexInputStateCreateInfo inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} };
+	};
+
+	using VertexBufferPtr = std::unique_ptr< VertexBuffer >;
 }
