@@ -6,6 +6,8 @@ See LICENSE file in root folder.
 
 #include "FrameGraphPrerequisites.hpp"
 
+#include <array>
+#include <string>
 #include <unordered_map>
 
 namespace crg
@@ -429,6 +431,12 @@ namespace crg
 		}
 	};
 
+	struct DebugBlockInfo
+	{
+		std::string markerName;
+		std::array< float, 4 > colour;
+	};
+
 	struct GraphContext
 	{
 		GraphContext( VkDevice device
@@ -499,13 +507,41 @@ namespace crg
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
 #	if VK_EXT_debug_utils
 		DECL_vkFunction( SetDebugUtilsObjectNameEXT );
+		DECL_vkFunction( CmdBeginDebugUtilsLabelEXT );
+		DECL_vkFunction( CmdEndDebugUtilsLabelEXT );
 #	endif
 #	if VK_EXT_debug_marker
 		DECL_vkFunction( DebugMarkerSetObjectNameEXT );
+		DECL_vkFunction( CmdDebugMarkerBeginEXT );
+		DECL_vkFunction( CmdDebugMarkerEndEXT );
+		DECL_vkFunction( CmdDebugMarkerInsertEXT );
 #	endif
-
 #undef DECL_vkFunction
 
+#if VK_EXT_debug_utils || VK_EXT_debug_marker
+		/**
+		*\brief
+		*	Begins a command buffer label.
+		*\param[in] labelInfo
+		*	The parameters of the label to begin.
+		*/
+		void vkCmdBeginDebugBlock( VkCommandBuffer commandBuffer
+			, DebugBlockInfo const & labelInfo )const;
+		/**
+		*\brief
+		*	Ends the command label.
+		*/
+		void vkCmdEndDebugBlock( VkCommandBuffer commandBuffer )const;
+		/**
+		*\brief
+		*	Inserts a command label.
+		*\param[in] labelInfo
+		*	The parameters of the label to begin.
+		*/
+		void vkCmdInsertDebugBlock( VkCommandBuffer commandBuffer
+			, DebugBlockInfo const & labelInfo )const;
+#endif
+		std::array< float, 4u > getNextRainbowColour()const;
 		uint32_t deduceMemoryType( uint32_t typeBits
 			, VkMemoryPropertyFlags requirements )const;
 
@@ -543,6 +579,53 @@ namespace crg
 		}
 
 	private:
+#if VK_EXT_debug_utils
+		/**
+		*\brief
+		*	Begins a command buffer label.
+		*\param[in] labelInfo
+		*	The parameters of the label to begin.
+		*/
+		void doBeginDebugUtilsLabel( VkCommandBuffer commandBuffer
+			, VkDebugUtilsLabelEXT const & labelInfo )const;
+		/**
+		*\brief
+		*	Ends the command label.
+		*/
+		void doEndDebugUtilsLabel( VkCommandBuffer commandBuffer )const;
+		/**
+		*\brief
+		*	Inserts a command label.
+		*\param[in] labelInfo
+		*	The parameters of the label to begin.
+		*/
+		void doInsertDebugUtilsLabel( VkCommandBuffer commandBuffer
+			, VkDebugUtilsLabelEXT const & labelInfo )const;
+#endif
+#if VK_EXT_debug_marker
+		/**
+		*\brief
+		*	Begins a command buffer label.
+		*\param[in] labelInfo
+		*	The parameters of the label to begin.
+		*/
+		void doDebugMarkerBegin( VkCommandBuffer commandBuffer
+			, VkDebugMarkerMarkerInfoEXT const & labelInfo )const;
+		/**
+		*\brief
+		*	Ends the command label.
+		*/
+		void doDebugMarkerEnd( VkCommandBuffer commandBuffer )const;
+		/**
+		*\brief
+		*	Inserts a command label.
+		*\param[in] labelInfo
+		*	The parameters of the label to begin.
+		*/
+		void doDebugMarkerInsert( VkCommandBuffer commandBuffer
+			, VkDebugMarkerMarkerInfoEXT const & labelInfo )const;
+#endif
+
 		void doRegisterObject( uint64_t object
 			, uint32_t objectType
 			, std::string const & name
