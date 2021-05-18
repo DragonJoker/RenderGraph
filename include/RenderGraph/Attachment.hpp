@@ -161,7 +161,8 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkClearValue clearValue = {} );
+			, VkClearValue clearValue = {}
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		/**
 		*\brief
 		*	Creates a depth and/or stencil output attachment.
@@ -194,7 +195,8 @@ namespace crg
 		*/
 		static inline Attachment createInOutColour( ImageViewData viewData
 			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
 			return createColour( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
@@ -387,6 +389,7 @@ namespace crg
 		VkImageLayout finalLayout{};
 		VkFilter filter{};
 		VkClearValue clearValue{};
+		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
 		/**@}*/
 
 	private:
@@ -400,7 +403,8 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout
 			, VkFilter filter
-			, VkClearValue clearValue );
+			, VkClearValue clearValue
+			, VkPipelineColorBlendAttachmentState blendState );
 
 		inline void setFlag( Flag flag, bool set )
 		{
