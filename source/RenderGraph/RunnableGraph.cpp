@@ -34,6 +34,21 @@ namespace crg
 				| ( ( invertV ? 0x01 : 0x00 ) << 2 );
 		}
 
+		std::string getName( VkFilter filter )
+		{
+			switch ( filter )
+			{
+			case VK_FILTER_NEAREST:
+				return "Nearest";
+			case VK_FILTER_LINEAR:
+				return "Linear";
+			case VK_FILTER_CUBIC_IMG:
+				return "Cubic";
+			default:
+				return "Unknown";
+			}
+		}
+
 		VkImageCreateInfo convert( ImageData const & data )
 		{
 			return data.info;
@@ -153,6 +168,14 @@ namespace crg
 			m_context.vkFreeMemory( m_context.device, img.second.second, m_context.allocator );
 			crgUnregisterObject( m_context, img.second.first );
 			m_context.vkDestroyImage( m_context.device, img.second.first, m_context.allocator );
+		}
+
+		for ( auto & sampler : m_samplers )
+		{
+			crgUnregisterObject( m_context, sampler.second );
+			m_context.vkDestroySampler( m_context.device
+				, sampler.second
+				, m_context.allocator );
 		}
 	}
 
@@ -340,6 +363,41 @@ namespace crg
 		}
 
 		return *ires.first->second;
+	}
+
+	VkSampler RunnableGraph::createSampler( VkFilter filter )
+	{
+		auto ires = m_samplers.emplace( filter, VkSampler{} );
+
+		if ( ires.second )
+		{
+			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
+				, nullptr
+				, 0u
+				, filter
+				, filter
+				, VK_SAMPLER_MIPMAP_MODE_LINEAR
+				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+				, 0.0f // mipLodBias
+				, VK_FALSE // anisotropyEnable
+				, 0.0f // maxAnisotropy
+				, VK_FALSE // compareEnable
+				, VK_COMPARE_OP_ALWAYS // compareOp
+				, -1000.0f
+				, 1000.0f
+				, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
+				, VK_FALSE };
+			auto res = m_context.vkCreateSampler( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, &ires.first->second );
+			checkVkResult( res, "Sampler creation" );
+			crgRegisterObject( m_context, getName( filter ) + "Sampler", ires.first->second );
+		}
+
+		return ires.first->second;
 	}
 
 	void RunnableGraph::doCreateImages()

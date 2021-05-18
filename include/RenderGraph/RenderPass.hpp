@@ -44,7 +44,8 @@ namespace crg
 		*	Creates a sampled image attachment.
 		*/
 		Attachment createSampled( ImageViewData viewData
-			, VkImageLayout initialLayout );
+			, VkImageLayout initialLayout
+			, VkFilter filter );
 		/**
 		*\brief
 		*	Creates a colour attachment.
@@ -53,7 +54,8 @@ namespace crg
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {} );
 		/**
 		*\brief
 		*	Creates a depth and/or stencil output attachment.
@@ -64,7 +66,8 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {} );
 		/**
 		*\brief
 		*	Creates an input colour attachment.
@@ -98,13 +101,15 @@ namespace crg
 		*	Creates an output colour attachment.
 		*/
 		Attachment createOutputColour( ImageViewData viewData
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, VkClearValue clearValue = {} )
 		{
 			return createColour( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout );
+				, finalLayout
+				, std::move( clearValue ) );
 		}
 		/**
 		*\brief
@@ -143,7 +148,8 @@ namespace crg
 		*	Creates an output depth attachment.
 		*/
 		Attachment createOutputDepth( ImageViewData viewData
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, VkClearValue clearValue = {} )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -151,7 +157,8 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout );
+				, finalLayout
+				, std::move( clearValue ) );
 		}
 		/**
 		*\brief
@@ -190,7 +197,8 @@ namespace crg
 		*	Creates an output depth and stencil attachment.
 		*/
 		Attachment createOutputDepthStencil( ImageViewData viewData
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, VkClearValue clearValue = {} )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -198,7 +206,8 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout );
+				, finalLayout
+				, std::move( clearValue ) );
 		}
 		/**
 		*\brief
@@ -237,7 +246,8 @@ namespace crg
 		*	Creates an output stencil attachment.
 		*/
 		Attachment createOutputStencil( ImageViewData viewData
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, VkClearValue clearValue = {} )
 		{
 			return createDepthStencil( std::move( viewData )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -245,7 +255,8 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout );
+				, finalLayout
+				, std::move( clearValue ) );
 		}
 		/**@}*/
 		/**

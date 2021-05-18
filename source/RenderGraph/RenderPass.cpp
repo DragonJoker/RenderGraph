@@ -45,10 +45,12 @@ namespace crg
 	}
 
 	Attachment RenderPass::createSampled( ImageViewData viewData
-		, VkImageLayout initialLayout )
+		, VkImageLayout initialLayout
+		, VkFilter filter )
 	{
 		auto result = Attachment::createSampled( viewData
-			, initialLayout );
+			, initialLayout
+			, filter );
 		sampled.push_back( result );
 		return result;
 	}
@@ -57,13 +59,15 @@ namespace crg
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout )
+		, VkImageLayout finalLayout
+		, VkClearValue clearValue )
 	{
 		auto result = Attachment::createColour( viewData
 			, loadOp
 			, storeOp
 			, initialLayout
-			, finalLayout );
+			, finalLayout
+			, clearValue );
 		colourInOuts.push_back( result );
 		return result;
 	}
@@ -74,7 +78,8 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout )
+		, VkImageLayout finalLayout
+		, VkClearValue clearValue )
 	{
 		auto result = Attachment::createDepthStencil( viewData
 			, loadOp
@@ -82,7 +87,8 @@ namespace crg
 			, stencilLoadOp
 			, stencilStoreOp
 			, initialLayout
-			, finalLayout );
+			, finalLayout
+			, clearValue );
 		depthStencilInOut = result;
 		return result;
 	}
