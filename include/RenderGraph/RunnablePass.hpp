@@ -1,10 +1,10 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
 
 #include <optional>
 
@@ -167,7 +167,7 @@ namespace crg
 	class RunnablePass
 	{
 	public:
-		RunnablePass( RenderPass const & pass
+		RunnablePass( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, rp::Config config
@@ -220,7 +220,7 @@ namespace crg
 
 	protected:
 		rp::ConfigData m_baseConfig;
-		RenderPass const & m_pass;
+		FramePass const & m_pass;
 		GraphContext const & m_context;
 		RunnableGraph & m_graph;
 		VkPipelineBindPoint m_bindingPoint;

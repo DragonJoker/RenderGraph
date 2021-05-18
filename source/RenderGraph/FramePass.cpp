@@ -1,17 +1,17 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/RunnablePass.hpp"
 
 #include <array>
 
 namespace crg
 {
-	RenderPass::RenderPass( std::string const & name
+	FramePass::FramePass( std::string const & name
 		, RunnablePassCreator runnableCreator )
-		: RenderPass{ name
+		: FramePass{ name
 			, {}
 			, {}
 			, std::nullopt
@@ -19,11 +19,11 @@ namespace crg
 	{
 	}
 	
-	RenderPass::RenderPass( std::string const & name
+	FramePass::FramePass( std::string const & name
 		, AttachmentArray const & sampled
 		, AttachmentArray const & colourInOuts
 		, RunnablePassCreator runnableCreator )
-		: RenderPass{ name
+		: FramePass{ name
 			, sampled
 			, colourInOuts
 			, std::nullopt
@@ -31,7 +31,7 @@ namespace crg
 	{
 	}
 
-	RenderPass::RenderPass( std::string const & name
+	FramePass::FramePass( std::string const & name
 		, AttachmentArray const & sampled
 		, AttachmentArray const & colourInOuts
 		, std::optional< Attachment > const & depthStencilInOut
@@ -44,7 +44,7 @@ namespace crg
 	{
 	}
 
-	Attachment RenderPass::createSampled( ImageViewData viewData
+	Attachment FramePass::createSampled( ImageViewData viewData
 		, VkImageLayout initialLayout
 		, VkFilter filter )
 	{
@@ -55,7 +55,7 @@ namespace crg
 		return result;
 	}
 
-	Attachment RenderPass::createColour( ImageViewData viewData
+	Attachment FramePass::createColour( ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
@@ -74,7 +74,7 @@ namespace crg
 		return result;
 	}
 
-	Attachment RenderPass::createDepthStencil( ImageViewData viewData
+	Attachment FramePass::createDepthStencil( ImageViewData viewData
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
@@ -95,7 +95,7 @@ namespace crg
 		return result;
 	}
 
-	RunnablePassPtr RenderPass::createRunnable( GraphContext const & context
+	RunnablePassPtr FramePass::createRunnable( GraphContext const & context
 		, RunnableGraph & graph )const
 	{
 		auto result = runnableCreator( *this, context, graph );

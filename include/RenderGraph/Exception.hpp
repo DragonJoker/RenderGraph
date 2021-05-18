@@ -1,10 +1,10 @@
-﻿/*
-This file belongs to RenderGraph.
+/*
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RenderGraphPrerequisites.hpp"
+#include "RenderGraph/FrameGraphPrerequisites.hpp"
 
 #include <exception>
 

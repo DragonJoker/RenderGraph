@@ -3,7 +3,7 @@ See LICENSE file in root folder
 */
 #pragma once
 
-#include "RenderGraphPrerequisites.hpp"
+#include "FrameGraphPrerequisites.hpp"
 
 #include <sstream>
 

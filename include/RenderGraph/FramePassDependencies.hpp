@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -8,16 +8,16 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	struct RenderPassDependencies
+	struct FramePassDependencies
 	{
-		RenderPass const * srcPass{};
-		RenderPass const * dstPass{};
+		FramePass const * srcPass{};
+		FramePass const * dstPass{};
 		AttachmentArray srcOutputs{};
 		AttachmentArray dstInputs{};
 	};
 
-	inline bool operator==( RenderPassDependencies const & lhs
-		, RenderPassDependencies const & rhs )
+	inline bool operator==( FramePassDependencies const & lhs
+		, FramePassDependencies const & rhs )
 	{
 		return lhs.dstPass == rhs.dstPass
 			&& lhs.srcPass == rhs.srcPass

@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -8,21 +8,21 @@ See LICENSE file in root folder.
 #include "ImageData.hpp"
 #include "ImageViewData.hpp"
 #include "GraphNode.hpp"
-#include "RenderPass.hpp"
+#include "FramePass.hpp"
 
 #include <map>
 #include <vector>
 
 namespace crg
 {
-	class RenderGraph
+	class FrameGraph
 	{
 		friend class RunnableGraph;
 
 	public:
-		RenderGraph( std::string name = "RenderGraph" );
-		void add( RenderPass const & pass );
-		void remove( RenderPass const & pass );
+		FrameGraph( std::string name = "FrameGraph" );
+		void add( FramePass const & pass );
+		void remove( FramePass const & pass );
 		void compile();
 		ImageId createImage( ImageData const & img );
 
@@ -40,7 +40,7 @@ namespace crg
 		ImageViewId createView( ImageViewData const & img );
 
 	private:
-		RenderPassPtrArray m_passes;
+		FramePassPtrArray m_passes;
 		AttachmentArray m_attachments;
 		ImageIdDataOwnerCont m_images;
 		ImageViewIdDataOwnerCont m_imageViews;

@@ -1,5 +1,5 @@
-﻿/*
-This file belongs to RenderGraph.
+/*
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -17,7 +17,7 @@ namespace crg
 	struct AttachmentPasses
 	{
 		Attachment attachment;
-		std::set< RenderPass const * > passes;
+		std::set< FramePass const * > passes;
 	};
 	using AttachmentPassesArray = std::vector< AttachmentPasses >;
 	bool operator==( AttachmentPasses const & lhs, AttachmentPasses const & rhs );

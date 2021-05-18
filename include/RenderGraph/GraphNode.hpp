@@ -1,10 +1,10 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RenderPassDependencies.hpp"
+#include "RenderGraph/FramePassDependencies.hpp"
 #include "RenderGraph/AttachmentTransition.hpp"
 
 #include <cassert>
@@ -24,13 +24,13 @@ namespace crg
 		{
 			Undefined,
 			Root,
-			RenderPass,
+			FramePass,
 		};
 
 		virtual ~GraphNode() = default;
 		void addAttaches( GraphAdjacentNode prev, AttachmentTransitionArray attachsToPrev );
 		void attachNode( GraphAdjacentNode next, AttachmentTransitionArray attachsToNext );
-		GraphAdjacentNode findInNext( RenderPass const & pass )const;
+		GraphAdjacentNode findInNext( FramePass const & pass )const;
 		AttachmentTransitionArray const & getAttachsToPrev( ConstGraphAdjacentNode pred = nullptr )const;
 
 		virtual void accept( GraphVisitor * vis ) = 0;
@@ -79,23 +79,23 @@ namespace crg
 	*\brief
 	*	Graph node coming from a render pass
 	*\remarks
-	*	The node name wil be the RenderPass name.
+	*	The node name wil be the FramePass name.
 	*/
-	struct RenderPassNode
+	struct FramePassNode
 		: public GraphNode
 	{
-		static constexpr Kind MyKind = Kind::RenderPass;
+		static constexpr Kind MyKind = Kind::FramePass;
 
-		RenderPassNode( RenderPass const & pass );
+		FramePassNode( FramePass const & pass );
 		void accept( GraphVisitor * vis )override;
 
-		inline RenderPass const & getRenderPass()const
+		inline FramePass const & getFramePass()const
 		{
 			return *pass;
 		}
 
 	private:
-		RenderPass const * pass;
+		FramePass const * pass;
 	};
 	/**
 	*\brief
@@ -112,11 +112,11 @@ namespace crg
 		void accept( GraphVisitor * vis )override;
 	};
 
-	RenderPass const * getRenderPass( GraphNode const & node );
+	FramePass const * getFramePass( GraphNode const & node );
 
-	inline bool isRenderPassNode( GraphNode const & node )
+	inline bool isFramePassNode( GraphNode const & node )
 	{
-		return node.getKind() == RenderPassNode::MyKind;
+		return node.getKind() == FramePassNode::MyKind;
 	}
 
 	inline bool isRootNode( GraphNode const & node )
@@ -124,9 +124,9 @@ namespace crg
 		return node.getKind() == RootNode::MyKind;
 	}
 
-	inline bool isRenderPassNode( ConstGraphAdjacentNode node )
+	inline bool isFramePassNode( ConstGraphAdjacentNode node )
 	{
-		return node && isRenderPassNode( *node );
+		return node && isFramePassNode( *node );
 	}
 
 	inline bool isRootNode( ConstGraphAdjacentNode node )
@@ -134,9 +134,9 @@ namespace crg
 		return node && isRootNode( *node );
 	}
 
-	inline bool isRenderPassNode( GraphNodePtr const & node )
+	inline bool isFramePassNode( GraphNodePtr const & node )
 	{
-		return node && isRenderPassNode( *node );
+		return node && isFramePassNode( *node );
 	}
 
 	inline bool isRootNode( GraphNodePtr const & node )

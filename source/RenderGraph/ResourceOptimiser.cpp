@@ -1,11 +1,11 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "ResourceOptimiser.hpp"
 
 #include "RenderGraph/Exception.hpp"
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
 
 #include <algorithm>
 
@@ -42,7 +42,7 @@ namespace crg
 				}
 			}
 			
-			void markPassAttachments( RenderPass & pass
+			void markPassAttachments( FramePass & pass
 				, Attachment::Flag toMark )
 			{
 				markAttachments( pass.sampled, toMark );
@@ -50,7 +50,7 @@ namespace crg
 				markAttachment( pass.depthStencilInOut, toMark );
 			}
 
-			void markPassesAttachments( RenderPassSet & passes
+			void markPassesAttachments( FramePassSet & passes
 				, Attachment::Flag toMark )
 			{
 				for ( auto pass : passes )
@@ -71,8 +71,8 @@ namespace crg
 		}
 
 		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
-			, RenderPassPtrArray const & passes
-			, RenderPassDependenciesArray const & dependencies
+			, FramePassPtrArray const & passes
+			, FramePassDependenciesArray const & dependencies
 			, AttachmentTransitionArray const & transitions
 			, RootNode const & root )
 		{
@@ -91,8 +91,8 @@ namespace crg
 		}
 
 		ImageViewIdAliasMap optimiseImageViews( ImageViewIdDataOwnerCont const & imageViews
-			, RenderPassPtrArray const & passes
-			, RenderPassDependenciesArray const & dependencies
+			, FramePassPtrArray const & passes
+			, FramePassDependenciesArray const & dependencies
 			, AttachmentTransitionArray const & transitions
 			, RootNode const & root )
 		{

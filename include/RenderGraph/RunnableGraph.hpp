@@ -1,11 +1,11 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
 
 #include "GraphContext.hpp"
-#include "RenderGraph.hpp"
+#include "FrameGraph.hpp"
 #include "RunnablePass.hpp"
 
 #include <unordered_map>
@@ -15,7 +15,7 @@ namespace crg
 	class RunnableGraph
 	{
 	public:
-		RunnableGraph( RenderGraph graph
+		RunnableGraph( FrameGraph graph
 			, GraphContext context );
 		~RunnableGraph();
 
@@ -37,7 +37,7 @@ namespace crg
 		void doCreateImageViews();
 
 	private:
-		RenderGraph m_graph;
+		FrameGraph m_graph;
 		GraphContext m_context;
 		std::vector< RunnablePassPtr > m_passes;
 		ImageMemoryMap m_images;
