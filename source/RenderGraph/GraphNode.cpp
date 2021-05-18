@@ -1,11 +1,11 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/GraphNode.hpp"
 
 #include "RenderGraph/GraphVisitor.hpp"
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
 
 namespace crg
 {
@@ -59,13 +59,13 @@ namespace crg
 		next->addAttaches( this, std::move( attachsToNext ) );
 	}
 
-	GraphAdjacentNode GraphNode::findInNext( RenderPass const & pass )const
+	GraphAdjacentNode GraphNode::findInNext( FramePass const & pass )const
 	{
 		auto it = std::find_if( next.begin()
 			, next.end()
 			, [&pass]( GraphAdjacentNode lookup )
 			{
-				return getRenderPass( *lookup ) == &pass;
+				return getFramePass( *lookup ) == &pass;
 			} );
 		return ( next.end() != it )
 			? *it
@@ -81,15 +81,15 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RenderPassNode::RenderPassNode( RenderPass const & pass )
+	FramePassNode::FramePassNode( FramePass const & pass )
 		: GraphNode{ MyKind, pass.name, {} }
 		, pass{ &pass }
 	{
 	}
 
-	void RenderPassNode::accept( GraphVisitor * vis )
+	void FramePassNode::accept( GraphVisitor * vis )
 	{
-		vis->visitRenderPassNode( this );
+		vis->visitFramePassNode( this );
 	}
 
 	//*********************************************************************************************
@@ -106,14 +106,14 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RenderPass const * getRenderPass( GraphNode const & node )
+	FramePass const * getFramePass( GraphNode const & node )
 	{
-		if ( !isRenderPassNode( node ) )
+		if ( !isFramePassNode( node ) )
 		{
 			return nullptr;
 		}
 
-		return &nodeCast< RenderPassNode >( node ).getRenderPass();
+		return &nodeCast< FramePassNode >( node ).getFramePass();
 	}
 
 	//*********************************************************************************************

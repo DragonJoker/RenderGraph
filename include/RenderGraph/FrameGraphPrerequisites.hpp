@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -24,20 +24,20 @@ namespace crg
 	struct ImageData;
 	struct ImageViewData;
 	struct GraphNode;
-	struct RenderPass;
-	struct RenderPassDependencies;
+	struct FramePass;
+	struct FramePassDependencies;
 	struct RootNode;
 	struct WriteDescriptorSet;
 
 	class GraphVisitor;
-	class RenderGraph;
+	class FrameGraph;
 	class RunnableGraph;
 	class RunnablePass;
 
 	using ImageId = Id< ImageData >;
 	using ImageViewId = Id< ImageViewData >;
 
-	using RenderPassPtr = std::unique_ptr< RenderPass >;
+	using FramePassPtr = std::unique_ptr< FramePass >;
 	using GraphNodePtr = std::unique_ptr< GraphNode >;
 	using RunnableGraphPtr = std::unique_ptr< RunnableGraph >;
 	using RunnablePassPtr = std::unique_ptr< RunnablePass >;
@@ -46,10 +46,10 @@ namespace crg
 
 	using AttachmentArray = std::vector< Attachment >;
 	using AttachmentTransitionArray = std::vector< AttachmentTransition >;
-	using RenderPassPtrArray = std::vector< RenderPassPtr >;
+	using FramePassPtrArray = std::vector< FramePassPtr >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
-	using RenderPassDependenciesArray = std::vector< RenderPassDependencies >;
+	using FramePassDependenciesArray = std::vector< FramePassDependencies >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;

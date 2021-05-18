@@ -1,5 +1,5 @@
-﻿/*
-This file belongs to RenderGraph.
+/*
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "BuilderCommon.hpp"
@@ -9,13 +9,13 @@ namespace crg
 	namespace builder
 	{
 		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
-			, RenderPassPtrArray const & passes
-			, RenderPassDependenciesArray const & dependencies
+			, FramePassPtrArray const & passes
+			, FramePassDependenciesArray const & dependencies
 			, AttachmentTransitionArray const & transitions
 			, RootNode const & root );
 		ImageViewIdAliasMap optimiseImageViews( ImageViewIdDataOwnerCont const & imageViews
-			, RenderPassPtrArray const & passes
-			, RenderPassDependenciesArray const & dependencies
+			, FramePassPtrArray const & passes
+			, FramePassDependenciesArray const & dependencies
 			, AttachmentTransitionArray const & transitions
 			, RootNode const & root );
 	}

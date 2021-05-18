@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/RenderQuad.hpp"
@@ -86,7 +86,7 @@ namespace crg
 		}
 	}
 
-	RenderQuad::RenderQuad( RenderPass const & pass
+	RenderQuad::RenderQuad( FramePass const & pass
 		, GraphContext const & context
 		, RunnableGraph & graph
 		, rq::Config config )
@@ -126,7 +126,7 @@ namespace crg
 		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
 			, m_config.texcoordConfig.invertU
 			, m_config.texcoordConfig.invertV );
-		doCreateRenderPass();
+		doCreateFramePass();
 		doCreatePipeline();
 		doCreateFramebuffer();
 	}
@@ -147,7 +147,7 @@ namespace crg
 		m_context.vkCmdEndRenderPass( commandBuffer );
 	}
 
-	void RenderQuad::doCreateRenderPass()
+	void RenderQuad::doCreateFramePass()
 	{
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
@@ -206,7 +206,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_renderPass );
-		checkVkResult( res, "RenderPass creation" );
+		checkVkResult( res, "FramePass creation" );
 		crgRegisterObject( m_context, m_pass.name, m_renderPass );
 	}
 

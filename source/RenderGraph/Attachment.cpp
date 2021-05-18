@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/Attachment.hpp"

@@ -1,10 +1,10 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/AttachmentTransition.hpp"
 
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
 
 namespace crg
 {

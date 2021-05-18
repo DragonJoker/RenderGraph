@@ -1,11 +1,11 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
-#include "RenderPassDependenciesBuilder.hpp"
+#include "FramePassDependenciesBuilder.hpp"
 
 #include "RenderGraph/Exception.hpp"
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -25,7 +25,7 @@ namespace crg
 			struct PassAttach
 			{
 				Attachment attach;
-				std::set< RenderPass const * > passes;
+				std::set< FramePass const * > passes;
 			};
 
 			using PassAttachCont = std::vector< PassAttach >;
@@ -54,7 +54,7 @@ namespace crg
 				return stream;
 			}
 
-			std::ostream & operator<<( std::ostream & stream, RenderPassDependencies const & dependency )
+			std::ostream & operator<<( std::ostream & stream, FramePassDependencies const & dependency )
 			{
 				stream << dependency.srcPass->name << " -> " << dependency.dstPass->name;
 				std::string sep = " [";
@@ -75,7 +75,7 @@ namespace crg
 				return stream;
 			}
 
-			std::ostream & operator<<( std::ostream & stream, RenderPassDependenciesArray const & dependencies )
+			std::ostream & operator<<( std::ostream & stream, FramePassDependenciesArray const & dependencies )
 			{
 				for ( auto & dependency : dependencies )
 				{
@@ -88,7 +88,7 @@ namespace crg
 			void printDebug( PassAttachCont const & sampled
 				, PassAttachCont const & inputs
 				, PassAttachCont const & outputs
-				, RenderPassDependenciesArray const & dependencies )
+				, FramePassDependenciesArray const & dependencies )
 			{
 #if CRG_DebugPassAttaches
 				std::clog << "Sampled" << std::endl;
@@ -142,7 +142,7 @@ namespace crg
 			}
 
 			void insertAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont )
 			{
 				auto it = std::find_if( cont.begin()
@@ -162,13 +162,13 @@ namespace crg
 			}
 
 			void processAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all
 				, std::function< bool( Attachment const & ) > processAttach )
 			{
 				bool found{ false };
-				std::vector< RenderPass const * > passes;
+				std::vector< FramePass const * > passes;
 
 				for ( auto & lookup : cont )
 				{
@@ -190,7 +190,7 @@ namespace crg
 			}
 
 			void processSampledAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -208,7 +208,7 @@ namespace crg
 			}
 
 			void processColourInputAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -226,7 +226,7 @@ namespace crg
 			}
 
 			void processColourOutputAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -244,7 +244,7 @@ namespace crg
 			}
 
 			void processDepthOrStencilInputAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -263,7 +263,7 @@ namespace crg
 			}
 
 			void processDepthOrStencilOutputAttach( Attachment const & attach
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -282,7 +282,7 @@ namespace crg
 			}
 
 			void processSampledAttachs( AttachmentArray const & attachs
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -293,7 +293,7 @@ namespace crg
 			}
 
 			void processColourInputAttachs( AttachmentArray const & attachs
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -304,7 +304,7 @@ namespace crg
 			}
 
 			void processColourOutputAttachs( AttachmentArray const & attachs
-				, RenderPass const & pass
+				, FramePass const & pass
 				, PassAttachCont & cont
 				, PassAttachCont & all )
 			{
@@ -315,8 +315,8 @@ namespace crg
 			}
 
 			void addRemainingDependency( Attachment const & attach
-				, std::set< RenderPass const * > const & passes
-				, RenderPassDependenciesArray & dependencies )
+				, std::set< FramePass const * > const & passes
+				, FramePassDependenciesArray & dependencies )
 			{
 				assert( passes.size() == 1u );
 				auto pass = *passes.begin();
@@ -325,7 +325,7 @@ namespace crg
 				{
 					auto it = std::find_if( dependencies.begin()
 						, dependencies.end()
-						, [pass]( RenderPassDependencies & lookup )
+						, [pass]( FramePassDependencies & lookup )
 						{
 							return lookup.dstPass == pass
 								&& lookup.srcPass == pass;
@@ -346,7 +346,7 @@ namespace crg
 				{
 					auto it = std::find_if( dependencies.begin()
 						, dependencies.end()
-						, [pass]( RenderPassDependencies & lookup )
+						, [pass]( FramePassDependencies & lookup )
 						{
 							return lookup.dstPass == pass;
 						} );
@@ -364,7 +364,7 @@ namespace crg
 				{
 					auto it = std::find_if( dependencies.begin()
 						, dependencies.end()
-						, [pass]( RenderPassDependencies & lookup )
+						, [pass]( FramePassDependencies & lookup )
 						{
 							return lookup.srcPass == pass;
 						} );
@@ -382,9 +382,9 @@ namespace crg
 
 			void addDependency( Attachment const & outAttach
 				, Attachment const & inAttach
-				, std::set< RenderPass const * > const & srcs
-				, std::set< RenderPass const * > const & dsts
-				, RenderPassDependenciesArray & dependencies )
+				, std::set< FramePass const * > const & srcs
+				, std::set< FramePass const * > const & dsts
+				, FramePassDependenciesArray & dependencies )
 			{
 				for ( auto & src : srcs )
 				{
@@ -394,7 +394,7 @@ namespace crg
 						{
 							auto it = std::find_if( dependencies.begin()
 								, dependencies.end()
-								, [&dst, &src]( RenderPassDependencies & lookup )
+								, [&dst, &src]( FramePassDependencies & lookup )
 								{
 									return lookup.srcPass == src
 										&& lookup.dstPass == dst;
@@ -424,7 +424,7 @@ namespace crg
 			}
 		}
 
-		RenderPassDependenciesArray buildPassDependencies( std::vector< RenderPassPtr > const & passes )
+		FramePassDependenciesArray buildPassDependencies( std::vector< FramePassPtr > const & passes )
 		{
 			PassAttachCont sampled;
 			PassAttachCont inputs;
@@ -444,7 +444,7 @@ namespace crg
 				}
 			}
 
-			RenderPassDependenciesArray result;
+			FramePassDependenciesArray result;
 
 			for ( auto & output : outputs )
 			{

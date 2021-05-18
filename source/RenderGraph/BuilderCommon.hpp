@@ -1,10 +1,10 @@
-﻿/*
-This file belongs to RenderGraph.
+/*
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RenderPassDependencies.hpp"
+#include "RenderGraph/FramePassDependencies.hpp"
 
 #include <functional>
 
@@ -12,12 +12,12 @@ namespace crg
 {
 	namespace builder
 	{
-		using RenderPassSet = std::set< RenderPass * >;
+		using FramePassSet = std::set< FramePass * >;
 
-		RenderPassSet retrieveRoots( RenderPassPtrArray const & passes
-			, RenderPassDependenciesArray const & dependencies );
-		RenderPassSet retrieveLeafs( RenderPassPtrArray const & passes
-			, RenderPassDependenciesArray const & dependencies );
+		FramePassSet retrieveRoots( FramePassPtrArray const & passes
+			, FramePassDependenciesArray const & dependencies );
+		FramePassSet retrieveLeafs( FramePassPtrArray const & passes
+			, FramePassDependenciesArray const & dependencies );
 
 		template< typename TypeT >
 		void filter( std::vector< TypeT > const & inputs

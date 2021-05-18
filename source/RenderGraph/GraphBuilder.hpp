@@ -1,5 +1,5 @@
 ﻿/*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "BuilderCommon.hpp"
@@ -8,9 +8,9 @@ namespace crg
 {
 	namespace builder
 	{
-		GraphNodePtrArray buildGraph( RenderPassPtrArray const & passes
+		GraphNodePtrArray buildGraph( FramePassPtrArray const & passes
 			, RootNode & rootNode
 			, AttachmentTransitionArray & allAttaches
-			, RenderPassDependenciesArray const & dependencies );
+			, FramePassDependenciesArray const & dependencies );
 	}
 }

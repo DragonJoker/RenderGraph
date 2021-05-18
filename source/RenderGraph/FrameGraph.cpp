@@ -1,35 +1,34 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
-#include "RenderGraph/RenderGraph.hpp"
-
-#include "GraphBuilder.hpp"
-#include "RenderPassDependenciesBuilder.hpp"
-#include "ResourceOptimiser.hpp"
+#include "RenderGraph/FrameGraph.hpp"
 
 #include "RenderGraph/Exception.hpp"
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/FramePass.hpp"
+#include "FramePassDependenciesBuilder.hpp"
+#include "GraphBuilder.hpp"
+#include "ResourceOptimiser.hpp"
 
 #include <algorithm>
 
 namespace crg
 {
-	RenderGraph::RenderGraph( std::string name )
+	FrameGraph::FrameGraph( std::string name )
 		: m_root{ std::move( name ) }
 	{
 	}
 
-	void RenderGraph::add( RenderPass const & pass )
+	void FrameGraph::add( FramePass const & pass )
 	{
 		if ( m_passes.end() != std::find_if( m_passes.begin()
 			, m_passes.end()
-			, [&pass]( RenderPassPtr const & lookup )
+			, [&pass]( FramePassPtr const & lookup )
 			{
 				return lookup->name == pass.name;
 			} ) )
 		{
-			CRG_Exception( "Duplicate RenderPass name detected." );
+			CRG_Exception( "Duplicate FramePass name detected." );
 		}
 
 		for ( auto & attach : pass.sampled )
@@ -47,31 +46,31 @@ namespace crg
 			m_attachments.emplace_back( *pass.depthStencilInOut );
 		}
 
-		m_passes.push_back( std::make_unique< RenderPass >( pass ) );
+		m_passes.push_back( std::make_unique< FramePass >( pass ) );
 	}
 
-	void RenderGraph::remove( RenderPass const & pass )
+	void FrameGraph::remove( FramePass const & pass )
 	{
 		auto it = std::find_if( m_passes.begin()
 			, m_passes.end()
-			, [&pass]( RenderPassPtr const & lookup )
+			, [&pass]( FramePassPtr const & lookup )
 			{
 				return lookup->name == pass.name;
 			} );
 
 		if ( m_passes.end() == it )
 		{
-			CRG_Exception( "RenderPass was not found." );
+			CRG_Exception( "FramePass was not found." );
 		}
 
 		m_passes.erase( it );
 	}
 
-	void RenderGraph::compile()
+	void FrameGraph::compile()
 	{
 		if ( m_passes.empty() )
 		{
-			CRG_Exception( "No RenderPass registered." );
+			CRG_Exception( "No FramePass registered." );
 		}
 
 		for ( auto & attach : m_attachments )
@@ -96,7 +95,7 @@ namespace crg
 			, m_root );
 	}
 
-	ImageId RenderGraph::createImage( ImageData const & img )
+	ImageId FrameGraph::createImage( ImageData const & img )
 	{
 		auto data = std::make_unique< ImageData >( img );
 		ImageId result{ uint32_t( m_images.size() + 1u ), data.get() };
@@ -104,7 +103,7 @@ namespace crg
 		return result;
 	}
 
-	ImageViewId RenderGraph::createView( ImageViewData const & img )
+	ImageViewId FrameGraph::createView( ImageViewData const & img )
 	{
 		auto data = std::make_unique< ImageViewData >( img );
 		ImageViewId result{ uint32_t( m_imageViews.size() + 1u ), data.get() };

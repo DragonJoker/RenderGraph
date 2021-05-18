@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/RunnableGraph.hpp"
@@ -95,7 +95,7 @@ namespace crg
 				}
 			}
 
-			void visitRenderPassNode( crg::RenderPassNode * node )override
+			void visitFramePassNode( crg::FramePassNode * node )override
 			{
 				m_result.push_back( node );
 				auto nexts = node->getNext();
@@ -115,7 +115,7 @@ namespace crg
 		};
 	}
 
-	RunnableGraph::RunnableGraph( RenderGraph graph
+	RunnableGraph::RunnableGraph( FrameGraph graph
 		, GraphContext context )
 		: m_graph{ std::move( graph ) }
 		, m_context{ std::move( context ) }
@@ -127,10 +127,10 @@ namespace crg
 
 		for ( auto & node : dfsNodes )
 		{
-			if ( node->getKind() == GraphNode::Kind::RenderPass )
+			if ( node->getKind() == GraphNode::Kind::FramePass )
 			{
-				auto & renderPassNode = nodeCast< RenderPassNode >( *node );
-				m_passes.push_back( renderPassNode.getRenderPass().createRunnable( m_context , *this ) );
+				auto & renderPassNode = nodeCast< FramePassNode >( *node );
+				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context , *this ) );
 			}
 		}
 	}

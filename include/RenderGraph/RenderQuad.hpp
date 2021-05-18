@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -90,7 +90,7 @@ namespace crg
 		friend class RenderQuadBuilderT;
 
 	public:
-		RenderQuad( RenderPass const & pass
+		RenderQuad( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, rq::Config config );
@@ -99,7 +99,7 @@ namespace crg
 	private:
 		void doInitialise()override;
 		void doRecordInto( VkCommandBuffer commandBuffer )const override;
-		void doCreateRenderPass();
+		void doCreateFramePass();
 		void doCreatePipeline();
 		void doCreateFramebuffer();
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
@@ -165,7 +165,7 @@ namespace crg
 		*\param[in] pass
 		*	The render pass.
 		*/
-		RunnablePassPtr build( RenderPass const & pass
+		RunnablePassPtr build( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph )
 		{

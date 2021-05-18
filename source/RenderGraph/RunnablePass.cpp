@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/RunnablePass.hpp"
@@ -41,7 +41,7 @@ namespace crg
 		}
 	}
 
-	RunnablePass::RunnablePass( RenderPass const & pass
+	RunnablePass::RunnablePass( FramePass const & pass
 		, GraphContext const & context
 		, RunnableGraph & graph
 		, rp::Config config
@@ -147,9 +147,12 @@ namespace crg
 
 	void RunnablePass::recordInto( VkCommandBuffer commandBuffer )const
 	{
+		m_context.vkCmdBeginDebugBlock( m_commandBuffer
+			, { m_pass.name, m_context.getNextRainbowColour() } );
 		m_context.vkCmdBindPipeline( commandBuffer, m_bindingPoint, m_pipeline );
 		m_context.vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSet, 0u, nullptr );
 		doRecordInto( commandBuffer );
+		m_context.vkCmdEndDebugBlock( m_commandBuffer );
 	}
 
 	SemaphoreWait RunnablePass::run( SemaphoreWait toWait

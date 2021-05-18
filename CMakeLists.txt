@@ -101,22 +101,22 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/AttachmentTransition.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/CallStack.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Exception.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraph.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphPrerequisites.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassDependencies.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphContext.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphNode.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphVisitor.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Id.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageData.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageViewData.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderGraph.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderGraphPrerequisites.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderPass.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderPassDependencies.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderQuad.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.hpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPassDependenciesBuilder.hpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.hpp
 	)
 	set( ${PROJECT_NAME}_FOLDER_SOURCE_FILES
@@ -124,19 +124,19 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/CallStack.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePass.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphContext.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphNode.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderGraph.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPass.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPassDependenciesBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderQuad.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePass.cpp
 	)
 	set( ${PROJECT_NAME}_FOLDER_NATVIS_FILES
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderGraph.natvis
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.natvis
 	)
 	source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
 	source_group( "Source Files" FILES ${${PROJECT_NAME}_FOLDER_SOURCE_FILES} )

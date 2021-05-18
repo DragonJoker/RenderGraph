@@ -1,5 +1,5 @@
 ﻿/*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -13,6 +13,6 @@ namespace crg
 	public:
 		virtual ~GraphVisitor() = default;
 		virtual void visitRootNode( RootNode * node ) = 0;
-		virtual void visitRenderPassNode( RenderPassNode * node ) = 0;
+		virtual void visitFramePassNode( FramePassNode * node ) = 0;
 	};
 }

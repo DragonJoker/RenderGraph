@@ -1,5 +1,5 @@
 ﻿/*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -10,6 +10,6 @@ namespace crg
 {
 	namespace builder
 	{
-		RenderPassDependenciesArray buildPassDependencies( RenderPassPtrArray const & passes );
+		FramePassDependenciesArray buildPassDependencies( FramePassPtrArray const & passes );
 	}
 }

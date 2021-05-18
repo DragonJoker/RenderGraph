@@ -1,5 +1,5 @@
 /*
-This file belongs to RenderGraph.
+This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #pragma once
@@ -11,24 +11,24 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	using RunnablePassCreator = std::function< RunnablePassPtr( RenderPass const &
+	using RunnablePassCreator = std::function< RunnablePassPtr( FramePass const &
 		, GraphContext const &
 		, RunnableGraph & ) >;
 
-	struct RenderPass
+	struct FramePass
 	{
 		/**
 		*\name
 		*	Construction.
 		*/
 		/**@[*/
-		RenderPass( std::string const & name
+		FramePass( std::string const & name
 			, RunnablePassCreator runnableCreator );
-		RenderPass( std::string const & name
+		FramePass( std::string const & name
 			, AttachmentArray const & sampled
 			, AttachmentArray const & colourInOuts
 			, RunnablePassCreator runnableCreator );
-		RenderPass( std::string const & name
+		FramePass( std::string const & name
 			, AttachmentArray const & sampled
 			, AttachmentArray const & colourInOuts
 			, std::optional< Attachment > const & depthStencilInOut

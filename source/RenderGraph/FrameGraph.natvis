@@ -52,7 +52,7 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::RenderPass">
+  <Type Name="crg::FramePass">
     <DisplayString>{{{name}}}</DisplayString>
     <Expand>
       <Item Name="name">name</Item>
@@ -72,7 +72,7 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::RenderPassNode">
+  <Type Name="crg::FramePassNode">
     <DisplayString>{{{kind} {*pass}, {next}}}</DisplayString>
     <Expand>
       <Item Name="pass">*pass</Item>
@@ -97,7 +97,7 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::RenderPassDependencies">
+  <Type Name="crg::FramePassDependencies">
     <DisplayString>{{src={*srcPass}, dst={*dstPass}, in={dstInputs}, out={srcOutputs}}}</DisplayString>
     <Expand>
       <Item Name="srcPass">*srcPass</Item>
