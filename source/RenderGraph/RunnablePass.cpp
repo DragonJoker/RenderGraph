@@ -43,7 +43,7 @@ namespace crg
 
 	RunnablePass::RunnablePass( RenderPass const & pass
 		, GraphContext const & context
-		, RunnableGraph const & graph
+		, RunnableGraph & graph
 		, rp::Config config
 		, VkPipelineBindPoint bindingPoint )
 		: m_baseConfig{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > )
@@ -71,13 +71,13 @@ namespace crg
 				, m_context.allocator );
 		}
 
-		if ( m_descriptorSet )
+		if ( m_semaphore )
 		{
-			crgUnregisterObject( m_context, m_descriptorSet );
-			m_context.vkFreeDescriptorSets( m_context.device
-				, m_descriptorSetPool
+			crgUnregisterObject( m_context, m_commandBuffer );
+			m_context.vkFreeCommandBuffers( m_context.device
+				, m_commandPool
 				, 1u
-				, &m_descriptorSet );
+				, &m_commandBuffer );
 		}
 
 		if ( m_descriptorSetPool )

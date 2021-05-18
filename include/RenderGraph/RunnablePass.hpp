@@ -169,7 +169,7 @@ namespace crg
 	public:
 		RunnablePass( RenderPass const & pass
 			, GraphContext const & context
-			, RunnableGraph const & graph
+			, RunnableGraph & graph
 			, rp::Config config
 			, VkPipelineBindPoint bindingPoint );
 		virtual ~RunnablePass();
@@ -223,7 +223,7 @@ namespace crg
 		rp::ConfigData m_baseConfig;
 		RenderPass const & m_pass;
 		GraphContext const & m_context;
-		RunnableGraph const & m_graph;
+		RunnableGraph & m_graph;
 		VkPipelineBindPoint m_bindingPoint;
 		WriteDescriptorSetArray m_descriptorWrites;
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;

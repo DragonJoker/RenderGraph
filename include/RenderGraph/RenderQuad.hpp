@@ -6,8 +6,6 @@ See LICENSE file in root folder.
 
 #include "RunnablePass.hpp"
 
-#include <array>
-
 namespace crg
 {
 	namespace rq
@@ -91,35 +89,19 @@ namespace crg
 		template< typename ConfigT, typename BuilderT >
 		friend class RenderQuadBuilderT;
 
-		struct Quad
-		{
-			using Data = std::array< float, 2u >;
-			struct Vertex
-			{
-				Data position;
-				Data texture;
-			};
-
-			Vertex vertex[6];
-		};
-
 	public:
 		RenderQuad( RenderPass const & pass
 			, GraphContext const & context
-			, RunnableGraph const & graph
+			, RunnableGraph & graph
 			, rq::Config config );
 		~RenderQuad();
 
 	private:
 		void doInitialise()override;
 		void doRecordInto( VkCommandBuffer commandBuffer )const override;
-		void doCreateVertexBuffer();
-		void doCreateVertexMemory();
 		void doCreateRenderPass();
 		void doCreatePipeline();
 		void doCreateFramebuffer();
-		VkPipelineVertexInputStateCreateInfo doCreateVertexInputState( VkVertexInputAttributeDescriptionArray & vertexAttribs
-			, VkVertexInputBindingDescriptionArray & vertexBindings );
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
 		VkPipelineColorBlendStateCreateInfo doCreateBlendState( VkPipelineColorBlendAttachmentStateArray & blendAttachs );
@@ -129,8 +111,7 @@ namespace crg
 
 	private:
 		bool m_useTexCoord{ true };
-		VkBuffer m_vertexBuffer{ VK_NULL_HANDLE };
-		VkDeviceMemory m_vertexMemory{ VK_NULL_HANDLE };
+		VertexBuffer const * m_vertexBuffer{};
 		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
 		VkFramebuffer m_frameBuffer{ VK_NULL_HANDLE };
 		VkRect2D m_renderArea{};
@@ -184,7 +165,7 @@ namespace crg
 		*/
 		RunnablePassPtr build( RenderPass const & pass
 			, GraphContext const & context
-			, RunnableGraph const & graph )
+			, RunnableGraph & graph )
 		{
 			m_config.baseConfig = std::move( ParentBuilder::m_config );
 			return std::make_unique< RenderQuad >( pass
