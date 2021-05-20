@@ -21,10 +21,11 @@ namespace crg
 
 	public:
 		FrameGraph( std::string name = "FrameGraph" );
-		void add( FramePass const & pass );
-		void remove( FramePass const & pass );
+		FramePass & createPass( std::string const & name
+			, RunnablePassCreator runnableCreator );
 		void compile();
 		ImageId createImage( ImageData const & img );
+		ImageViewId createView( ImageViewData const & view );
 
 		inline GraphAdjacentNode getGraph()
 		{
@@ -37,11 +38,7 @@ namespace crg
 		}
 
 	private:
-		ImageViewId createView( ImageViewData const & img );
-
-	private:
 		FramePassPtrArray m_passes;
-		AttachmentArray m_attachments;
 		ImageIdDataOwnerCont m_images;
 		ImageViewIdDataOwnerCont m_imageViews;
 		GraphNodePtrArray m_nodes;

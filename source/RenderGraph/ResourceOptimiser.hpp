@@ -8,6 +8,7 @@ namespace crg
 {
 	namespace builder
 	{
+		void mergeViews( FramePassPtrArray const & passes );
 		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
 			, FramePassPtrArray const & passes
 			, FramePassDependenciesArray const & dependencies

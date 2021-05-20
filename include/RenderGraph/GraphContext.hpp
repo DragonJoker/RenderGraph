@@ -443,12 +443,14 @@ namespace crg
 			, VkPipelineCache cache
 			, VkAllocationCallbacks const * allocator
 			, VkPhysicalDeviceMemoryProperties memoryProperties
+			, VkPhysicalDeviceProperties properties
 			, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr );
 
 		VkDevice device{ VK_NULL_HANDLE };
 		VkPipelineCache cache{ VK_NULL_HANDLE };
 		VkAllocationCallbacks const * allocator{ nullptr };
 		VkPhysicalDeviceMemoryProperties memoryProperties{};
+		VkPhysicalDeviceProperties properties{};
 
 #define DECL_vkFunction( name )\
 		PFN_vk##name vk##name{ nullptr }
@@ -496,13 +498,23 @@ namespace crg
 		DECL_vkFunction( BeginCommandBuffer );
 		DECL_vkFunction( EndCommandBuffer );
 		DECL_vkFunction( QueueSubmit );
+		DECL_vkFunction( CreateQueryPool );
+		DECL_vkFunction( DestroyQueryPool );
+		DECL_vkFunction( GetQueryPoolResults );
 
 		DECL_vkFunction( CmdBindPipeline );
 		DECL_vkFunction( CmdBindDescriptorSets );
 		DECL_vkFunction( CmdBindVertexBuffers );
+		DECL_vkFunction( CmdBindIndexBuffer );
 		DECL_vkFunction( CmdDraw );
+		DECL_vkFunction( CmdDrawIndexed );
 		DECL_vkFunction( CmdBeginRenderPass );
 		DECL_vkFunction( CmdEndRenderPass );
+		DECL_vkFunction( CmdResetQueryPool );
+		DECL_vkFunction( CmdWriteTimestamp );
+		DECL_vkFunction( CmdPipelineBarrier );
+		DECL_vkFunction( CmdCopyImage );
+		DECL_vkFunction( CmdExecuteCommands );
 
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
 #	if VK_EXT_debug_utils
@@ -634,9 +646,9 @@ namespace crg
 		void doReportRegisteredObjects()const;
 
 #	define crgRegisterObject( Cont, TypeName, Object )\
-		GraphContext::stRegisterObject( Cont, TypeName, Object )
+		crg::GraphContext::stRegisterObject( Cont, TypeName, Object )
 #	define crgUnregisterObject( Cont, Object )\
-		GraphContext::stUnregisterObject( Cont, Object )
+		crg::GraphContext::stUnregisterObject( Cont, Object )
 
 #	ifndef NDEBUG
 #		define crgReportRegisteredObjects()\

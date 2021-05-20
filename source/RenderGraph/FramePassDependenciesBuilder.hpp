@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
@@ -10,6 +10,7 @@ namespace crg
 {
 	namespace builder
 	{
-		FramePassDependenciesArray buildPassDependencies( FramePassPtrArray const & passes );
+		FramePassDependenciesArray buildPassAttachDependencies( FramePassPtrArray const & passes );
+		void filterPassDependencies( FramePassDependenciesArray & dependencies );
 	}
 }

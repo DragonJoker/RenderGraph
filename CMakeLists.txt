@@ -105,15 +105,20 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphPrerequisites.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassDependencies.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassTimer.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphContext.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphNode.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphVisitor.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Id.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageCopy.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageData.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageViewData.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/PipelinePass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderPass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderQuad.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/WriteDescriptorSet.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.hpp
@@ -127,9 +132,13 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassTimer.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphContext.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphNode.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ImageCopy.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/PipelinePass.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderQuad.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp

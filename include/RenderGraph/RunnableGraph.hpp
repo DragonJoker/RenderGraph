@@ -19,8 +19,8 @@ namespace crg
 			, GraphContext context );
 		~RunnableGraph();
 
-		void record()const;
-		void recordInto( VkCommandBuffer commandBuffer )const;
+		void record();
+		void recordInto( VkCommandBuffer commandBuffer );
 		SemaphoreWait run( SemaphoreWait toWait
 			, VkQueue queue );
 		VkImage getImage( ImageId const & image )const;
@@ -31,6 +31,12 @@ namespace crg
 			, bool invertU
 			, bool invertV );
 		VkSampler createSampler( VkFilter filter );
+
+		void memoryBarrier( VkCommandBuffer commandBuffer
+			, VkPipelineStageFlagBits srcStageMask
+			, VkPipelineStageFlagBits dstStageMask
+			, Attachment const & attach
+			, VkImageLayout wantedLayout );
 
 	private:
 		void doCreateImages();

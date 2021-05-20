@@ -6,8 +6,10 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
+#include "RenderGraph/ImageData.hpp"
 
 #include <algorithm>
+#include <cassert>
 
 namespace crg
 {

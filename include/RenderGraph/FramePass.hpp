@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #pragma once
 
 #include "RenderGraph/Attachment.hpp"
+#include "RenderGraph/WriteDescriptorSet.hpp"
 
 #include <functional>
 #include <optional>
@@ -24,33 +25,95 @@ namespace crg
 		/**@[*/
 		FramePass( std::string const & name
 			, RunnablePassCreator runnableCreator );
-		FramePass( std::string const & name
-			, AttachmentArray const & sampled
-			, AttachmentArray const & colourInOuts
-			, RunnablePassCreator runnableCreator );
-		FramePass( std::string const & name
-			, AttachmentArray const & sampled
-			, AttachmentArray const & colourInOuts
-			, std::optional< Attachment > const & depthStencilInOut
-			, RunnablePassCreator runnableCreator );
 		/**@}*/
 		/**
 		*\name
-		*	Attachments adding.
+		*	Dependencies.
+		*/
+		/**@[*/
+		void addDependency( FramePass const & pass )
+		{
+			depends.push_back( &pass );
+		}
+
+		void addDependencies( FramePassArray const & passes )
+		{
+			depends.insert( depends.end()
+				, passes.begin()
+				, passes.end() );
+		}
+
+		bool dependsOn( FramePass const & pass )const;
+		bool directDependsOn( FramePass const & pass )const;
+		/**@}*/
+		/**
+		*\name
+		*	Buffer attachments.
+		*/
+		/**@[*/
+		/**
+		*\brief
+		*	Creates a uniform buffer attachment.
+		*/
+		void addUniformBuffer( VkBuffer buffer
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a storage buffer attachment.
+		*/
+		void addStorageBuffer( VkBuffer buffer
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a uniform texel buffer view attachment.
+		*/
+		void addUniformBufferView( VkBuffer buffer
+			, VkBufferView view
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a storage texel buffer view attachment.
+		*/
+		void addStorageBufferView( VkBuffer buffer
+			, VkBufferView view
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**@}*/
+		/**
+		*\name
+		*	Image attachments.
 		*/
 		/**@[*/
 		/**
 		*\brief
 		*	Creates a sampled image attachment.
 		*/
-		Attachment createSampled( ImageViewData viewData
+		void addSampledView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
+			, uint32_t binding
 			, VkFilter filter );
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
+		void addStorageView( std::string name
+			, ImageViewId view
+			, VkImageLayout initialLayout
+			, uint32_t binding );
 		/**
 		*\brief
 		*	Creates a colour attachment.
 		*/
-		Attachment createColour( ImageViewData viewData
+		void addColourView( std::string name
+			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
@@ -61,7 +124,8 @@ namespace crg
 		*\brief
 		*	Creates a depth and/or stencil output attachment.
 		*/
-		Attachment createDepthStencil( ImageViewData viewData
+		void addDepthStencilView( std::string name
+			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
@@ -71,13 +135,27 @@ namespace crg
 			, VkClearValue clearValue = {} );
 		/**
 		*\brief
+		*	Creates an transfer input attachment.
+		*/
+		void addTransferInputView( std::string name
+			, ImageViewId view );
+		/**
+		*\brief
+		*	Creates an transfer output attachment.
+		*/
+		void addTransferOutputView( std::string name
+			, ImageViewId view );
+		/**
+		*\brief
 		*	Creates an input colour attachment.
 		*/
-		Attachment createInputColour( ImageViewData viewData
+		void addInputColourView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createColour( std::move( viewData )
+			return addColourView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, initialLayout
@@ -87,12 +165,14 @@ namespace crg
 		*\brief
 		*	Creates an in/out colour attachment.
 		*/
-		Attachment createInOutColour( ImageViewData viewData
+		void addInOutColourView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
-			return createColour( std::move( viewData )
+			addColourView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, initialLayout
@@ -104,11 +184,13 @@ namespace crg
 		*\brief
 		*	Creates an output colour attachment.
 		*/
-		Attachment createOutputColour( ImageViewData viewData
+		void addOutputColourView( std::string name
+			, ImageViewId view
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			return createColour( std::move( viewData )
+			addColourView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
@@ -119,11 +201,13 @@ namespace crg
 		*\brief
 		*	Creates an input depth attachment.
 		*/
-		Attachment createInputDepth( ImageViewData viewData
+		void addInputDepthView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -135,11 +219,13 @@ namespace crg
 		*\brief
 		*	Creates an in/out depth attachment.
 		*/
-		Attachment createInOutDepth( ImageViewData viewData
+		void addInOutDepthView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -152,11 +238,13 @@ namespace crg
 		*\brief
 		*	Creates an output depth attachment.
 		*/
-		Attachment createOutputDepth( ImageViewData viewData
+		void addOutputDepthView( std::string name
+			, ImageViewId view
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -169,11 +257,13 @@ namespace crg
 		*\brief
 		*	Creates an input depth and stencil attachment.
 		*/
-		Attachment createInputDepthStencil( ImageViewData viewData
+		void addInputDepthStencilView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
@@ -185,11 +275,13 @@ namespace crg
 		*\brief
 		*	Creates an in/out depth and stencil attachment.
 		*/
-		Attachment createInOutDepthStencil( ImageViewData viewData
+		void addInOutDepthStencilView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
@@ -202,11 +294,13 @@ namespace crg
 		*\brief
 		*	Creates an output depth and stencil attachment.
 		*/
-		Attachment createOutputDepthStencil( ImageViewData viewData
+		void addOutputDepthStencilView( std::string name
+			, ImageViewId view
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -219,11 +313,13 @@ namespace crg
 		*\brief
 		*	Creates an input stencil attachment.
 		*/
-		Attachment createInputStencil( ImageViewData viewData
+		void addInputStencilView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
@@ -235,11 +331,13 @@ namespace crg
 		*\brief
 		*	Creates an in/out stencil attachment.
 		*/
-		Attachment createInOutStencil( ImageViewData viewData
+		void addInOutStencilView( std::string name
+			, ImageViewId view
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
@@ -252,11 +350,13 @@ namespace crg
 		*\brief
 		*	Creates an output stencil attachment.
 		*/
-		Attachment createOutputStencil( ImageViewData viewData
+		void addOutputStencilView( std::string name
+			, ImageViewId view
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			return createDepthStencil( std::move( viewData )
+			addDepthStencilView( std::move( name )
+				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -277,8 +377,13 @@ namespace crg
 
 		std::string name;
 		AttachmentArray sampled;
+		AttachmentArray storage;
 		AttachmentArray colourInOuts;
 		std::optional< Attachment > depthStencilInOut;
+		AttachmentArray transferInOuts;
+		WriteDescriptorSetArray buffers;
+		WriteDescriptorSetArray bufferViews;
 		RunnablePassCreator runnableCreator;
+		FramePassArray depends;
 	};
 }

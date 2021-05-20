@@ -4,7 +4,8 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RunnablePass.hpp"
+#include "PipelinePass.hpp"
+#include "RenderPass.hpp"
 
 namespace crg
 {
@@ -29,23 +30,12 @@ namespace crg
 		};
 
 		template< template< typename ValueT > typename WrapperT >
-		struct ConfigT;
-
-		template<>
-		struct ConfigT< std::optional >
+		struct ConfigT
 		{
-			rp::ConfigT< std::optional > baseConfig;
-			std::optional< Texcoord > texcoordConfig;
-			std::optional< VkExtent2D > renderSize;
-			std::optional< VkOffset2D > renderPosition;
-		};
-
-		template<>
-		struct ConfigT< RawTypeT >
-		{
-			Texcoord texcoordConfig;
-			VkExtent2D renderSize;
-			VkOffset2D renderPosition;
+			WrapperT< VkPipelineShaderStageCreateInfoArray > program;
+			WrapperT< Texcoord > texcoordConfig;
+			WrapperT< VkExtent2D > renderSize;
+			WrapperT< VkOffset2D > renderPosition;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -83,7 +73,7 @@ namespace crg
 	};
 
 	class RenderQuad
-		: public RunnablePass
+		: public RenderPass
 	{
 	public:
 		template< typename ConfigT, typename BuilderT >
@@ -96,15 +86,18 @@ namespace crg
 			, rq::Config config );
 		~RenderQuad();
 
-	private:
-		void doInitialise()override;
-		void doRecordInto( VkCommandBuffer commandBuffer )const override;
-		void doCreateFramePass();
+	protected:
+		void doSubInitialise()override;
+		void doSubRecordInto( VkCommandBuffer commandBuffer )const override;
+
+		void doFillDescriptorBindings();
+		void doCreateDescriptorSetLayout();
+		void doCreatePipelineLayout();
+		void doCreateDescriptorPool();
+		void doCreateDescriptorSet();
 		void doCreatePipeline();
-		void doCreateFramebuffer();
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
-		VkPipelineColorBlendStateCreateInfo doCreateBlendState();
 
 	protected:
 		rq::ConfigData m_config;
@@ -112,18 +105,18 @@ namespace crg
 	private:
 		bool m_useTexCoord{ true };
 		VertexBuffer const * m_vertexBuffer{};
-		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
-		VkFramebuffer m_frameBuffer{ VK_NULL_HANDLE };
-		VkRect2D m_renderArea{};
-		std::vector< VkClearValue > m_clearValues;
-		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
+		WriteDescriptorSetArray m_descriptorWrites;
+		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
+		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
+		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
+		VkPipeline m_pipeline{ VK_NULL_HANDLE };
+		VkDescriptorPool m_descriptorSetPool{ VK_NULL_HANDLE };
+		VkDescriptorSet m_descriptorSet{ VK_NULL_HANDLE };
 	};
 
 	template< typename ConfigT, typename BuilderT >
 	class RenderQuadBuilderT
-		: public RunnablePassBuilderT< RenderQuadBuilderT< ConfigT, BuilderT > >
 	{
-		using ParentBuilder = RunnablePassBuilderT< RenderQuadBuilderT< ConfigT, BuilderT > >;
 		static_assert( std::is_same_v< ConfigT, rq::Config >
 			|| std::is_base_of_v< rq::Config, ConfigT >
 			, "RenderQuadBuilderT::ConfigT must derive from crg::rq::Config" );
@@ -158,6 +151,15 @@ namespace crg
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
+		*\param[in] config
+		*	The pipeline program.
+		*/
+		auto & program( VkPipelineShaderStageCreateInfoArray config )
+		{
+			m_config.program = std::move( config );
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
 		*\brief
 		*	Creates the RenderQuad.
 		*\param[in] device
@@ -169,7 +171,6 @@ namespace crg
 			, GraphContext const & context
 			, RunnableGraph & graph )
 		{
-			m_config.baseConfig = std::move( ParentBuilder::m_config );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph

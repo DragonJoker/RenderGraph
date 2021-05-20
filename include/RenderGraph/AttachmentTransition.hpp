@@ -12,29 +12,16 @@ namespace crg
 {
 	/**
 	*\brief
-	*	The attachment, and the passes related to it, all as an input or all as anoutput.
-	*/
-	struct AttachmentPasses
-	{
-		Attachment attachment;
-		std::set< FramePass const * > passes;
-	};
-	using AttachmentPassesArray = std::vector< AttachmentPasses >;
-	bool operator==( AttachmentPasses const & lhs, AttachmentPasses const & rhs );
-	/**
-	*\brief
-	*	The transition between two states of an attachment.
+	*	The transition between two states of an image view.
 	*/
 	struct AttachmentTransition
 	{
-		// Passes from this will expect the attachment to be an output.
-		AttachmentPassesArray srcOutputs;
-		// Passes from this will expect the attachment to be an input.
-		AttachmentPasses dstInput;
+		ImageViewId view;
+		Attachment srcAttach;
+		Attachment dstAttach;
 	};
 	bool operator==( AttachmentTransition const & lhs, AttachmentTransition const & rhs );
 
 	AttachmentTransitionArray mergeIdenticalTransitions( AttachmentTransitionArray value );
-	AttachmentTransitionArray mergeTransitionsPerInput( AttachmentTransitionArray value );
 	AttachmentTransitionArray reduceDirectPaths( AttachmentTransitionArray value );
 }
