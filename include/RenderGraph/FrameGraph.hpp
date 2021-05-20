@@ -27,12 +27,17 @@ namespace crg
 		ImageId createImage( ImageData const & img );
 		ImageViewId createView( ImageViewData const & view );
 
-		inline GraphAdjacentNode getGraph()
+		GraphAdjacentNode getGraph()
 		{
 			return &m_root;
 		}
 
-		inline AttachmentTransitionArray const & getTransitions()
+		ConstGraphAdjacentNode getGraph()const
+		{
+			return &m_root;
+		}
+
+		AttachmentTransitionArray const & getTransitions()const
 		{
 			return m_transitions;
 		}

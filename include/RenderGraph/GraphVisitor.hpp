@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
@@ -12,7 +12,7 @@ namespace crg
 	{
 	public:
 		virtual ~GraphVisitor() = default;
-		virtual void visitRootNode( RootNode * node ) = 0;
-		virtual void visitFramePassNode( FramePassNode * node ) = 0;
+		virtual void visitRootNode( RootNode const * node ) = 0;
+		virtual void visitFramePassNode( FramePassNode const * node ) = 0;
 	};
 }

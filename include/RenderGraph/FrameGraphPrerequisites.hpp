@@ -25,7 +25,6 @@ namespace crg
 	struct ImageViewData;
 	struct GraphNode;
 	struct FramePass;
-	struct FramePassDependencies;
 	struct RootNode;
 	struct WriteDescriptorSet;
 
@@ -50,8 +49,9 @@ namespace crg
 	using FramePassPtrArray = std::vector< FramePassPtr >;
 	using FramePassArray = std::vector< FramePass const * >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
+	using ConstGraphAdjacentNodeArray = std::vector< ConstGraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
-	using FramePassDependenciesArray = std::vector< FramePassDependencies >;
+	using FramePassDependenciesMap = std::map< FramePass *, AttachmentTransitionArray >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;

@@ -8,20 +8,4 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	struct FramePassDependencies
-	{
-		FramePass const * srcPass{};
-		FramePass const * dstPass{};
-		AttachmentArray srcOutputs{};
-		AttachmentArray dstInputs{};
-	};
-
-	inline bool operator==( FramePassDependencies const & lhs
-		, FramePassDependencies const & rhs )
-	{
-		return lhs.dstPass == rhs.dstPass
-			&& lhs.srcPass == rhs.srcPass
-			&& lhs.srcOutputs == rhs.srcOutputs
-			&& lhs.dstInputs == rhs.dstInputs;
-	}
 }

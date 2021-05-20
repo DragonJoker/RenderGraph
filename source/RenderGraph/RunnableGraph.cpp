@@ -1,8 +1,8 @@
 /*
-This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/RunnableGraph.hpp"
+#include "RenderGraph/DotExport.hpp"
 #include "RenderGraph/GraphVisitor.hpp"
 
 #include <array>
@@ -14,165 +14,17 @@ namespace crg
 {
 	namespace
 	{
-		std::ostream & operator<<( std::ostream & stream
-			, std::vector< ImageViewId > const & values )
-		{
-			std::string sep;
-
-			for ( auto & value : values )
-			{
-				stream << sep << value.id;
-				sep = ", ";
-			}
-
-			return stream;
-		}
-
-		std::ostream & operator<<( std::ostream & stream
-			, FramePass const & value )
-		{
-			stream << value.name;
-			return stream;
-		}
-
-		class DotOutVisitor
-			: public GraphVisitor
-		{
-		public:
-			static void submit( std::ostream & stream
-				, GraphAdjacentNode node
-				, std::set< GraphNode const * > & visited )
-			{
-				DotOutVisitor vis{ stream, visited };
-				node->accept( &vis );
-			}
-
-			static void submit( std::ostream & stream
-				, GraphAdjacentNode node )
-			{
-				std::set< GraphNode const * > visited;
-				submit( stream, node, visited );
-			}
-
-			static void submit( std::ostream & stream
-				, AttachmentTransitionArray const & transitions )
-			{
-				stream << "digraph \"Transitions\" {\n";
-				stream << "  rankdir = \"LR\"";
-
-				for ( auto & transition : transitions )
-				{
-					std::string name{ transition.view.data->name + "\\nTrans. to\\n" + transition.dstAttach.name };
-					stream << "    \"" << name << "\" [ shape=square ];\n";
-
-					if ( transition.srcAttach.pass )
-					{
-						stream << "    \"" << transition.srcAttach.pass->name << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
-					}
-					else
-					{
-						stream << "    \"ExternalSource\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
-					}
-
-					if ( transition.dstAttach.pass )
-					{
-						stream << "    \"" << name << "\" -> \"" << transition.dstAttach.pass->name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
-					}
-					else
-					{
-						stream << "    \"" << name << "\" -> \"ExternalDestination\" [ label=\"" << transition.view.data->name << "\" ];\n";
-					}
-				}
-
-				stream << "}\n";
-			}
-
-		private:
-			DotOutVisitor( std::ostream & stream
-				, std::set< GraphNode const * > & visited )
-				: m_stream{ stream }
-				, m_visited{ visited }
-			{
-			}
-
-			void printEdge( GraphNode * lhs
-				, GraphNode * rhs )
-			{
-				std::string sep;
-				auto transitions = rhs->getAttachsToPrev( lhs );
-				std::sort( transitions.begin()
-					, transitions.end()
-					, []( AttachmentTransition const & lhs, AttachmentTransition const & rhs )
-					{
-						return lhs.srcAttach.name < rhs.srcAttach.name;
-					} );
-				uint32_t index{ 1u };
-
-				for ( auto & transition : transitions )
-				{
-					std::string name{ transition.view.data->name + "\\nfrom\\n" + transition.srcAttach.name + "\\nto\\n" + transition.dstAttach.name };
-					m_stream << "    \"" << name << "\" [ shape=square ];\n";
-					m_stream << "    \"" << lhs->getName() << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
-					m_stream << "    \"" << name << "\" -> \"" << rhs->getName() << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
-				}
-			}
-
-			void submit( GraphNode * node )
-			{
-				submit( m_stream
-					, node
-					, m_visited );
-			}
-
-			void visitRootNode( RootNode * node )override
-			{
-				m_stream << "digraph \"" << node->getName() << "\" {\n";
-
-				for ( auto & next : node->getNext() )
-				{
-					submit( next );
-				}
-
-				m_stream << "}\n";
-			}
-
-			void visitFramePassNode( FramePassNode * node )override
-			{
-				m_visited.insert( node );
-				auto nexts = node->getNext();
-
-				for ( auto & next : nexts )
-				{
-					printEdge( node, next );
-
-					if ( m_visited.end() == m_visited.find( next ) )
-					{
-						submit( next );
-					}
-				}
-			}
-
-		private:
-			std::ostream & m_stream;
-			std::set< GraphNode const * > & m_visited;
-		};
-
-		void displayPasses( FrameGraph & value )
-		{
-			std::ofstream file{ value.getGraph()->getName() + ".dot" };
-			DotOutVisitor::submit( file, value.getGraph() );
-		}
-
-		void displayTransitions( FrameGraph & value )
-		{
-			std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
-			DotOutVisitor::submit( file, value.getTransitions() );
-		}
 
 		void display( FrameGraph & value )
 		{
-			displayTransitions( value );
-			displayPasses( value );
+			{
+				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
+				dot::displayTransitions( file, value );
+			}
+			{
+				std::ofstream file{ value.getGraph()->getName() + "_passes.dot" };
+				dot::displayPasses( file, value );
+			}
 		}
 
 		struct Quad
@@ -230,24 +82,24 @@ namespace crg
 			: public GraphVisitor
 		{
 		public:
-			static GraphAdjacentNodeArray submit( GraphAdjacentNode node )
+			static ConstGraphAdjacentNodeArray submit( ConstGraphAdjacentNode node )
 			{
-				GraphAdjacentNodeArray result;
-				std::set< GraphNode const * > visited;
+				ConstGraphAdjacentNodeArray result;
+				std::set< ConstGraphAdjacentNode > visited;
 				DfsVisitor vis{ result, visited };
 				node->accept( &vis );
 				return result;
 			}
 
 		private:
-			DfsVisitor( GraphAdjacentNodeArray & result
-				, std::set< GraphNode const * > & visited )
+			DfsVisitor( ConstGraphAdjacentNodeArray & result
+				, std::set< ConstGraphAdjacentNode > & visited )
 				: m_result{ result }
 				, m_visited{ visited }
 			{
 			}
 
-			void visitRootNode( RootNode * node )override
+			void visitRootNode( RootNode const * node )override
 			{
 				m_result.push_back( node );
 
@@ -257,7 +109,7 @@ namespace crg
 				}
 			}
 
-			void visitFramePassNode( FramePassNode * node )override
+			void visitFramePassNode( FramePassNode const * node )override
 			{
 				m_result.push_back( node );
 				auto nexts = node->getNext();
@@ -273,8 +125,8 @@ namespace crg
 			}
 
 		private:
-			GraphAdjacentNodeArray & m_result;
-			std::set< GraphNode const * > & m_visited;
+			ConstGraphAdjacentNodeArray & m_result;
+			std::set< ConstGraphAdjacentNode > & m_visited;
 		};
 	}
 

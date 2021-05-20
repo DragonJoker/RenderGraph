@@ -73,15 +73,13 @@ namespace crg
 		}
 
 		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
-			, FramePassPtrArray const & passes
-			, FramePassDependenciesArray const & dependencies
-			, AttachmentTransitionArray const & transitions
+			, FramePassDependenciesMap const & dependencies
 			, RootNode const & root )
 		{
 			ImageIdAliasMap result;
 			// We mark root and leaf nodes images as non mergeable.
-			auto roots = retrieveRoots( passes, dependencies );
-			auto leaves = retrieveLeafs( passes, dependencies );
+			auto roots = retrieveRoots( dependencies );
+			auto leaves = retrieveLeafs( dependencies );
 			markPassesAttachments( roots, Attachment::Flag::Output );
 			markPassesAttachments( leaves, Attachment::Flag::Input );
 
@@ -93,9 +91,7 @@ namespace crg
 		}
 
 		ImageViewIdAliasMap optimiseImageViews( ImageViewIdDataOwnerCont const & imageViews
-			, FramePassPtrArray const & passes
-			, FramePassDependenciesArray const & dependencies
-			, AttachmentTransitionArray const & transitions
+			, FramePassDependenciesMap const & dependencies
 			, RootNode const & root )
 		{
 			ImageViewIdAliasMap result;

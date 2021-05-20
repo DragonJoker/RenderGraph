@@ -33,16 +33,17 @@
   </Type>
 
   <Type Name="crg::Id&lt;*&gt;">
-    <DisplayString>{id}</DisplayString>
+    <DisplayString>{id} {data->name}</DisplayString>
     <Expand>
       <Item Name="id">id</Item>
-      <Item Name="data">data</Item>
+      <Item Name="data">*data</Item>
     </Expand>
   </Type>
 
   <Type Name="crg::Attachment">
-    <DisplayString>{name} {view}</DisplayString>
+    <DisplayString>{name} {view} {pass}</DisplayString>
     <Expand>
+      <Item Name="name">name</Item>
       <Item Name="view">view</Item>
       <Item Name="pass">*pass</Item>
       <Item Condition="(flags &amp; crg::Attachment::Sampled)" Name="sampled">true</Item>
@@ -60,9 +61,12 @@
     <Expand>
       <Item Name="name">name</Item>
       <Item Name="sampled">sampled</Item>
+      <Item Name="storage">storage</Item>
       <Item Name="inouts">colourInOuts</Item>
-      <Item Name="transfer">transferInOut</Item>
+      <Item Name="transfer">transferInOuts</Item>
       <Item Condition="depthStencilInOut.has_value()" Name="depthStencilInOut">depthStencilInOut.value()</Item>
+      <Item Name="buffers">buffers</Item>
+      <Item Name="bufferViews">bufferViews</Item>
       <Item Name="depends">depends</Item>
     </Expand>
   </Type>

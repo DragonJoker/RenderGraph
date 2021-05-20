@@ -46,7 +46,7 @@ namespace crg
 	}
 
 	Attachment::Attachment( FlagKind flags
-		, FramePass const & pass
+		, FramePass & pass
 		, std::string name
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
