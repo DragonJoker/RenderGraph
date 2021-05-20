@@ -49,17 +49,6 @@ namespace crg
 					} );
 			}
 
-			GraphAdjacentNode find( std::string const & name
-				, GraphNodePtrArray const & nodes )
-			{
-				return findIf( nodes
-					, GraphNode::Kind::Undefined
-					, [&name]( GraphAdjacentNode lookup )
-					{
-						return name == lookup->getName();
-					} );
-			}
-
 			GraphAdjacentNode createNode( FramePass const * pass
 				, GraphNodePtrArray & nodes )
 			{
@@ -74,152 +63,70 @@ namespace crg
 				return result;
 			}
 
-			AttachmentTransitionArray buildTransitions( AttachmentArray const & srcOutputs
-				, AttachmentArray const & dstInputs
-				, FramePass const * srcPass
-				, FramePass const * dstPass )
-			{
-				AttachmentTransitionArray result;
-
-				if ( srcPass == nullptr )
-				{
-					for ( auto & attach : dstInputs )
-					{
-						result.push_back( { attach.view
-							, Attachment::createDefault( attach.view )
-							, attach } );
-					}
-				}
-				else if ( dstPass == nullptr )
-				{
-					for ( auto & attach : srcOutputs )
-					{
-						result.push_back( { attach.view
-							, attach
-							, Attachment::createDefault( attach.view ) } );
-					}
-				}
-				else
-				{
-					auto srcOutputIt = srcOutputs.begin();
-					auto end = srcOutputs.end();
-					std::set< FramePass const * > srcPasses{ srcPass };
-					std::set< FramePass const * > dstPasses{ dstPass };
-
-					while ( srcOutputIt != end )
-					{
-						auto dstInputIt = std::find_if( dstInputs.begin()
-							, dstInputs.end()
-							, [srcOutputIt]( Attachment const & lookup )
-							{
-								return srcOutputIt->view.data->image.id == lookup.view.data->image.id;
-							} );
-						assert( dstInputIt != dstInputs.end() );
-						result.push_back( { srcOutputIt->view
-							, *srcOutputIt
-							, *dstInputIt } );
-						++srcOutputIt;
-					}
-				}
-
-				return result;
-			}
-
-			void buildGraphRec( FramePass const * curr
-				, AttachmentTransitionArray prevTransitions
-				, FramePassDependenciesArray const & dependencies
+			void buildGraphRec( FramePass * curr
+				, AttachmentTransitionArray const & transitions
 				, GraphNodePtrArray & nodes
 				, RootNode & fullGraph
-				, AttachmentTransitionArray & allTransitions
 				, GraphAdjacentNode prevNode )
 			{
-				// We want the dependencies for which the current pass is the source.
-				std::set< FramePassDependencies const * > attaches;
-				FramePassDependenciesArray nextDependencies;
-				filter< FramePassDependencies >( dependencies
-					, [&curr]( FramePassDependencies const & lookup )
-					{
-						return lookup.srcPass
-							&& curr->name == lookup.srcPass->name;
-					}
-					, [&attaches]( FramePassDependencies const & lookup )
-					{
-						attaches.insert( &lookup );
-					}
-					, [&nextDependencies]( FramePassDependencies const & lookup )
-					{
-						nextDependencies.push_back( lookup );
-					} );
+				AttachmentTransitionArray currTransitions;
+				AttachmentTransitionArray nextTransitions;
+				FramePassSet dstPasses;
 
-				GraphAdjacentNode result{ createNode( curr, nodes ) };
-				allTransitions.insert( allTransitions.end()
-					, prevTransitions.begin()
-					, prevTransitions.end() );
-
-				if ( prevNode->getKind() == GraphNode::Kind::Root )
+				// List the transitions for which the current pass is the source.
+				for ( auto & transition : transitions )
 				{
-					prevNode->attachNode( result
-						, std::move( prevTransitions ) );
-
-					for ( auto & dependency : nextDependencies )
+					if ( transition.dstAttach.pass
+						&& curr == transition.dstAttach.pass )
 					{
-						auto transitions = buildTransitions( dependency.srcOutputs
-							, dependency.dstInputs
-							, dependency.srcPass
-							, dependency.dstPass );
-						allTransitions.insert( allTransitions.end()
-							, transitions.begin()
-							, transitions.end() );
-					}
-				}
-				else if ( curr != getFramePass( *prevNode ) )
-				{
-					prevNode->attachNode( result
-						, std::move( prevTransitions ) );
-				}
-
-				for ( auto & dependency : attaches )
-				{
-					auto transitions = buildTransitions( dependency->srcOutputs
-						, dependency->dstInputs
-						, curr
-						, dependency->dstPass );
-
-					if ( dependency->dstPass )
-					{
-						buildGraphRec( dependency->dstPass
-							, std::move( transitions )
-							, nextDependencies
-							, nodes
-							, fullGraph
-							, allTransitions
-							, result );
+						currTransitions.push_back( transition );
 					}
 					else
 					{
-						allTransitions.insert( allTransitions.end()
-							, transitions.begin()
-							, transitions.end() );
+						nextTransitions.push_back( transition );
+
+						if ( curr == transition.srcAttach.pass
+							&& transition.dstAttach.pass )
+						{
+							dstPasses.insert( transition.dstAttach.pass );
+						}
 					}
+				}
+
+				GraphAdjacentNode result{ createNode( curr, nodes ) };
+
+				if ( prevNode->getKind() == GraphNode::Kind::Root
+					|| curr != getFramePass( *prevNode ) )
+				{
+					prevNode->attachNode( result
+						, std::move( currTransitions ) );
+				}
+
+				for ( auto & dstPass : dstPasses )
+				{
+					buildGraphRec( dstPass
+						, nextTransitions
+						, nodes
+						, fullGraph
+						, result );
 				}
 			}
 		}
 
-		GraphNodePtrArray buildGraph( std::vector< FramePassPtr > const & passes
-			, RootNode & rootNode
-			, AttachmentTransitionArray & transitions
-			, FramePassDependenciesArray const & dependencies )
+		GraphNodePtrArray buildGraph( RootNode & rootNode
+			, FramePassDependenciesMap const & dependencies
+			, AttachmentTransitionArray const & transitions )
 		{
 			GraphNodePtrArray nodes;
 			// Retrieve root and leave passes.
-			auto roots = retrieveRoots( passes, dependencies );
+			auto roots = retrieveRoots( dependencies );
 
 			if ( roots.empty() )
 			{
 				CRG_Exception( "No root to start with" );
 			}
 
-			auto leaves = retrieveLeafs( passes, dependencies );
+			auto leaves = retrieveLeafs( dependencies );
 
 			if ( leaves.empty() )
 			{
@@ -232,16 +139,12 @@ namespace crg
 			for ( auto & root : roots )
 			{
 				buildGraphRec( root
-					, {}
-					, dependencies
+					, transitions
 					, nodes
 					, rootNode
-					, transitions
 					, curr );
 			}
 
-			transitions = mergeIdenticalTransitions( std::move( transitions ) );
-			transitions = reduceDirectPaths( std::move( transitions ) );
 			return nodes;
 		}
 	}

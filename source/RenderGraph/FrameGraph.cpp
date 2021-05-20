@@ -46,21 +46,16 @@ namespace crg
 			CRG_Exception( "No FramePass registered." );
 		}
 
-		auto dependencies = builder::buildPassAttachDependencies( m_passes );
-		builder::filterPassDependencies( dependencies );
-		m_nodes = builder::buildGraph( m_passes
-			, m_root
-			, m_transitions
-			, dependencies );
-		m_imageAliases = builder::optimiseImages( m_images
-			, m_passes
+		auto dependencies = builder::buildPassAttachDependencies( m_passes
+			, m_transitions );
+		m_nodes = builder::buildGraph( m_root
 			, dependencies
-			, m_transitions
+			, m_transitions );
+		m_imageAliases = builder::optimiseImages( m_images
+			, dependencies
 			, m_root );
 		m_imageViewAliases = builder::optimiseImageViews( m_imageViews
-			, m_passes
 			, dependencies
-			, m_transitions
 			, m_root );
 	}
 

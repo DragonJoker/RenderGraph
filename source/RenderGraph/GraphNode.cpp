@@ -87,7 +87,7 @@ namespace crg
 	{
 	}
 
-	void FramePassNode::accept( GraphVisitor * vis )
+	void FramePassNode::accept( GraphVisitor * vis )const
 	{
 		vis->visitFramePassNode( this );
 	}
@@ -99,7 +99,7 @@ namespace crg
 	{
 	}
 
-	void RootNode::accept( GraphVisitor * vis )
+	void RootNode::accept( GraphVisitor * vis )const
 	{
 		vis->visitRootNode( this );
 	}

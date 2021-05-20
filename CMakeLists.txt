@@ -100,6 +100,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Attachment.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/AttachmentTransition.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/CallStack.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/DotExport.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Exception.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraph.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphPrerequisites.hpp
@@ -129,6 +130,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/CallStack.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/DotExport.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.cpp

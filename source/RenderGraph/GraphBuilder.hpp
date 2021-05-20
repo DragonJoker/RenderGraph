@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
@@ -8,9 +8,8 @@ namespace crg
 {
 	namespace builder
 	{
-		GraphNodePtrArray buildGraph( FramePassPtrArray const & passes
-			, RootNode & rootNode
-			, AttachmentTransitionArray & allAttaches
-			, FramePassDependenciesArray const & dependencies );
+		GraphNodePtrArray buildGraph( RootNode & rootNode
+			, FramePassDependenciesMap const & dependencies
+			, AttachmentTransitionArray const & transitions );
 	}
 }

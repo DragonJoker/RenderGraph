@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #include "BuilderCommon.hpp"
 
+#include "RenderGraph/AttachmentTransition.hpp"
 #include "RenderGraph/FramePassDependencies.hpp"
 #include "RenderGraph/FramePass.hpp"
 
@@ -13,49 +14,46 @@ namespace crg
 {
 	namespace builder
 	{
-		FramePassSet retrieveRoots( FramePassPtrArray const & passes
-			, FramePassDependenciesArray const & dependencies )
+		FramePassSet retrieveRoots( FramePassDependenciesMap const & dependencies )
 		{
 			FramePassSet result;
-			filter< FramePassPtr >( passes
-				, [&dependencies]( FramePassPtr const & pass )
+			// Retrieve passes for which no transition is set.
+			for ( auto & depsIt : dependencies )
+			{
+				if ( depsIt.second.empty() )
 				{
-					// We want the passes that are not listed as destination to other passes.
-					return dependencies.end() == std::find_if( dependencies.begin()
-						, dependencies.end()
-						, [&pass]( FramePassDependencies const & lookup )
-						{
-							return lookup.srcPass
-								&& lookup.dstPass == pass.get();
-						} );
+					result.insert( depsIt.first );
 				}
-				, [&result]( FramePassPtr const & lookup )
-				{
-					result.insert( lookup.get() );
-				} );
+			}
+
 			return result;
 		}
 
-		FramePassSet retrieveLeafs( FramePassPtrArray const & passes
-			, FramePassDependenciesArray const & dependencies )
+		FramePassSet retrieveLeafs( FramePassDependenciesMap const & dependencies )
 		{
 			FramePassSet result;
-			filter< FramePassPtr >( passes
-				, [&dependencies]( FramePassPtr const & pass )
+			// Retrieve passes that are not listed in other passes' transitions source.
+			for ( auto & depsIt : dependencies )
+			{
+				auto it = std::find_if( dependencies.begin()
+					, dependencies.end()
+					, [&depsIt]( FramePassDependenciesMap::value_type const & lookup )
+					{
+						return lookup.first != depsIt.first
+							&& lookup.second.end() != std::find_if( lookup.second.begin()
+								, lookup.second.end()
+								, [&depsIt]( AttachmentTransition const & lookup )
+								{
+									return lookup.srcAttach.pass == depsIt.first;
+								} );
+					} );
+
+				if ( it == dependencies.end() )
 				{
-					// We want the passes that are not listed as source to other passes.
-					return dependencies.end() == std::find_if( dependencies.begin()
-						, dependencies.end()
-						, [&pass]( FramePassDependencies const & lookup )
-						{
-							return lookup.dstPass
-								&& lookup.srcPass == pass.get();
-						} );
+					result.insert( depsIt.first );
 				}
-				, [&result]( FramePassPtr const & lookup )
-				{
-					result.insert( lookup.get() );
-				} );
+			}
+
 			return result;
 		}
 	}

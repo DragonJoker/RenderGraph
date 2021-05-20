@@ -154,7 +154,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			return addColourView( std::move( name )
+			return addColourView( name + "InColour"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -171,7 +171,7 @@ namespace crg
 			, VkImageLayout finalLayout
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
-			addColourView( std::move( name )
+			addColourView( name + "InOutColour"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -189,7 +189,7 @@ namespace crg
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			addColourView( std::move( name )
+			addColourView( name + "OutColour"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -206,7 +206,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "InDepth"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -224,7 +224,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "InOutDepth"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -243,7 +243,7 @@ namespace crg
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "OutDepth"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -262,7 +262,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "InDepthStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -280,7 +280,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "InOutDepthStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -299,7 +299,7 @@ namespace crg
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "OutDepthStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -318,7 +318,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "InStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -336,7 +336,7 @@ namespace crg
 			, VkImageLayout initialLayout
 			, VkImageLayout finalLayout )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "InOutStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -355,7 +355,7 @@ namespace crg
 			, VkImageLayout finalLayout
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( std::move( name )
+			addDepthStencilView( name + "OutStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE

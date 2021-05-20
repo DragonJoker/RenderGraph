@@ -103,7 +103,7 @@ namespace crg
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Sampled )
 			, *this
-			, std::move( name )
+			, name + "Sampled"
 			, std::move( view )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -124,7 +124,7 @@ namespace crg
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Storage )
 			, *this
-			, std::move( name )
+			, name + "Storage"
 			, std::move( view )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -194,7 +194,7 @@ namespace crg
 	{
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, std::move( name )
+			, name + "InTransfer"
 			, std::move( view )
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
@@ -213,7 +213,7 @@ namespace crg
 	{
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
-			, std::move( name )
+			, name + "OutTransfer"
 			, std::move( view )
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}

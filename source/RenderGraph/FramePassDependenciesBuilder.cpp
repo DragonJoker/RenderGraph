@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #include "FramePassDependenciesBuilder.hpp"
 
+#include "RenderGraph/AttachmentTransition.hpp"
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
 
@@ -22,29 +23,29 @@ namespace crg
 	{
 		namespace
 		{
-			struct PassAttach
+			struct ViewAttaches
 			{
-				Attachment attach;
-				std::set< FramePass const * > passes;
+				ImageViewId view;
+				std::set< Attachment const * > attaches;
 			};
 
-			using PassAttachCont = std::vector< PassAttach >;
+			using ViewAttachesArray = std::vector< ViewAttaches >;
 
-			std::ostream & operator<<( std::ostream & stream, PassAttach const & attach )
+			std::ostream & operator<<( std::ostream & stream, ViewAttaches const & attach )
 			{
-				stream << attach.attach.view.data->name;
+				stream << attach.view.data->name;
 				std::string sep{ " -> " };
 
-				for ( auto & pass : attach.passes )
+				for ( auto & attach : attach.attaches )
 				{
-					stream << sep << pass->name;
+					stream << sep << attach->name;
 					sep = ", ";
 				}
 
 				return stream;
 			}
 
-			std::ostream & operator<<( std::ostream & stream, PassAttachCont const & attaches )
+			std::ostream & operator<<( std::ostream & stream, ViewAttachesArray const & attaches )
 			{
 				for ( auto & attach : attaches )
 				{
@@ -54,41 +55,34 @@ namespace crg
 				return stream;
 			}
 
-			std::ostream & operator<<( std::ostream & stream, FramePassDependencies const & dependency )
+			std::ostream & operator<<( std::ostream & stream, AttachmentTransition const & transition )
 			{
-				stream << dependency.srcPass->name << " -> " << dependency.dstPass->name;
-				std::string sep = " [";
-
-				for ( auto & attach : dependency.srcOutputs )
-				{
-					stream << sep << attach.view.data->name;
-					sep = ", ";
-				}
-
-				for ( auto & attach : dependency.dstInputs )
-				{
-					stream << sep << attach.view.data->name;
-					sep = ", ";
-				}
-
+				stream << transition.srcAttach.pass->name << " -> " << transition.dstAttach.pass->name;
+				std::string sep = " on [";
+				stream << sep << transition.view.data->name;
 				stream << "]";
 				return stream;
 			}
 
-			std::ostream & operator<<( std::ostream & stream, FramePassDependenciesArray const & dependencies )
+			std::ostream & operator<<( std::ostream & stream, FramePassDependenciesMap const & dependencies )
 			{
-				for ( auto & dependency : dependencies )
+				for ( auto & depsIt : dependencies )
 				{
-					stream << dependency << std::endl;
+					stream << depsIt.first << std::endl;
+
+					for ( auto & transition : depsIt.second )
+					{
+						stream << "  " << transition << std::endl;
+					}
 				}
 
 				return stream;
 			}
 
-			void printDebug( PassAttachCont const & sampled
-				, PassAttachCont const & inputs
-				, PassAttachCont const & outputs
-				, FramePassDependenciesArray const & dependencies )
+			void printDebug( ViewAttachesArray const & sampled
+				, ViewAttachesArray const & inputs
+				, ViewAttachesArray const & outputs
+				, FramePassDependenciesMap const & dependencies )
 			{
 #if CRG_DebugPassAttaches
 				std::clog << "Sampled" << std::endl;
@@ -104,14 +98,14 @@ namespace crg
 #endif
 			}
 
-			inline bool isInRange( uint32_t value
+			bool isInRange( uint32_t value
 				, uint32_t left
 				, uint32_t count )
 			{
 				return value >= left && value < left + count;
 			}
 
-			inline bool areIntersecting( uint32_t lhsLBound
+			bool areIntersecting( uint32_t lhsLBound
 				, uint32_t lhsCount
 				, uint32_t rhsLBound
 				, uint32_t rhsCount )
@@ -120,7 +114,7 @@ namespace crg
 					|| isInRange( rhsLBound, lhsLBound, lhsCount );
 			}
 
-			inline bool areIntersecting( VkImageSubresourceRange const & lhs
+			bool areIntersecting( VkImageSubresourceRange const & lhs
 				, VkImageSubresourceRange const & rhs )
 			{
 				return areIntersecting( lhs.baseMipLevel
@@ -133,7 +127,7 @@ namespace crg
 						, lhs.layerCount );
 			}
 
-			inline bool areOverlapping( ImageViewData const & lhs
+			bool areOverlapping( ImageViewData const & lhs
 				, ImageViewData const & rhs )
 			{
 				return lhs.image == rhs.image
@@ -141,44 +135,50 @@ namespace crg
 						, rhs.info.subresourceRange );
 			}
 
+			bool areOverlapping( Attachment const & lhs
+				, Attachment const & rhs )
+			{
+				return areOverlapping( *lhs.view.data, *rhs.view.data );
+			}
+
 			void insertAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont )
+				, ViewAttachesArray & cont )
 			{
 				auto it = std::find_if( cont.begin()
 					, cont.end()
-					, [&attach]( PassAttach const & lookup )
+					, [&attach]( ViewAttaches const & lookup )
 					{
-						return lookup.attach.view == attach.view;
+						return lookup.view == attach.view;
 					} );
 
 				if ( cont.end() == it )
 				{
-					cont.push_back( PassAttach{ attach } );
+					cont.push_back( ViewAttaches{ attach.view } );
 					it = std::prev( cont.end() );
 				}
 
-				it->passes.insert( &pass );
+				it->attaches.insert( &attach );
 			}
 
 			void processAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all
-				, std::function< bool( Attachment const & ) > processAttach )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all
+				, std::function< bool( ImageViewId const & ) > processAttach )
 			{
 				bool found{ false };
 				std::vector< FramePass const * > passes;
 
 				for ( auto & lookup : cont )
 				{
-					if ( processAttach( lookup.attach ) )
+					if ( processAttach( lookup.view ) )
 					{
-						if ( lookup.passes.end() == std::find( lookup.passes.begin()
-							, lookup.passes.end()
-							, &pass ) )
+						if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
+							, lookup.attaches.end()
+							, &attach ) )
 						{
-							lookup.passes.insert( &pass );
+							lookup.attaches.insert( &attach );
 						}
 
 						found = true;
@@ -191,8 +191,8 @@ namespace crg
 
 			void processSampledAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				if ( attach.isSampled() )
 				{
@@ -200,17 +200,17 @@ namespace crg
 						, pass
 						, cont
 						, all
-						, [&attach]( Attachment const & lookup )
+						, [&attach]( ImageViewId const & lookup )
 						{
-							return areOverlapping( *lookup.view.data, *attach.view.data );
+							return areOverlapping( *lookup.data, *attach.view.data );
 						} );
 				}
 			}
 
 			void processColourInputAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				if ( attach.isColourInput() )
 				{
@@ -218,17 +218,17 @@ namespace crg
 						, pass
 						, cont
 						, all
-						, [&attach]( Attachment const & lookup )
+						, [&attach]( ImageViewId const & lookup )
 						{
-							return areOverlapping( *lookup.view.data, *attach.view.data );
+							return areOverlapping( *lookup.data, *attach.view.data );
 						} );
 				}
 			}
 
 			void processColourOutputAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				if ( attach.isColourOutput() )
 				{
@@ -236,17 +236,17 @@ namespace crg
 						, pass
 						, cont
 						, all
-						, [&attach]( Attachment const & lookup )
+						, [&attach]( ImageViewId const & lookup )
 						{
-							return areOverlapping( *lookup.view.data, *attach.view.data );
+							return areOverlapping( *lookup.data, *attach.view.data );
 						} );
 				}
 			}
 
 			void processDepthOrStencilInputAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				if ( attach.isDepthInput()
 					|| attach.isStencilInput() )
@@ -255,17 +255,17 @@ namespace crg
 						, pass
 						, cont
 						, all
-						, [&attach]( Attachment const & lookup )
+						, [&attach]( ImageViewId const & lookup )
 						{
-							return areOverlapping( *lookup.view.data, *attach.view.data );
+							return areOverlapping( *lookup.data, *attach.view.data );
 						} );
 				}
 			}
 
 			void processDepthOrStencilOutputAttach( Attachment const & attach
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				if ( attach.isDepthOutput()
 					|| attach.isStencilOutput() )
@@ -274,17 +274,17 @@ namespace crg
 						, pass
 						, cont
 						, all
-						, [&attach]( Attachment const & lookup )
+						, [&attach]( ImageViewId const & lookup )
 						{
-							return areOverlapping( *lookup.view.data, *attach.view.data );
+							return areOverlapping( *lookup.data, *attach.view.data );
 						} );
 				}
 			}
 
 			void processSampledAttachs( AttachmentArray const & attachs
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
@@ -294,8 +294,8 @@ namespace crg
 
 			void processColourInputAttachs( AttachmentArray const & attachs
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
@@ -305,8 +305,8 @@ namespace crg
 
 			void processColourOutputAttachs( AttachmentArray const & attachs
 				, FramePass const & pass
-				, PassAttachCont & cont
-				, PassAttachCont & all )
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
@@ -315,127 +315,52 @@ namespace crg
 			}
 
 			void addRemainingDependency( Attachment const & attach
-				, std::set< FramePass const * > const & passes
-				, FramePassDependenciesArray & dependencies )
+				, FramePassDependenciesMap & dependencies
+				, AttachmentTransitionArray & allTransitions )
 			{
-				assert( passes.size() == 1u );
-				auto pass = *passes.begin();
+				auto & transitions = dependencies.emplace( attach.pass, AttachmentTransitionArray{} ).first->second;
 
 				if ( attach.isColourInOut() )
 				{
-					auto it = std::find_if( dependencies.begin()
-						, dependencies.end()
-						, [pass]( FramePassDependencies & lookup )
-						{
-							return lookup.dstPass == pass
-								&& lookup.srcPass == pass;
-						} );
-
-					if ( it == dependencies.end() )
-					{
-						dependencies.push_back( { pass, pass } );
-						it = std::prev( dependencies.end() );
-					}
-
-					auto & dep = *it;
-					dep.srcOutputs.push_back( attach );
-					dep.dstInputs.push_back( attach );
+					transitions.push_back( { attach.view, attach, attach } );
 				}
 				else if ( attach.isColourInput()
 						|| attach.isSampled() )
 				{
-					auto it = std::find_if( dependencies.begin()
-						, dependencies.end()
-						, [pass]( FramePassDependencies & lookup )
-						{
-							return lookup.dstPass == pass;
-						} );
-
-					if ( it == dependencies.end() )
-					{
-						dependencies.push_back( { nullptr, pass } );
-						it = std::prev( dependencies.end() );
-					}
-
-					auto & dep = *it;
-					dep.dstInputs.push_back( attach );
+					transitions.push_back( { attach.view, Attachment::createDefault( attach.view ), attach } );
 				}
 				else
 				{
-					auto it = std::find_if( dependencies.begin()
-						, dependencies.end()
-						, [pass]( FramePassDependencies & lookup )
-						{
-							return lookup.srcPass == pass;
-						} );
-
-					if ( it == dependencies.end() )
-					{
-						dependencies.push_back( { pass, nullptr } );
-						it = std::prev( dependencies.end() );
-					}
-
-					auto & dep = *it;
-					dep.srcOutputs.push_back( attach );
+					transitions.push_back( { attach.view, attach, Attachment::createDefault( attach.view ) } );
 				}
+
+				allTransitions.push_back( transitions.back() );
 			}
 
-			void addDependency( Attachment const & outAttach
-				, Attachment const & inAttach
-				, std::set< FramePass const * > const & srcs
-				, std::set< FramePass const * > const & dsts
-				, FramePassDependenciesArray & dependencies )
+			void addDependency( Attachment const & outputAttach
+				, Attachment const & inputAttach
+				, FramePassDependenciesMap & dependencies
+				, AttachmentTransitionArray & allTransitions )
 			{
-				for ( auto & src : srcs )
-				{
-					for ( auto & dst : dsts )
-					{
-						if ( src != dst
-							&& !src->dependsOn( *dst )
-							&& dst->directDependsOn( *src ) )
-						{
-							auto it = std::find_if( dependencies.begin()
-								, dependencies.end()
-								, [&dst, &src]( FramePassDependencies & lookup )
-								{
-									return lookup.srcPass == src
-										&& lookup.dstPass == dst;
-								} );
-
-							if ( it == dependencies.end() )
-							{
-								dependencies.push_back( { src, dst } );
-								it = std::prev( dependencies.end() );
-							}
-
-							auto & dep = *it;
-
-							if ( dep.srcOutputs.end() == std::find( dep.srcOutputs.begin()
-									, dep.srcOutputs.end()
-									, outAttach )
-								|| dep.dstInputs.end() == std::find( dep.dstInputs.begin()
-									, dep.dstInputs.end()
-									, inAttach ) )
-							{
-								dep.srcOutputs.push_back( outAttach );
-								dep.dstInputs.push_back( inAttach );
-							}
-						}
-					}
-				}
+				assert( outputAttach.view == inputAttach.view );
+				auto & transitions = dependencies.emplace( inputAttach.pass, AttachmentTransitionArray{} ).first->second;
+				transitions.push_back( { outputAttach.view, outputAttach, inputAttach } );
+				allTransitions.push_back( transitions.back() );
 			}
 		}
 
-		FramePassDependenciesArray buildPassAttachDependencies( std::vector< FramePassPtr > const & passes )
+		FramePassDependenciesMap buildPassAttachDependencies( std::vector< FramePassPtr > const & passes
+			, AttachmentTransitionArray & allTransitions )
 		{
-			PassAttachCont sampled;
-			PassAttachCont inputs;
-			PassAttachCont outputs;
-			PassAttachCont all;
+			ViewAttachesArray sampled;
+			ViewAttachesArray inputs;
+			ViewAttachesArray outputs;
+			ViewAttachesArray all;
 
 			for ( auto & pass : passes )
 			{
-				processSampledAttachs( pass->sampled, *pass, sampled, all );
+				processSampledAttachs( pass->sampled, *pass, inputs, all );
+				processSampledAttachs( pass->storage, *pass, inputs, all );
 				processColourInputAttachs( pass->colourInOuts, *pass, inputs, all );
 				processColourInputAttachs( pass->transferInOuts, *pass, inputs, all );
 				processColourOutputAttachs( pass->colourInOuts, *pass, outputs, all );
@@ -448,49 +373,38 @@ namespace crg
 				}
 			}
 
-			FramePassDependenciesArray result;
+			FramePassDependenciesMap result;
+
+			for ( auto & pass : passes )
+			{
+				result.emplace( pass.get(), AttachmentTransitionArray{} );
+			}
 
 			for ( auto & output : outputs )
 			{
 				for ( auto & input : inputs )
 				{
-					if ( areOverlapping( *output.attach.view.data, *input.attach.view.data ) )
+					if ( areOverlapping( *input.view.data, *output.view.data ) )
 					{
-						addDependency( output.attach
-							, input.attach
-							, output.passes
-							, input.passes
-							, result );
-
-						auto it = std::find_if( all.begin()
-							, all.end()
-							, [&input]( PassAttach const & lookup )
-							{
-								return lookup.attach.view == input.attach.view;
-							} );
-
-						if ( all.end() != it )
+						for ( auto & outputAttach : output.attaches )
 						{
-							all.erase( it );
+							for ( auto & inputAttach : input.attaches )
+							{
+								if ( inputAttach->pass->directDependsOn( *outputAttach->pass ) )
+								{
+									addDependency( *outputAttach
+										, *inputAttach
+										, result
+										, allTransitions );
+								}
+							}
 						}
-					}
-				}
-
-				for ( auto & sample : sampled )
-				{
-					if ( areOverlapping( *output.attach.view.data, *sample.attach.view.data ) )
-					{
-						addDependency( output.attach
-							, sample.attach
-							, output.passes
-							, sample.passes
-							, result );
 
 						auto it = std::find_if( all.begin()
 							, all.end()
-							, [&output]( PassAttach const & lookup )
+							, [&input]( ViewAttaches const & lookup )
 							{
-								return lookup.attach.view == output.attach.view;
+								return lookup.view == input.view;
 							} );
 
 						if ( all.end() != it )
@@ -504,17 +418,16 @@ namespace crg
 			// `all` should now only contain sampled/input/output from/to nothing attaches.
 			for ( auto & remaining : all )
 			{
-				addRemainingDependency( remaining.attach
-					, remaining.passes
-					, result );
+				for ( auto & attach : remaining.attaches )
+				{
+					addRemainingDependency( *attach
+						, result
+						, allTransitions );
+				}
 			}
 
 			printDebug( sampled, inputs, outputs, result );
 			return result;
-		}
-
-		void filterPassDependencies( FramePassDependenciesArray & dependencies )
-		{
 		}
 	}
 }

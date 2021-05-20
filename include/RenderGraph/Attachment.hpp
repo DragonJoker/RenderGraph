@@ -173,7 +173,7 @@ namespace crg
 		*	Members.
 		*/
 		/**@[*/
-		FramePass const * pass{};
+		FramePass * pass{};
 		std::string name{};
 		ImageViewId view{};
 		VkAttachmentLoadOp loadOp{};
@@ -191,7 +191,7 @@ namespace crg
 	private:
 		Attachment( ImageViewId view );
 		Attachment( FlagKind flags
-			, FramePass const & pass
+			, FramePass & pass
 			, std::string name
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
