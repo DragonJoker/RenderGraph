@@ -17,11 +17,13 @@ namespace crg
 		, VkPipelineCache cache
 		, VkAllocationCallbacks const * allocator
 		, VkPhysicalDeviceMemoryProperties memoryProperties
+		, VkPhysicalDeviceProperties properties
 		, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr )
 		: device{ device }
 		, cache{ cache }
 		, allocator{ allocator }
-		, memoryProperties{ memoryProperties }
+		, memoryProperties{ std::move( memoryProperties ) }
+		, properties{ std::move( properties ) }
 	{
 #define DECL_vkFunction( name )\
 		vk##name = reinterpret_cast< PFN_vk##name >( vkGetDeviceProcAddr( device, "vk"#name ) )
@@ -69,13 +71,21 @@ namespace crg
 		DECL_vkFunction( BeginCommandBuffer );
 		DECL_vkFunction( EndCommandBuffer );
 		DECL_vkFunction( QueueSubmit );
+		DECL_vkFunction( CreateQueryPool );
+		DECL_vkFunction( DestroyQueryPool );
+		DECL_vkFunction( GetQueryPoolResults );
 
 		DECL_vkFunction( CmdBindPipeline );
 		DECL_vkFunction( CmdBindDescriptorSets );
 		DECL_vkFunction( CmdBindVertexBuffers );
+		DECL_vkFunction( CmdBindIndexBuffer );
 		DECL_vkFunction( CmdDraw );
+		DECL_vkFunction( CmdDrawIndexed );
 		DECL_vkFunction( CmdBeginRenderPass );
 		DECL_vkFunction( CmdEndRenderPass );
+		DECL_vkFunction( CmdResetQueryPool );
+		DECL_vkFunction( CmdWriteTimestamp );
+		DECL_vkFunction( CmdExecuteCommands );
 
 #if VK_EXT_debug_utils
 		DECL_vkFunction( SetDebugUtilsObjectNameEXT );

@@ -83,58 +83,46 @@ namespace crg
 
 				if ( srcPass == nullptr )
 				{
-					auto dstInputIt = dstInputs.begin();
-					auto end = dstInputs.end();
-					std::set< FramePass const * > dstPasses{ dstPass };
-
-					while ( dstInputIt != end )
+					for ( auto & attach : dstInputs )
 					{
-						result.push_back( AttachmentTransition
-							{
-								{},
-								{ *dstInputIt, dstPasses },
-							} );
-						++dstInputIt;
+						result.push_back( { attach.view
+							, Attachment::createDefault( attach.view )
+							, attach } );
 					}
 				}
 				else if ( dstPass == nullptr )
 				{
-					auto srcOutputIt = srcOutputs.begin();
-					auto end = srcOutputs.end();
-					std::set< FramePass const * > srcPasses{ srcPass };
-
-					while ( srcOutputIt != end )
+					for ( auto & attach : srcOutputs )
 					{
-						result.push_back( AttachmentTransition
-							{
-								{ { *srcOutputIt, srcPasses } },
-								{ Attachment::createDefault(), {} },
-							} );
-						++srcOutputIt;
+						result.push_back( { attach.view
+							, attach
+							, Attachment::createDefault( attach.view ) } );
 					}
 				}
 				else
 				{
-					assert( srcOutputs.size() == dstInputs.size() );
 					auto srcOutputIt = srcOutputs.begin();
 					auto end = srcOutputs.end();
-					auto dstInputIt = dstInputs.begin();
 					std::set< FramePass const * > srcPasses{ srcPass };
 					std::set< FramePass const * > dstPasses{ dstPass };
 
 					while ( srcOutputIt != end )
 					{
-						result.push_back( AttachmentTransition
+						auto dstInputIt = std::find_if( dstInputs.begin()
+							, dstInputs.end()
+							, [srcOutputIt]( Attachment const & lookup )
 							{
-								{ { *srcOutputIt, srcPasses } },
-								{ *dstInputIt, dstPasses },
+								return srcOutputIt->view.data->image.id == lookup.view.data->image.id;
 							} );
+						assert( dstInputIt != dstInputs.end() );
+						result.push_back( { srcOutputIt->view
+							, *srcOutputIt
+							, *dstInputIt } );
 						++srcOutputIt;
-						++dstInputIt;
 					}
 				}
 
-				return mergeIdenticalTransitions( std::move( result ) );
+				return result;
 			}
 
 			void buildGraphRec( FramePass const * curr
@@ -253,7 +241,6 @@ namespace crg
 			}
 
 			transitions = mergeIdenticalTransitions( std::move( transitions ) );
-			transitions = mergeTransitionsPerInput( std::move( transitions ) );
 			transitions = reduceDirectPaths( std::move( transitions ) );
 			return nodes;
 		}

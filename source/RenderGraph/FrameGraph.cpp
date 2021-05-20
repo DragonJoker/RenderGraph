@@ -19,51 +19,24 @@ namespace crg
 	{
 	}
 
-	void FrameGraph::add( FramePass const & pass )
+	FramePass & FrameGraph::createPass( std::string const & name
+		, RunnablePassCreator runnableCreator )
 	{
+		auto pass = std::make_unique< FramePass >( name
+			, runnableCreator );
 		if ( m_passes.end() != std::find_if( m_passes.begin()
 			, m_passes.end()
 			, [&pass]( FramePassPtr const & lookup )
 			{
-				return lookup->name == pass.name;
+				return lookup->name == pass->name;
 			} ) )
 		{
 			CRG_Exception( "Duplicate FramePass name detected." );
 		}
 
-		for ( auto & attach : pass.sampled )
-		{
-			m_attachments.emplace_back( attach );
-		}
-
-		for ( auto & attach : pass.colourInOuts )
-		{
-			m_attachments.emplace_back( attach );
-		}
-
-		if ( pass.depthStencilInOut )
-		{
-			m_attachments.emplace_back( *pass.depthStencilInOut );
-		}
-
-		m_passes.push_back( std::make_unique< FramePass >( pass ) );
-	}
-
-	void FrameGraph::remove( FramePass const & pass )
-	{
-		auto it = std::find_if( m_passes.begin()
-			, m_passes.end()
-			, [&pass]( FramePassPtr const & lookup )
-			{
-				return lookup->name == pass.name;
-			} );
-
-		if ( m_passes.end() == it )
-		{
-			CRG_Exception( "FramePass was not found." );
-		}
-
-		m_passes.erase( it );
+		auto result = pass.get();
+		m_passes.emplace_back( std::move( pass ) );
+		return *result;
 	}
 
 	void FrameGraph::compile()
@@ -73,12 +46,8 @@ namespace crg
 			CRG_Exception( "No FramePass registered." );
 		}
 
-		for ( auto & attach : m_attachments )
-		{
-			m_attachViews.emplace( attach.viewData.name, createView( attach.viewData ) );
-		}
-
-		auto dependencies = builder::buildPassDependencies( m_passes );
+		auto dependencies = builder::buildPassAttachDependencies( m_passes );
+		builder::filterPassDependencies( dependencies );
 		m_nodes = builder::buildGraph( m_passes
 			, m_root
 			, m_transitions
@@ -103,11 +72,27 @@ namespace crg
 		return result;
 	}
 
-	ImageViewId FrameGraph::createView( ImageViewData const & img )
+	ImageViewId FrameGraph::createView( ImageViewData const & view )
 	{
-		auto data = std::make_unique< ImageViewData >( img );
-		ImageViewId result{ uint32_t( m_imageViews.size() + 1u ), data.get() };
-		m_imageViews.insert( { result, std::move( data ) } );
+		auto it = std::find_if( m_imageViews.begin()
+			, m_imageViews.end()
+			, [&view]( ImageViewIdDataOwnerCont::value_type const & lookup )
+			{
+				return *lookup.second == view;
+			} );
+		ImageViewId result{};
+
+		if ( it == m_imageViews.end() )
+		{
+			auto data = std::make_unique< ImageViewData >( view );
+			result = { uint32_t( m_imageViews.size() + 1u ), data.get() };
+			m_imageViews.insert( { result, std::move( data ) } );
+		}
+		else
+		{
+			result = it->first;
+		}
+
 		return result;
 	}
 }

@@ -13,89 +13,15 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
-	{
-		VkAttachmentReference addAttach( Attachment const & attach
-			, VkAttachmentDescriptionArray & attaches
-			, std::vector< VkClearValue > & clearValues )
-		{
-			VkImageLayout attachLayout;
-
-			if ( attach.hasFlag( Attachment::Flag::Depth ) )
-			{
-				if ( attach.isDepthOutput() && attach.isStencilOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isDepthOutput() && attach.isStencilInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-				}
-				else if ( attach.isDepthInput() && attach.isStencilOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isDepthInput() && attach.isStencilInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-				}
-				else if ( attach.isDepthOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isStencilOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isDepthInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-				}
-				else if ( attach.isStencilInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-				}
-			}
-			else
-			{
-				attachLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			}
-
-			VkAttachmentReference result{ uint32_t( attaches.size() )
-				, attachLayout };
-			attaches.push_back( { 0u
-				, attach.viewData.info.format
-				, attach.viewData.image.data->info.samples
-				, attach.loadOp
-				, attach.storeOp
-				, attach.stencilLoadOp
-				, attach.stencilStoreOp
-				, attach.initialLayout
-				, attach.finalLayout } );
-			clearValues.push_back( attach.clearValue );
-			return result;
-		}
-
-		VkAttachmentReference addAttach( Attachment const & attach
-			, VkAttachmentDescriptionArray & attaches
-			, std::vector< VkClearValue > & clearValues
-			, VkPipelineColorBlendAttachmentStateArray & blendAttachs )
-		{
-			blendAttachs.push_back( attach.blendState );
-			return addAttach( attach, attaches, clearValues );
-		}
-	}
-
 	RenderQuad::RenderQuad( FramePass const & pass
 		, GraphContext const & context
 		, RunnableGraph & graph
 		, rq::Config config )
-		: RunnablePass{ pass
+		: RenderPass{ pass
 			, context
-			, graph
-			, std::move( config.baseConfig )
-			, VK_PIPELINE_BIND_POINT_GRAPHICS }
-		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
+			, graph }
+		, m_config{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > )
+			, std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > ) }
 		, m_useTexCoord{ config.texcoordConfig }
@@ -104,110 +30,208 @@ namespace crg
 
 	RenderQuad::~RenderQuad()
 	{
-		if ( m_frameBuffer )
+		m_descriptorBindings.clear();
+
+		if ( m_descriptorSetPool )
 		{
-			crgUnregisterObject( m_context, m_frameBuffer );
-			m_context.vkDestroyFramebuffer( m_context.device
-				, m_frameBuffer
+			crgUnregisterObject( m_context, m_descriptorSetPool );
+			m_context.vkDestroyDescriptorPool( m_context.device
+				, m_descriptorSetPool
 				, m_context.allocator );
 		}
 
-		if ( m_renderPass )
+		if ( m_pipeline )
 		{
-			crgUnregisterObject( m_context, m_renderPass );
-			m_context.vkDestroyRenderPass( m_context.device
-				, m_renderPass
+			crgUnregisterObject( m_context, m_pipeline );
+			m_context.vkDestroyPipeline( m_context.device
+				, m_pipeline
+				, m_context.allocator );
+		}
+
+		if ( m_pipelineLayout )
+		{
+			crgUnregisterObject( m_context, m_pipelineLayout );
+			m_context.vkDestroyPipelineLayout( m_context.device
+				, m_pipelineLayout
+				, m_context.allocator );
+		}
+
+		if ( m_descriptorSetLayout )
+		{
+			crgUnregisterObject( m_context, m_descriptorSetLayout );
+			m_context.vkDestroyDescriptorSetLayout( m_context.device
+				, m_descriptorSetLayout
 				, m_context.allocator );
 		}
 	}
 
-	void RenderQuad::doInitialise()
+	void RenderQuad::doSubInitialise()
 	{
 		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
 			, m_config.texcoordConfig.invertU
 			, m_config.texcoordConfig.invertV );
-		doCreateFramePass();
+		doFillDescriptorBindings();
+		doCreateDescriptorSetLayout();
+		doCreatePipelineLayout();
+		doCreateDescriptorPool();
+		doCreateDescriptorSet();
 		doCreatePipeline();
-		doCreateFramebuffer();
 	}
 
-	void RenderQuad::doRecordInto( VkCommandBuffer commandBuffer )const
+	void RenderQuad::doSubRecordInto( VkCommandBuffer commandBuffer )const
 	{
 		VkDeviceSize offset{};
-		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
-			, nullptr
-			, m_renderPass
-			, m_frameBuffer
-			, m_renderArea
-			, uint32_t( m_clearValues.size() )
-			, m_clearValues.data() };
-		m_context.vkCmdBeginRenderPass( commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
+		m_context.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline );
+		m_context.vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0u, 1u, &m_descriptorSet, 0u, nullptr );
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
-		m_context.vkCmdEndRenderPass( commandBuffer );
 	}
 
-	void RenderQuad::doCreateFramePass()
+	void RenderQuad::doFillDescriptorBindings()
 	{
-		VkAttachmentDescriptionArray attaches;
-		VkAttachmentReferenceArray colorReferences;
-		VkAttachmentReference depthReference{};
+		WriteDescriptorSetArray descriptorWrites;
+		VkShaderStageFlags shaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		auto imageDescriptor = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-		if ( m_pass.depthStencilInOut )
+		for ( auto & sampled : m_pass.sampled )
 		{
-			depthReference = addAttach( *m_pass.depthStencilInOut
-				, attaches
-				, m_clearValues );
-		}
-
-		for ( auto & attach : m_pass.colourInOuts )
-		{
-			colorReferences.push_back( addAttach( attach
-				, attaches
-				, m_clearValues
-				, m_blendAttachs ) );
-		}
-
-		VkSubpassDescription subpassDesc{ 0u
-			, m_bindingPoint
-			, 0u
-			, nullptr
-			, uint32_t( colorReferences.size() )
-			, colorReferences.data()
-			, nullptr
-			, depthReference.layout ? &depthReference : nullptr
-			, 0u
-			, nullptr };
-		VkSubpassDependencyArray dependencies{
-			{ VK_SUBPASS_EXTERNAL
+			m_descriptorBindings.push_back( { sampled.binding
+				, imageDescriptor
+				, 1u
+				, shaderStage
+				, nullptr } );
+			m_descriptorWrites.push_back( WriteDescriptorSet{ sampled.binding
 				, 0u
-				, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, VK_ACCESS_MEMORY_READ_BIT
-				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-				, VK_DEPENDENCY_BY_REGION_BIT }
-			, { 0u
-				, VK_SUBPASS_EXTERNAL
-				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-				, VK_ACCESS_MEMORY_READ_BIT
-				, VK_DEPENDENCY_BY_REGION_BIT } };
-		VkRenderPassCreateInfo createInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO
+				, imageDescriptor
+				, VkDescriptorImageInfo{ m_graph.createSampler( sampled.filter )
+				, m_graph.getImageView( sampled )
+				, sampled.initialLayout } } );
+		}
+
+		for ( auto & storage : m_pass.storage )
+		{
+			m_descriptorBindings.push_back( { storage.binding
+				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+				, 1u
+				, shaderStage
+				, nullptr } );
+			m_descriptorWrites.push_back( WriteDescriptorSet{ storage.binding
+				, 0u
+				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+				, VkDescriptorImageInfo{ VK_NULL_HANDLE
+				, m_graph.getImageView( storage )
+				, storage.initialLayout } } );
+		}
+
+		shaderStage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+		for ( auto & uniform : m_pass.buffers )
+		{
+			m_descriptorBindings.push_back( { uniform->dstBinding
+				, uniform->descriptorType
+				, uniform->descriptorCount
+				, shaderStage
+				, nullptr } );
+			m_descriptorWrites.push_back( uniform );
+		}
+
+		for ( auto & uniform : m_pass.bufferViews )
+		{
+			m_descriptorBindings.push_back( { uniform->dstBinding
+				, uniform->descriptorType
+				, uniform->descriptorCount
+				, shaderStage
+				, nullptr } );
+			m_descriptorWrites.push_back( uniform );
+		}
+	}
+
+	void RenderQuad::doCreateDescriptorSetLayout()
+	{
+		VkDescriptorSetLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
 			, nullptr
 			, 0u
-			, uint32_t( attaches.size() )
-			, attaches.data()
-			, 1u
-			, &subpassDesc
-			, uint32_t( dependencies.size() )
-			, dependencies.data() };
-		auto res = m_context.vkCreateRenderPass( m_context.device
+			, static_cast< uint32_t >( m_descriptorBindings.size() )
+			, m_descriptorBindings.data() };
+		auto res = m_context.vkCreateDescriptorSetLayout( m_context.device
 			, &createInfo
 			, m_context.allocator
-			, &m_renderPass );
-		checkVkResult( res, "FramePass creation" );
-		crgRegisterObject( m_context, m_pass.name, m_renderPass );
+			, &m_descriptorSetLayout );
+		checkVkResult( res, "DescriptorSetLayout creation" );
+		crgRegisterObject( m_context, m_pass.name, m_descriptorSetLayout );
+	}
+
+	void RenderQuad::doCreatePipelineLayout()
+	{
+		VkPipelineLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
+			, nullptr
+			, 0u
+			, 1u                       // setLayoutCount
+			, &m_descriptorSetLayout   // pSetLayouts
+			, 0u                       // pushConstantRangeCount
+			, nullptr };               // pPushConstantRanges
+		auto res = m_context.vkCreatePipelineLayout( m_context.device
+			, &createInfo
+			, m_context.allocator
+			, &m_pipelineLayout );
+		checkVkResult( res, "PipeliineLayout creation" );
+		crgRegisterObject( m_context, m_pass.name, m_pipelineLayout );
+	}
+
+	void RenderQuad::doCreateDescriptorPool()
+	{
+		assert( m_descriptorSetLayout );
+		VkDescriptorSetLayoutBindingArray bindings;
+		uint32_t index = 0u;
+
+		for ( auto & binding : m_pass.sampled )
+		{
+			bindings.push_back( { index++
+				, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
+				, 1u
+				, VK_SHADER_STAGE_FRAGMENT_BIT
+				, nullptr } );
+		}
+
+		auto sizes = getBindingsSizes( bindings, 1u );
+		VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
+			, nullptr
+			, 0u
+			, 1u
+			, uint32_t( sizes.size() )
+			, sizes.data() };
+		auto res = m_context.vkCreateDescriptorPool( m_context.device
+			, &createInfo
+			, m_context.allocator
+			, &m_descriptorSetPool );
+		checkVkResult( res, "DescriptorPool creation" );
+		crgRegisterObject( m_context, m_pass.name, m_descriptorSetPool );
+	}
+
+	void RenderQuad::doCreateDescriptorSet()
+	{
+		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
+			, nullptr
+			, m_descriptorSetPool
+			, 1u
+			, &m_descriptorSetLayout };
+		auto res = m_context.vkAllocateDescriptorSets( m_context.device
+			, &allocateInfo
+			, &m_descriptorSet );
+		checkVkResult( res, "DescriptorSet allocation" );
+		crgRegisterObject( m_context, m_pass.name, m_descriptorSet );
+
+		for ( auto & write : m_descriptorWrites )
+		{
+			write.update( m_descriptorSet );
+		}
+
+		auto descriptorWrites = makeVkArray< VkWriteDescriptorSet >( m_descriptorWrites );
+		m_context.vkUpdateDescriptorSets( m_context.device
+			, uint32_t( descriptorWrites.size() )
+			, descriptorWrites.data()
+			, 0u
+			, nullptr );
 	}
 
 	void RenderQuad::doCreatePipeline()
@@ -245,18 +269,23 @@ namespace crg
 			, 0.0f
 			, 0.0f
 			, 0.0f };
+		VkPipelineDepthStencilStateCreateInfo dsState{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
+			, nullptr
+			, 0u
+			, VK_FALSE
+			, VK_FALSE };
 		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
 			, nullptr
 			, 0u
-			, uint32_t( m_baseConfig.program.size() )
-			, m_baseConfig.program.data()
+			, uint32_t( m_config.program.size() )
+			, m_config.program.data()
 			, &m_vertexBuffer->inputState
 			, &iaState
 			, nullptr
 			, &vpState
 			, &rsState
 			, &msState
-			, &m_baseConfig.dsState
+			, &dsState
 			, &cbState
 			, nullptr
 			, m_pipelineLayout
@@ -292,56 +321,5 @@ namespace crg
 			, viewports.data()
 			, uint32_t( scissors.size())
 			, scissors.data() };
-	}
-
-	VkPipelineColorBlendStateCreateInfo RenderQuad::doCreateBlendState()
-	{
-		return { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
-			, nullptr
-			, 0u
-			, VK_FALSE
-			, VK_LOGIC_OP_COPY
-			, uint32_t( m_blendAttachs.size() )
-			, m_blendAttachs.data() };
-	}
-
-	void RenderQuad::doCreateFramebuffer()
-	{
-		VkImageViewArray attachments;
-		uint32_t width{};
-		uint32_t height{};
-		uint32_t layers{ 1u };
-
-		if ( m_pass.depthStencilInOut )
-		{
-			attachments.push_back( m_graph.getImageView( *m_pass.depthStencilInOut ) );
-			width = m_pass.depthStencilInOut->viewData.image.data->info.extent.width;
-			height = m_pass.depthStencilInOut->viewData.image.data->info.extent.height;
-		}
-
-		for ( auto & attach : m_pass.colourInOuts )
-		{
-			attachments.push_back( m_graph.getImageView( attach ) );
-			width = attach.viewData.image.data->info.extent.width;
-			height = attach.viewData.image.data->info.extent.height;
-		}
-
-		m_renderArea.extent.width = width;
-		m_renderArea.extent.height = height;
-		VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
-			, nullptr
-			, 0u
-			, m_renderPass
-			, uint32_t( attachments.size() )
-			, attachments.data()
-			, width
-			, height
-			, layers };
-		auto res = m_context.vkCreateFramebuffer( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_frameBuffer );
-		checkVkResult( res, "Framebuffer creation" );
-		crgRegisterObject( m_context, m_pass.name, m_frameBuffer );
 	}
 }

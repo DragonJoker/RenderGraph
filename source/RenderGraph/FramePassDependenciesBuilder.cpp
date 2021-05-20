@@ -32,7 +32,7 @@ namespace crg
 
 			std::ostream & operator<<( std::ostream & stream, PassAttach const & attach )
 			{
-				stream << attach.attach.viewData.name;
+				stream << attach.attach.view.data->name;
 				std::string sep{ " -> " };
 
 				for ( auto & pass : attach.passes )
@@ -61,13 +61,13 @@ namespace crg
 
 				for ( auto & attach : dependency.srcOutputs )
 				{
-					stream << sep << attach.viewData.name;
+					stream << sep << attach.view.data->name;
 					sep = ", ";
 				}
 
 				for ( auto & attach : dependency.dstInputs )
 				{
-					stream << sep << attach.viewData.name;
+					stream << sep << attach.view.data->name;
 					sep = ", ";
 				}
 
@@ -149,7 +149,7 @@ namespace crg
 					, cont.end()
 					, [&attach]( PassAttach const & lookup )
 					{
-						return lookup.attach.viewData == attach.viewData;
+						return lookup.attach.view == attach.view;
 					} );
 
 				if ( cont.end() == it )
@@ -202,7 +202,7 @@ namespace crg
 						, all
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.viewData, attach.viewData );
+							return areOverlapping( *lookup.view.data, *attach.view.data );
 						} );
 				}
 			}
@@ -220,7 +220,7 @@ namespace crg
 						, all
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.viewData, attach.viewData );
+							return areOverlapping( *lookup.view.data, *attach.view.data );
 						} );
 				}
 			}
@@ -238,7 +238,7 @@ namespace crg
 						, all
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.viewData, attach.viewData );
+							return areOverlapping( *lookup.view.data, *attach.view.data );
 						} );
 				}
 			}
@@ -257,7 +257,7 @@ namespace crg
 						, all
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.viewData, attach.viewData );
+							return areOverlapping( *lookup.view.data, *attach.view.data );
 						} );
 				}
 			}
@@ -276,7 +276,7 @@ namespace crg
 						, all
 						, [&attach]( Attachment const & lookup )
 						{
-							return areOverlapping( lookup.viewData, attach.viewData );
+							return areOverlapping( *lookup.view.data, *attach.view.data );
 						} );
 				}
 			}
@@ -390,7 +390,9 @@ namespace crg
 				{
 					for ( auto & dst : dsts )
 					{
-						if ( src != dst )
+						if ( src != dst
+							&& !src->dependsOn( *dst )
+							&& dst->directDependsOn( *src ) )
 						{
 							auto it = std::find_if( dependencies.begin()
 								, dependencies.end()
@@ -424,7 +426,7 @@ namespace crg
 			}
 		}
 
-		FramePassDependenciesArray buildPassDependencies( std::vector< FramePassPtr > const & passes )
+		FramePassDependenciesArray buildPassAttachDependencies( std::vector< FramePassPtr > const & passes )
 		{
 			PassAttachCont sampled;
 			PassAttachCont inputs;
@@ -435,7 +437,9 @@ namespace crg
 			{
 				processSampledAttachs( pass->sampled, *pass, sampled, all );
 				processColourInputAttachs( pass->colourInOuts, *pass, inputs, all );
+				processColourInputAttachs( pass->transferInOuts, *pass, inputs, all );
 				processColourOutputAttachs( pass->colourInOuts, *pass, outputs, all );
+				processColourOutputAttachs( pass->transferInOuts, *pass, outputs, all );
 
 				if ( pass->depthStencilInOut )
 				{
@@ -450,7 +454,7 @@ namespace crg
 			{
 				for ( auto & input : inputs )
 				{
-					if ( areOverlapping( output.attach.viewData, input.attach.viewData ) )
+					if ( areOverlapping( *output.attach.view.data, *input.attach.view.data ) )
 					{
 						addDependency( output.attach
 							, input.attach
@@ -462,7 +466,7 @@ namespace crg
 							, all.end()
 							, [&input]( PassAttach const & lookup )
 							{
-								return lookup.attach.viewData == input.attach.viewData;
+								return lookup.attach.view == input.attach.view;
 							} );
 
 						if ( all.end() != it )
@@ -474,7 +478,7 @@ namespace crg
 
 				for ( auto & sample : sampled )
 				{
-					if ( areOverlapping( output.attach.viewData, sample.attach.viewData ) )
+					if ( areOverlapping( *output.attach.view.data, *sample.attach.view.data ) )
 					{
 						addDependency( output.attach
 							, sample.attach
@@ -486,7 +490,7 @@ namespace crg
 							, all.end()
 							, [&output]( PassAttach const & lookup )
 							{
-								return lookup.attach.viewData == output.attach.viewData;
+								return lookup.attach.view == output.attach.view;
 							} );
 
 						if ( all.end() != it )
@@ -507,6 +511,10 @@ namespace crg
 
 			printDebug( sampled, inputs, outputs, result );
 			return result;
+		}
+
+		void filterPassDependencies( FramePassDependenciesArray & dependencies )
+		{
 		}
 	}
 }

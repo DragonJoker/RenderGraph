@@ -31,6 +31,7 @@ namespace crg
 
 	class GraphVisitor;
 	class FrameGraph;
+	class FramePassTimer;
 	class RunnableGraph;
 	class RunnablePass;
 
@@ -47,6 +48,7 @@ namespace crg
 	using AttachmentArray = std::vector< Attachment >;
 	using AttachmentTransitionArray = std::vector< AttachmentTransition >;
 	using FramePassPtrArray = std::vector< FramePassPtr >;
+	using FramePassArray = std::vector< FramePass const * >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
 	using FramePassDependenciesArray = std::vector< FramePassDependencies >;
@@ -102,4 +104,19 @@ namespace crg
 		, VK_BLEND_FACTOR_ZERO
 		, VK_BLEND_OP_ADD
 		, VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT };
+
+	template< typename TypeT >
+	struct DefaultValueGetterT;
+
+	template< typename TypeT >
+	static inline TypeT const & defaultV = DefaultValueGetterT< TypeT >::get();
+
+	template< typename TypeT >
+	struct RawTyperT
+	{
+		using Type = TypeT;
+	};
+
+	template< typename TypeT >
+	using RawTypeT = typename RawTyperT< TypeT >::Type;
 }

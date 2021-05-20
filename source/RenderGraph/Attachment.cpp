@@ -9,22 +9,59 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	Attachment::Attachment()
+	namespace
+	{
+		bool isDepthFormat( VkFormat fmt )
+		{
+			return fmt == VK_FORMAT_D16_UNORM
+				|| fmt == VK_FORMAT_X8_D24_UNORM_PACK32
+				|| fmt == VK_FORMAT_D32_SFLOAT
+				|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
+		}
+
+		bool isStencilFormat( VkFormat fmt )
+		{
+			return fmt == VK_FORMAT_S8_UINT
+				|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
+		}
+
+		bool isColourFormat( VkFormat fmt )
+		{
+			return !isDepthFormat( fmt ) && !isStencilFormat( fmt );
+		}
+
+		bool isDepthStencilFormat( VkFormat fmt )
+		{
+			return isDepthFormat( fmt ) && isStencilFormat( fmt );
+		}
+	}
+
+	Attachment::Attachment( ImageViewId view )
+		: view{ view }
 	{
 	}
 
 	Attachment::Attachment( FlagKind flags
-		, ImageViewData viewData
+		, FramePass const & pass
+		, std::string name
+		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
 		, VkImageLayout finalLayout
+		, uint32_t binding
 		, VkFilter filter
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
-		: viewData{ std::move( viewData ) }
+		: pass{ &pass }
+		, name{ std::move( name ) }
+		, view{ std::move( view ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
@@ -51,74 +88,23 @@ namespace crg
 		, initialLayout{ initialLayout }
 		, finalLayout{ finalLayout }
 		, filter{ filter }
+		, binding{ binding }
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
 	{
+		assert( ( ( view.data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
+				&& isColourFormat( view.data->info.format ) )
+			|| ( ( view.data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
+				&& isDepthStencilFormat( view.data->info.format ) )
+			|| ( ( view.data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
+				&& isDepthFormat( view.data->info.format ) )
+			|| ( ( view.data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
+				&& isStencilFormat( view.data->info.format ) ) );
 		assert( !isSampled()
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
-	}
-
-	Attachment Attachment::createSampled( ImageViewData viewData
-		, VkImageLayout initialLayout
-		, VkFilter filter )
-	{
-		return { FlagKind( Flag::Sampled )
-			, viewData
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, initialLayout
-			, filter
-			, {}
-			, {} };
-	}
-
-	Attachment Attachment::createColour( ImageViewData viewData
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
-		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState )
-	{
-		return { FlagKind( Flag::None )
-			, viewData
-			, loadOp
-			, storeOp
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, finalLayout
-			, {}
-			, std::move( clearValue )
-			, std::move( blendState ) };
-	}
-
-	Attachment Attachment::createDepthStencil( ImageViewData viewData
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
-		, VkClearValue clearValue )
-	{
-		return { FlagKind( Flag::Depth )
-			, viewData
-			, loadOp
-			, storeOp
-			, stencilLoadOp
-			, stencilStoreOp
-			, initialLayout
-			, finalLayout
-			, {}
-			, std::move( clearValue )
-			, {} };
 	}
 
 	bool operator==( VkClearValue const & lhs
@@ -143,8 +129,9 @@ namespace crg
 	bool operator==( Attachment const & lhs
 		, Attachment const & rhs )
 	{
-		return lhs.flags == rhs.flags
-			&& lhs.viewData == rhs.viewData
+		return lhs.pass == rhs.pass
+			&& lhs.flags == rhs.flags
+			&& lhs.view == rhs.view
 			&& lhs.loadOp == rhs.loadOp
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp
