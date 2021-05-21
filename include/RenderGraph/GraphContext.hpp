@@ -504,6 +504,7 @@ namespace crg
 		DECL_vkFunction( CreateQueryPool );
 		DECL_vkFunction( DestroyQueryPool );
 		DECL_vkFunction( GetQueryPoolResults );
+		DECL_vkFunction( ResetCommandBuffer );
 
 		DECL_vkFunction( CmdBindPipeline );
 		DECL_vkFunction( CmdBindDescriptorSets );

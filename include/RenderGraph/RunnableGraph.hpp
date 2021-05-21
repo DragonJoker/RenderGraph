@@ -21,7 +21,10 @@ namespace crg
 
 		void record();
 		void recordInto( VkCommandBuffer commandBuffer );
+
 		SemaphoreWait run( SemaphoreWait toWait
+			, VkQueue queue );
+		SemaphoreWait run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
 		VkImage getImage( ImageId const & image )const;
 		VkImage getImage( Attachment const & attach )const;
@@ -33,7 +36,8 @@ namespace crg
 		VkSampler createSampler( VkFilter filter );
 
 		VkImageLayout getInitialLayout( crg::FramePass const & pass
-			, ImageViewId view );
+			, ImageViewId view
+			, bool allowSrcClear = true );
 		VkImageLayout getFinalLayout( crg::FramePass const & pass
 			, ImageViewId view );
 		void memoryBarrier( VkCommandBuffer commandBuffer

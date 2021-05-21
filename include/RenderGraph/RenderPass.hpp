@@ -48,6 +48,11 @@ namespace crg
 		VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
 		virtual void doSubInitialise() = 0;
 		virtual void doSubRecordInto( VkCommandBuffer commandBuffer )const = 0;
+		virtual VkSubpassContents doGetSubpassContents( uint32_t subpassIndex )const
+		{
+			return VK_SUBPASS_CONTENTS_INLINE;
+		}
+
 		void doCreateRenderPass();
 		void doCreateFramebuffer();
 		VkPipelineColorBlendStateCreateInfo doCreateBlendState();

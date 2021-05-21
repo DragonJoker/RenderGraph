@@ -119,4 +119,12 @@ namespace crg
 
 	template< typename TypeT >
 	using RawTypeT = typename RawTyperT< TypeT >::Type;
+
+	struct SemaphoreWait
+	{
+		VkSemaphore semaphore;
+		VkPipelineStageFlags dstStageMask;
+	};
+
+	using SemaphoreWaitArray = std::vector< SemaphoreWait >;
 }

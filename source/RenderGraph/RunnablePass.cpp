@@ -61,7 +61,7 @@ namespace crg
 	{
 		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 			, nullptr
-			, 0u
+			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 			, nullptr };
 		m_context.vkBeginCommandBuffer( m_commandBuffer, &beginInfo );
 		recordInto( m_commandBuffer );
@@ -82,12 +82,30 @@ namespace crg
 	SemaphoreWait RunnablePass::run( SemaphoreWait toWait
 		, VkQueue queue )
 	{
+		return run( ( toWait.semaphore
+				? SemaphoreWaitArray{ 1u, toWait }
+				: SemaphoreWaitArray{} )
+			, queue );
+	}
+
+	SemaphoreWait RunnablePass::run( SemaphoreWaitArray const & toWait
+		, VkQueue queue )
+	{
 		m_timer.notifyPassRender();
+		std::vector< VkSemaphore > semaphores;
+		std::vector< VkPipelineStageFlags > dstStageMasks;
+
+		for ( auto & wait : toWait )
+		{
+			semaphores.push_back( wait.semaphore );
+			dstStageMasks.push_back( wait.dstStageMask );
+		}
+
 		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 			, nullptr
-			, 1u
-			, &toWait.semaphore
-			, & toWait.dstStageMask
+			, uint32_t( toWait.size() )
+			, semaphores.data()
+			, dstStageMasks.data()
 			, 1u
 			, &m_commandBuffer
 			, 1u
@@ -100,11 +118,17 @@ namespace crg
 			, doGetSemaphoreWaitFlags() };
 	}
 
+	void RunnablePass::resetCommandBuffer()
+	{
+		m_context.vkResetCommandBuffer( m_commandBuffer
+			, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+	}
+
 	void RunnablePass::doCreateCommandPool()
 	{
 		VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
 			, nullptr
-			, 0u
+			, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
 			, };
 		auto res = m_context.vkCreateCommandPool( m_context.device
 			, &createInfo
