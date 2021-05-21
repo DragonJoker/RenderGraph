@@ -12,21 +12,20 @@ namespace crg
 	//*********************************************************************************************
 
 	GraphNode::GraphNode( Kind kind
-		, std::string name
-		, AttachmentsNodeMap attachments )
+		, std::string name )
 		: kind{ kind }
 		, name{ std::move( name ) }
 		, next{}
-		, attachsToPrev{ std::move( attachments ) }
 	{
 	}
 
-	void GraphNode::addAttaches( GraphAdjacentNode prev, AttachmentTransitionArray attachsToPrev )
+	void GraphNode::addAttaches( GraphAdjacentNode prev
+		, AttachmentTransitionArray inAttaches )
 	{
 		bool dirty = false;
-		auto * mine = &this->attachsToPrev[prev];
+		auto * mine = &this->inputAttaches[prev];
 
-		for ( auto & attach : attachsToPrev )
+		for ( auto & attach : inAttaches )
 		{
 			auto it = std::find( mine->begin()
 				, mine->end()
@@ -45,7 +44,8 @@ namespace crg
 		}
 	}
 
-	void GraphNode::attachNode( GraphAdjacentNode next, AttachmentTransitionArray attachsToNext )
+	void GraphNode::attachNode( GraphAdjacentNode next
+		, AttachmentTransitionArray inputAttaches )
 	{
 		auto it = std::find( this->next.begin()
 			, this->next.end()
@@ -56,7 +56,8 @@ namespace crg
 			this->next.push_back( next );
 		}
 
-		next->addAttaches( this, std::move( attachsToNext ) );
+		next->addAttaches( this
+			, std::move( inputAttaches ) );
 	}
 
 	GraphAdjacentNode GraphNode::findInNext( FramePass const & pass )const
@@ -72,17 +73,17 @@ namespace crg
 			: nullptr;
 	}
 
-	AttachmentTransitionArray const & GraphNode::getAttachsToPrev( ConstGraphAdjacentNode const pred )const
+	AttachmentTransitionArray const & GraphNode::getInputAttaches( ConstGraphAdjacentNode const pred )const
 	{
-		auto it = attachsToPrev.find( pred );
-		assert( it != attachsToPrev.end() );
+		auto it = inputAttaches.find( pred );
+		assert( it != inputAttaches.end() );
 		return it->second;
 	}
 
 	//*********************************************************************************************
 
 	FramePassNode::FramePassNode( FramePass const & pass )
-		: GraphNode{ MyKind, pass.name, {} }
+		: GraphNode{ MyKind, pass.name }
 		, pass{ &pass }
 	{
 	}
@@ -95,7 +96,7 @@ namespace crg
 	//*********************************************************************************************
 
 	RootNode::RootNode( std::string name )
-		: GraphNode{ MyKind, std::move( name ), {} }
+		: GraphNode{ MyKind, std::move( name ) }
 	{
 	}
 

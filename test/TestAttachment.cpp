@@ -1,6 +1,8 @@
 #include "Common.hpp"
 
 #include <RenderGraph/Attachment.hpp>
+#include <RenderGraph/FrameGraph.hpp>
+#include <RenderGraph/FramePass.hpp>
 #include <RenderGraph/ImageData.hpp>
 
 namespace
@@ -8,261 +10,315 @@ namespace
 	void testSampledAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testSampledAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createSampled( "Sampled"
-			, colView );
-
-		check( colAttachment.name == "Sampled" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addSampledView( view, 1u );
+		require( pass.sampled.size() == 1u );
+		auto & attachment = pass.sampled[0];
+		check( attachment.name == pass.name + view.data->name + "Sampled" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
+		check( attachment.binding == 1u );
+		check( attachment.filter == VK_FILTER_LINEAR );
+		testEnd();
+	}
+	
+	void testStorageAttachment( test::TestCounts & testCounts )
+	{
+		testBegin( "testStorageAttachment" );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addStorageView( view, 1u );
+		require( pass.sampled.size() == 1u );
+		auto & attachment = pass.sampled[0];
+		check( attachment.name == pass.name + view.data->name + "Storage" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
+		check( attachment.binding == 1u );
 		testEnd();
 	}
 
 	void testColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testColourAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createColour( "Colour"
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addColourView( "Colour"
+			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, colView );
-
-		check( colAttachment.name == "Colour" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.view == colView );
+			, VK_ATTACHMENT_STORE_OP_STORE );
+		require( pass.colourInOuts.size() == 1u );
+		auto & attachment = pass.colourInOuts[0];
+		check( attachment.name == pass.name + view.data->name + "Colour" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testDepthStencilAttachment" );
-		auto dsImage = test::createImage( VK_FORMAT_D32_SFLOAT );
-		auto dsView = test::makeId( test::createView( dsImage ) );
-		auto dsAttachment = crg::Attachment::createDepthStencil( "DepthStencil"
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addDepthStencilView("DepthStencil"
+			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
 			, VK_ATTACHMENT_STORE_OP_STORE
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, dsView );
-
-		check( dsAttachment.name == "DepthStencil" );
-		check( dsAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( dsAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( dsAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( dsAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( dsAttachment.view == dsView );
+			, VK_ATTACHMENT_STORE_OP_STORE );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "DepthStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInColourAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInputColour( "Colour"
-			, colView );
-
-		check( colAttachment.name == "Colour" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInputColourView( view );
+		require( pass.colourInOuts.size() == 1u );
+		auto & attachment = pass.colourInOuts[0];
+		check( attachment.name == pass.name + view.data->name + "InColour" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testOutColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutColourAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createOutputColour( "Colour"
-			, colView );
-
-		check( colAttachment.name == "Colour" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addOutputColourView( view );
+		require( pass.colourInOuts.size() == 1u );
+		auto & attachment = pass.colourInOuts[0];
+		check( attachment.name == pass.name + view.data->name + "OutColour" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInOutColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutColourAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInOutColour( "Colour"
-			, colView );
-
-		check( colAttachment.name == "Colour" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInOutColourView( view );
+		require( pass.colourInOuts.size() == 1u );
+		auto & attachment = pass.colourInOuts[0];
+		check( attachment.name == pass.name + view.data->name + "InOutColour" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInDepthAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInDepthAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_D32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInputDepthStencil( "Depth"
-			, colView );
-
-		check( colAttachment.name == "Depth" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInputDepthView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "InDepth" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testOutDepthAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutDepthAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_D32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createOutputDepthStencil( "Depth"
-			, colView );
-
-		check( colAttachment.name == "Depth" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addOutputDepthView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "OutDepth" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInOutDepthAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutDepthAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_D32_SFLOAT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInOutDepthStencil( "Depth"
-			, colView );
-
-		check( colAttachment.name == "Depth" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInOutDepthView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "InOutDepth" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInDepthStencilAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInputDepthStencil( "DepthStencil"
-			, colView );
-
-		check( colAttachment.name == "DepthStencil" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInputDepthStencilView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "InDepthStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testOutDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutDepthStencilAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createOutputDepthStencil( "DepthStencil"
-			, colView );
-
-		check( colAttachment.name == "DepthStencil" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addOutputDepthStencilView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "OutDepthStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInOutDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutDepthStencilAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInOutDepthStencil( "DepthStencil"
-			, colView );
-
-		check( colAttachment.name == "DepthStencil" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInOutDepthStencilView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "InOutDepthStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInStencilAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_S8_UINT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInputDepthStencil( "Stencil"
-			, colView );
-
-		check( colAttachment.name == "Stencil" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInputStencilView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "InStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testOutStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutStencilAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_S8_UINT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createOutputDepthStencil( "Stencil"
-			, colView );
-
-		check( colAttachment.name == "Stencil" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addOutputStencilView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "OutStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.view == view );
 		testEnd();
 	}
 
 	void testInOutStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutStencilAttachment" );
-		auto colImage = test::createImage( VK_FORMAT_S8_UINT );
-		auto colView = test::makeId( test::createView( colImage ) );
-		auto colAttachment = crg::Attachment::createInOutDepthStencil( "Stencil"
-			, colView );
-
-		check( colAttachment.name == "Stencil" );
-		check( colAttachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( colAttachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( colAttachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
-		check( colAttachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( colAttachment.view == colView );
+		crg::FrameGraph graph{ "test" };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		pass.addInOutStencilView( view );
+		require( pass.depthStencilInOut.has_value() );
+		auto & attachment = *pass.depthStencilInOut;
+		check( attachment.name == pass.name + view.data->name + "InOutStencil" );
+		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
+		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
+		check( attachment.view == view );
 		testEnd();
 	}
 }
@@ -271,13 +327,20 @@ int main( int argc, char ** argv )
 {
 	testSuiteBegin( "TestAttachment" );
 	testSampledAttachment( testCounts );
+	testStorageAttachment( testCounts );
 	testColourAttachment( testCounts );
 	testDepthStencilAttachment( testCounts );
 	testInColourAttachment( testCounts );
 	testOutColourAttachment( testCounts );
 	testInOutColourAttachment( testCounts );
+	testInDepthAttachment( testCounts );
+	testOutDepthAttachment( testCounts );
+	testInOutDepthAttachment( testCounts );
 	testInDepthStencilAttachment( testCounts );
 	testOutDepthStencilAttachment( testCounts );
 	testInOutDepthStencilAttachment( testCounts );
+	testInStencilAttachment( testCounts );
+	testOutStencilAttachment( testCounts );
+	testInOutStencilAttachment( testCounts );
 	testSuiteEnd();
 }

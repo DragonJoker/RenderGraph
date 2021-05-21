@@ -16,18 +16,13 @@ add_library( ${TEST_NAME}
 	${${TEST_NAME}_HEADER_FILES}
 	${${TEST_NAME}_SOURCE_FILES}
 )
-target_include_directories( ${TEST_NAME} PUBLIC
-	${IncludeDirs}
-)
-target_compile_options( ${TEST_NAME} PUBLIC
-	${CompileOptions}
-)
-target_compile_definitions( ${TEST_NAME} PUBLIC
-	${CompileDefinitions}
+target_link_libraries( ${TEST_NAME}
+	PUBLIC
+		crg::RenderGraph
 )
 set_target_properties( ${TEST_NAME} PROPERTIES
 	CXX_STANDARD 17
-	FOLDER "Tests"
+	FOLDER "Tests/${MAIN_PROJECT_NAME}"
 )
 
 file( GLOB TEST_FILES
@@ -40,22 +35,25 @@ foreach ( TEST_FILE ${TEST_FILES} )
 		$<TARGET_OBJECTS:TestCommon>
 		${TEST_FILE}
 	)
-	target_compile_options( ${TEST_NAME} PRIVATE
-		${CompileOptions}
-	)
-	target_compile_definitions( ${TEST_NAME} PRIVATE
-		${CompileDefinitions}
-	)
-	target_include_directories( ${TEST_NAME} PRIVATE
-		${IncludeDirs}
-	)
-	target_link_libraries( ${TEST_NAME} PRIVATE
-		${LinkLibraries}
+	target_link_libraries( ${TEST_NAME}
+		PRIVATE
+			crg::RenderGraph
 	)
 	set_target_properties( ${TEST_NAME} PROPERTIES
 		CXX_STANDARD 17
-		FOLDER "Tests"
+		FOLDER "Tests/${MAIN_PROJECT_NAME}"
 	)
+	if ( WIN32 )
+		target_link_libraries( ${TEST_NAME}
+			PRIVATE
+				Dbghelp
+		)
+	else ()
+		target_link_libraries( ${TEST_NAME}
+			PRIVATE
+				dl
+		)
+	endif ()
 	add_test(
 		NAME ${TEST_NAME}
 		COMMAND ${TEST_NAME}

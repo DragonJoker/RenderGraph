@@ -54,7 +54,6 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
 		, uint32_t binding
 		, VkFilter filter
 		, VkClearValue clearValue
@@ -86,7 +85,6 @@ namespace crg
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
 		, initialLayout{ initialLayout }
-		, finalLayout{ finalLayout }
 		, filter{ filter }
 		, binding{ binding }
 		, clearValue{ std::move( clearValue ) }

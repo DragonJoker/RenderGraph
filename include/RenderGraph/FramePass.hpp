@@ -95,88 +95,76 @@ namespace crg
 		*\brief
 		*	Creates a sampled image attachment.
 		*/
-		void addSampledView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
+		void addSampledView( ImageViewId view
 			, uint32_t binding
-			, VkFilter filter );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			, VkFilter filter = VK_FILTER_LINEAR );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
 		*/
-		void addStorageView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, uint32_t binding );
+		void addStorageView( ImageViewId view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+		/**
+		*\brief
+		*	Creates an transfer input attachment.
+		*/
+		void addTransferInputView( ImageViewId view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
+		/**
+		*\brief
+		*	Creates an transfer output attachment.
+		*/
+		void addTransferOutputView( ImageViewId view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
 		/**
 		*\brief
 		*	Creates a colour attachment.
 		*/
-		void addColourView( std::string name
+		void addColourView( std::string const & name
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {}
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		/**
 		*\brief
 		*	Creates a depth and/or stencil output attachment.
 		*/
-		void addDepthStencilView( std::string name
+		void addDepthStencilView( std::string const & name
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
-		/**
-		*\brief
-		*	Creates an transfer input attachment.
-		*/
-		void addTransferInputView( std::string name
-			, ImageViewId view );
-		/**
-		*\brief
-		*	Creates an transfer output attachment.
-		*/
-		void addTransferOutputView( std::string name
-			, ImageViewId view );
 		/**
 		*\brief
 		*	Creates an input colour attachment.
 		*/
-		void addInputColourView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInputColourView( ImageViewId view )
 		{
-			return addColourView( name + "InColour"
+			return addColourView( "InColour"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, initialLayout
-				, finalLayout );
+				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
 		*\brief
 		*	Creates an in/out colour attachment.
 		*/
-		void addInOutColourView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout
+		void addInOutColourView( ImageViewId view
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
-			addColourView( name + "InOutColour"
+			addColourView( "InOutColour"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, initialLayout
-				, finalLayout
+				, VK_IMAGE_LAYOUT_UNDEFINED
 				, {}
 				, std::move( blendState ) );
 		}
@@ -184,185 +172,149 @@ namespace crg
 		*\brief
 		*	Creates an output colour attachment.
 		*/
-		void addOutputColourView( std::string name
-			, ImageViewId view
-			, VkImageLayout finalLayout
+		void addOutputColourView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addColourView( name + "OutColour"
+			addColourView( "OutColour"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**
 		*\brief
 		*	Creates an input depth attachment.
 		*/
-		void addInputDepthView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInputDepthView( ImageViewId view )
 		{
-			addDepthStencilView( name + "InDepth"
+			addDepthStencilView( "InDepth"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, initialLayout
-				, finalLayout );
+				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
 		*\brief
 		*	Creates an in/out depth attachment.
 		*/
-		void addInOutDepthView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInOutDepthView( ImageViewId view )
 		{
-			addDepthStencilView( name + "InOutDepth"
+			addDepthStencilView( "InOutDepth"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, initialLayout
-				, finalLayout
+				, VK_IMAGE_LAYOUT_UNDEFINED
 				, {} );
 		}
 		/**
 		*\brief
 		*	Creates an output depth attachment.
 		*/
-		void addOutputDepthView( std::string name
-			, ImageViewId view
-			, VkImageLayout finalLayout
+		void addOutputDepthView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( name + "OutDepth"
+			addDepthStencilView( "OutDepth"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**
 		*\brief
 		*	Creates an input depth and stencil attachment.
 		*/
-		void addInputDepthStencilView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInputDepthStencilView( ImageViewId view )
 		{
-			addDepthStencilView( name + "InDepthStencil"
+			addDepthStencilView( "InDepthStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, initialLayout
-				, finalLayout );
+				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
 		*\brief
 		*	Creates an in/out depth and stencil attachment.
 		*/
-		void addInOutDepthStencilView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInOutDepthStencilView( ImageViewId view )
 		{
-			addDepthStencilView( name + "InOutDepthStencil"
+			addDepthStencilView( "InOutDepthStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, initialLayout
-				, finalLayout
+				, VK_IMAGE_LAYOUT_UNDEFINED
 				, {} );
 		}
 		/**
 		*\brief
 		*	Creates an output depth and stencil attachment.
 		*/
-		void addOutputDepthStencilView( std::string name
-			, ImageViewId view
-			, VkImageLayout finalLayout
+		void addOutputDepthStencilView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( name + "OutDepthStencil"
+			addDepthStencilView( "OutDepthStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**
 		*\brief
 		*	Creates an input stencil attachment.
 		*/
-		void addInputStencilView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInputStencilView( ImageViewId view )
 		{
-			addDepthStencilView( name + "InStencil"
+			addDepthStencilView( "InStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, initialLayout
-				, finalLayout );
+				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
 		*\brief
 		*	Creates an in/out stencil attachment.
 		*/
-		void addInOutStencilView( std::string name
-			, ImageViewId view
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+		void addInOutStencilView( ImageViewId view )
 		{
-			addDepthStencilView( name + "InOutStencil"
+			addDepthStencilView( "InOutStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, initialLayout
-				, finalLayout
+				, VK_IMAGE_LAYOUT_UNDEFINED
 				, {} );
 		}
 		/**
 		*\brief
 		*	Creates an output stencil attachment.
 		*/
-		void addOutputStencilView( std::string name
-			, ImageViewId view
-			, VkImageLayout finalLayout
+		void addOutputStencilView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( name + "OutStencil"
+			addDepthStencilView( "OutStencil"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
-				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**@}*/

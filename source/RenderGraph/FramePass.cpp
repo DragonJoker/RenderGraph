@@ -95,21 +95,19 @@ namespace crg
 		bufferViews.push_back( write );
 	}
 
-	void FramePass::addSampledView( std::string name
-		, ImageViewId view
-		, VkImageLayout initialLayout
+	void FramePass::addSampledView( ImageViewId view
 		, uint32_t binding
+		, VkImageLayout initialLayout
 		, VkFilter filter )
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Sampled )
 			, *this
-			, name + "Sampled"
+			, name + view.data->name + "Sampled"
 			, std::move( view )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
 			, initialLayout
 			, binding
 			, filter
@@ -117,20 +115,18 @@ namespace crg
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addStorageView( std::string name
-		, ImageViewId view
-		, VkImageLayout initialLayout
-		, uint32_t binding )
+	void FramePass::addStorageView( ImageViewId view
+		, uint32_t binding
+		, VkImageLayout initialLayout )
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Storage )
 			, *this
-			, name + "Storage"
+			, name + view.data->name + "Storage"
 			, std::move( view )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
 			, initialLayout
 			, binding
 			, VkFilter{}
@@ -138,93 +134,87 @@ namespace crg
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addColourView( std::string name
+	void FramePass::addTransferInputView( ImageViewId view
+		, VkImageLayout initialLayout )
+	{
+		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, this->name + view.data->name + "InTransfer"
+			, std::move( view )
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, initialLayout
+			, uint32_t{}
+			, VkFilter{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addTransferOutputView( ImageViewId view
+		, VkImageLayout initialLayout )
+	{
+		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, this->name + view.data->name + "OutTransfer"
+			, std::move( view )
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, initialLayout
+			, uint32_t{}
+			, VkFilter{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addColourView( std::string const & name
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
 		colourInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
-			, std::move( name )
+			, this->name + view.data->name + name
 			, std::move( view )
 			, loadOp
 			, storeOp
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
-			, finalLayout
 			, uint32_t{}
 			, VkFilter{}
 			, std::move( clearValue )
 			, std::move( blendState ) } );
 	}
 
-	void FramePass::addDepthStencilView( std::string name
+	void FramePass::addDepthStencilView( std::string const & name
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		depthStencilInOut = { Attachment::FlagKind( Attachment::Flag::Depth )
 			, *this
-			, std::move( name )
+			, this->name + view.data->name + name
 			, std::move( view )
 			, loadOp
 			, storeOp
 			, stencilLoadOp
 			, stencilStoreOp
 			, initialLayout
-			, finalLayout
 			, uint32_t{}
 			, VkFilter{}
 			, std::move( clearValue )
 			, VkPipelineColorBlendAttachmentState{} };
-	}
-
-	void FramePass::addTransferInputView( std::string name
-		, ImageViewId view )
-	{
-		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, name + "InTransfer"
-			, std::move( view )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkImageLayout{}
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, uint32_t{}
-			, VkFilter{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{} } );
-	}
-
-	void FramePass::addTransferOutputView( std::string name
-		, ImageViewId view )
-	{
-		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, name + "OutTransfer"
-			, std::move( view )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkImageLayout{}
-			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-			, uint32_t{}
-			, VkFilter{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{} } );
 	}
 
 	RunnablePassPtr FramePass::createRunnable( GraphContext const & context

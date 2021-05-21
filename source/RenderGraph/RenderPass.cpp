@@ -18,7 +18,9 @@ namespace crg
 	{
 		VkAttachmentReference addAttach( Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
-			, std::vector< VkClearValue > & clearValues )
+			, std::vector< VkClearValue > & clearValues
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			VkImageLayout attachLayout;
 
@@ -71,8 +73,8 @@ namespace crg
 				, attach.storeOp
 				, attach.stencilLoadOp
 				, attach.stencilStoreOp
-				, attach.initialLayout
-				, attach.finalLayout } );
+				, initialLayout
+				, finalLayout } );
 			clearValues.push_back( attach.clearValue );
 			return result;
 		}
@@ -80,10 +82,16 @@ namespace crg
 		VkAttachmentReference addAttach( Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< VkClearValue > & clearValues
-			, VkPipelineColorBlendAttachmentStateArray & blendAttachs )
+			, VkPipelineColorBlendAttachmentStateArray & blendAttachs
+			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout )
 		{
 			blendAttachs.push_back( attach.blendState );
-			return addAttach( attach, attaches, clearValues );
+			return addAttach( attach
+				, attaches
+				, clearValues
+				, initialLayout
+				, finalLayout );
 		}
 	}
 
@@ -169,7 +177,9 @@ namespace crg
 		{
 			depthReference = addAttach( *m_pass.depthStencilInOut
 				, attaches
-				, m_clearValues );
+				, m_clearValues
+				, m_graph.getInitialLayout( m_pass, m_pass.depthStencilInOut->view )
+				, m_graph.getFinalLayout( m_pass, m_pass.depthStencilInOut->view ) );
 		}
 
 		for ( auto & attach : m_pass.colourInOuts )
@@ -177,7 +187,9 @@ namespace crg
 			colorReferences.push_back( addAttach( attach
 				, attaches
 				, m_clearValues
-				, m_blendAttachs ) );
+				, m_blendAttachs
+				, m_graph.getInitialLayout( m_pass, m_pass.depthStencilInOut->view )
+				, m_graph.getFinalLayout( m_pass, m_pass.depthStencilInOut->view ) ) );
 		}
 
 		VkSubpassDescription subpassDesc{ 0u

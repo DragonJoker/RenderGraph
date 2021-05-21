@@ -69,17 +69,16 @@ namespace crg
 				, RootNode & fullGraph
 				, GraphAdjacentNode prevNode )
 			{
-				AttachmentTransitionArray currTransitions;
+				AttachmentTransitionArray inputTransitions;
 				AttachmentTransitionArray nextTransitions;
 				FramePassSet dstPasses;
 
 				// List the transitions for which the current pass is the source.
 				for ( auto & transition : transitions )
 				{
-					if ( transition.dstAttach.pass
-						&& curr == transition.dstAttach.pass )
+					if ( curr == transition.dstAttach.pass )
 					{
-						currTransitions.push_back( transition );
+						inputTransitions.push_back( transition );
 					}
 					else
 					{
@@ -99,7 +98,7 @@ namespace crg
 					|| curr != getFramePass( *prevNode ) )
 				{
 					prevNode->attachNode( result
-						, std::move( currTransitions ) );
+						, std::move( inputTransitions ) );
 				}
 
 				for ( auto & dstPass : dstPasses )
