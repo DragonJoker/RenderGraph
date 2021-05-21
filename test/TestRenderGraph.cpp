@@ -1,7 +1,8 @@
 #include "Common.hpp"
 
-#include <RenderGraph/RenderGraph.hpp>
+#include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/ImageData.hpp>
+#include <RenderGraph/RunnablePass.hpp>
 
 #include <sstream>
 
@@ -28,45 +29,61 @@ namespace
 		return result.str();
 	}
 
+	class DummyRunnable
+		: public crg::RunnablePass
+	{
+	public:
+		DummyRunnable( crg::FramePass const & pass
+			, crg::GraphContext const & context
+			, crg::RunnableGraph & graph )
+			: crg::RunnablePass{ pass, context, graph }
+		{
+		}
+	private:
+		void doInitialise()override
+		{
+		}
+		void doRecordInto( VkCommandBuffer commandBuffer )
+		{
+		}
+		VkPipelineStageFlags doGetSemaphoreWaitFlags()const override
+		{
+			return VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+		}
+	};
+
+	crg::RunnablePassCreator createDummy()
+	{
+		return []( crg::FramePass const &
+			, crg::GraphContext const &
+			, crg::RunnableGraph & )
+		{
+			return std::make_unique< DummyRunnable >();
+		};
+	}
+
 	void testNoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testNoPass" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		checkThrow( graph.compile() );
 
-		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createOutputColour( "RT"
-			, rtv );
-		crg::RenderPass pass
-		{
-			"pass1C",
-			{},
-			{ rtAttach },
-		};
+		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rtv = graph.createView( test::createView( "rtv", rt ) );
+		auto & pass = graph.createPass( "pass1C", crg::RunnablePassCreator{} );
+		pass.addOutputColourView( rtv );
 
-		checkNoThrow( graph.add( pass ) );
-		checkNoThrow( graph.remove( pass ) );
-		checkThrow( graph.compile() );
 		testEnd();
 	}
 
 	void testOnePass( test::TestCounts & testCounts )
 	{
 		testBegin( "testOnePass" );
-		crg::RenderGraph graph{ testCounts.testName };
-		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createOutputColour( "RT"
-			, rtv );
-		crg::RenderPass pass
-		{
-			"pass1C",
-			{},
-			{ rtAttach },
-		};
-
-		checkNoThrow( graph.add( pass ) );
+		crg::FrameGraph graph{ testCounts.testName };
+		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rtv = graph.createView( test::createView( "rtv", rt ) );
+		auto & pass = graph.createPass( "pass1C", crg::RunnablePassCreator{} );
+		pass.addOutputColourView(  rtv );
 		checkNoThrow( graph.compile() );
 		std::stringstream stream;
 		test::display( testCounts, stream, graph );
@@ -80,78 +97,26 @@ namespace
 	void testDuplicateName( test::TestCounts & testCounts )
 	{
 		testBegin( "testDuplicateName" );
-		crg::RenderGraph graph{ testCounts.testName };
-		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createOutputColour( "RT"
-			, rtv );
-		crg::RenderPass pass
-		{
-			"pass1C",
-			{},
-			{ rtAttach },
-		};
-		checkNoThrow( graph.add( pass ) );
-		checkThrow( graph.add( pass ) );
-		checkNoThrow( graph.remove( pass ) );
-		testEnd();
-	}
-
-	void testWrongRemove( test::TestCounts & testCounts )
-	{
-		testBegin( "testWrongRemove" );
-		crg::RenderGraph graph{ testCounts.testName };
-		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createOutputColour( "RT"
-			, rtv );
-		crg::RenderPass pass1
-		{
-			"pass1C",
-			{},
-			{ rtAttach },
-		};
-		crg::RenderPass pass2
-		{
-			"pass2C",
-			{},
-			{ rtAttach },
-		};
-		checkNoThrow( graph.add( pass1 ) );
-		checkThrow( graph.remove( pass2 ) );
-		checkNoThrow( graph.remove( pass1 ) );
+		crg::FrameGraph graph{ testCounts.testName };
+		checkNoThrow( graph.createPass( "pass1C", crg::RunnablePassCreator{} ) );
+		checkThrow( graph.createPass( "pass2C", crg::RunnablePassCreator{} ) );
 		testEnd();
 	}
 
 	void testOneDependency( test::TestCounts & testCounts )
 	{
 		testBegin( "testOneDependency" );
-		crg::RenderGraph graph{ testCounts.testName };
-		auto rt = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtv = graph.createView( test::createView( rt, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto rtAttach = crg::Attachment::createOutputColour( "RT"
-			, rtv );
-		crg::RenderPass pass1
-		{
-			"pass1C",
-			{},
-			{ rtAttach },
-		};
-		checkNoThrow( graph.add( pass1 ) );
+		crg::FrameGraph graph{ testCounts.testName };
+		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rtv = graph.createView( test::createView( "rtv", rt ) );
+		auto & pass1 = graph.createPass( "pass1C", crg::RunnablePassCreator{} );
+		pass1.addOutputColourView( rtv );
 
-		auto inAttach = crg::Attachment::createSampled( "IN"
-			, rtv );
-		auto out = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto outv = graph.createView( test::createView( out, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto outAttach = crg::Attachment::createOutputColour( "OUT"
-			, outv );
-		crg::RenderPass pass2
-		{
-			"pass2C",
-			{ inAttach },
-			{ outAttach },
-		};
-		checkNoThrow( graph.add( pass2 ) );
+		auto out = graph.createImage( test::createImage( "out", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto outv = graph.createView( test::createView( "outv", out ) );
+		auto & pass2 = graph.createPass( "pass2C", crg::RunnablePassCreator{} );
+		pass2.addSampledView( rtv, 0u );
+		pass2.addOutputColourView( outv );
 
 		checkNoThrow( graph.compile() );
 		std::stringstream stream;
@@ -169,10 +134,10 @@ namespace
 	void testChainedDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testChainedDependencies" );
-		crg::RenderGraph graph{ testCounts.testName };
-		auto d0 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto d0v = graph.createView( test::createView( d0, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d0tAttach = crg::Attachment::createOutputColour( "D0Tg"
+		crg::FrameGraph graph{ testCounts.testName };
+		auto d0 = graph.createImage( test::createImage( "d0", VK_FORMAT_R32G32B32_SFLOAT ) );
+		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
+		auto d0tAttach = pass.addOutputColourView( "D0Tg"
 			, d0v );
 		crg::RenderPass pass0
 		{
@@ -184,9 +149,9 @@ namespace
 
 		auto d0sAttach = crg::Attachment::createSampled( "D0Sp"
 			, d0v );
-		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d1tAttach = crg::Attachment::createOutputColour( "D1Tg"
+		auto d1 = graph.createImage( test::createImage( "d1", VK_FORMAT_R32G32B32_SFLOAT ) );
+		auto d1v = graph.createView( test::createView( "d1v", d1 ) );
+		auto d1tAttach = pass.addOutputColourView( "D1Tg"
 			, d1v );
 		crg::RenderPass pass1
 		{
@@ -198,9 +163,9 @@ namespace
 
 		auto d1sAttach = crg::Attachment::createSampled( "D1Sp"
 			, d1v );
-		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d2tAttach = crg::Attachment::createOutputColour( "D2Tg"
+		auto d2 = graph.createImage( test::createImage( "d2", VK_FORMAT_R32G32B32_SFLOAT ) );
+		auto d2v = graph.createView( test::createView( "d2v", d2 ) );
+		auto d2tAttach = pass.addOutputColourView( "D2Tg"
 			, d2v );
 		crg::RenderPass pass2
 		{
@@ -229,18 +194,18 @@ namespace
 	void testSharedDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testSharedDependencies" );
-		crg::RenderGraph graph{ testCounts.testName };
-		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dstv1 = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT, 1u ) );
-		auto dstAttach1 = crg::Attachment::createOutputDepth( "DSTarget1"
+		crg::FrameGraph graph{ testCounts.testName };
+		auto d = graph.createImage( test::createImage( "d", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto dstv1 = graph.createView( test::createView( "dstv1", d ) );
+		auto dstAttach1 = pass.addOutputDepth( "DSTarget1"
 			, dstv1 );
-		auto dstv2 = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT, 1u ) );
-		auto dstAttach2 = crg::Attachment::createOutputDepth( "DSTarget2"
+		auto dstv2 = graph.createView( test::createView( "dstv2", d ) );
+		auto dstAttach2 = pass.addOutputDepth( "DSTarget2"
 			, dstv2 );
 
-		auto d0 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto d0v = graph.createView( test::createView( d0, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d0tAttach = crg::Attachment::createOutputColour( "D0Tg"
+		auto d0 = graph.createImage( test::createImage( "d0", VK_FORMAT_R32G32B32_SFLOAT ) );
+		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
+		auto d0tAttach = pass.addOutputColourView( "D0Tg"
 			, d0v );
 		crg::RenderPass pass0
 		{
@@ -254,8 +219,8 @@ namespace
 		auto d0sAttach = crg::Attachment::createSampled( "D0Sp"
 			, d0v );
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d1tAttach = crg::Attachment::createOutputColour( "D1Tg"
+		auto d1v = graph.createView( test::createView( d1 ) );
+		auto d1tAttach = pass.addOutputColourView( "D1Tg"
 			, d1v );
 		crg::RenderPass pass1
 		{
@@ -269,8 +234,8 @@ namespace
 		auto d1sAttach = crg::Attachment::createSampled( "D1Sp"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto d2tAttach = crg::Attachment::createOutputColour( "D2Tg"
+		auto d2v = graph.createView( test::createView( d2 ) );
+		auto d2tAttach = pass.addOutputColourView( "D2Tg"
 			, d2v );
 		crg::RenderPass pass2
 		{
@@ -299,14 +264,14 @@ namespace
 	void test2MipDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "test2MipDependencies" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto lp = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
-		auto m0v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 0u ) );
+		auto m0v = graph.createView( test::createView( lp, 0u ) );
 
 		auto m0sAttach = crg::Attachment::createSampled( "SSAOLinSp"
 			, m0v );
-		auto m1v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto m1tAttach = crg::Attachment::createOutputColour( "SSAOMin1Tg"
+		auto m1v = graph.createView( test::createView( lp, 1u ) );
+		auto m1tAttach = pass.addOutputColourView( "SSAOMin1Tg"
 			, m1v );
 		crg::RenderPass ssaoMinifyPass1
 		{
@@ -318,8 +283,8 @@ namespace
 
 		auto m1sAttach = crg::Attachment::createSampled( "SSAOMin1Sp"
 			, m1v );
-		auto m2v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
-		auto m2tAttach = crg::Attachment::createOutputColour( "SSAOMin2Tg"
+		auto m2v = graph.createView( test::createView( lp, 2u ) );
+		auto m2tAttach = pass.addOutputColourView( "SSAOMin2Tg"
 			, m2v );
 		crg::RenderPass ssaoMinifyPass2
 		{
@@ -345,14 +310,14 @@ namespace
 	void test3MipDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "test3MipDependencies" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto lp = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 0u ) );
 
 		auto m0sAttach = crg::Attachment::createSampled( "SSAOLinSp"
 			, m0v );
 		auto m1v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto m1tAttach = crg::Attachment::createOutputColour( "SSAOMin1Tg"
+		auto m1tAttach = pass.addOutputColourView( "SSAOMin1Tg"
 			, m1v );
 		crg::RenderPass ssaoMinifyPass1
 		{
@@ -365,7 +330,7 @@ namespace
 		auto m1sAttach = crg::Attachment::createSampled( "SSAOMin1Sp"
 			, m1v );
 		auto m2v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
-		auto m2tAttach = crg::Attachment::createOutputColour( "SSAOMin2Tg"
+		auto m2tAttach = pass.addOutputColourView( "SSAOMin2Tg"
 			, m2v );
 		crg::RenderPass ssaoMinifyPass2
 		{
@@ -378,7 +343,7 @@ namespace
 		auto m2sAttach = crg::Attachment::createSampled( "SSAOMin2Sp"
 			, m2v );
 		auto m3v = graph.createView( test::createView( lp, VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
-		auto m3tAttach = crg::Attachment::createOutputColour( "SSAOMin3Tg"
+		auto m3tAttach = pass.addOutputColourView( "SSAOMin3Tg"
 			, m3v );
 		crg::RenderPass ssaoMinifyPass3
 		{
@@ -407,10 +372,10 @@ namespace
 	void testLoopDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependencies" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto atAttach = crg::Attachment::createOutputColour( "Img1Tg"
+		auto atAttach = pass.addOutputColourView( "Img1Tg"
 			, av );
 
 		auto b = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
@@ -427,7 +392,7 @@ namespace
 
 		auto asAttach = crg::Attachment::createSampled( "Img1Sp"
 			, av );
-		auto btAttach = crg::Attachment::createOutputColour( "Img2Tg"
+		auto btAttach = pass.addOutputColourView( "Img2Tg"
 			, bv );
 		crg::RenderPass pass2
 		{
@@ -444,10 +409,10 @@ namespace
 	void testLoopDependenciesWithRoot( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependenciesWithRoot" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto b = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto btAttach = crg::Attachment::createOutputColour( "Img2Tg"
+		auto btAttach = pass.addOutputColourView( "Img2Tg"
 			, bv );
 		crg::RenderPass pass0
 		{
@@ -458,7 +423,7 @@ namespace
 
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto atAttach = crg::Attachment::createOutputColour( "Img1Tg"
+		auto atAttach = pass.addOutputColourView( "Img1Tg"
 			, av );
 		auto bsAttach = crg::Attachment::createSampled( "Img2Sp"
 			, bv );
@@ -487,10 +452,10 @@ namespace
 	void testLoopDependenciesWithRootAndLeaf( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependenciesWithRootAndLeaf" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto c = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( c, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto ctAttach = crg::Attachment::createOutputColour( "Img0Tg"
+		auto ctAttach = pass.addOutputColourView( "Img0Tg"
 			, cv );
 		crg::RenderPass pass0
 		{
@@ -502,7 +467,7 @@ namespace
 
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto atAttach = crg::Attachment::createOutputColour( "Img1Tg"
+		auto atAttach = pass.addOutputColourView( "Img1Tg"
 			, av );
 		auto b = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( b, VK_FORMAT_R32G32B32_SFLOAT ) );
@@ -520,7 +485,7 @@ namespace
 
 		auto asAttach = crg::Attachment::createSampled( "Img1Sp"
 			, av );
-		auto btAttach = crg::Attachment::createOutputColour( "Img2Tg"
+		auto btAttach = pass.addOutputColourView( "Img2Tg"
 			, bv );
 		crg::RenderPass pass2
 		{
@@ -567,11 +532,11 @@ namespace
 		, crg::RenderPass const & previous
 		, crg::Attachment const & dsAttach
 		, crg::Attachment const & d2sAttach
-		, crg::RenderGraph & graph )
+		, crg::FrameGraph & graph )
 	{
 		auto lp = graph.createImage( test::createImage( VK_FORMAT_R32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 0u ) );
-		auto m0tAttach = crg::Attachment::createOutputColour( "SSAOLinTg"
+		auto m0tAttach = pass.addOutputColourView( "SSAOLinTg"
 			, m0v );
 		crg::RenderPass ssaoLinearisePass
 		{
@@ -584,7 +549,7 @@ namespace
 		auto m0sAttach = crg::Attachment::createSampled( "SSAOMin0Sp"
 			, m0v );
 		auto m1v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 1u ) );
-		auto m1tAttach = crg::Attachment::createOutputColour( "SSAOMin1Tg"
+		auto m1tAttach = pass.addOutputColourView( "SSAOMin1Tg"
 			, m1v );
 		crg::RenderPass ssaoMinifyPass1
 		{
@@ -597,7 +562,7 @@ namespace
 		auto m1sAttach = crg::Attachment::createSampled( "SSAOMin1Sp"
 			, m1v );
 		auto m2v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 2u ) );
-		auto m2tAttach = crg::Attachment::createOutputColour( "SSAOMin2Tg"
+		auto m2tAttach = pass.addOutputColourView( "SSAOMin2Tg"
 			, m2v );
 		crg::RenderPass ssaoMinifyPass2
 		{
@@ -610,7 +575,7 @@ namespace
 		auto m2sAttach = crg::Attachment::createSampled( "SSAOMin2Sp"
 			, m2v );
 		auto m3v = graph.createView( test::createView( lp, VK_FORMAT_R32_SFLOAT, 3u ) );
-		auto m3tAttach = crg::Attachment::createOutputColour( "SSAOMin3Tg"
+		auto m3tAttach = pass.addOutputColourView( "SSAOMin3Tg"
 			, m3v );
 		crg::RenderPass ssaoMinifyPass3
 		{
@@ -625,7 +590,7 @@ namespace
 			, mv );
 		auto rs = graph.createImage( test::createImage( VK_FORMAT_R32_SFLOAT ) );
 		auto rsv = graph.createView( test::createView( rs, VK_FORMAT_R32_SFLOAT ) );
-		auto rstAttach = crg::Attachment::createOutputColour( "SSAORawTg"
+		auto rstAttach = pass.addOutputColourView( "SSAORawTg"
 			, rsv );
 		crg::RenderPass ssaoRawPass
 		{
@@ -639,7 +604,7 @@ namespace
 			, rsv );
 		auto bl = graph.createImage( test::createImage( VK_FORMAT_R32_SFLOAT ) );
 		auto blv = graph.createView( test::createView( bl, VK_FORMAT_R32_SFLOAT ) );
-		auto bltAttach = crg::Attachment::createOutputColour( "SSAOBlurTg"
+		auto bltAttach = pass.addOutputColourView( "SSAOBlurTg"
 			, blv );
 		crg::RenderPass ssaoBlurPass
 		{
@@ -656,30 +621,30 @@ namespace
 	void testSsaoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testSsaoPass" );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dtv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dtAttach = crg::Attachment::createOutputDepth( "DepthTg"
+		auto dtAttach = pass.addOutputDepth( "DepthTg"
 			, dtv );
 		auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto vtAttach = crg::Attachment::createOutputColour( "VelocityTg"
+		auto vtAttach = pass.addOutputColourView( "VelocityTg"
 			, vv );
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto d1tAttach = crg::Attachment::createOutputColour( "Data1Tg"
+		auto d1tAttach = pass.addOutputColourView( "Data1Tg"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d2tAttach = crg::Attachment::createOutputColour( "Data2Tg"
+		auto d2tAttach = pass.addOutputColourView( "Data2Tg"
 			, d2v );
 		auto d3 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d3v = graph.createView( test::createView( d3, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d3tAttach = crg::Attachment::createOutputColour( "Data3Tg"
+		auto d3tAttach = pass.addOutputColourView( "Data3Tg"
 			, d3v );
 		auto d4 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4v = graph.createView( test::createView( d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d4tAttach = crg::Attachment::createOutputColour( "Data4Tg"
+		auto d4tAttach = pass.addOutputColourView( "Data4Tg"
 			, d4v );
 		crg::RenderPass geometryPass
 		{
@@ -709,7 +674,7 @@ namespace
 			, d4v );
 		auto of = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto ofv = graph.createView( test::createView( of, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto oftAttach = crg::Attachment::createOutputColour( "OutputTg"
+		auto oftAttach = pass.addOutputColourView( "OutputTg"
 			, ofv );
 		crg::RenderPass ambientPass
 		{
@@ -794,23 +759,23 @@ namespace
 		, crg::Attachment const & dsAttach
 		, crg::Attachment const & dtAttach
 		, crg::Attachment const & vtAttach
-		, crg::RenderGraph & graph )
+		, crg::FrameGraph & graph )
 	{
 		auto d1 = graph.createImage( test::createImage( VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( d1, VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto d1tAttach = crg::Attachment::createOutputColour( "Data1Tg"
+		auto d1tAttach = pass.addOutputColourView( "Data1Tg"
 			, d1v );
 		auto d2 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( d2, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d2tAttach = crg::Attachment::createOutputColour( "Data2Tg"
+		auto d2tAttach = pass.addOutputColourView( "Data2Tg"
 			, d2v );
 		auto d3 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d3v = graph.createView( test::createView( d3, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d3tAttach = crg::Attachment::createOutputColour( "Data3Tg"
+		auto d3tAttach = pass.addOutputColourView( "Data3Tg"
 			, d3v );
 		auto d4 = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4v = graph.createView( test::createView( d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto d4tAttach = crg::Attachment::createOutputColour( "Data4Tg"
+		auto d4tAttach = pass.addOutputColourView( "Data4Tg"
 			, d4v );
 		crg::RenderPass geometryPass
 		{
@@ -831,11 +796,11 @@ namespace
 			, d4v );
 		auto df = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto dfv = graph.createView( test::createView( df, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto dftAttach = crg::Attachment::createOutputColour( "DiffuseTg"
+		auto dftAttach = pass.addOutputColourView( "DiffuseTg"
 			, dfv );
 		auto sp = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto spv = graph.createView( test::createView( sp, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto sptAttach = crg::Attachment::createOutputColour( "SpecularTg"
+		auto sptAttach = pass.addOutputColourView( "SpecularTg"
 			, spv );
 		crg::RenderPass lightingPass
 		{
@@ -851,7 +816,7 @@ namespace
 			, spv );
 		auto of = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto ofv = graph.createView( test::createView( of, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto oftAttach = crg::Attachment::createOutputColour( "OutputTg"
+		auto oftAttach = pass.addOutputColourView( "OutputTg"
 			, ofv );
 
 		if constexpr ( EnableSsao )
@@ -888,7 +853,7 @@ namespace
 		, crg::Attachment const & dsAttach
 		, crg::Attachment const & dtAttach
 		, crg::Attachment const & vtAttach
-		, crg::RenderGraph & graph )
+		, crg::FrameGraph & graph )
 	{
 		auto a = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto av = graph.createView( test::createView( a, VK_FORMAT_R16G16B16A16_SFLOAT ) );
@@ -913,7 +878,7 @@ namespace
 			, rv );
 		auto c = graph.createImage( test::createImage( VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( c, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto ctAttach = crg::Attachment::createOutputColour( "CombineTg"
+		auto ctAttach = pass.addOutputColourView( "CombineTg"
 			, cv );
 		crg::RenderPass combinePass
 		{
@@ -938,10 +903,10 @@ namespace
 			+ ( EnableOpaque ? std::string{ "Opaque" } : std::string{} )
 			+ ( EnableSsao ? std::string{ "Ssao" } : std::string{} )
 			+ ( EnableTransparent ? std::string{ "Transparent" } : std::string{} ) );
-		crg::RenderGraph graph{ testCounts.testName };
+		crg::FrameGraph graph{ testCounts.testName };
 		auto d = graph.createImage( test::createImage( VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dtv = graph.createView( test::createView( d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto dt1Attach = crg::Attachment::createOutputDepth( "DepthTg1"
+		auto dt1Attach = pass.addOutputDepth( "DepthTg1"
 			, dtv );
 		auto dt2Attach = crg::Attachment::createInputDepth( "DepthTg2"
 			, dtv );
@@ -965,14 +930,14 @@ namespace
 			, dsv );
 		auto o = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto otv = graph.createView( test::createView( o, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto otAttach = crg::Attachment::createOutputColour( "FinalCombineTg"
+		auto otAttach = pass.addOutputColourView( "FinalCombineTg"
 			, otv );
 
 		if constexpr ( EnableOpaque )
 		{
 			auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 			auto vv1 = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto vt1Attach = crg::Attachment::createOutputColour( "VelocityTg1"
+			auto vt1Attach = pass.addOutputColourView( "VelocityTg1"
 				, vv1 );
 			auto dcsAttach = buildDeferred< EnableSsao >( testCounts
 				, dsAttach
@@ -1019,7 +984,7 @@ namespace
 		{
 			auto v = graph.createImage( test::createImage( VK_FORMAT_R16G16B16A16_SFLOAT ) );
 			auto vv = graph.createView( test::createView( v, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto vt1Attach = crg::Attachment::createOutputColour( "VelocityTg1"
+			auto vt1Attach = pass.addOutputColourView( "VelocityTg1"
 				, vv );
 			auto wbcsAttach = buildWeightedBlended( testCounts
 				, dsAttach
