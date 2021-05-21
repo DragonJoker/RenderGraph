@@ -42,12 +42,26 @@ namespace crg
 			return m_transitions;
 		}
 
+		FramePassDependenciesMap const & getInputTransitions()const
+		{
+			return m_inputTransitions;
+		}
+
+		FramePassDependenciesMap const & getOutputTransitions()const
+		{
+			return m_outputTransitions;
+		}
+
 	private:
 		FramePassPtrArray m_passes;
 		ImageIdDataOwnerCont m_images;
 		ImageViewIdDataOwnerCont m_imageViews;
 		GraphNodePtrArray m_nodes;
 		AttachmentTransitionArray m_transitions;
+		// Transitions for which the pass is the destination.
+		FramePassDependenciesMap m_inputTransitions;
+		// Transitions for which the pass is the source.
+		FramePassDependenciesMap m_outputTransitions;
 		RootNode m_root;
 		ImageIdAliasMap m_imageAliases;
 		ImageViewIdAliasMap m_imageViewAliases;

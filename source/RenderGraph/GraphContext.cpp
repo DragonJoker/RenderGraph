@@ -18,12 +18,14 @@ namespace crg
 		, VkAllocationCallbacks const * allocator
 		, VkPhysicalDeviceMemoryProperties memoryProperties
 		, VkPhysicalDeviceProperties properties
+		, bool separateDepthStencilLayouts
 		, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr )
 		: device{ device }
 		, cache{ cache }
 		, allocator{ allocator }
 		, memoryProperties{ std::move( memoryProperties ) }
 		, properties{ std::move( properties ) }
+		, separateDepthStencilLayouts{ separateDepthStencilLayouts }
 	{
 #define DECL_vkFunction( name )\
 		vk##name = reinterpret_cast< PFN_vk##name >( vkGetDeviceProcAddr( device, "vk"#name ) )

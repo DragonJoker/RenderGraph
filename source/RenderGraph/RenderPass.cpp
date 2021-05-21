@@ -20,52 +20,11 @@ namespace crg
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< VkClearValue > & clearValues
 			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, bool separateDepthStencilLayouts )
 		{
-			VkImageLayout attachLayout;
-
-			if ( attach.hasFlag( Attachment::Flag::Depth ) )
-			{
-				if ( attach.isDepthOutput() && attach.isStencilOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isDepthOutput() && attach.isStencilInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL;
-				}
-				else if ( attach.isDepthInput() && attach.isStencilOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isDepthInput() && attach.isStencilInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-				}
-				else if ( attach.isDepthOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isStencilOutput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-				}
-				else if ( attach.isDepthInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-				}
-				else if ( attach.isStencilInput() )
-				{
-					attachLayout = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-				}
-			}
-			else
-			{
-				attachLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-			}
-
 			VkAttachmentReference result{ uint32_t( attaches.size() )
-				, attachLayout };
+				, attach.getImageLayout( separateDepthStencilLayouts ) };
 			attaches.push_back( { 0u
 				, attach.view.data->info.format
 				, attach.view.data->image.data->info.samples
@@ -84,14 +43,16 @@ namespace crg
 			, std::vector< VkClearValue > & clearValues
 			, VkPipelineColorBlendAttachmentStateArray & blendAttachs
 			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout )
+			, VkImageLayout finalLayout
+			, bool separateDepthStencilLayouts )
 		{
 			blendAttachs.push_back( attach.blendState );
 			return addAttach( attach
 				, attaches
 				, clearValues
 				, initialLayout
-				, finalLayout );
+				, finalLayout
+				, separateDepthStencilLayouts );
 		}
 	}
 
@@ -179,7 +140,8 @@ namespace crg
 				, attaches
 				, m_clearValues
 				, m_graph.getInitialLayout( m_pass, m_pass.depthStencilInOut->view )
-				, m_graph.getFinalLayout( m_pass, m_pass.depthStencilInOut->view ) );
+				, m_graph.getFinalLayout( m_pass, m_pass.depthStencilInOut->view )
+				, m_context.separateDepthStencilLayouts );
 		}
 
 		for ( auto & attach : m_pass.colourInOuts )
@@ -188,8 +150,9 @@ namespace crg
 				, attaches
 				, m_clearValues
 				, m_blendAttachs
-				, m_graph.getInitialLayout( m_pass, m_pass.depthStencilInOut->view )
-				, m_graph.getFinalLayout( m_pass, m_pass.depthStencilInOut->view ) ) );
+				, m_graph.getInitialLayout( m_pass, attach.view )
+				, m_graph.getFinalLayout( m_pass, attach.view )
+				, m_context.separateDepthStencilLayouts ) );
 		}
 
 		VkSubpassDescription subpassDesc{ 0u

@@ -444,6 +444,7 @@ namespace crg
 			, VkAllocationCallbacks const * allocator
 			, VkPhysicalDeviceMemoryProperties memoryProperties
 			, VkPhysicalDeviceProperties properties
+			, bool separateDepthStencilLayouts
 			, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr );
 
 		VkDevice device{ VK_NULL_HANDLE };
@@ -451,6 +452,8 @@ namespace crg
 		VkAllocationCallbacks const * allocator{ nullptr };
 		VkPhysicalDeviceMemoryProperties memoryProperties{};
 		VkPhysicalDeviceProperties properties{};
+		VkPhysicalDeviceFeatures features{};
+		bool separateDepthStencilLayouts;
 
 #define DECL_vkFunction( name )\
 		PFN_vk##name vk##name{ nullptr }

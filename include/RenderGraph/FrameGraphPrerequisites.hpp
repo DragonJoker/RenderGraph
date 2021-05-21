@@ -51,7 +51,7 @@ namespace crg
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using ConstGraphAdjacentNodeArray = std::vector< ConstGraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
-	using FramePassDependenciesMap = std::map< FramePass *, AttachmentTransitionArray >;
+	using FramePassDependenciesMap = std::map< FramePass const *, AttachmentTransitionArray >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;

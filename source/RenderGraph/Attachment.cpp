@@ -105,6 +105,84 @@ namespace crg
 				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
 	}
 
+	VkImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
+	{
+		if ( isSampled() )
+		{
+			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+
+		if ( isStorage() )
+		{
+			return VK_IMAGE_LAYOUT_GENERAL;
+		}
+
+		if ( isTransferInput() )
+		{
+			return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+		}
+
+		if ( isTransferOutput() )
+		{
+			return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		}
+
+		if ( isColourInput()
+			|| isColourOutput() )
+		{
+			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
+
+		if ( separateDepthStencilLayouts )
+		{
+			if ( isDepthStencilOutput() )
+			{
+				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			}
+
+			if ( isDepthStencilInput() )
+			{
+				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+			}
+
+			if ( isDepthOutput() )
+			{
+				return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+			}
+
+			if ( isDepthInput() )
+			{
+				return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+			}
+
+			if ( isStencilOutput() )
+			{
+				return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+			}
+
+			if ( isStencilInput() )
+			{
+				return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+			}
+		}
+		else
+		{
+			if ( isDepthOutput()
+				|| isStencilOutput() )
+			{
+				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+			}
+
+			if ( isDepthInput()
+				|| isStencilInput() )
+			{
+				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+			}
+		}
+
+		return VK_IMAGE_LAYOUT_GENERAL;
+	}
+
 	bool operator==( VkClearValue const & lhs
 		, VkClearValue const & rhs )
 	{

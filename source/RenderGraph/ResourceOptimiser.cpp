@@ -17,49 +17,49 @@ namespace crg
 	{
 		namespace
 		{
-			void markAttachment( Attachment & attachment
-				, Attachment::Flag toMark )
-			{
-				if ( attachment.hasFlag( toMark ) )
-				{
-					attachment.setUnique();
-				}
-			}
-			
-			void markAttachment( std::optional< Attachment > & attachment
-				, Attachment::Flag toMark )
-			{
-				if ( attachment )
-				{
-					markAttachment( *attachment, toMark );
-				}
-			}
-			
-			void markAttachments( AttachmentArray & attachments
-				, Attachment::Flag toMark )
-			{
-				for ( auto attachment : attachments )
-				{
-					markAttachment( attachment, toMark );
-				}
-			}
-			
-			void markPassAttachments( FramePass & pass
-				, Attachment::Flag toMark )
-			{
-				markAttachments( pass.sampled, toMark );
-				markAttachments( pass.colourInOuts, toMark );
-				markAttachment( pass.depthStencilInOut, toMark );
-			}
+			//void markAttachment( Attachment & attachment
+			//	, Attachment::Flag toMark )
+			//{
+			//	if ( attachment.hasFlag( toMark ) )
+			//	{
+			//		attachment.setUnique();
+			//	}
+			//}
+			//
+			//void markAttachment( std::optional< Attachment > & attachment
+			//	, Attachment::Flag toMark )
+			//{
+			//	if ( attachment )
+			//	{
+			//		markAttachment( *attachment, toMark );
+			//	}
+			//}
+			//
+			//void markAttachments( AttachmentArray & attachments
+			//	, Attachment::Flag toMark )
+			//{
+			//	for ( auto attachment : attachments )
+			//	{
+			//		markAttachment( attachment, toMark );
+			//	}
+			//}
+			//
+			//void markPassAttachments( FramePass & pass
+			//	, Attachment::Flag toMark )
+			//{
+			//	markAttachments( pass.sampled, toMark );
+			//	markAttachments( pass.colourInOuts, toMark );
+			//	markAttachment( pass.depthStencilInOut, toMark );
+			//}
 
-			void markPassesAttachments( FramePassSet & passes
-				, Attachment::Flag toMark )
-			{
-				for ( auto pass : passes )
-				{
-					markPassAttachments( *pass, toMark );
-				}
-			}
+			//void markPassesAttachments( FramePassSet & passes
+			//	, Attachment::Flag toMark )
+			//{
+			//	for ( auto pass : passes )
+			//	{
+			//		markPassAttachments( *pass, toMark );
+			//	}
+			//}
 
 			template< typename DataT >
 			using IdDataMap = std::map< DataT *, std::vector< Id< DataT > > >;
@@ -80,8 +80,8 @@ namespace crg
 			// We mark root and leaf nodes images as non mergeable.
 			auto roots = retrieveRoots( dependencies );
 			auto leaves = retrieveLeafs( dependencies );
-			markPassesAttachments( roots, Attachment::Flag::Output );
-			markPassesAttachments( leaves, Attachment::Flag::Input );
+			//markPassesAttachments( roots, Attachment::Flag::Output );
+			//markPassesAttachments( leaves, Attachment::Flag::Input );
 
 			// We'll need to see which image we can merge, given their ImageData,
 			// and their flags.

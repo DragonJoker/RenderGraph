@@ -63,7 +63,7 @@ namespace crg
 				return result;
 			}
 
-			void buildGraphRec( FramePass * curr
+			void buildGraphRec( FramePass const * curr
 				, AttachmentTransitionArray const & transitions
 				, GraphNodePtrArray & nodes
 				, RootNode & fullGraph

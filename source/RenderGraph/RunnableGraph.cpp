@@ -239,19 +239,12 @@ namespace crg
 
 	VkImage RunnableGraph::getImage( Attachment const & attach )const
 	{
-		auto it = m_images.find( attach.view.data->image );
-
-		if ( it == m_images.end() )
-		{
-			return VK_NULL_HANDLE;
-		}
-
-		return it->second.first;
+		return getImage( attach.view.data->image );
 	}
 
-	VkImageView RunnableGraph::getImageView( ImageViewId const & image )const
+	VkImageView RunnableGraph::getImageView( ImageViewId const & view )const
 	{
-		auto it = m_imageViews.find( image );
+		auto it = m_imageViews.find( view );
 
 		if ( it == m_imageViews.end() )
 		{
@@ -263,17 +256,7 @@ namespace crg
 
 	VkImageView RunnableGraph::getImageView( Attachment const & attach )const
 	{
-		auto it = m_graph.m_attachViews.find( attach.view.data->name );
-
-		if ( it == m_graph.m_attachViews.end()
-			|| *it->second.data != *attach.view.data )
-		{
-			return VK_NULL_HANDLE;
-		}
-
-		auto viewIt = m_imageViews.find( it->second );
-		assert( viewIt != m_imageViews.end() );
-		return viewIt->second;
+		return getImageView( attach.view );
 	}
 
 	VertexBuffer const & RunnableGraph::createQuadVertexBuffer( bool texCoords
@@ -420,13 +403,36 @@ namespace crg
 	VkImageLayout RunnableGraph::getInitialLayout( crg::FramePass const & pass
 		, ImageViewId view )
 	{
-		return VK_IMAGE_LAYOUT_UNDEFINED;
+		auto passIt = m_graph.getInputTransitions().find( &pass );
+		assert( passIt != m_graph.getInputTransitions().end() );
+		auto it = std::find_if( passIt->second.begin()
+			, passIt->second.end()
+			, [&view]( AttachmentTransition const & lookup )
+			{
+				return view == lookup.view;
+			} );
+
+		if ( it == passIt->second.end() )
+		{
+			return VK_IMAGE_LAYOUT_UNDEFINED;
+		}
+
+		return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
 	}
 
 	VkImageLayout RunnableGraph::getFinalLayout( crg::FramePass const & pass
 		, ImageViewId view )
 	{
-		return VK_IMAGE_LAYOUT_UNDEFINED;
+		auto passIt = m_graph.getOutputTransitions().find( &pass );
+		assert( passIt != m_graph.getOutputTransitions().end() );
+		auto it = std::find_if( passIt->second.begin()
+			, passIt->second.end()
+			, [&view]( AttachmentTransition const & lookup )
+			{
+				return view == lookup.view;
+			} );
+		assert( it != passIt->second.end() );
+		return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
