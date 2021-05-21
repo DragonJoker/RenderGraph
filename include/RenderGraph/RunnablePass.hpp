@@ -12,12 +12,6 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	struct SemaphoreWait
-	{
-		VkSemaphore semaphore;
-		VkPipelineStageFlags dstStageMask;
-	};
-
 	class RunnablePass
 	{
 	public:
@@ -46,7 +40,7 @@ namespace crg
 		void recordInto( VkCommandBuffer commandBuffer );
 		/**
 		*\brief
-		*	Submits this pass' command buffer to the givent queue.
+		*	Submits this pass' command buffer to the given queue.
 		*\param[in] toWait
 		*	The semaphore to wait for.
 		*\param[out] queue
@@ -56,6 +50,23 @@ namespace crg
 		*/
 		SemaphoreWait run( SemaphoreWait toWait
 			, VkQueue queue );
+		/**
+		*\brief
+		*	Submits this pass' command buffer to the given queue.
+		*\param[in] toWait
+		*	The semaphores to wait for.
+		*\param[out] queue
+		*	The queue to submit to.
+		*\return
+		*	This pass' semaphore.
+		*/
+		SemaphoreWait run( SemaphoreWaitArray const & toWait
+			, VkQueue queue );
+		/**
+		*\brief
+		*	Resets the command buffer to initial state.
+		*/
+		void resetCommandBuffer();
 
 		FramePassTimer const & getTimer()const
 		{

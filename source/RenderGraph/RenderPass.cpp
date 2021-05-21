@@ -118,7 +118,9 @@ namespace crg
 			, m_renderArea
 			, uint32_t( m_clearValues.size() )
 			, m_clearValues.data() };
-		m_context.vkCmdBeginRenderPass( commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE );
+		m_context.vkCmdBeginRenderPass( commandBuffer
+			, &beginInfo
+			, doGetSubpassContents( 0u ) );
 		doSubRecordInto( commandBuffer );
 		m_context.vkCmdEndRenderPass( commandBuffer );
 	}

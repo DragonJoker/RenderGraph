@@ -215,14 +215,23 @@ namespace crg
 	SemaphoreWait RunnableGraph::run( SemaphoreWait toWait
 		, VkQueue queue )
 	{
+		return run( ( toWait.semaphore
+				? SemaphoreWaitArray{ 1u, toWait }
+				: SemaphoreWaitArray{} )
+			, queue );
+	}
+
+	SemaphoreWait RunnableGraph::run( SemaphoreWaitArray const & toWait
+		, VkQueue queue )
+	{
 		auto result = toWait;
 
 		for ( auto & pass : m_passes )
 		{
-			result = pass->run( result, queue );
+			result = { 1u, pass->run( result, queue ) };
 		}
 
-		return result;
+		return result.front();
 	}
 
 	VkImage RunnableGraph::getImage( ImageId const & image )const
@@ -401,7 +410,8 @@ namespace crg
 	}
 
 	VkImageLayout RunnableGraph::getInitialLayout( crg::FramePass const & pass
-		, ImageViewId view )
+		, ImageViewId view
+		, bool allowSrcClear )
 	{
 		auto passIt = m_graph.getInputTransitions().find( &pass );
 		assert( passIt != m_graph.getInputTransitions().end() );
@@ -417,7 +427,26 @@ namespace crg
 			return VK_IMAGE_LAYOUT_UNDEFINED;
 		}
 
-		return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+		if ( it->dstAttach.getFlags() != 0u )
+		{
+			return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+		}
+
+		if ( allowSrcClear
+			&& ( it->srcAttach.isColourClearing()
+			|| it->srcAttach.isDepthClearing() ) )
+		{
+			return VK_IMAGE_LAYOUT_UNDEFINED;
+		}
+
+		if ( !allowSrcClear
+			&& ( it->srcAttach.isColourClearing()
+				|| it->srcAttach.isDepthClearing() ) )
+		{
+			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+
+		return it->srcAttach.getImageLayout( m_context.separateDepthStencilLayouts );
 	}
 
 	VkImageLayout RunnableGraph::getFinalLayout( crg::FramePass const & pass
@@ -431,8 +460,13 @@ namespace crg
 			{
 				return view == lookup.view;
 			} );
-		assert( it != passIt->second.end() );
-		return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+
+		if ( it != passIt->second.end() )
+		{
+			return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+		}
+
+		return getInitialLayout( pass, view, false );
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer

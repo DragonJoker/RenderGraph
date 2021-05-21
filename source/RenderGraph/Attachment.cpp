@@ -180,7 +180,7 @@ namespace crg
 			}
 		}
 
-		return VK_IMAGE_LAYOUT_GENERAL;
+		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
 	bool operator==( VkClearValue const & lhs

@@ -17,10 +17,29 @@ namespace crg
 		FramePassSet retrieveRoots( FramePassDependenciesMap const & dependencies )
 		{
 			FramePassSet result;
+			uint32_t dstCount = 0u;
+
 			// Retrieve passes for which no transition is set.
 			for ( auto & depsIt : dependencies )
 			{
 				if ( depsIt.second.empty() )
+				{
+					result.insert( depsIt.first );
+				}
+				else
+				{
+					dstCount += size_t( std::count_if( depsIt.second.begin()
+						, depsIt.second.end()
+						, []( AttachmentTransition const & lookup )
+						{
+							return lookup.dstAttach.getFlags() != 0;
+						} ) );
+				}
+			}
+
+			if ( !dstCount )
+			{
+				for ( auto & depsIt : dependencies )
 				{
 					result.insert( depsIt.first );
 				}

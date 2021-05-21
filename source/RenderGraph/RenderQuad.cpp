@@ -105,7 +105,9 @@ namespace crg
 				, imageDescriptor
 				, VkDescriptorImageInfo{ m_graph.createSampler( sampled.filter )
 				, m_graph.getImageView( sampled )
-				, sampled.initialLayout } } );
+				, ( sampled.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
+					? sampled.initialLayout
+					: sampled.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
 		}
 
 		for ( auto & storage : m_pass.storage )
@@ -120,7 +122,9 @@ namespace crg
 				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 				, VkDescriptorImageInfo{ VK_NULL_HANDLE
 				, m_graph.getImageView( storage )
-				, storage.initialLayout } } );
+				, ( storage.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
+					? storage.initialLayout
+					: storage.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
 		}
 
 		shaderStage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
