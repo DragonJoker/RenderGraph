@@ -146,7 +146,8 @@ namespace crg
 			if ( node->getKind() == GraphNode::Kind::FramePass )
 			{
 				auto & renderPassNode = nodeCast< FramePassNode >( *node );
-				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context , *this ) );
+				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
+					, *this ) );
 			}
 		}
 	}
@@ -414,6 +415,18 @@ namespace crg
 		}
 
 		return ires.first->second;
+	}
+
+	VkImageLayout RunnableGraph::getInitialLayout( crg::FramePass const & pass
+		, ImageViewId view )
+	{
+		return VK_IMAGE_LAYOUT_UNDEFINED;
+	}
+
+	VkImageLayout RunnableGraph::getFinalLayout( crg::FramePass const & pass
+		, ImageViewId view )
+	{
+		return VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer

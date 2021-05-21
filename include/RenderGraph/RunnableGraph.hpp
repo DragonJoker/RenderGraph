@@ -32,6 +32,10 @@ namespace crg
 			, bool invertV );
 		VkSampler createSampler( VkFilter filter );
 
+		VkImageLayout getInitialLayout( crg::FramePass const & pass
+			, ImageViewId view );
+		VkImageLayout getFinalLayout( crg::FramePass const & pass
+			, ImageViewId view );
 		void memoryBarrier( VkCommandBuffer commandBuffer
 			, VkPipelineStageFlagBits srcStageMask
 			, VkPipelineStageFlagBits dstStageMask

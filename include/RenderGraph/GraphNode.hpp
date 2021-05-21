@@ -28,10 +28,12 @@ namespace crg
 		};
 
 		virtual ~GraphNode() = default;
-		void addAttaches( GraphAdjacentNode prev, AttachmentTransitionArray attachsToPrev );
-		void attachNode( GraphAdjacentNode next, AttachmentTransitionArray attachsToNext );
+		void addAttaches( GraphAdjacentNode prev
+			, AttachmentTransitionArray inputAttaches );
+		void attachNode( GraphAdjacentNode next
+			, AttachmentTransitionArray inputAttaches );
 		GraphAdjacentNode findInNext( FramePass const & pass )const;
-		AttachmentTransitionArray const & getAttachsToPrev( ConstGraphAdjacentNode pred = nullptr )const;
+		AttachmentTransitionArray const & getInputAttaches( ConstGraphAdjacentNode pred = nullptr )const;
 
 		virtual void accept( GraphVisitor * vis )const = 0;
 
@@ -66,14 +68,13 @@ namespace crg
 
 	protected:
 		GraphNode( Kind kind
-			, std::string name
-			, AttachmentsNodeMap attachments );
+			, std::string name );
 
 	protected:
 		Kind kind;
 		std::string name;
 		GraphAdjacentNodeArray next;
-		AttachmentsNodeMap attachsToPrev;
+		AttachmentsNodeMap inputAttaches;
 	};
 	/**
 	*\brief

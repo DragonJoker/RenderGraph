@@ -41,38 +41,11 @@ include( ExternalDependencies )
 # Organize projects into folders
 set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 
-if ( WIN32 )
-	set( BinLibraries
-		Dbghelp
-	)
-else ()
-	set( BinLibraries
-		dl
-	)
-endif ()
-
-set( CompileOptions
-	$<$<CXX_COMPILER_ID:MSVC>:/MP>
-	$<$<CXX_COMPILER_ID:MSVC>:/Zm300>
-)
-
-set( CompileDefinitions
-	CRG_VERSION_MAJOR=${VERSION_MAJOR}
-	CRG_VERSION_MINOR=${VERSION_MINOR}
-	CRG_VERSION_BUILD=${VERSION_BUILD}
-	$<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
-)
-
 #--------------------------------------------------------------------------------------------------
 #	Adding include dirs to include search path
 #--------------------------------------------------------------------------------------------------
 set( CRG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
 set( CRG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
-
-set( IncludeDirs
-	${CRG_SOURCE_DIR}/include
-	${CRG_BINARY_DIR}/include
-)
 
 if ( NOT DEFINED CRG_BUILD_TESTS )
 	option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
@@ -159,15 +132,19 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	)
 	add_library( crg::${PROJECT_NAME}
 		ALIAS
-		${PROJECT_NAME}
+			${PROJECT_NAME}
 	)
 	target_compile_options( ${PROJECT_NAME}
 		PUBLIC
-			${CompileOptions}
+			$<$<CXX_COMPILER_ID:MSVC>:/MP>
+			$<$<CXX_COMPILER_ID:MSVC>:/Zm300>
 	)
 	target_compile_definitions( ${PROJECT_NAME}
 		PUBLIC
-			${CompileDefinitions}
+			CRG_VERSION_MAJOR=${VERSION_MAJOR}
+			CRG_VERSION_MINOR=${VERSION_MINOR}
+			CRG_VERSION_BUILD=${VERSION_BUILD}
+			$<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
 	)
 	target_include_directories( ${PROJECT_NAME}
 		PUBLIC
@@ -180,9 +157,6 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		PROPERTIES
 			CXX_STANDARD 17
 			FOLDER "${CRG_BASE_DIR}/Core"
-	)
-	set( LinkLibraries
-		RenderGraph
 	)
 	install(
 		TARGETS ${PROJECT_NAME}

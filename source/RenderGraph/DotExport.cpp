@@ -79,7 +79,7 @@ namespace crg::dot
 				, ConstGraphAdjacentNode rhs )
 			{
 				std::string sep;
-				auto transitions = rhs->getAttachsToPrev( lhs );
+				auto transitions = rhs->getInputAttaches( lhs );
 				std::sort( transitions.begin()
 					, transitions.end()
 					, []( AttachmentTransition const & lhs, AttachmentTransition const & rhs )

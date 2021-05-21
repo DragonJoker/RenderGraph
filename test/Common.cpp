@@ -1,9 +1,10 @@
 #include "Common.hpp"
 
+#include <RenderGraph/DotExport.hpp>
 #include <RenderGraph/GraphVisitor.hpp>
 #include <RenderGraph/ImageData.hpp>
 #include <RenderGraph/ImageViewData.hpp>
-#include <RenderGraph/RenderGraph.hpp>
+#include <RenderGraph/FrameGraph.hpp>
 
 #include <functional>
 #include <map>
@@ -28,195 +29,109 @@ namespace test
 		}
 
 		std::ostream & operator<<( std::ostream & stream
-			, crg::RenderPass const & value )
+			, crg::FramePass const & value )
 		{
 			stream << value.name;
 			return stream;
 		}
 
-		class DotOutVisitor
-			: public crg::GraphVisitor
-		{
-		public:
-			static void submit( std::ostream & stream
-				, crg::GraphAdjacentNode node
-				, std::set< crg::GraphNode const * > & visited )
-			{
-				DotOutVisitor vis{ stream, visited };
-				node->accept( &vis );
-			}
-
-			static void submit( std::ostream & stream
-				, crg::GraphAdjacentNode node )
-			{
-				std::set< crg::GraphNode const * > visited;
-				submit( stream, node, visited );
-			}
-
-			static void submit( std::ostream & stream
-				, crg::AttachmentTransitionArray const & transitions )
-			{
-				stream << "digraph \"Transitions\" {\n";
-				stream << "  rankdir = \"LR\"";
-
-				for ( auto & transition : transitions )
-				{
-					std::string name{ "Trans. to\\n" + transition.dstInput.attachment.name };
-					stream << "    \"" << name << "\" [ shape=square ];\n";
-
-					for ( auto & srcOutput : transition.srcOutputs )
-					{
-						for ( auto pass : srcOutput.passes )
-						{
-							stream << "    \"" << pass->name << "\" -> \"" << name << "\" [ label=\"" << srcOutput.attachment.name << "\" ];\n";
-						}
-					}
-
-					for ( auto pass : transition.dstInput.passes )
-					{
-						stream << "    \"" << name << "\" -> \"" << pass->name << "\" [ label=\"" << transition.dstInput.attachment.name << "\" ];\n";
-					}
-				}
-
-				stream << "}\n";
-			}
-
-		private:
-			DotOutVisitor( std::ostream & stream
-				, std::set< crg::GraphNode const * > & visited )
-				: m_stream{ stream }
-				, m_visited{ visited }
-			{
-			}
-
-			void printEdge( crg::GraphNode * lhs
-				, crg::GraphNode * rhs )
-			{
-				std::string sep;
-				auto transitions = rhs->getAttachsToPrev( lhs );
-				std::sort( transitions.begin()
-					, transitions.end()
-					, []( crg::AttachmentTransition const & lhs, crg::AttachmentTransition const & rhs )
-					{
-						return lhs.srcOutputs.front().attachment.name < rhs.srcOutputs.front().attachment.name;
-					} );
-				uint32_t index{ 1u };
-
-				for ( auto & transition : transitions )
-				{
-					auto & srcOutput = transition.srcOutputs.front();
-					std::string name{ srcOutput.attachment.name + "\\nto\\n" + transition.dstInput.attachment.name };
-					m_stream << "    \"" << name << "\" [ shape=square ];\n";
-					m_stream << "    \"" << lhs->getName() << "\" -> \"" << name << "\" [ label=\"" << srcOutput.attachment.name << "\" ];\n";
-					m_stream << "    \"" << name << "\" -> \"" << rhs->getName() << "\" [ label=\"" << transition.dstInput.attachment.name << "\" ];\n";
-				}
-			}
-
-			void submit( crg::GraphNode * node )
-			{
-				submit( m_stream
-					, node
-					, m_visited );
-			}
-
-			void visitRootNode( crg::RootNode * node )override
-			{
-				m_stream << "digraph \"" << node->getName() << "\" {\n";
-
-				for ( auto & next : node->getNext() )
-				{
-					submit( next );
-				}
-
-				m_stream << "}\n";
-			}
-
-			void visitRenderPassNode( crg::RenderPassNode * node )override
-			{
-				m_visited.insert( node );
-				auto nexts = node->getNext();
-
-				for ( auto & next : nexts )
-				{
-					printEdge( node, next );
-
-					if ( m_visited.end() == m_visited.find( next ) )
-					{
-						submit( next );
-					}
-				}
-			}
-
-		private:
-			std::ostream & m_stream;
-			std::set< crg::GraphNode const * > & m_visited;
-		};
-
 		void displayPasses( TestCounts & testCounts
 			, std::ostream & stream
-			, crg::RenderGraph & value )
+			, crg::FrameGraph & value )
 		{
-			DotOutVisitor::submit( stream, value.getGraph() );
+			crg::dot::displayPasses( stream, value );
 			std::ofstream file{ testCounts.testName + ".dot" };
-			DotOutVisitor::submit( file, value.getGraph() );
+			crg::dot::displayPasses( file, value );
 		}
 
 		void displayTransitions( TestCounts & testCounts
 			, std::ostream & stream
-			, crg::RenderGraph & value )
+			, crg::FrameGraph & value )
 		{
-			DotOutVisitor::submit( stream, value.getTransitions() );
+			crg::dot::displayTransitions( stream, value );
 			std::ofstream file{ testCounts.testName + "_transitions.dot" };
-			DotOutVisitor::submit( file, value.getTransitions() );
+			crg::dot::displayTransitions( file, value );
+		}
+
+		bool isDepthFormat( VkFormat fmt )
+		{
+			return fmt == VK_FORMAT_D16_UNORM
+				|| fmt == VK_FORMAT_X8_D24_UNORM_PACK32
+				|| fmt == VK_FORMAT_D32_SFLOAT
+				|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
+		}
+
+		bool isStencilFormat( VkFormat fmt )
+		{
+			return fmt == VK_FORMAT_S8_UINT
+				|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
+				|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
+		}
+
+		bool isColourFormat( VkFormat fmt )
+		{
+			return !isDepthFormat( fmt ) && !isStencilFormat( fmt );
+		}
+
+		bool isDepthStencilFormat( VkFormat fmt )
+		{
+			return isDepthFormat( fmt ) && isStencilFormat( fmt );
 		}
 	}
 
-	crg::ImageData createImage( VkFormat format
+	crg::ImageData createImage( std::string name
+		, VkFormat format
 		, uint32_t mipLevels )
 	{
-		crg::ImageData result{};
-		result.format = format;
-		result.mipLevels = mipLevels;
-		result.extent = { 1024, 1024 };
-		result.imageType = VK_IMAGE_TYPE_2D;
-		result.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-			| VK_IMAGE_USAGE_SAMPLED_BIT;
-		return result;
+		return crg::ImageData{ std::move( name )
+			, 0u
+			, VK_IMAGE_TYPE_2D
+			, format
+			, { 1024, 1024 }
+			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+				| VK_IMAGE_USAGE_SAMPLED_BIT )
+			, mipLevels };
 	}
 
-	crg::ImageViewData createView( crg::ImageData image
+	crg::ImageViewData createView( std::string name
+		, crg::ImageId image
 		, uint32_t baseMipLevel
 		, uint32_t levelCount )
 	{
-		crg::ImageViewData result{};
-		result.format = image.format;
-		result.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		result.subresourceRange.baseMipLevel = baseMipLevel;
-		result.subresourceRange.levelCount = levelCount;
-		result.subresourceRange.baseArrayLayer = 0u;
-		result.subresourceRange.layerCount = 1u;
-		return result;
+		return createView( std::move( name )
+			, image
+			, image.data->info.format
+			, baseMipLevel
+			, levelCount );
 	}
 
-	crg::ImageViewData createView( crg::ImageId image
+	crg::ImageViewData createView( std::string name
+		, crg::ImageId image
 		, VkFormat format
 		, uint32_t baseMipLevel
 		, uint32_t levelCount )
 	{
-		crg::ImageViewData result{};
-		result.image = image;
-		result.format = format;
-		result.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		result.subresourceRange.baseMipLevel = baseMipLevel;
-		result.subresourceRange.levelCount = levelCount;
-		result.subresourceRange.baseArrayLayer = 0u;
-		result.subresourceRange.layerCount = 1u;
-		return result;
+		VkImageAspectFlags aspect = ( isDepthStencilFormat( format )
+			? ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_DEPTH_BIT )
+			: ( isDepthFormat( format )
+				? VK_IMAGE_ASPECT_DEPTH_BIT
+				: ( isStencilFormat( format )
+					? VK_IMAGE_ASPECT_STENCIL_BIT
+					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
+		return crg::ImageViewData{ std::move( name )
+			, image
+			, 0u
+			, VK_IMAGE_VIEW_TYPE_2D
+			, format
+			, { aspect, baseMipLevel, levelCount, 0u, 1u } };
 	}
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
-		, crg::RenderGraph & value )
+		, crg::FrameGraph & value )
 	{
 		std::stringstream trans;
 		displayTransitions( testCounts, trans, value );
@@ -224,7 +139,7 @@ namespace test
 	}
 
 	void display( TestCounts & testCounts
-		, crg::RenderGraph & value )
+		, crg::FrameGraph & value )
 	{
 		display( testCounts, std::cout, value );
 	}

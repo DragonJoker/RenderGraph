@@ -181,7 +181,6 @@ namespace crg
 		VkAttachmentLoadOp stencilLoadOp{};
 		VkAttachmentStoreOp stencilStoreOp{};
 		VkImageLayout initialLayout{};
-		VkImageLayout finalLayout{};
 		VkFilter filter{};
 		uint32_t binding{};
 		VkClearValue clearValue{};
@@ -199,7 +198,6 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout
 			, uint32_t binding
 			, VkFilter filter
 			, VkClearValue clearValue
