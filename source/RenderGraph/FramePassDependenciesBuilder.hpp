@@ -10,7 +10,9 @@ namespace crg
 {
 	namespace builder
 	{
-		FramePassDependenciesMap buildPassAttachDependencies( FramePassPtrArray const & passes
+		void buildPassAttachDependencies( FramePassPtrArray const & passes
+			, FramePassDependenciesMap & inputTransitions
+			, FramePassDependenciesMap & outputTransitions
 			, AttachmentTransitionArray & allTransitions );
 	}
 }

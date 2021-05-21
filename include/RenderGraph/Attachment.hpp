@@ -54,6 +54,7 @@ namespace crg
 		*	Getters.
 		*/
 		/**@{*/
+		VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		FlagKind getFlags()const
 		{
 			return flags;
@@ -74,9 +75,15 @@ namespace crg
 			return hasFlag( Flag::Sampled );
 		}
 
+		bool isStorage()const
+		{
+			return hasFlag( Flag::Storage );
+		}
+
 		bool isAttachment()const
 		{
-			return !isSampled();
+			return !isSampled()
+				&& !isStorage();
 		}
 
 		bool isColourClearing()const
@@ -146,6 +153,24 @@ namespace crg
 		{
 			return isStencilInput()
 				&& isStencilOutput();
+		}
+
+		bool isDepthStencilInput()const
+		{
+			return isDepthInput()
+				&& isStencilInput();
+		}
+
+		bool isDepthStencilOutput()const
+		{
+			return isDepthOutput()
+				&& isStencilOutput();
+		}
+
+		bool isDepthStencilInOut()const
+		{
+			return isDepthInOut()
+				&& isStencilInOut();
 		}
 
 		bool isTransferInput()const

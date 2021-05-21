@@ -82,7 +82,8 @@ namespace crg
 			void printDebug( ViewAttachesArray const & sampled
 				, ViewAttachesArray const & inputs
 				, ViewAttachesArray const & outputs
-				, FramePassDependenciesMap const & dependencies )
+				, FramePassDependenciesMap const & inputTransitions
+				, FramePassDependenciesMap const & outputTransitions )
 			{
 #if CRG_DebugPassAttaches
 				std::clog << "Sampled" << std::endl;
@@ -93,8 +94,10 @@ namespace crg
 				std::clog << outputs << std::endl;
 #endif
 #if CRG_DebugPassDependencies
-				std::clog << "Dependencies" << std::endl;
-				std::clog << dependencies << std::endl;
+				std::clog << "Input Transitions" << std::endl;
+				std::clog << inputTransitions << std::endl;
+				std::clog << "Output Transitions" << std::endl;
+				std::clog << outputTransitions << std::endl;
 #endif
 			}
 
@@ -315,10 +318,10 @@ namespace crg
 			}
 
 			void addRemainingDependency( Attachment const & attach
-				, FramePassDependenciesMap & dependencies
+				, FramePassDependenciesMap & inputTransitions
 				, AttachmentTransitionArray & allTransitions )
 			{
-				auto & transitions = dependencies.emplace( attach.pass, AttachmentTransitionArray{} ).first->second;
+				auto & transitions = inputTransitions.emplace( attach.pass, AttachmentTransitionArray{} ).first->second;
 
 				if ( attach.isColourInOut() )
 				{
@@ -339,17 +342,27 @@ namespace crg
 
 			void addDependency( Attachment const & outputAttach
 				, Attachment const & inputAttach
-				, FramePassDependenciesMap & dependencies
+				, FramePassDependenciesMap & inputTransitions
+				, FramePassDependenciesMap & outputTransitions
 				, AttachmentTransitionArray & allTransitions )
 			{
 				assert( outputAttach.view == inputAttach.view );
-				auto & transitions = dependencies.emplace( inputAttach.pass, AttachmentTransitionArray{} ).first->second;
-				transitions.push_back( { outputAttach.view, outputAttach, inputAttach } );
-				allTransitions.push_back( transitions.back() );
+				AttachmentTransition transition{ outputAttach.view, outputAttach, inputAttach };
+				allTransitions.push_back( transition );
+				{
+					auto & transitions = inputTransitions.emplace( inputAttach.pass, AttachmentTransitionArray{} ).first->second;
+					transitions.push_back( transition );
+				}
+				{
+					auto & transitions = outputTransitions.emplace( outputAttach.pass, AttachmentTransitionArray{} ).first->second;
+					transitions.push_back( transition );
+				}
 			}
 		}
 
-		FramePassDependenciesMap buildPassAttachDependencies( std::vector< FramePassPtr > const & passes
+		void buildPassAttachDependencies( std::vector< FramePassPtr > const & passes
+			, FramePassDependenciesMap & inputTransitions
+			, FramePassDependenciesMap & outputTransitions
 			, AttachmentTransitionArray & allTransitions )
 		{
 			ViewAttachesArray sampled;
@@ -373,11 +386,10 @@ namespace crg
 				}
 			}
 
-			FramePassDependenciesMap result;
-
 			for ( auto & pass : passes )
 			{
-				result.emplace( pass.get(), AttachmentTransitionArray{} );
+				inputTransitions.emplace( pass.get(), AttachmentTransitionArray{} );
+				outputTransitions.emplace( pass.get(), AttachmentTransitionArray{} );
 			}
 
 			for ( auto & output : outputs )
@@ -394,7 +406,8 @@ namespace crg
 								{
 									addDependency( *outputAttach
 										, *inputAttach
-										, result
+										, inputTransitions
+										, outputTransitions
 										, allTransitions );
 								}
 							}
@@ -421,13 +434,16 @@ namespace crg
 				for ( auto & attach : remaining.attaches )
 				{
 					addRemainingDependency( *attach
-						, result
+						, inputTransitions
 						, allTransitions );
 				}
 			}
 
-			printDebug( sampled, inputs, outputs, result );
-			return result;
+			printDebug( sampled
+				, inputs
+				, outputs
+				, inputTransitions
+				, outputTransitions );
 		}
 	}
 }

@@ -12,7 +12,7 @@ namespace crg
 {
 	namespace builder
 	{
-		using FramePassSet = std::set< FramePass * >;
+		using FramePassSet = std::set< FramePass const * >;
 
 		FramePassSet retrieveRoots( FramePassDependenciesMap const & dependencies );
 		FramePassSet retrieveLeafs( FramePassDependenciesMap const & dependencies );
