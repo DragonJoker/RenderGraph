@@ -41,9 +41,8 @@ namespace crg
 		VkImageLayout getFinalLayout( crg::FramePass const & pass
 			, ImageViewId view );
 		void memoryBarrier( VkCommandBuffer commandBuffer
-			, VkPipelineStageFlagBits srcStageMask
-			, VkPipelineStageFlagBits dstStageMask
-			, Attachment const & attach
+			, ImageViewId const & view
+			, VkImageLayout currentLayout
 			, VkImageLayout wantedLayout );
 
 	private:

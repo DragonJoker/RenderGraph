@@ -78,6 +78,103 @@ namespace crg
 			return result;
 		}
 
+		VkAccessFlags getAccessMask( VkImageLayout layout )
+		{
+			VkAccessFlags result{ 0u };
+
+			switch ( layout )
+			{
+			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+			case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+				result |= VK_ACCESS_MEMORY_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+				result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+				result |= VK_ACCESS_SHADER_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+				result |= VK_ACCESS_TRANSFER_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				break;
+#ifdef VK_NV_shading_rate_image
+			case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+				result |= VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+				break;
+#endif
+#ifdef VK_EXT_fragment_density_map
+			case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+				result |= VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+				break;
+#endif
+			default:
+				break;
+			}
+
+			return result;
+		}
+
+		VkPipelineStageFlags getStageMask( VkImageLayout layout )
+		{
+			VkPipelineStageFlags result{ 0u };
+
+			switch ( layout )
+			{
+			case VK_IMAGE_LAYOUT_UNDEFINED:
+				result |= VK_PIPELINE_STAGE_HOST_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_GENERAL:
+				result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+			case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+				result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+				break;
+#ifdef VK_EXT_fragment_density_map
+			case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+#endif
+			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+				break;
+#ifdef VK_NV_shading_rate_image
+			case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+				result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+				break;
+#endif
+			default:
+				break;
+			}
+
+			return result;
+		}
+
 		class DfsVisitor
 			: public GraphVisitor
 		{
@@ -470,11 +567,33 @@ namespace crg
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, VkPipelineStageFlagBits srcStageMask
-		, VkPipelineStageFlagBits dstStageMask
-		, Attachment const & attach
+		, ImageViewId const & view
+		, VkImageLayout currentLayout
 		, VkImageLayout wantedLayout )
 	{
+		if ( currentLayout != wantedLayout )
+		{
+			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
+				, nullptr
+				, getAccessMask( currentLayout )
+				, getAccessMask( wantedLayout )
+				, currentLayout
+				, wantedLayout
+				, VK_QUEUE_FAMILY_IGNORED
+				, VK_QUEUE_FAMILY_IGNORED
+				, getImage( view.data->image )
+				, view.data->info.subresourceRange };
+			m_context.vkCmdPipelineBarrier( commandBuffer
+				, getStageMask( currentLayout )
+				, getStageMask( wantedLayout )
+				, VK_DEPENDENCY_BY_REGION_BIT
+				, 0u
+				, nullptr
+				, 0u
+				, nullptr
+				, 1u
+				, &barrier );
+		}
 	}
 
 	void RunnableGraph::doCreateImages()
