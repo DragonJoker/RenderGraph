@@ -15,32 +15,32 @@ namespace crg
 	class RunnableGraph
 	{
 	public:
-		RunnableGraph( FrameGraph graph
+		CRG_API RunnableGraph( FrameGraph graph
 			, GraphContext context );
-		~RunnableGraph();
+		CRG_API ~RunnableGraph();
 
-		void record();
-		void recordInto( VkCommandBuffer commandBuffer );
+		CRG_API void record();
+		CRG_API void recordInto( VkCommandBuffer commandBuffer );
 
-		SemaphoreWait run( SemaphoreWait toWait
+		CRG_API SemaphoreWait run( SemaphoreWait toWait
 			, VkQueue queue );
-		SemaphoreWait run( SemaphoreWaitArray const & toWait
+		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
-		VkImage getImage( ImageId const & image )const;
-		VkImage getImage( Attachment const & attach )const;
-		VkImageView getImageView( ImageViewId const & imageView )const;
-		VkImageView getImageView( Attachment const & attach )const;
-		VertexBuffer const & createQuadVertexBuffer( bool texCoords
+		CRG_API VkImage getImage( ImageId const & image )const;
+		CRG_API VkImage getImage( Attachment const & attach )const;
+		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
+		CRG_API VkImageView getImageView( Attachment const & attach )const;
+		CRG_API VertexBuffer const & createQuadVertexBuffer( bool texCoords
 			, bool invertU
 			, bool invertV );
-		VkSampler createSampler( SamplerDesc const & samplerDesc );
+		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
-		VkImageLayout getInitialLayout( crg::FramePass const & pass
+		CRG_API VkImageLayout getInitialLayout( crg::FramePass const & pass
 			, ImageViewId view
 			, bool allowSrcClear = true );
-		VkImageLayout getFinalLayout( crg::FramePass const & pass
+		CRG_API VkImageLayout getFinalLayout( crg::FramePass const & pass
 			, ImageViewId view );
-		void memoryBarrier( VkCommandBuffer commandBuffer
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
 			, VkImageLayout currentLayout
 			, VkImageLayout wantedLayout );

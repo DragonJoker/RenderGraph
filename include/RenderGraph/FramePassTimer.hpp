@@ -16,12 +16,12 @@ namespace crg
 	class FramePassTimerBlock
 	{
 	public:
-		explicit FramePassTimerBlock( FramePassTimer & timer );
-		FramePassTimerBlock( FramePassTimerBlock && rhs )noexcept;
-		FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept;
-		FramePassTimerBlock( FramePassTimerBlock const & ) = delete;
-		FramePassTimerBlock & operator=( FramePassTimerBlock const & ) = delete;
-		~FramePassTimerBlock();
+		CRG_API explicit FramePassTimerBlock( FramePassTimer & timer );
+		CRG_API FramePassTimerBlock( FramePassTimerBlock && rhs )noexcept;
+		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept;
+		CRG_API FramePassTimerBlock( FramePassTimerBlock const & ) = delete;
+		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock const & ) = delete;
+		CRG_API ~FramePassTimerBlock();
 
 		FramePassTimer * operator->()const
 		{
@@ -47,15 +47,15 @@ namespace crg
 		*\param[in] passesCount
 		*	The number of render passes.
 		*/
-		FramePassTimer( GraphContext const & context
+		CRG_API FramePassTimer( GraphContext const & context
 			, std::string const & name
 			, uint32_t passesCount = 1u );
-		~FramePassTimer();
+		CRG_API ~FramePassTimer();
 		/**
 		*\brief
 		*	Starts the CPU timer, resets GPU time.
 		*/
-		FramePassTimerBlock start();
+		CRG_API FramePassTimerBlock start();
 		/**
 		*\brief
 		*	Notifies the given pass render.
@@ -64,13 +64,13 @@ namespace crg
 		*\param[in] subtractGpuFromCpu
 		*	Tells if the GPU time should be subtracted from CPU time (in case of fence wait).
 		*/
-		void notifyPassRender( uint32_t passIndex = 0u
+		CRG_API void notifyPassRender( uint32_t passIndex = 0u
 			, bool subtractGpuFromCpu = false );
 		/**
 		*\brief
 		*	Reset the timer's times.
 		*/
-		void reset();
+		CRG_API void reset();
 		/**
 		*\brief
 		*	Writes the timestamp for the beginning of the pass.
@@ -79,7 +79,7 @@ namespace crg
 		*\param[in] passIndex
 		*	The pass index.
 		*/
-		void beginPass( VkCommandBuffer commandBuffer
+		CRG_API void beginPass( VkCommandBuffer commandBuffer
 			, uint32_t passIndex = 0u )const;
 		/**
 		*\brief
@@ -89,13 +89,13 @@ namespace crg
 		*\param[in] passIndex
 		*	The pass index.
 		*/
-		void endPass( VkCommandBuffer commandBuffer
+		CRG_API void endPass( VkCommandBuffer commandBuffer
 			, uint32_t passIndex = 0u )const;
 		/**
 		*\brief
 		*	Retrieves GPU time from the query.
 		*/
-		void retrieveGpuTime();
+		CRG_API void retrieveGpuTime();
 		/**
 		*\brief
 		*	Updates the passes count to the given value.
@@ -107,7 +107,7 @@ namespace crg
 		*\param[in] count
 		*	Le nombre de passes de rendu.
 		*/
-		void updateCount( uint32_t count );
+		CRG_API void updateCount( uint32_t count );
 		/**
 		*\name
 		*	Getters.

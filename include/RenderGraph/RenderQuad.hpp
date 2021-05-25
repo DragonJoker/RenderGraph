@@ -80,25 +80,25 @@ namespace crg
 		friend class RenderQuadBuilderT;
 
 	public:
-		RenderQuad( FramePass const & pass
+		CRG_API RenderQuad( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, rq::Config config );
-		~RenderQuad();
+		CRG_API ~RenderQuad();
 
-		void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 
 	protected:
-		void doSubInitialise()override;
-		void doSubRecordInto( VkCommandBuffer commandBuffer )const override;
+		CRG_API void doSubInitialise()override;
+		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer )const override;
 
-		void doFillDescriptorBindings();
-		void doCreateDescriptorSetLayout();
-		void doCreatePipelineLayout();
-		void doCreateDescriptorPool();
-		void doCreateDescriptorSet();
-		void doCreatePipeline();
-		VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
+		CRG_API void doFillDescriptorBindings();
+		CRG_API void doCreateDescriptorSetLayout();
+		CRG_API void doCreatePipelineLayout();
+		CRG_API void doCreateDescriptorPool();
+		CRG_API void doCreateDescriptorSet();
+		CRG_API void doCreatePipeline();
+		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
 
 	protected:
@@ -124,7 +124,7 @@ namespace crg
 			, "RenderQuadBuilderT::ConfigT must derive from crg::rq::Config" );
 
 	public:
-		RenderQuadBuilderT() = default;
+		CRG_API RenderQuadBuilderT() = default;
 		/**
 		*\param[in] config
 		*	The texture coordinates configuration.

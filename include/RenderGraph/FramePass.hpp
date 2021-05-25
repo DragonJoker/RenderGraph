@@ -23,7 +23,7 @@ namespace crg
 		*	Construction.
 		*/
 		/**@[*/
-		FramePass( std::string const & name
+		CRG_API FramePass( std::string const & name
 			, RunnablePassCreator runnableCreator );
 		/**@}*/
 		/**
@@ -55,7 +55,7 @@ namespace crg
 		*\brief
 		*	Creates a uniform buffer attachment.
 		*/
-		void addUniformBuffer( VkBuffer buffer
+		CRG_API void addUniformBuffer( VkBuffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -63,7 +63,7 @@ namespace crg
 		*\brief
 		*	Creates a storage buffer attachment.
 		*/
-		void addStorageBuffer( VkBuffer buffer
+		CRG_API void addStorageBuffer( VkBuffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -71,7 +71,7 @@ namespace crg
 		*\brief
 		*	Creates a uniform texel buffer view attachment.
 		*/
-		void addUniformBufferView( VkBuffer buffer
+		CRG_API void addUniformBufferView( VkBuffer buffer
 			, VkBufferView view
 			, uint32_t binding
 			, VkDeviceSize offset
@@ -80,7 +80,7 @@ namespace crg
 		*\brief
 		*	Creates a storage texel buffer view attachment.
 		*/
-		void addStorageBufferView( VkBuffer buffer
+		CRG_API void addStorageBufferView( VkBuffer buffer
 			, VkBufferView view
 			, uint32_t binding
 			, VkDeviceSize offset
@@ -95,7 +95,7 @@ namespace crg
 		*\brief
 		*	Creates a sampled image attachment.
 		*/
-		void addSampledView( ImageViewId view
+		CRG_API void addSampledView( ImageViewId view
 			, uint32_t binding
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 			, SamplerDesc samplerDesc = SamplerDesc{} );
@@ -103,26 +103,26 @@ namespace crg
 		*\brief
 		*	Creates a storage image attachment.
 		*/
-		void addStorageView( ImageViewId view
+		CRG_API void addStorageView( ImageViewId view
 			, uint32_t binding
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
 		/**
 		*\brief
 		*	Creates an transfer input attachment.
 		*/
-		void addTransferInputView( ImageViewId view
+		CRG_API void addTransferInputView( ImageViewId view
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
 		/**
 		*\brief
 		*	Creates an transfer output attachment.
 		*/
-		void addTransferOutputView( ImageViewId view
+		CRG_API void addTransferOutputView( ImageViewId view
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
 		/**
 		*\brief
 		*	Creates a colour attachment.
 		*/
-		void addColourView( std::string const & name
+		CRG_API void addColourView( std::string const & name
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -133,7 +133,7 @@ namespace crg
 		*\brief
 		*	Creates a depth and/or stencil output attachment.
 		*/
-		void addDepthStencilView( std::string const & name
+		CRG_API void addDepthStencilView( std::string const & name
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -323,7 +323,7 @@ namespace crg
 		*	Graph compilation.
 		*/
 		/**@[*/
-		RunnablePassPtr createRunnable( GraphContext const & context
+		CRG_API RunnablePassPtr createRunnable( GraphContext const & context
 			, RunnableGraph & graph )const;
 		/**@}*/
 

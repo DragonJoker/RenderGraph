@@ -26,12 +26,12 @@ namespace crg
 		*\brief
 		*	Initialises debug data.
 		*/
-		void initialise();
+		CRG_API void initialise();
 		/**
 		*\brief
 		*	Cleans up debug data.
 		*/
-		void cleanup();
+		CRG_API void cleanup();
 		/**
 		*\brief
 		*	Puts the backtrace into a stream.

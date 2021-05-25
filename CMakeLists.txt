@@ -47,6 +47,9 @@ set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 set( CRG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
 set( CRG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
 
+if ( NOT DEFINED CRG_BUILD_STATIC )
+	option( CRG_BUILD_STATIC "Build as a static library" ON )
+endif ()
 if ( NOT DEFINED CRG_BUILD_TESTS )
 	option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
 endif ()
@@ -125,11 +128,34 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
 	source_group( "Source Files" FILES ${${PROJECT_NAME}_FOLDER_SOURCE_FILES} )
 	source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_FOLDER_NATVIS_FILES} )
-	add_library( ${PROJECT_NAME} STATIC
-		${${PROJECT_NAME}_FOLDER_HEADER_FILES}
-		${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
-		${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
-	)
+	if ( CRG_BUILD_STATIC )
+		add_library( ${PROJECT_NAME} STATIC
+			${${PROJECT_NAME}_FOLDER_HEADER_FILES}
+			${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
+			${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
+		)
+		target_compile_definitions( ${PROJECT_NAME}
+			PUBLIC
+				CRG_BUILD_STATIC
+		)
+	else ()
+		add_library( ${PROJECT_NAME} SHARED
+			${${PROJECT_NAME}_FOLDER_HEADER_FILES}
+			${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
+			${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
+		)
+		if ( WIN32 )
+			target_link_libraries( ${PROJECT_NAME}
+				PUBLIC
+					Dbghelp
+			)
+		else ()
+			target_link_libraries( ${PROJECT_NAME}
+				PUBLIC
+					dl
+			)
+		endif ()
+	endif ()
 	add_library( crg::${PROJECT_NAME}
 		ALIAS
 			${PROJECT_NAME}

@@ -27,15 +27,15 @@ namespace crg
 			FramePass,
 		};
 
-		virtual ~GraphNode() = default;
-		void addAttaches( GraphAdjacentNode prev
+		CRG_API virtual ~GraphNode() = default;
+		CRG_API void addAttaches( GraphAdjacentNode prev
 			, AttachmentTransitionArray inputAttaches );
-		void attachNode( GraphAdjacentNode next
+		CRG_API void attachNode( GraphAdjacentNode next
 			, AttachmentTransitionArray inputAttaches );
-		GraphAdjacentNode findInNext( FramePass const & pass )const;
-		AttachmentTransitionArray const & getInputAttaches( ConstGraphAdjacentNode pred = nullptr )const;
+		CRG_API GraphAdjacentNode findInNext( FramePass const & pass )const;
+		CRG_API AttachmentTransitionArray const & getInputAttaches( ConstGraphAdjacentNode pred = nullptr )const;
 
-		virtual void accept( GraphVisitor * vis )const = 0;
+		CRG_API virtual void accept( GraphVisitor * vis )const = 0;
 
 		template< typename NodeT >
 		NodeT const & cast()const
@@ -67,7 +67,7 @@ namespace crg
 		}
 
 	protected:
-		GraphNode( Kind kind
+		CRG_API GraphNode( Kind kind
 			, std::string name );
 
 	protected:
@@ -87,8 +87,8 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::FramePass;
 
-		FramePassNode( FramePass const & pass );
-		void accept( GraphVisitor * vis )const override;
+		CRG_API FramePassNode( FramePass const & pass );
+		CRG_API void accept( GraphVisitor * vis )const override;
 
 		inline FramePass const & getFramePass()const
 		{
@@ -109,11 +109,11 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::Root;
 
-		RootNode( std::string name );
-		void accept( GraphVisitor * vis )const override;
+		CRG_API RootNode( std::string name );
+		CRG_API void accept( GraphVisitor * vis )const override;
 	};
 
-	FramePass const * getFramePass( GraphNode const & node );
+	CRG_API FramePass const * getFramePass( GraphNode const & node );
 
 	inline bool isFramePassNode( GraphNode const & node )
 	{

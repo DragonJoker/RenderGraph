@@ -9,8 +9,8 @@ See LICENSE file in root folder.
 
 namespace crg::dot
 {
-	void displayPasses( std::ostream & stream
+	CRG_API void displayPasses( std::ostream & stream
 		, FrameGraph const & value );
-	void displayTransitions( std::ostream & stream
+	CRG_API void displayTransitions( std::ostream & stream
 		, FrameGraph const & value );
 }

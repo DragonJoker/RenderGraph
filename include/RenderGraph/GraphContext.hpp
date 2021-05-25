@@ -439,7 +439,7 @@ namespace crg
 
 	struct GraphContext
 	{
-		GraphContext( VkDevice device
+		CRG_API GraphContext( VkDevice device
 			, VkPipelineCache cache
 			, VkAllocationCallbacks const * allocator
 			, VkPhysicalDeviceMemoryProperties memoryProperties
@@ -554,24 +554,24 @@ namespace crg
 		*\param[in] labelInfo
 		*	The parameters of the label to begin.
 		*/
-		void vkCmdBeginDebugBlock( VkCommandBuffer commandBuffer
+		CRG_API void vkCmdBeginDebugBlock( VkCommandBuffer commandBuffer
 			, DebugBlockInfo const & labelInfo )const;
 		/**
 		*\brief
 		*	Ends the command label.
 		*/
-		void vkCmdEndDebugBlock( VkCommandBuffer commandBuffer )const;
+		CRG_API void vkCmdEndDebugBlock( VkCommandBuffer commandBuffer )const;
 		/**
 		*\brief
 		*	Inserts a command label.
 		*\param[in] labelInfo
 		*	The parameters of the label to begin.
 		*/
-		void vkCmdInsertDebugBlock( VkCommandBuffer commandBuffer
+		CRG_API void vkCmdInsertDebugBlock( VkCommandBuffer commandBuffer
 			, DebugBlockInfo const & labelInfo )const;
 #endif
-		std::array< float, 4u > getNextRainbowColour()const;
-		uint32_t deduceMemoryType( uint32_t typeBits
+		CRG_API std::array< float, 4u > getNextRainbowColour()const;
+		CRG_API uint32_t deduceMemoryType( uint32_t typeBits
 			, VkMemoryPropertyFlags requirements )const;
 
 	private:
@@ -586,7 +586,7 @@ namespace crg
 
 	public:
 		template< typename ObjectT >
-		static inline void stRegisterObject( GraphContext const & context
+		static void stRegisterObject( GraphContext const & context
 			, std::string const & name
 			, ObjectT object )
 		{
@@ -602,7 +602,7 @@ namespace crg
 		}
 
 		template< typename ObjectT >
-		static inline void stUnregisterObject( GraphContext const & context, ObjectT object )
+		static void stUnregisterObject( GraphContext const & context, ObjectT object )
 		{
 			context.doUnregisterObject( uint64_t( object ) );
 		}
@@ -655,12 +655,12 @@ namespace crg
 			, VkDebugMarkerMarkerInfoEXT const & labelInfo )const;
 #endif
 
-		void doRegisterObject( uint64_t object
+		CRG_API void doRegisterObject( uint64_t object
 			, uint32_t objectType
 			, std::string const & name
 			, std::string const & typeName )const;
-		void doUnregisterObject( uint64_t object )const;
-		void doReportRegisteredObjects()const;
+		CRG_API void doUnregisterObject( uint64_t object )const;
+		CRG_API void doReportRegisteredObjects()const;
 
 #	define crgRegisterObject( Cont, TypeName, Object )\
 		crg::GraphContext::stRegisterObject( Cont, TypeName, Object )
@@ -680,6 +680,6 @@ namespace crg
 #endif
 	};
 
-	void checkVkResult( VkResult result, char const * const stepName );
-	void checkVkResult( VkResult result, std::string const & stepName );
+	CRG_API void checkVkResult( VkResult result, char const * const stepName );
+	CRG_API void checkVkResult( VkResult result, std::string const & stepName );
 }

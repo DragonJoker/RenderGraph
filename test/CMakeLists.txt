@@ -43,16 +43,18 @@ foreach ( TEST_FILE ${TEST_FILES} )
 		CXX_STANDARD 17
 		FOLDER "Tests/${MAIN_PROJECT_NAME}"
 	)
-	if ( WIN32 )
-		target_link_libraries( ${TEST_NAME}
-			PRIVATE
-				Dbghelp
-		)
-	else ()
-		target_link_libraries( ${TEST_NAME}
-			PRIVATE
-				dl
-		)
+	if ( NOT CRG_BUILD_STATIC )
+		if ( WIN32 )
+			target_link_libraries( ${TEST_NAME}
+				PRIVATE
+					Dbghelp
+			)
+		else ()
+			target_link_libraries( ${TEST_NAME}
+				PRIVATE
+					dl
+			)
+		endif ()
 	endif ()
 	add_test(
 		NAME ${TEST_NAME}

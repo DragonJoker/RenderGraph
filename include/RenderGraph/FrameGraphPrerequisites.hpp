@@ -13,6 +13,16 @@ See LICENSE file in root folder.
 #include <set>
 #include <vector>
 
+#if !defined( _WIN32 ) || defined( CRG_BUILD_STATIC )
+#	define CRG_API
+#else
+#	if defined( RenderGraph_EXPORTS )
+#		define CRG_API __declspec( dllexport )
+#	else
+#		define CRG_API __declspec( dllimport )
+#	endif
+#endif
+
 namespace crg
 {
 	template< typename DataT >
