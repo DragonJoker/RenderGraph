@@ -12,6 +12,39 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	struct SamplerDesc
+	{
+		VkFilter magFilter;
+		VkFilter minFilter;
+		VkSamplerMipmapMode mipmapMode;
+		VkSamplerAddressMode addressModeU;
+		VkSamplerAddressMode addressModeV;
+		VkSamplerAddressMode addressModeW;
+		float mipLodBias;
+		float minLod;
+		float maxLod;
+
+		explicit SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
+			, VkFilter minFilter = VK_FILTER_NEAREST
+			, VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST
+			, VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+			, VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+			, VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+			, float mipLodBias = 0.0f
+			, float minLod = -500.0f
+			, float maxLod = 500.0f )
+			: magFilter{ magFilter }
+			, minFilter{ minFilter }
+			, mipmapMode{ mipmapMode }
+			, addressModeU{ addressModeU }
+			, addressModeV{ addressModeV }
+			, addressModeW{ addressModeW }
+			, mipLodBias{ mipLodBias }
+			, minLod{ minLod }
+			, maxLod{ maxLod }
+		{
+		}
+	};
 	/**
 	*\brief
 	*	A sampled image, or an input/output colour/depth/stencil/depthstencil attachment.
@@ -206,7 +239,7 @@ namespace crg
 		VkAttachmentLoadOp stencilLoadOp{};
 		VkAttachmentStoreOp stencilStoreOp{};
 		VkImageLayout initialLayout{};
-		VkFilter filter{};
+		SamplerDesc samplerDesc{};
 		uint32_t binding{};
 		VkClearValue clearValue{};
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
@@ -224,7 +257,7 @@ namespace crg
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout
 			, uint32_t binding
-			, VkFilter filter
+			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState );
 

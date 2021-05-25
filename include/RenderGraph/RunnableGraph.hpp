@@ -33,7 +33,7 @@ namespace crg
 		VertexBuffer const & createQuadVertexBuffer( bool texCoords
 			, bool invertU
 			, bool invertV );
-		VkSampler createSampler( VkFilter filter );
+		VkSampler createSampler( SamplerDesc const & samplerDesc );
 
 		VkImageLayout getInitialLayout( crg::FramePass const & pass
 			, ImageViewId view
@@ -56,6 +56,6 @@ namespace crg
 		ImageMemoryMap m_images;
 		ImageViewMap m_imageViews;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
-		std::unordered_map< VkFilter, VkSampler > m_samplers;
+		std::unordered_map< size_t, VkSampler > m_samplers;
 	};
 }

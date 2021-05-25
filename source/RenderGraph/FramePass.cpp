@@ -98,7 +98,7 @@ namespace crg
 	void FramePass::addSampledView( ImageViewId view
 		, uint32_t binding
 		, VkImageLayout initialLayout
-		, VkFilter filter )
+		, SamplerDesc samplerDesc )
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Sampled )
 			, *this
@@ -110,7 +110,7 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, binding
-			, filter
+			, std::move( samplerDesc )
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
@@ -129,7 +129,7 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, binding
-			, VkFilter{}
+			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
@@ -147,7 +147,7 @@ namespace crg
 			, VkAttachmentStoreOp{}
 			, initialLayout
 			, uint32_t{}
-			, VkFilter{}
+			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
@@ -165,7 +165,7 @@ namespace crg
 			, VkAttachmentStoreOp{}
 			, initialLayout
 			, uint32_t{}
-			, VkFilter{}
+			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
@@ -188,7 +188,7 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, uint32_t{}
-			, VkFilter{}
+			, SamplerDesc{}
 			, std::move( clearValue )
 			, std::move( blendState ) } );
 	}
@@ -212,7 +212,7 @@ namespace crg
 			, stencilStoreOp
 			, initialLayout
 			, uint32_t{}
-			, VkFilter{}
+			, SamplerDesc{}
 			, std::move( clearValue )
 			, VkPipelineColorBlendAttachmentState{} };
 	}
