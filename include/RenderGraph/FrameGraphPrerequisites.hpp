@@ -28,11 +28,17 @@ namespace crg
 	struct RootNode;
 	struct WriteDescriptorSet;
 
-	class GraphVisitor;
+	class Exception;
 	class FrameGraph;
 	class FramePassTimer;
+	class GraphVisitor;
 	class RunnableGraph;
 	class RunnablePass;
+
+	class ImageCopy;
+	class PipelinePass;
+	class RenderPass;
+	class RenderQuad;
 
 	using ImageId = Id< ImageData >;
 	using ImageViewId = Id< ImageViewData >;

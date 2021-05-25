@@ -65,6 +65,23 @@ namespace crg
 		}
 	}
 
+	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
+	{
+		resetCommandBuffer();
+
+		if ( m_pipeline )
+		{
+			crgUnregisterObject( m_context, m_pipeline );
+			m_context.vkDestroyPipeline( m_context.device
+				, m_pipeline
+				, m_context.allocator );
+		}
+
+		m_config.program = std::move( config );
+		doCreatePipeline();
+		record();
+	}
+
 	void RenderQuad::doSubInitialise()
 	{
 		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
@@ -161,7 +178,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_descriptorSetLayout );
-		checkVkResult( res, "DescriptorSetLayout creation" );
+		checkVkResult( res, m_pass.name + " - DescriptorSetLayout creation" );
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSetLayout );
 	}
 
@@ -178,26 +195,14 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_pipelineLayout );
-		checkVkResult( res, "PipeliineLayout creation" );
+		checkVkResult( res, m_pass.name + " - PipeliineLayout creation" );
 		crgRegisterObject( m_context, m_pass.name, m_pipelineLayout );
 	}
 
 	void RenderQuad::doCreateDescriptorPool()
 	{
 		assert( m_descriptorSetLayout );
-		VkDescriptorSetLayoutBindingArray bindings;
-		uint32_t index = 0u;
-
-		for ( auto & binding : m_pass.sampled )
-		{
-			bindings.push_back( { index++
-				, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-				, 1u
-				, VK_SHADER_STAGE_FRAGMENT_BIT
-				, nullptr } );
-		}
-
-		auto sizes = getBindingsSizes( bindings, 1u );
+		auto sizes = getBindingsSizes( m_descriptorBindings, 1u );
 		VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
 			, nullptr
 			, 0u
@@ -208,7 +213,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_descriptorSetPool );
-		checkVkResult( res, "DescriptorPool creation" );
+		checkVkResult( res, m_pass.name + " - DescriptorPool creation" );
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSetPool );
 	}
 
@@ -222,7 +227,7 @@ namespace crg
 		auto res = m_context.vkAllocateDescriptorSets( m_context.device
 			, &allocateInfo
 			, &m_descriptorSet );
-		checkVkResult( res, "DescriptorSet allocation" );
+		checkVkResult( res, m_pass.name + " - DescriptorSet allocation" );
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSet );
 
 		for ( auto & write : m_descriptorWrites )
@@ -303,7 +308,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_pipeline );
-		checkVkResult( res, "Pipeline creation" );
+		checkVkResult( res, m_pass.name + " - Pipeline creation" );
 		crgRegisterObject( m_context, m_pass.name, m_pipeline );
 	}
 
