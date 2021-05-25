@@ -48,6 +48,38 @@ namespace crg
 				| ( ( invertV ? 0x01 : 0x00 ) << 2 );
 		}
 
+		template< typename T >
+		inline size_t hashCombine( size_t hash
+			, T const & rhs )
+		{
+			const uint64_t kMul = 0x9ddfea08eb382d69ULL;
+			auto seed = hash;
+
+			std::hash< T > hasher;
+			uint64_t a = ( hasher( rhs ) ^ seed ) * kMul;
+			a ^= ( a >> 47 );
+
+			uint64_t b = ( seed ^ a ) * kMul;
+			b ^= ( b >> 47 );
+
+			hash = static_cast< std::size_t >( b * kMul );
+			return hash;
+		}
+
+		size_t makeHash( SamplerDesc const & samplerDesc )
+		{
+			auto result = std::hash< uint32_t >{}( samplerDesc.magFilter );
+			result = hashCombine( result, samplerDesc.minFilter );
+			result = hashCombine( result, samplerDesc.mipmapMode );
+			result = hashCombine( result, samplerDesc.addressModeU );
+			result = hashCombine( result, samplerDesc.addressModeV );
+			result = hashCombine( result, samplerDesc.addressModeW );
+			result = hashCombine( result, samplerDesc.mipLodBias );
+			result = hashCombine( result, samplerDesc.minLod );
+			result = hashCombine( result, samplerDesc.maxLod );
+			return result;
+		}
+
 		std::string getName( VkFilter filter )
 		{
 			switch ( filter )
@@ -471,28 +503,28 @@ namespace crg
 		return *ires.first->second;
 	}
 
-	VkSampler RunnableGraph::createSampler( VkFilter filter )
+	VkSampler RunnableGraph::createSampler( SamplerDesc const & samplerDesc )
 	{
-		auto ires = m_samplers.emplace( filter, VkSampler{} );
+		auto ires = m_samplers.emplace( makeHash( samplerDesc ), VkSampler{} );
 
 		if ( ires.second )
 		{
 			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
 				, nullptr
 				, 0u
-				, filter
-				, filter
-				, VK_SAMPLER_MIPMAP_MODE_LINEAR
-				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-				, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-				, 0.0f // mipLodBias
+				, samplerDesc.magFilter
+				, samplerDesc.minFilter
+				, samplerDesc.mipmapMode
+				, samplerDesc.addressModeU
+				, samplerDesc.addressModeV
+				, samplerDesc.addressModeW
+				, samplerDesc.mipLodBias // mipLodBias
 				, VK_FALSE // anisotropyEnable
 				, 0.0f // maxAnisotropy
 				, VK_FALSE // compareEnable
 				, VK_COMPARE_OP_ALWAYS // compareOp
-				, -1000.0f
-				, 1000.0f
+				, samplerDesc.minLod
+				, samplerDesc.maxLod
 				, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
 				, VK_FALSE };
 			auto res = m_context.vkCreateSampler( m_context.device
@@ -500,7 +532,7 @@ namespace crg
 				, m_context.allocator
 				, &ires.first->second );
 			checkVkResult( res, "Sampler creation" );
-			crgRegisterObject( m_context, getName( filter ) + "Sampler", ires.first->second );
+			crgRegisterObject( m_context, "Sampler" + std::to_string( makeHash( samplerDesc ) ), ires.first->second );
 		}
 
 		return ires.first->second;

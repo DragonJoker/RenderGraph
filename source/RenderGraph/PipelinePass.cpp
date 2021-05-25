@@ -116,7 +116,7 @@ namespace crg
 				m_descriptorWrites.push_back( WriteDescriptorSet{ sampled.binding
 					, 0u
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, VkDescriptorImageInfo{ m_graph.createSampler( sampled.filter )
+					, VkDescriptorImageInfo{ m_graph.createSampler( sampled.samplerDesc )
 					, m_graph.getImageView( sampled )
 					, sampled.initialLayout } } );
 			}

@@ -55,7 +55,7 @@ namespace crg
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
 		, uint32_t binding
-		, VkFilter filter
+		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 		: pass{ &pass }
@@ -85,7 +85,7 @@ namespace crg
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
 		, initialLayout{ initialLayout }
-		, filter{ filter }
+		, samplerDesc{ std::move( samplerDesc ) }
 		, binding{ binding }
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
@@ -202,6 +202,20 @@ namespace crg
 			&& lhs.colorWriteMask == rhs.colorWriteMask;
 	}
 
+	bool operator==( SamplerDesc const & lhs
+		, SamplerDesc const & rhs )
+	{
+		return lhs.magFilter == rhs.magFilter
+			&& lhs.minFilter == rhs.minFilter
+			&& lhs.mipmapMode == rhs.mipmapMode
+			&& lhs.addressModeU == rhs.addressModeU
+			&& lhs.addressModeV == rhs.addressModeV
+			&& lhs.addressModeW == rhs.addressModeW
+			&& lhs.mipLodBias == rhs.mipLodBias
+			&& lhs.minLod == rhs.minLod
+			&& lhs.maxLod == rhs.maxLod;
+	}
+
 	bool operator==( Attachment const & lhs
 		, Attachment const & rhs )
 	{
@@ -212,7 +226,7 @@ namespace crg
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp
 			&& lhs.stencilStoreOp == rhs.stencilStoreOp
-			&& lhs.filter == rhs.filter
+			&& lhs.samplerDesc == rhs.samplerDesc
 			&& lhs.clearValue == rhs.clearValue
 			&& lhs.blendState == rhs.blendState;
 	}

@@ -120,7 +120,7 @@ namespace crg
 			m_descriptorWrites.push_back( WriteDescriptorSet{ sampled.binding
 				, 0u
 				, imageDescriptor
-				, VkDescriptorImageInfo{ m_graph.createSampler( sampled.filter )
+				, VkDescriptorImageInfo{ m_graph.createSampler( sampled.samplerDesc )
 				, m_graph.getImageView( sampled )
 				, ( sampled.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
 					? sampled.initialLayout

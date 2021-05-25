@@ -98,7 +98,7 @@ namespace crg
 		void addSampledView( ImageViewId view
 			, uint32_t binding
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-			, VkFilter filter = VK_FILTER_LINEAR );
+			, SamplerDesc samplerDesc = SamplerDesc{} );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
