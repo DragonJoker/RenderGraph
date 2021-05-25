@@ -24,7 +24,7 @@ namespace crg
 		float minLod;
 		float maxLod;
 
-		explicit SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
+		CRG_API explicit SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
 			, VkFilter minFilter = VK_FILTER_NEAREST
 			, VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST
 			, VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
@@ -87,7 +87,7 @@ namespace crg
 		*	Getters.
 		*/
 		/**@{*/
-		VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
+		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		FlagKind getFlags()const
 		{
 			return flags;
@@ -246,8 +246,8 @@ namespace crg
 		/**@}*/
 
 	private:
-		Attachment( ImageViewId view );
-		Attachment( FlagKind flags
+		CRG_API Attachment( ImageViewId view );
+		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, std::string name
 			, ImageViewId view
@@ -261,7 +261,7 @@ namespace crg
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState );
 
-		void setFlag( Flag flag, bool set )
+		CRG_API void setFlag( Flag flag, bool set )
 		{
 			if ( set )
 			{
@@ -275,9 +275,9 @@ namespace crg
 
 		FlagKind flags{};
 
-		friend bool operator==( Attachment const & lhs, Attachment const & rhs );
+		friend CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 	};
 
-	bool operator==( Attachment const & lhs, Attachment const & rhs );
-	bool operator!=( Attachment const & lhs, Attachment const & rhs );
+	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
+	CRG_API bool operator!=( Attachment const & lhs, Attachment const & rhs );
 }

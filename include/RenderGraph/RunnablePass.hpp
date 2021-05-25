@@ -15,29 +15,29 @@ namespace crg
 	class RunnablePass
 	{
 	public:
-		RunnablePass( FramePass const & pass
+		CRG_API RunnablePass( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph );
-		virtual ~RunnablePass();
+		CRG_API virtual ~RunnablePass();
 		/**
 		*\brief
 		*	Initialises the descriptor set.
 		*/
-		void initialise();
+		CRG_API void initialise();
 		/**
 		*\brief
 		*	Records the render pass into the given command buffer.
 		*\param[in,out] commandBuffer
 		*	The command buffer.
 		*/
-		void record();
+		CRG_API void record();
 		/**
 		*\brief
 		*	Records the render pass into the given command buffer.
 		*\param[in,out] commandBuffer
 		*	The command buffer.
 		*/
-		void recordInto( VkCommandBuffer commandBuffer );
+		CRG_API void recordInto( VkCommandBuffer commandBuffer );
 		/**
 		*\brief
 		*	Submits this pass' command buffer to the given queue.
@@ -48,7 +48,7 @@ namespace crg
 		*\return
 		*	This pass' semaphore.
 		*/
-		SemaphoreWait run( SemaphoreWait toWait
+		CRG_API SemaphoreWait run( SemaphoreWait toWait
 			, VkQueue queue );
 		/**
 		*\brief
@@ -60,13 +60,13 @@ namespace crg
 		*\return
 		*	This pass' semaphore.
 		*/
-		SemaphoreWait run( SemaphoreWaitArray const & toWait
+		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
 		/**
 		*\brief
 		*	Resets the command buffer to initial state.
 		*/
-		void resetCommandBuffer();
+		CRG_API void resetCommandBuffer();
 
 		FramePassTimer const & getTimer()const
 		{
@@ -86,9 +86,9 @@ namespace crg
 		void doCreateFence();
 
 	protected:
-		virtual void doInitialise() = 0;
-		virtual void doRecordInto( VkCommandBuffer commandBuffer )const = 0;
-		virtual VkPipelineStageFlags doGetSemaphoreWaitFlags()const = 0;
+		CRG_API virtual void doInitialise() = 0;
+		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer )const = 0;
+		CRG_API virtual VkPipelineStageFlags doGetSemaphoreWaitFlags()const = 0;
 
 	protected:
 		FramePass const & m_pass;

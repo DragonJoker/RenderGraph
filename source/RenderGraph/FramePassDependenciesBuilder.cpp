@@ -68,7 +68,7 @@ namespace crg
 			{
 				for ( auto & depsIt : dependencies )
 				{
-					stream << depsIt.first << std::endl;
+					stream << depsIt.first->name << std::endl;
 
 					for ( auto & transition : depsIt.second )
 					{

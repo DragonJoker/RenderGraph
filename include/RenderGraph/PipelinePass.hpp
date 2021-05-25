@@ -35,15 +35,15 @@ namespace crg
 		: public RunnablePass
 	{
 	public:
-		PipelinePass( FramePass const & pass
+		CRG_API PipelinePass( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, pp::Config config
 			, VkPipelineBindPoint bindingPoint );
-		virtual ~PipelinePass();
+		CRG_API virtual ~PipelinePass();
 
 	protected:
-		void doInitialise()override;
+		CRG_API void doInitialise()override;
 
 	private:
 		void doFillDescriptorBindings();
@@ -68,7 +68,7 @@ namespace crg
 	class PipelinePassBuilderT
 	{
 	public:
-		PipelinePassBuilderT() = default;
+		CRG_API PipelinePassBuilderT() = default;
 		/**
 		*\param[in] config
 		*	The pipeline program.

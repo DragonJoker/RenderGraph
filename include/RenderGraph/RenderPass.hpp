@@ -7,7 +7,7 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	VkDescriptorPoolSizeArray getBindingsSizes( VkDescriptorSetLayoutBindingArray const & bindings
+	CRG_API VkDescriptorPoolSizeArray getBindingsSizes( VkDescriptorSetLayoutBindingArray const & bindings
 		, uint32_t maxSets );
 
 	template< typename VkType, typename LibType >
@@ -32,10 +32,10 @@ namespace crg
 		friend class RenderQuadBuilderT;
 
 	public:
-		RenderPass( FramePass const & pass
+		CRG_API RenderPass( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph );
-		~RenderPass();
+		CRG_API ~RenderPass();
 
 		VkRenderPass getRenderPass()const
 		{
@@ -43,19 +43,19 @@ namespace crg
 		}
 
 	protected:
-		void doInitialise()override final;
-		void doRecordInto( VkCommandBuffer commandBuffer )const override final;
-		VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
-		virtual void doSubInitialise() = 0;
-		virtual void doSubRecordInto( VkCommandBuffer commandBuffer )const = 0;
-		virtual VkSubpassContents doGetSubpassContents( uint32_t subpassIndex )const
+		CRG_API void doInitialise()override final;
+		CRG_API void doRecordInto( VkCommandBuffer commandBuffer )const override final;
+		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
+		CRG_API virtual void doSubInitialise() = 0;
+		CRG_API virtual void doSubRecordInto( VkCommandBuffer commandBuffer )const = 0;
+		CRG_API virtual VkSubpassContents doGetSubpassContents( uint32_t subpassIndex )const
 		{
 			return VK_SUBPASS_CONTENTS_INLINE;
 		}
 
-		void doCreateRenderPass();
-		void doCreateFramebuffer();
-		VkPipelineColorBlendStateCreateInfo doCreateBlendState();
+		CRG_API void doCreateRenderPass();
+		CRG_API void doCreateFramebuffer();
+		CRG_API VkPipelineColorBlendStateCreateInfo doCreateBlendState();
 
 	protected:
 		VkRenderPass m_renderPass{ VK_NULL_HANDLE };

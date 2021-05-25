@@ -20,12 +20,12 @@ namespace crg
 		friend class RunnableGraph;
 
 	public:
-		FrameGraph( std::string name = "FrameGraph" );
-		FramePass & createPass( std::string const & name
+		CRG_API FrameGraph( std::string name = "FrameGraph" );
+		CRG_API FramePass & createPass( std::string const & name
 			, RunnablePassCreator runnableCreator );
-		void compile();
-		ImageId createImage( ImageData const & img );
-		ImageViewId createView( ImageViewData const & view );
+		CRG_API void compile();
+		CRG_API ImageId createImage( ImageData const & img );
+		CRG_API ImageViewId createView( ImageViewData const & view );
 
 		GraphAdjacentNode getGraph()
 		{

@@ -11,16 +11,16 @@ namespace crg
 		: public RunnablePass
 	{
 	public:
-		ImageCopy( FramePass const & pass
+		CRG_API ImageCopy( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, VkExtent3D copySize );
-		~ImageCopy();
+		CRG_API ~ImageCopy();
 
 	protected:
-		void doInitialise()override;
-		void doRecordInto( VkCommandBuffer commandBuffer )const override;
-		VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;
+		CRG_API void doInitialise()override;
+		CRG_API void doRecordInto( VkCommandBuffer commandBuffer )const override;
+		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;
 
 	private:
 		Attachment m_srcAttach;
