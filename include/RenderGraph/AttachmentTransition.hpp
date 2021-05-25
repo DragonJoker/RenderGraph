@@ -17,8 +17,8 @@ namespace crg
 	struct AttachmentTransition
 	{
 		ImageViewId view;
-		Attachment srcAttach;
-		Attachment dstAttach;
+		Attachment outputAttach;
+		Attachment inputAttach;
 	};
 	bool operator==( AttachmentTransition const & lhs, AttachmentTransition const & rhs );
 

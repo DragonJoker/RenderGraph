@@ -42,21 +42,21 @@ namespace crg::dot
 
 				for ( auto & transition : transitions )
 				{
-					std::string name{ transition.view.data->name + "\\nTrans. to\\n" + transition.dstAttach.name };
+					std::string name{ "Trans. to\\n" + transition.inputAttach.name };
 					stream << "    \"" << name << "\" [ shape=square ];\n";
 
-					if ( transition.srcAttach.pass )
+					if ( transition.outputAttach.pass )
 					{
-						stream << "    \"" << transition.srcAttach.pass->name << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
+						stream << "    \"" << transition.outputAttach.pass->name << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 					}
 					else
 					{
 						stream << "    \"ExternalSource\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 					}
 
-					if ( transition.dstAttach.pass )
+					if ( transition.inputAttach.pass )
 					{
-						stream << "    \"" << name << "\" -> \"" << transition.dstAttach.pass->name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
+						stream << "    \"" << name << "\" -> \"" << transition.inputAttach.pass->name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 					}
 					else
 					{
@@ -84,13 +84,13 @@ namespace crg::dot
 					, transitions.end()
 					, []( AttachmentTransition const & lhs, AttachmentTransition const & rhs )
 					{
-						return lhs.srcAttach.name < rhs.srcAttach.name;
+						return lhs.outputAttach.name < rhs.outputAttach.name;
 					} );
 				uint32_t index{ 1u };
 
 				for ( auto & transition : transitions )
 				{
-					std::string name{ transition.view.data->name + "\\nfrom\\n" + transition.srcAttach.name + "\\nto\\n" + transition.dstAttach.name };
+					std::string name{ "\\nTransition to\\n" + transition.inputAttach.name };
 					m_stream << "    \"" << name << "\" [ shape=square ];\n";
 					m_stream << "    \"" << lhs->getName() << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 					m_stream << "    \"" << name << "\" -> \"" << rhs->getName() << "\" [ label=\"" << transition.view.data->name << "\" ];\n";

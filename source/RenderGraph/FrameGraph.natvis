@@ -117,11 +117,11 @@
   </Type>
 
   <Type Name="crg::AttachmentTransition">
-    <DisplayString>{view.data->name} : {srcAttach.name} -> {dstAttach.name}</DisplayString>
+    <DisplayString>{view.data->name} : {outputAttach.name} -> {inputAttach.name}</DisplayString>
     <Expand>
       <Item Name="view">view</Item>
-      <Item Name="src">srcAttach</Item>
-      <Item Name="dst">dstAttach</Item>
+      <Item Name="src">outputAttach</Item>
+      <Item Name="dst">inputAttach</Item>
     </Expand>
   </Type>
 

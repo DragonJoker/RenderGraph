@@ -57,7 +57,9 @@ namespace crg
 
 			std::ostream & operator<<( std::ostream & stream, AttachmentTransition const & transition )
 			{
-				stream << transition.srcAttach.pass->name << " -> " << transition.dstAttach.pass->name;
+				stream << ( transition.outputAttach.pass ? transition.outputAttach.pass->name : std::string{ "External" } )
+					<< " -> "
+					<< ( transition.inputAttach.pass ? transition.inputAttach.pass->name : std::string{ "External" } );
 				std::string sep = " on [";
 				stream << sep << transition.view.data->name;
 				stream << "]";

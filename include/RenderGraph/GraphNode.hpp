@@ -51,19 +51,24 @@ namespace crg
 			return static_cast< NodeT & >( *this );
 		}
 
-		inline Kind getKind()const
+		Kind getKind()const
 		{
 			return kind;
 		}
 
-		inline std::string const & getName()const
+		std::string const & getName()const
 		{
 			return name;
 		}
 
-		inline auto & getNext()const
+		auto & getNext()const
 		{
 			return next;
+		}
+
+		bool hasPrev()const
+		{
+			return !inputAttaches.empty();
 		}
 
 	protected:
@@ -90,7 +95,7 @@ namespace crg
 		CRG_API FramePassNode( FramePass const & pass );
 		CRG_API void accept( GraphVisitor * vis )const override;
 
-		inline FramePass const & getFramePass()const
+		FramePass const & getFramePass()const
 		{
 			return *pass;
 		}
@@ -115,32 +120,32 @@ namespace crg
 
 	CRG_API FramePass const * getFramePass( GraphNode const & node );
 
-	inline bool isFramePassNode( GraphNode const & node )
+	static bool isFramePassNode( GraphNode const & node )
 	{
 		return node.getKind() == FramePassNode::MyKind;
 	}
 
-	inline bool isRootNode( GraphNode const & node )
+	static bool isRootNode( GraphNode const & node )
 	{
 		return node.getKind() == RootNode::MyKind;
 	}
 
-	inline bool isFramePassNode( ConstGraphAdjacentNode node )
+	static bool isFramePassNode( ConstGraphAdjacentNode node )
 	{
 		return node && isFramePassNode( *node );
 	}
 
-	inline bool isRootNode( ConstGraphAdjacentNode node )
+	static bool isRootNode( ConstGraphAdjacentNode node )
 	{
 		return node && isRootNode( *node );
 	}
 
-	inline bool isFramePassNode( GraphNodePtr const & node )
+	static bool isFramePassNode( GraphNodePtr const & node )
 	{
 		return node && isFramePassNode( *node );
 	}
 
-	inline bool isRootNode( GraphNodePtr const & node )
+	static bool isRootNode( GraphNodePtr const & node )
 	{
 		return node && isRootNode( *node );
 	}
