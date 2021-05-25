@@ -19,7 +19,6 @@ namespace crg
 		uint32_t id;
 		TypeT const * data;
 
-	private:
 		Id( uint32_t id = 0u
 			, TypeT const * data = nullptr )
 			: id{ id }
