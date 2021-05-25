@@ -86,6 +86,8 @@ namespace crg
 			, rq::Config config );
 		~RenderQuad();
 
+		void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+
 	protected:
 		void doSubInitialise()override;
 		void doSubRecordInto( VkCommandBuffer commandBuffer )const override;
@@ -167,7 +169,7 @@ namespace crg
 		*\param[in] pass
 		*	The render pass.
 		*/
-		RunnablePassPtr build( FramePass const & pass
+		std::unique_ptr< RenderQuad > build( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph )
 		{

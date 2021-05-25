@@ -190,7 +190,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_descriptorSetLayout );
-		checkVkResult( res, "DescriptorSetLayout creation" );
+		checkVkResult( res, m_pass.name + " - DescriptorSetLayout creation" );
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSetLayout );
 	}
 
@@ -207,7 +207,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_pipelineLayout );
-		checkVkResult( res, "PipeliineLayout creation" );
+		checkVkResult( res, m_pass.name + " - PipeliineLayout creation" );
 		crgRegisterObject( m_context, m_pass.name, m_pipelineLayout );
 	}
 
@@ -237,7 +237,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_descriptorSetPool );
-		checkVkResult( res, "DescriptorPool creation" );
+		checkVkResult( res, m_pass.name + " - DescriptorPool creation" );
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSetPool );
 	}
 
@@ -251,7 +251,7 @@ namespace crg
 		auto res = m_context.vkAllocateDescriptorSets( m_context.device
 			, &allocateInfo
 			, &m_descriptorSet );
-		checkVkResult( res, "DescriptorSet allocation" );
+		checkVkResult( res, m_pass.name + " - DescriptorSet allocation" );
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSet );
 
 		for ( auto & write : m_descriptorWrites )

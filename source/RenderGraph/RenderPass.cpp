@@ -195,7 +195,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_renderPass );
-		checkVkResult( res, "FramePass creation" );
+		checkVkResult( res, m_pass.name + " - RenderPass creation" );
 		crgRegisterObject( m_context, m_pass.name, m_renderPass );
 	}
 
@@ -246,7 +246,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_frameBuffer );
-		checkVkResult( res, "Framebuffer creation" );
+		checkVkResult( res, m_pass.name + " - Framebuffer creation" );
 		crgRegisterObject( m_context, m_pass.name, m_frameBuffer );
 	}
 

@@ -82,6 +82,8 @@ namespace crg
 		void doCreateCommandPool();
 		void doCreateCommandBuffer();
 		void doCreateSemaphore();
+		void doCreateEvent();
+		void doCreateFence();
 
 	protected:
 		virtual void doInitialise() = 0;
@@ -95,6 +97,8 @@ namespace crg
 		VkCommandPool m_commandPool{ VK_NULL_HANDLE };
 		VkCommandBuffer m_commandBuffer{ VK_NULL_HANDLE };
 		VkSemaphore m_semaphore{ VK_NULL_HANDLE };
+		VkEvent m_event{ VK_NULL_HANDLE };
+		VkFence m_fence{ VK_NULL_HANDLE };
 		FramePassTimer m_timer;
 	};
 }

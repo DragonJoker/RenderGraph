@@ -77,6 +77,16 @@ namespace crg
 		DECL_vkFunction( DestroyQueryPool );
 		DECL_vkFunction( GetQueryPoolResults );
 		DECL_vkFunction( ResetCommandBuffer );
+		DECL_vkFunction( CreateEvent );
+		DECL_vkFunction( DestroyEvent );
+		DECL_vkFunction( ResetEvent );
+		DECL_vkFunction( SetEvent );
+		DECL_vkFunction( GetEventStatus );
+		DECL_vkFunction( CreateFence );
+		DECL_vkFunction( DestroyFence );
+		DECL_vkFunction( GetFenceStatus );
+		DECL_vkFunction( WaitForFences );
+		DECL_vkFunction( ResetFences );
 
 		DECL_vkFunction( CmdBindPipeline );
 		DECL_vkFunction( CmdBindDescriptorSets );
@@ -88,7 +98,12 @@ namespace crg
 		DECL_vkFunction( CmdEndRenderPass );
 		DECL_vkFunction( CmdResetQueryPool );
 		DECL_vkFunction( CmdWriteTimestamp );
+		DECL_vkFunction( CmdPipelineBarrier );
+		DECL_vkFunction( CmdCopyImage );
 		DECL_vkFunction( CmdExecuteCommands );
+		DECL_vkFunction( CmdResetEvent );
+		DECL_vkFunction( CmdSetEvent );
+		DECL_vkFunction( CmdWaitEvents );
 
 #if VK_EXT_debug_utils
 		DECL_vkFunction( SetDebugUtilsObjectNameEXT );
@@ -363,5 +378,10 @@ namespace crg
 		{
 			throw std::runtime_error{ stepName };
 		}
+	}
+
+	void checkVkResult( VkResult result, std::string const & stepName )
+	{
+		checkVkResult( result, stepName.c_str() );
 	}
 }
