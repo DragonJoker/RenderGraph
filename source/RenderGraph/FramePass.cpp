@@ -9,6 +9,113 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	namespace
+	{
+		bool isInOutputs( FramePass const & pass
+			, ImageViewId const & view )
+		{
+			auto it = std::find_if( pass.colourInOuts.begin()
+				, pass.colourInOuts.end()
+				, [&view]( Attachment const & lookup )
+				{
+					return lookup.view == view
+						&& lookup.isColourOutput();
+				} );
+
+			if ( it != pass.colourInOuts.end() )
+			{
+				return true;
+			}
+
+			it = std::find_if( pass.transferInOuts.begin()
+				, pass.transferInOuts.end()
+				, [&view]( Attachment const & lookup )
+				{
+					return lookup.view == view
+						&& lookup.isTransferOutput();
+				} );
+
+			if ( it != pass.transferInOuts.end() )
+			{
+				return true;
+			}
+
+			if ( pass.depthStencilInOut
+				&& pass.depthStencilInOut->view == view
+				&& ( pass.depthStencilInOut->isDepthOutput()
+					|| pass.depthStencilInOut->isStencilOutput() ) )
+			{
+				return true;
+			}
+
+			return false;
+		}
+
+		bool isInInputs( FramePass const & pass
+			, ImageViewId const & view )
+		{
+			auto it = std::find_if( pass.colourInOuts.begin()
+				, pass.colourInOuts.end()
+				, [&view]( Attachment const & lookup )
+				{
+					return lookup.view == view
+						&& lookup.isColourInput();
+				} );
+
+			if ( it != pass.colourInOuts.end() )
+			{
+				return true;
+			}
+
+			it = std::find_if( pass.transferInOuts.begin()
+				, pass.transferInOuts.end()
+				, [&view]( Attachment const & lookup )
+				{
+					return lookup.view == view
+						&& lookup.isTransferInput();
+				} );
+
+			if ( it != pass.transferInOuts.end() )
+			{
+				return true;
+			}
+
+			it = std::find_if( pass.sampled.begin()
+				, pass.sampled.end()
+				, [&view]( Attachment const & lookup )
+				{
+					return lookup.view == view;
+				} );
+
+			if ( it != pass.sampled.end() )
+			{
+				return true;
+			}
+
+			it = std::find_if( pass.storage.begin()
+				, pass.storage.end()
+				, [&view]( Attachment const & lookup )
+				{
+					return lookup.view == view;
+				} );
+
+			if ( it != pass.storage.end() )
+			{
+				return true;
+			}
+
+			if ( pass.depthStencilInOut
+				&& pass.depthStencilInOut->view == view
+				&& ( pass.depthStencilInOut->isDepthInput()
+					|| pass.depthStencilInOut->isStencilInput() ) )
+			{
+				return true;
+			}
+
+			return false;
+		}
+	}
+
 	FramePass::FramePass( std::string const & name
 		, RunnablePassCreator runnableCreator )
 		: name{ name }
@@ -16,19 +123,30 @@ namespace crg
 	{
 	}
 
-	bool FramePass::dependsOn( FramePass const & pass )const
+	bool FramePass::dependsOn( FramePass const & pass
+		, ImageViewId const & view )const
 	{
 		auto it = std::find_if( depends.begin()
 			, depends.end()
-			, [&pass]( FramePass const * lookup )
+			, [&pass, &view]( FramePass const * lookup )
 			{
-				return pass.name == lookup->name
-					|| lookup->dependsOn( pass );
+				bool result = false;
+
+				if ( isInOutputs( *lookup, view ) )
+				{
+					result = ( pass.name == lookup->name );
+				}
+				else if ( !isInInputs( *lookup, view ) )
+				{
+					result = lookup->dependsOn( pass, view );
+				}
+
+				return result;
 			} );
 		return it != depends.end();
 	}
 
-	bool FramePass::directDependsOn( FramePass const & pass )const
+	bool FramePass::dependsOn( FramePass const & pass )const
 	{
 		auto it = std::find_if( depends.begin()
 			, depends.end()

@@ -42,9 +42,23 @@ namespace crg
 				, passes.begin()
 				, passes.end() );
 		}
-
-		bool dependsOn( FramePass const & pass )const;
-		bool directDependsOn( FramePass const & pass )const;
+		/**
+		*\brief
+		*	Tells if, for given view, this pass directly depends on given pass.
+		*\param[in] pass
+		*	The pass to test.
+		*\param[in] view
+		*	The view.
+		*/
+		CRG_API bool dependsOn( FramePass const & pass
+			, ImageViewId const & view )const;
+		/**
+		*\brief
+		*	Tells if this pass directly depends on given pass.
+		*\param[in] pass
+		*	The pass to test.
+		*/
+		CRG_API bool dependsOn( FramePass const & pass )const;
 		/**@}*/
 		/**
 		*\name

@@ -402,7 +402,8 @@ namespace crg
 						{
 							for ( auto & inputAttach : input.attaches )
 							{
-								if ( inputAttach->pass->directDependsOn( *outputAttach->pass ) )
+								if ( inputAttach->pass->dependsOn( *outputAttach->pass
+									, outputAttach->view ) )
 								{
 									addDependency( *outputAttach
 										, *inputAttach
