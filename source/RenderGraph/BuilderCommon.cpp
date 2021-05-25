@@ -32,7 +32,7 @@ namespace crg
 						, depsIt.second.end()
 						, []( AttachmentTransition const & lookup )
 						{
-							return lookup.dstAttach.getFlags() != 0;
+							return lookup.inputAttach.getFlags() != 0;
 						} ) );
 				}
 			}
@@ -63,7 +63,7 @@ namespace crg
 								, lookup.second.end()
 								, [&depsIt]( AttachmentTransition const & lookup )
 								{
-									return lookup.srcAttach.pass == depsIt.first;
+									return lookup.outputAttach.pass == depsIt.first;
 								} );
 					} );
 

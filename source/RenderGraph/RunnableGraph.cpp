@@ -538,49 +538,22 @@ namespace crg
 		return ires.first->second;
 	}
 
-	VkImageLayout RunnableGraph::getInitialLayout( crg::FramePass const & pass
-		, ImageViewId view
-		, bool allowSrcClear )
+	VkImageLayout RunnableGraph::getCurrentLayout( ImageViewId view )
 	{
-		auto passIt = m_graph.getInputTransitions().find( &pass );
-		assert( passIt != m_graph.getInputTransitions().end() );
-		auto it = std::find_if( passIt->second.begin()
-			, passIt->second.end()
-			, [&view]( AttachmentTransition const & lookup )
-			{
-				return view == lookup.view;
-			} );
+		auto it = m_viewsLayouts.find( view.id );
 
-		if ( it == passIt->second.end() )
+		if ( it != m_viewsLayouts.end() )
 		{
-			return VK_IMAGE_LAYOUT_UNDEFINED;
+			return it->second;
 		}
 
-		if ( it->dstAttach.getFlags() != 0u )
-		{
-			return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-		}
-
-		if ( allowSrcClear
-			&& ( it->srcAttach.isColourClearing()
-			|| it->srcAttach.isDepthClearing() ) )
-		{
-			return VK_IMAGE_LAYOUT_UNDEFINED;
-		}
-
-		if ( !allowSrcClear
-			&& ( it->srcAttach.isColourClearing()
-				|| it->srcAttach.isDepthClearing() ) )
-		{
-			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		}
-
-		return it->srcAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+		return VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
-	VkImageLayout RunnableGraph::getFinalLayout( crg::FramePass const & pass
+	VkImageLayout RunnableGraph::getOutputLayout( crg::FramePass const & pass
 		, ImageViewId view )
 	{
+		VkImageLayout result{ VK_IMAGE_LAYOUT_UNDEFINED };
 		auto passIt = m_graph.getOutputTransitions().find( &pass );
 		assert( passIt != m_graph.getOutputTransitions().end() );
 		auto it = std::find_if( passIt->second.begin()
@@ -592,10 +565,40 @@ namespace crg
 
 		if ( it != passIt->second.end() )
 		{
-			return it->dstAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+			result = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+		}
+		else
+		{
+			passIt = m_graph.getInputTransitions().find( &pass );
+			assert( passIt != m_graph.getInputTransitions().end() );
+			auto it = std::find_if( passIt->second.begin()
+				, passIt->second.end()
+				, [&view]( AttachmentTransition const & lookup )
+				{
+					return view == lookup.view;
+				} );
+
+			if ( it == passIt->second.end() )
+			{
+				result = VK_IMAGE_LAYOUT_UNDEFINED;
+			}
+			else if ( it->inputAttach.getFlags() != 0u )
+			{
+				result = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+			}
+			else if ( it->outputAttach.isColourClearing()
+				|| it->outputAttach.isDepthClearing() )
+			{
+				result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			}
+			else
+			{
+				result = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+			}
 		}
 
-		return getInitialLayout( pass, view, false );
+		m_viewsLayouts[view.id] = result;
+		return result;
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer

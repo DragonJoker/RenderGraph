@@ -35,10 +35,8 @@ namespace crg
 			, bool invertV );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
-		CRG_API VkImageLayout getInitialLayout( crg::FramePass const & pass
-			, ImageViewId view
-			, bool allowSrcClear = true );
-		CRG_API VkImageLayout getFinalLayout( crg::FramePass const & pass
+		CRG_API VkImageLayout getCurrentLayout( ImageViewId view );
+		CRG_API VkImageLayout getOutputLayout( crg::FramePass const & pass
 			, ImageViewId view );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
@@ -57,5 +55,6 @@ namespace crg
 		ImageViewMap m_imageViews;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 		std::unordered_map< size_t, VkSampler > m_samplers;
+		std::unordered_map< uint32_t, VkImageLayout > m_viewsLayouts;
 	};
 }

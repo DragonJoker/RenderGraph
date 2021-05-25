@@ -13,8 +13,8 @@ namespace crg
 	bool operator==( AttachmentTransition const & lhs, AttachmentTransition const & rhs )
 	{
 		return lhs.view == rhs.view
-			&& lhs.srcAttach == rhs.srcAttach
-			&& lhs.dstAttach == rhs.dstAttach;
+			&& lhs.outputAttach == rhs.outputAttach
+			&& lhs.inputAttach == rhs.inputAttach;
 	}
 
 	AttachmentTransitionArray mergeIdenticalTransitions( AttachmentTransitionArray transitions )
@@ -44,12 +44,12 @@ namespace crg
 			{
 				bool result = false;
 
-				if ( transition.dstAttach.isSampled() )
+				if ( transition.inputAttach.isSampled() )
 				{
-					auto inputPass = *transition.dstAttach.pass;
+					auto inputPass = *transition.inputAttach.pass;
 					auto it = std::find( inputPass.sampled.begin()
 						, inputPass.sampled.end()
-						, transition.dstAttach );
+						, transition.inputAttach );
 					result = it == inputPass.sampled.end();
 				}
 

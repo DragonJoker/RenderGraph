@@ -138,22 +138,24 @@ namespace crg
 
 		if ( m_pass.depthStencilInOut )
 		{
+			auto current = m_graph.getCurrentLayout( m_pass.depthStencilInOut->view );
 			depthReference = addAttach( *m_pass.depthStencilInOut
 				, attaches
 				, m_clearValues
-				, m_graph.getInitialLayout( m_pass, m_pass.depthStencilInOut->view )
-				, m_graph.getFinalLayout( m_pass, m_pass.depthStencilInOut->view )
+				, current
+				, m_graph.getOutputLayout( m_pass, m_pass.depthStencilInOut->view )
 				, m_context.separateDepthStencilLayouts );
 		}
 
 		for ( auto & attach : m_pass.colourInOuts )
 		{
+			auto current = m_graph.getCurrentLayout( attach.view );
 			colorReferences.push_back( addAttach( attach
 				, attaches
 				, m_clearValues
 				, m_blendAttachs
-				, m_graph.getInitialLayout( m_pass, attach.view )
-				, m_graph.getFinalLayout( m_pass, attach.view )
+				, current
+				, m_graph.getOutputLayout( m_pass, attach.view )
 				, m_context.separateDepthStencilLayouts ) );
 		}
 
