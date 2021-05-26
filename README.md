@@ -3,26 +3,23 @@
 </p>
 
 
-RenderGraph
-============
+# RenderGraph
 
 This library owes to be used to handle Vulkan render passes and image transitions smoothly.
 
-It allows the user to register its render passes, along with their attachments (input, sampled, colour, depth stencil...), and will generate a graph from that data.
+It allows the user to register its render passes, along with their attachments (input, sampled, colour, depth stencil...), and will generate a runnable graph from that data.
 
-It is a work in progress.
+## Current status
 
-Current status
---------------
+- The user can register its passes and their attachments.  
+- The runnable graph is generated, and image layout transitions are handled.  
 
-The user can register its passes.  
-The graph is generated.  
-The image view transitions are explicited in the graph, and can be used to determine render pass sequence.  
+## Todo
 
-Todo
-----
+- Handling of "variants" (optional passes, or paths of a single pass that are triggered by specific conditions) if needed.  
+- Sort of run the graph, given variants, and a number of queues.  
 
-Support blend loops (first pass clears/loads, other passes blend to the result of the first pass).  
-Handling of "variants" (paths of a single pass that are triggered by specific conditions) if needed.  
-Generate the VkRenderPassCreateInfo, VkFramebufferCreateInfo, VkImageCreateInfo and VkImageViewCreateInfo from the graph status (for each variant if needed).  
-Sort of run the graph, given variants, and a number of queues.
+## Building
+
+RenderGraph uses CMake.  
+The only dependency is Vulkan-Headers, and the CMake variable holding its folder is VULKAN_HEADERS_INCLUDE_DIRS, which you need to set on command line, or by editing the CMakeCache.txt.  
