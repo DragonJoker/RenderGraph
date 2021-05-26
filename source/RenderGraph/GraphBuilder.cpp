@@ -62,86 +62,71 @@ namespace crg
 
 				return result;
 			}
-
-			void buildGraphRec( FramePass const * curr
-				, AttachmentTransitionArray const & transitions
-				, GraphNodePtrArray & nodes
-				, RootNode & fullGraph
-				, GraphAdjacentNode prevNode )
-			{
-				AttachmentTransitionArray inputTransitions;
-				AttachmentTransitionArray nextTransitions;
-				FramePassSet dstPasses;
-
-				// List the transitions for which the current pass is the source.
-				for ( auto & transition : transitions )
-				{
-					if ( curr == transition.dstAttach.pass )
-					{
-						inputTransitions.push_back( transition );
-					}
-					else
-					{
-						nextTransitions.push_back( transition );
-
-						if ( curr == transition.srcAttach.pass
-							&& transition.dstAttach.pass )
-						{
-							dstPasses.insert( transition.dstAttach.pass );
-						}
-					}
-				}
-
-				GraphAdjacentNode result{ createNode( curr, nodes ) };
-
-				if ( prevNode->getKind() == GraphNode::Kind::Root
-					|| curr != getFramePass( *prevNode ) )
-				{
-					prevNode->attachNode( result
-						, std::move( inputTransitions ) );
-				}
-
-				for ( auto & dstPass : dstPasses )
-				{
-					buildGraphRec( dstPass
-						, nextTransitions
-						, nodes
-						, fullGraph
-						, result );
-				}
-			}
 		}
 
 		GraphNodePtrArray buildGraph( RootNode & rootNode
-			, FramePassDependenciesMap const & dependencies
 			, AttachmentTransitionArray const & transitions )
 		{
 			GraphNodePtrArray nodes;
-			// Retrieve root and leave passes.
-			auto roots = retrieveRoots( dependencies );
 
-			if ( roots.empty() )
+			for ( auto & transition : transitions )
 			{
-				CRG_Exception( "No root to start with" );
+				GraphAdjacentNode outputNode{};
+				GraphAdjacentNode inputNode{};
+				auto itOutput = std::find_if( nodes.begin()
+					, nodes.end()
+					, [&transition]( auto & lookup )
+					{
+						return getFramePass( *lookup ) == transition.outputAttach.pass;
+					} );
+
+				if ( itOutput == nodes.end() )
+				{
+					if ( transition.outputAttach.pass )
+					{
+						nodes.push_back( std::make_unique< FramePassNode >( *transition.outputAttach.pass ) );
+						outputNode = nodes.back().get();
+					}
+				}
+				else
+				{
+					outputNode = itOutput->get();
+				}
+
+				auto itInput = std::find_if( nodes.begin()
+					, nodes.end()
+					, [&transition]( auto & lookup )
+					{
+						return getFramePass( *lookup ) == transition.inputAttach.pass;
+					} );
+
+				if ( itInput == nodes.end() )
+				{
+					if ( transition.inputAttach.pass )
+					{
+						nodes.push_back( std::make_unique< FramePassNode >( *transition.inputAttach.pass ) );
+						inputNode = nodes.back().get();
+					}
+				}
+				else
+				{
+					inputNode = itInput->get();
+				}
+
+				if ( inputNode
+					&& outputNode
+					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass ) )
+				{
+					outputNode->attachNode( inputNode, { transition } );
+				}
 			}
 
-			auto leaves = retrieveLeafs( dependencies );
-
-			if ( leaves.empty() )
+			for ( auto & node : nodes )
 			{
-				CRG_Exception( "No leaf to end with" );
-			}
-
-			// Build paths from each root pass to leaf pass
-			GraphAdjacentNode curr{ &rootNode };
-
-			for ( auto & root : roots )
-			{
-				buildGraphRec( root
-					, transitions
-					, nodes
-					, rootNode
-					, curr );
+				if ( !node->hasPrev() )
+				{
+					rootNode.attachNode( node.get(), {} );
+				}
 			}
 
 			return nodes;
