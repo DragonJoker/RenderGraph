@@ -3,7 +3,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "PipelinePass.hpp"
+#include "RenderGraph/RunnablePasses/PipelinePass.hpp"
 
 namespace crg
 {
