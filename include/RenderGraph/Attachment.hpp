@@ -24,7 +24,7 @@ namespace crg
 		float minLod;
 		float maxLod;
 
-		CRG_API explicit SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
+		explicit constexpr SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
 			, VkFilter minFilter = VK_FILTER_NEAREST
 			, VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST
 			, VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
@@ -45,13 +45,15 @@ namespace crg
 		{
 		}
 	};
+	CRG_API bool operator==( SamplerDesc const & lhs
+		, SamplerDesc const & rhs );
 	/**
 	*\brief
 	*	A sampled image, or an input/output colour/depth/stencil/depthstencil attachment.
 	*/
 	struct Attachment
 	{
-		friend class FramePass;
+		friend struct FramePass;
 		/**
 		*\brief
 		*	The flags qualifying an Attachment.

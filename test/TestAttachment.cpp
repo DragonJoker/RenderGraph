@@ -7,6 +7,8 @@
 
 namespace
 {
+	static constexpr crg::SamplerDesc defaultSamplerDesc{};
+
 	void testSampledAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testSampledAttachment" );
@@ -24,7 +26,7 @@ namespace
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.view == view );
 		check( attachment.binding == 1u );
-		check( attachment.filter == VK_FILTER_LINEAR );
+		check( attachment.samplerDesc == defaultSamplerDesc );
 		testEnd();
 	}
 	

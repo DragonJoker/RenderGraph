@@ -23,6 +23,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v4
+      with:
+        vcpkgGitCommitId: 'b275dd0cc08687f936fe84ea2325ca794f51bb2a'
+        setupOnly: true
+
+    - name: Install dependencies from vcpkg
+      run: $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
+      shell: bash
+
     - name: Checkout submodules
       run: git submodule update --init -- "CMake"
 

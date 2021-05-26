@@ -53,21 +53,12 @@ endif ()
 if ( NOT DEFINED CRG_BUILD_TESTS )
 	option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
 endif ()
-if ( NOT DEFINED CRG_BUILD_EXAMPLES )
-	option( CRG_BUILD_EXAMPLES "Build RenderGraph example applications" OFF )
-endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
-	if ( NOT EXISTS ${CMAKE_SOURCE_DIR}/external/Vulkan-Headers/include/ )
-		if ( VCPKG_PACKAGE_BUILD )
-			set( Vulkan_INCLUDE_DIR ${_VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/include )
-		elseif ( VCPKG_TOOLCHAIN )
-			find_path( Vulkan_INCLUDE_DIR "vulkan/vulkan.h" )
-		else ()
-			find_package( Vulkan REQUIRED )
-		endif ()
+	if ( VCPKG_TOOLCHAIN )
+		find_package( Vulkan CONFIG REQUIRED )
 	else ()
-		set( Vulkan_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/Vulkan-Headers/include )
+		find_package( Vulkan REQUIRED )
 	endif ()
 
 	# RenderGraph library
@@ -178,6 +169,8 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			$<BUILD_INTERFACE:${CRG_BINARY_DIR}/include>
 			$<BUILD_INTERFACE:${Vulkan_INCLUDE_DIR}>
 			$<INSTALL_INTERFACE:include>
+		PRIVATE
+			${Vulkan_INCLUDE_DIR}
 	)
 	set_target_properties( ${PROJECT_NAME}
 		PROPERTIES
@@ -210,10 +203,6 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 
 	if ( CRG_BUILD_TESTS )
 		add_subdirectory( test )
-	endif ()
-
-	if ( CRG_BUILD_EXAMPLES )
-		add_subdirectory( examples )
 	endif ()
 else()
 	message( SEND_ERROR "Please select a build type (Debug or Release)" )

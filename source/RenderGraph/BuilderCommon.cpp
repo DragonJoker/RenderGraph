@@ -28,7 +28,7 @@ namespace crg
 				}
 				else
 				{
-					dstCount += size_t( std::count_if( depsIt.second.begin()
+					dstCount += uint32_t( std::count_if( depsIt.second.begin()
 						, depsIt.second.end()
 						, []( AttachmentTransition const & lookup )
 						{
