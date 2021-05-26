@@ -19,6 +19,7 @@ add_library( ${TEST_NAME}
 target_include_directories( ${TEST_NAME}
 	PUBLIC
 		${CRG_SOURCE_DIR}/include
+		${VULKAN_HEADERS_INCLUDE_DIRS}
 )
 set_target_properties( ${TEST_NAME}
 	PROPERTIES
