@@ -12,13 +12,20 @@ set( ${TEST_NAME}_SOURCE_FILES
 )
 
 add_library( ${TEST_NAME}
-	OBJECT
+	STATIC
 	${${TEST_NAME}_HEADER_FILES}
 	${${TEST_NAME}_SOURCE_FILES}
 )
+add_library( crg::${TEST_NAME}
+	ALIAS
+		${TEST_NAME}
+)
+target_link_libraries( ${TEST_NAME}
+	PUBLIC
+		crg::RenderGraph
+)
 target_include_directories( ${TEST_NAME}
 	PUBLIC
-		${CRG_SOURCE_DIR}/include
 		${VULKAN_HEADERS_INCLUDE_DIRS}
 )
 set_target_properties( ${TEST_NAME}
@@ -34,12 +41,11 @@ file( GLOB TEST_FILES
 foreach ( TEST_FILE ${TEST_FILES} )
 	get_filename_component( TEST_NAME ${TEST_FILE} NAME_WE )
 	add_executable( ${TEST_NAME}
-		$<TARGET_OBJECTS:TestCommon>
 		${TEST_FILE}
 	)
 	target_link_libraries( ${TEST_NAME}
 		PRIVATE
-			crg::RenderGraph
+			crg::TestCommon
 	)
 	set_target_properties( ${TEST_NAME}
 		PROPERTIES
