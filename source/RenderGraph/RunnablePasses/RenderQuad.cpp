@@ -2,7 +2,7 @@
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
-#include "RenderGraph/RenderQuad.hpp"
+#include "RenderGraph/RunnablePasses/RenderQuad.hpp"
 
 #include "RenderGraph/Attachment.hpp"
 #include "RenderGraph/GraphContext.hpp"

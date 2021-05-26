@@ -2,7 +2,7 @@
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
-#include "RenderGraph/ImageCopy.hpp"
+#include "RenderGraph/RunnablePasses/ImageCopy.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/ImageData.hpp"

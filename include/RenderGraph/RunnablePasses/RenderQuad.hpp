@@ -4,8 +4,8 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "PipelinePass.hpp"
-#include "RenderPass.hpp"
+#include "RenderGraph/RunnablePasses/PipelinePass.hpp"
+#include "RenderGraph/RunnablePasses/RenderPass.hpp"
 
 namespace crg
 {

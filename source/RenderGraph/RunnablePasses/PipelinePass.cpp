@@ -1,7 +1,7 @@
 /*
 See LICENSE file in root folder.
 */
-#include "RenderGraph/PipelinePass.hpp"
+#include "RenderGraph/RunnablePasses/PipelinePass.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/RunnableGraph.hpp"

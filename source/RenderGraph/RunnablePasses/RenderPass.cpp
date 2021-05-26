@@ -1,7 +1,7 @@
 /*
 See LICENSE file in root folder.
 */
-#include "RenderGraph/RenderPass.hpp"
+#include "RenderGraph/RunnablePasses/RenderPass.hpp"
 
 #include "RenderGraph/Attachment.hpp"
 #include "RenderGraph/GraphContext.hpp"

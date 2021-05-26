@@ -60,7 +60,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	endif ()
 	# RenderGraph library
 	project( RenderGraph )
-	set( ${PROJECT_NAME}_FOLDER_HEADER_FILES
+	set( ${PROJECT_NAME}_HDR_FILES
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Attachment.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/AttachmentTransition.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/CallStack.hpp
@@ -75,12 +75,8 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphNode.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphVisitor.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Id.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageCopy.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageData.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageViewData.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/PipelinePass.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderPass.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RenderQuad.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/WriteDescriptorSet.hpp
@@ -89,7 +85,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.hpp
 	)
-	set( ${PROJECT_NAME}_FOLDER_SOURCE_FILES
+	set( ${PROJECT_NAME}_SRC_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/Attachment.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.cpp
@@ -102,25 +98,43 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphContext.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphNode.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ImageCopy.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/PipelinePass.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderPass.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RenderQuad.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePass.cpp
 	)
-	set( ${PROJECT_NAME}_FOLDER_NATVIS_FILES
+	set( ${PROJECT_NAME}_NVS_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.natvis
 	)
-	source_group( "Header Files" FILES ${${PROJECT_NAME}_FOLDER_HEADER_FILES} )
-	source_group( "Source Files" FILES ${${PROJECT_NAME}_FOLDER_SOURCE_FILES} )
-	source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_FOLDER_NATVIS_FILES} )
+	source_group( "Header Files" FILES ${${PROJECT_NAME}_HDR_FILES} )
+	source_group( "Source Files" FILES ${${PROJECT_NAME}_SRC_FILES} )
+	source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_NVS_FILES} )
+	set( ${PROJECT_NAME}_FOLDER_HDR_FILES
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/ImageCopy.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelinePass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderPass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuad.hpp
+	)
+	set( ${PROJECT_NAME}_FOLDER_SRC_FILES
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/ImageCopy.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/PipelinePass.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPass.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderQuad.cpp
+	)
+	set( ${PROJECT_NAME}_SRC_FILES
+		${${PROJECT_NAME}_SRC_FILES}
+		${${PROJECT_NAME}_FOLDER_SRC_FILES}
+	)
+	set( ${PROJECT_NAME}_HDR_FILES
+		${${PROJECT_NAME}_HDR_FILES}
+		${${PROJECT_NAME}_FOLDER_HDR_FILES}
+	)
+	source_group( "Header Files\\RunnablePasses" FILES ${${PROJECT_NAME}_FOLDER_HDR_FILES} )
+	source_group( "Source Files\\RunnablePasses" FILES ${${PROJECT_NAME}_FOLDER_SRC_FILES} )
 	if ( CRG_BUILD_STATIC )
 		add_library( ${PROJECT_NAME} STATIC
-			${${PROJECT_NAME}_FOLDER_HEADER_FILES}
-			${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
-			${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
+			${${PROJECT_NAME}_HDR_FILES}
+			${${PROJECT_NAME}_SRC_FILES}
+			${${PROJECT_NAME}_NVS_FILES}
 		)
 		target_compile_definitions( ${PROJECT_NAME}
 			PUBLIC
@@ -128,9 +142,9 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		)
 	else ()
 		add_library( ${PROJECT_NAME} SHARED
-			${${PROJECT_NAME}_FOLDER_HEADER_FILES}
-			${${PROJECT_NAME}_FOLDER_SOURCE_FILES}
-			${${PROJECT_NAME}_FOLDER_NATVIS_FILES}
+			${${PROJECT_NAME}_HDR_FILES}
+			${${PROJECT_NAME}_SRC_FILES}
+			${${PROJECT_NAME}_NVS_FILES}
 		)
 		if ( WIN32 )
 			target_link_libraries( ${PROJECT_NAME}
