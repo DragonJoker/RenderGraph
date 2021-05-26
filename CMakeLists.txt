@@ -55,8 +55,9 @@ if ( NOT DEFINED CRG_BUILD_TESTS )
 endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
-	find_path( VULKAN_HEADERS_INCLUDE_DIRS "vulkan/vk_icd.h" )
-
+	if ( NOT DEFINED VULKAN_HEADERS_INCLUDE_DIRS )
+		find_path( VULKAN_HEADERS_INCLUDE_DIRS "vulkan/vk_icd.h" )
+	endif ()
 	# RenderGraph library
 	project( RenderGraph )
 	set( ${PROJECT_NAME}_FOLDER_HEADER_FILES
