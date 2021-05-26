@@ -55,11 +55,7 @@ if ( NOT DEFINED CRG_BUILD_TESTS )
 endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
-	if ( VCPKG_TOOLCHAIN )
-		find_package( Vulkan CONFIG REQUIRED )
-	else ()
-		find_package( Vulkan REQUIRED )
-	endif ()
+	find_path( VULKAN_HEADERS_INCLUDE_DIRS "vulkan/vk_icd.h" )
 
 	# RenderGraph library
 	project( RenderGraph )
@@ -170,7 +166,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			$<BUILD_INTERFACE:${Vulkan_INCLUDE_DIR}>
 			$<INSTALL_INTERFACE:include>
 		PRIVATE
-			${Vulkan_INCLUDE_DIR}
+			${VULKAN_HEADERS_INCLUDE_DIRS}
 	)
 	set_target_properties( ${PROJECT_NAME}
 		PROPERTIES
