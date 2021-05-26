@@ -133,6 +133,7 @@ namespace crg
 			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
 
+#if VK_KHR_separate_depth_stencil_layouts
 		if ( separateDepthStencilLayouts )
 		{
 			if ( isDepthStencilOutput() )
@@ -166,6 +167,7 @@ namespace crg
 			}
 		}
 		else
+#endif
 		{
 			if ( isDepthOutput()
 				|| isStencilOutput() )

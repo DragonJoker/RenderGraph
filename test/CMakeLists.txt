@@ -16,13 +16,14 @@ add_library( ${TEST_NAME}
 	${${TEST_NAME}_HEADER_FILES}
 	${${TEST_NAME}_SOURCE_FILES}
 )
-target_link_libraries( ${TEST_NAME}
+target_include_directories( ${TEST_NAME}
 	PUBLIC
-		crg::RenderGraph
+		${CRG_SOURCE_DIR}/include
 )
-set_target_properties( ${TEST_NAME} PROPERTIES
-	CXX_STANDARD 17
-	FOLDER "Tests/${MAIN_PROJECT_NAME}"
+set_target_properties( ${TEST_NAME}
+	PROPERTIES
+		CXX_STANDARD 17
+		FOLDER "Tests/${MAIN_PROJECT_NAME}"
 )
 
 file( GLOB TEST_FILES
@@ -39,9 +40,14 @@ foreach ( TEST_FILE ${TEST_FILES} )
 		PRIVATE
 			crg::RenderGraph
 	)
-	set_target_properties( ${TEST_NAME} PROPERTIES
-		CXX_STANDARD 17
-		FOLDER "Tests/${MAIN_PROJECT_NAME}"
+	set_target_properties( ${TEST_NAME}
+		PROPERTIES
+			CXX_STANDARD 17
+			FOLDER "Tests/${MAIN_PROJECT_NAME}"
+	)
+	target_include_directories( ${TEST_NAME}
+		PRIVATE
+			${VULKAN_HEADERS_INCLUDE_DIRS}
 	)
 	if ( NOT CRG_BUILD_STATIC )
 		if ( WIN32 )
