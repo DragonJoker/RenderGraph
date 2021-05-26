@@ -51,7 +51,6 @@ namespace crg
 			, m_outputTransitions
 			, m_transitions );
 		m_nodes = builder::buildGraph( m_root
-			, m_inputTransitions
 			, m_transitions );
 		m_imageAliases = builder::optimiseImages( m_images
 			, m_inputTransitions
