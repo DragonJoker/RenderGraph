@@ -379,6 +379,21 @@ namespace crg
 			data.source.push_back( view );
 		}
 
+		if ( data.info.subresourceRange.layerCount > 1u )
+		{
+			switch ( data.info.viewType )
+			{
+			case VK_IMAGE_VIEW_TYPE_1D:
+				data.info.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+				break;
+			case VK_IMAGE_VIEW_TYPE_2D:
+				data.info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+				break;
+			default:
+				break;
+			}
+		}
+
 		return graph.createView( data );
 	}
 
