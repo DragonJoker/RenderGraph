@@ -154,7 +154,7 @@ namespace crg
 		*\brief
 		*	Creates an transfer input/output attachment.
 		*/
-		CRG_API void FramePass::addTransferInOutView( ImageViewId view );
+		CRG_API void addTransferInOutView( ImageViewId view );
 		/**
 		*\brief
 		*	Creates a colour attachment.
