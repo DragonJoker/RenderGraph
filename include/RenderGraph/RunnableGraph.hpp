@@ -26,6 +26,7 @@ namespace crg
 			, VkQueue queue );
 		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
+		CRG_API ImageViewId createView( ImageViewData const & view );
 		CRG_API VkImage getImage( ImageId const & image )const;
 		CRG_API VkImage getImage( Attachment const & attach )const;
 		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
@@ -35,9 +36,13 @@ namespace crg
 			, bool invertV );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
-		CRG_API VkImageLayout getCurrentLayout( ImageViewId view );
-		CRG_API VkImageLayout getOutputLayout( crg::FramePass const & pass
+		CRG_API VkImageLayout getCurrentLayout( ImageViewId view )const;
+		CRG_API VkImageLayout updateCurrentLayout( ImageViewId view
+			, VkImageLayout newLayout );
+		CRG_API VkImageLayout updateToOutputLayout( crg::FramePass const & pass
 			, ImageViewId view );
+		CRG_API VkImageLayout getOutputLayout( crg::FramePass const & pass
+			, ImageViewId view )const;
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
 			, VkImageLayout currentLayout
@@ -45,6 +50,7 @@ namespace crg
 
 	private:
 		void doCreateImages();
+		void doCreateImageView( ImageViewId view );
 		void doCreateImageViews();
 
 	private:

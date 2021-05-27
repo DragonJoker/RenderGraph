@@ -3,6 +3,8 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/FramePass.hpp"
+
+#include "RenderGraph/FrameGraph.hpp"
 #include "RenderGraph/RunnablePass.hpp"
 
 #include <array>
@@ -11,6 +13,66 @@ namespace crg
 {
 	namespace
 	{
+		AttachmentArray splitAttach( Attachment const & attach )
+		{
+			AttachmentArray result;
+
+			if ( attach.view.data->source.empty() )
+			{
+				result.push_back( attach );
+			}
+			else
+			{
+				for ( auto & view : attach.view.data->source )
+				{
+					result.push_back( Attachment{ view, attach } );
+				}
+			}
+
+			return result;
+		}
+
+		ImageViewIdArray splitView( ImageViewId const & view )
+		{
+			ImageViewIdArray result;
+
+			if ( view.data->source.empty() )
+			{
+				result.push_back( view );
+			}
+			else
+			{
+				for ( auto & view : view.data->source )
+				{
+					result.push_back( view );
+				}
+			}
+
+			return result;
+		}
+
+		template< typename PredT >
+		bool matchView( Attachment const & lhs
+			, ImageViewId const & rhs
+			, PredT predicate )
+		{
+			auto lhsAttaches = splitAttach( lhs );
+			auto rhsViews = splitView( rhs );
+
+			for ( auto & lhsAttach : lhsAttaches )
+			{
+				for ( auto & rhsView : rhsViews )
+				{
+					if ( predicate( lhsAttach, rhsView ) )
+					{
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+
 		bool isInOutputs( FramePass const & pass
 			, ImageViewId const & view )
 		{
@@ -18,8 +80,14 @@ namespace crg
 				, pass.colourInOuts.end()
 				, [&view]( Attachment const & lookup )
 				{
-					return lookup.view == view
-						&& lookup.isColourOutput();
+					return matchView( lookup
+						, view
+						, []( Attachment const & lhs
+							, ImageViewId const & rhs )
+						{
+							return lhs.view == rhs
+								&& lhs.isColourOutput();
+						} );
 				} );
 
 			if ( it != pass.colourInOuts.end() )
@@ -31,8 +99,14 @@ namespace crg
 				, pass.transferInOuts.end()
 				, [&view]( Attachment const & lookup )
 				{
-					return lookup.view == view
-						&& lookup.isTransferOutput();
+					return matchView( lookup
+						, view
+						, []( Attachment const & lhs
+							, ImageViewId const & rhs )
+						{
+							return lhs.view == rhs
+								&& lhs.isTransferOutput();
+						} );
 				} );
 
 			if ( it != pass.transferInOuts.end() )
@@ -40,12 +114,17 @@ namespace crg
 				return true;
 			}
 
-			if ( pass.depthStencilInOut
-				&& pass.depthStencilInOut->view == view
-				&& ( pass.depthStencilInOut->isDepthOutput()
-					|| pass.depthStencilInOut->isStencilOutput() ) )
+			if ( pass.depthStencilInOut )
 			{
-				return true;
+				return matchView( *pass.depthStencilInOut
+					, view
+					, []( Attachment const & lhs
+						, ImageViewId const & rhs )
+					{
+						return lhs.view == rhs
+							&& ( lhs.isDepthOutput()
+								|| lhs.isStencilOutput() );
+					} );
 			}
 
 			return false;
@@ -58,8 +137,14 @@ namespace crg
 				, pass.colourInOuts.end()
 				, [&view]( Attachment const & lookup )
 				{
-					return lookup.view == view
-						&& lookup.isColourInput();
+					return matchView( lookup
+						, view
+						, []( Attachment const & lhs
+							, ImageViewId const & rhs )
+						{
+							return lhs.view == rhs
+								&& lhs.isColourInput();
+						} );
 				} );
 
 			if ( it != pass.colourInOuts.end() )
@@ -71,8 +156,14 @@ namespace crg
 				, pass.transferInOuts.end()
 				, [&view]( Attachment const & lookup )
 				{
-					return lookup.view == view
-						&& lookup.isTransferInput();
+					return matchView( lookup
+						, view
+						, []( Attachment const & lhs
+							, ImageViewId const & rhs )
+						{
+							return lhs.view == rhs
+								&& lhs.isTransferInput();
+						} );
 				} );
 
 			if ( it != pass.transferInOuts.end() )
@@ -84,7 +175,13 @@ namespace crg
 				, pass.sampled.end()
 				, [&view]( Attachment const & lookup )
 				{
-					return lookup.view == view;
+					return matchView( lookup
+						, view
+						, []( Attachment const & lhs
+							, ImageViewId const & rhs )
+						{
+							return lhs.view == rhs;
+						} );
 				} );
 
 			if ( it != pass.sampled.end() )
@@ -96,7 +193,13 @@ namespace crg
 				, pass.storage.end()
 				, [&view]( Attachment const & lookup )
 				{
-					return lookup.view == view;
+					return matchView( lookup
+						, view
+						, []( Attachment const & lhs
+							, ImageViewId const & rhs )
+						{
+							return lhs.view == rhs;
+						} );
 				} );
 
 			if ( it != pass.storage.end() )
@@ -104,21 +207,28 @@ namespace crg
 				return true;
 			}
 
-			if ( pass.depthStencilInOut
-				&& pass.depthStencilInOut->view == view
-				&& ( pass.depthStencilInOut->isDepthInput()
-					|| pass.depthStencilInOut->isStencilInput() ) )
+			if ( pass.depthStencilInOut )
 			{
-				return true;
+				return matchView( *pass.depthStencilInOut
+					, view
+					, []( Attachment const & lhs
+						, ImageViewId const & rhs )
+					{
+						return lhs.view == rhs
+							&& ( lhs.isDepthInput()
+								|| lhs.isStencilInput() );
+					} );
 			}
 
 			return false;
 		}
 	}
 
-	FramePass::FramePass( std::string const & name
+	FramePass::FramePass( FrameGraph & graph
+		, std::string const & name
 		, RunnablePassCreator runnableCreator )
-		: name{ name }
+		: graph{ graph }
+		, name{ name }
 		, runnableCreator{ runnableCreator }
 	{
 	}
@@ -213,6 +323,65 @@ namespace crg
 		bufferViews.push_back( write );
 	}
 
+	ImageViewId FramePass::mergeViews( ImageViewIdArray const & views
+		, bool mergeMipLevels
+		, bool mergeArrayLayers )
+	{
+		ImageViewData data;
+
+		for ( auto & view : views )
+		{
+			if ( data.image.id == 0 )
+			{
+				data.image = view.data->image;
+				data.name = data.image.data->name;
+				data.info.components = view.data->info.components;
+				data.info.flags = view.data->info.flags;
+				data.info.format = view.data->info.format;
+				data.info.viewType = view.data->info.viewType;
+				data.info.subresourceRange = view.data->info.subresourceRange;
+			}
+			else
+			{
+				assert( data.image == view.data->image );
+
+				if ( mergeMipLevels )
+				{
+					auto maxLevel = std::max( data.info.subresourceRange.levelCount + data.info.subresourceRange.baseMipLevel
+						, view.data->info.subresourceRange.levelCount + view.data->info.subresourceRange.baseMipLevel );
+					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
+						, data.info.subresourceRange.baseMipLevel );
+					data.info.subresourceRange.levelCount = maxLevel - data.info.subresourceRange.baseMipLevel;
+				}
+				else
+				{
+					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
+						, data.info.subresourceRange.baseMipLevel );
+					data.info.subresourceRange.levelCount = 1u;
+				}
+
+				if ( mergeArrayLayers )
+				{
+					auto maxLayer = std::max( data.info.subresourceRange.layerCount + data.info.subresourceRange.baseArrayLayer
+						, view.data->info.subresourceRange.layerCount + view.data->info.subresourceRange.baseArrayLayer );
+					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
+						, data.info.subresourceRange.baseArrayLayer );
+					data.info.subresourceRange.layerCount = maxLayer - data.info.subresourceRange.baseArrayLayer;
+				}
+				else
+				{
+					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
+						, data.info.subresourceRange.baseArrayLayer );
+					data.info.subresourceRange.layerCount = 1u;
+				}
+			}
+
+			data.source.push_back( view );
+		}
+
+		return graph.createView( data );
+	}
+
 	void FramePass::addSampledView( ImageViewId view
 		, uint32_t binding
 		, VkImageLayout initialLayout
@@ -220,7 +389,7 @@ namespace crg
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Sampled )
 			, *this
-			, name + view.data->name + "Sampled"
+			, name + view.data->name + "Spl"
 			, std::move( view )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -239,7 +408,7 @@ namespace crg
 	{
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Storage )
 			, *this
-			, name + view.data->name + "Storage"
+			, name + view.data->name + "Str"
 			, std::move( view )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -257,7 +426,7 @@ namespace crg
 	{
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, this->name + view.data->name + "InTransfer"
+			, this->name + view.data->name + "It"
 			, std::move( view )
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
@@ -275,13 +444,30 @@ namespace crg
 	{
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
-			, this->name + view.data->name + "OutTransfer"
+			, this->name + view.data->name + "Ot"
 			, std::move( view )
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
 			, initialLayout
+			, uint32_t{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addTransferInOutView( ImageViewId view )
+	{
+		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, this->name + view.data->name + "IOt"
+			, std::move( view )
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkImageLayout{}
 			, uint32_t{}
 			, SamplerDesc{}
 			, VkClearValue{}

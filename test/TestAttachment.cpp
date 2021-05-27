@@ -15,11 +15,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addSampledView( view, 1u );
 		require( pass.sampled.size() == 1u );
 		auto & attachment = pass.sampled[0];
-		check( attachment.name == pass.name + view.data->name + "Sampled" );
+		check( attachment.name == pass.name + view.data->name + "Spl" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -36,11 +36,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addStorageView( view, 1u );
 		require( pass.sampled.size() == 1u );
 		auto & attachment = pass.sampled[0];
-		check( attachment.name == pass.name + view.data->name + "Storage" );
+		check( attachment.name == pass.name + view.data->name + "Str" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -56,7 +56,7 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addColourView( "Colour"
 			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -78,7 +78,7 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addDepthStencilView("DepthStencil"
 			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -102,11 +102,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputColourView( view );
 		require( pass.colourInOuts.size() == 1u );
 		auto & attachment = pass.colourInOuts[0];
-		check( attachment.name == pass.name + view.data->name + "InColour" );
+		check( attachment.name == pass.name + view.data->name + "Ic" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -121,11 +121,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputColourView( view );
 		require( pass.colourInOuts.size() == 1u );
 		auto & attachment = pass.colourInOuts[0];
-		check( attachment.name == pass.name + view.data->name + "OutColour" );
+		check( attachment.name == pass.name + view.data->name + "Oc" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -140,11 +140,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutColourView( view );
 		require( pass.colourInOuts.size() == 1u );
 		auto & attachment = pass.colourInOuts[0];
-		check( attachment.name == pass.name + view.data->name + "InOutColour" );
+		check( attachment.name == pass.name + view.data->name + "IOc" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -159,11 +159,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "InDepth" );
+		check( attachment.name == pass.name + view.data->name + "Id" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -178,11 +178,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "OutDepth" );
+		check( attachment.name == pass.name + view.data->name + "Od" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -197,11 +197,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutDepthView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "InOutDepth" );
+		check( attachment.name == pass.name + view.data->name + "IOd" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -216,11 +216,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthStencilView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "InDepthStencil" );
+		check( attachment.name == pass.name + view.data->name + "Ids" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
@@ -235,11 +235,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthStencilView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "OutDepthStencil" );
+		check( attachment.name == pass.name + view.data->name + "Ods" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
@@ -254,11 +254,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutDepthStencilView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "InOutDepthStencil" );
+		check( attachment.name == pass.name + view.data->name + "IOds" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
@@ -273,11 +273,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStencilView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "InStencil" );
+		check( attachment.name == pass.name + view.data->name + "Is" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
@@ -292,11 +292,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStencilView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "OutStencil" );
+		check( attachment.name == pass.name + view.data->name + "Os" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
@@ -311,11 +311,11 @@ namespace
 		crg::FrameGraph graph{ "test" };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass pass{ "test", crg::RunnablePassCreator{} };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutStencilView( view );
 		require( pass.depthStencilInOut.has_value() );
 		auto & attachment = *pass.depthStencilInOut;
-		check( attachment.name == pass.name + view.data->name + "InOutStencil" );
+		check( attachment.name == pass.name + view.data->name + "IOs" );
 		check( attachment.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );

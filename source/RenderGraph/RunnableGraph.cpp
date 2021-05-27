@@ -245,7 +245,8 @@ namespace crg
 
 				for ( auto & next : nexts )
 				{
-					if ( m_visited.end() == m_visited.find( next ) )
+					if ( m_visited.end() == m_visited.find( next )
+						&& getHitCount( node->getFramePass(), *getFramePass( *next ) ) == 0 )
 					{
 						m_visited.insert( next );
 						next->accept( this );
@@ -254,8 +255,24 @@ namespace crg
 			}
 
 		private:
+			size_t getHitCount( FramePass const & lhs
+				, FramePass const & rhs )
+			{
+				auto ires = m_hitCount.emplace( &rhs, 0u );
+
+				if ( ires.second )
+				{
+					ires.first->second = rhs.depends.size();
+				}
+
+				--ires.first->second;
+				return ires.first->second;
+			}
+
+		private:
 			ConstGraphAdjacentNodeArray & m_result;
 			std::set< ConstGraphAdjacentNode > & m_visited;
+			std::unordered_map< FramePass const *, size_t > m_hitCount;
 		};
 	}
 
@@ -361,6 +378,13 @@ namespace crg
 		}
 
 		return result.front();
+	}
+
+	ImageViewId RunnableGraph::createView( ImageViewData const & view )
+	{
+		auto result = m_graph.createView( view );
+		doCreateImageView( result );
+		return result;
 	}
 
 	VkImage RunnableGraph::getImage( ImageId const & image )const
@@ -538,7 +562,7 @@ namespace crg
 		return ires.first->second;
 	}
 
-	VkImageLayout RunnableGraph::getCurrentLayout( ImageViewId view )
+	VkImageLayout RunnableGraph::getCurrentLayout( ImageViewId view )const
 	{
 		auto it = m_viewsLayouts.find( view.id );
 
@@ -547,11 +571,35 @@ namespace crg
 			return it->second;
 		}
 
+		for ( auto & source : view.data->source )
+		{
+			it = m_viewsLayouts.find( source.id );
+
+			if ( it != m_viewsLayouts.end() )
+			{
+				return it->second;
+			}
+		}
+
 		return VK_IMAGE_LAYOUT_UNDEFINED;
 	}
 
-	VkImageLayout RunnableGraph::getOutputLayout( crg::FramePass const & pass
+	VkImageLayout RunnableGraph::updateCurrentLayout( ImageViewId view
+		, VkImageLayout newLayout )
+	{
+		m_viewsLayouts[view.id] = newLayout;
+		return newLayout;
+	}
+
+	VkImageLayout RunnableGraph::updateToOutputLayout( crg::FramePass const & pass
 		, ImageViewId view )
+	{
+		auto result = getOutputLayout( pass, view );
+		return updateCurrentLayout( view, result );
+	}
+
+	VkImageLayout RunnableGraph::getOutputLayout( crg::FramePass const & pass
+		, ImageViewId view )const
 	{
 		VkImageLayout result{ VK_IMAGE_LAYOUT_UNDEFINED };
 		auto passIt = m_graph.getOutputTransitions().find( &pass );
@@ -560,7 +608,13 @@ namespace crg
 			, passIt->second.end()
 			, [&view]( AttachmentTransition const & lookup )
 			{
-				return view == lookup.view;
+				return view == lookup.view
+					|| view.data->source.end() != std::find( view.data->source.begin()
+						, view.data->source.end()
+						, lookup.view )
+					|| lookup.view.data->source.end() != std::find( lookup.view.data->source.begin()
+						, lookup.view.data->source.end()
+						, view );
 			} );
 
 		if ( it != passIt->second.end() )
@@ -575,7 +629,13 @@ namespace crg
 				, passIt->second.end()
 				, [&view]( AttachmentTransition const & lookup )
 				{
-					return view == lookup.view;
+					return view == lookup.view
+						|| view.data->source.end() != std::find( view.data->source.begin()
+							, view.data->source.end()
+							, lookup.view )
+						|| lookup.view.data->source.end() != std::find( lookup.view.data->source.begin()
+							, lookup.view.data->source.end()
+							, view );
 				} );
 
 			if ( it == passIt->second.end() )
@@ -597,7 +657,6 @@ namespace crg
 			}
 		}
 
-		m_viewsLayouts[view.id] = result;
 		return result;
 	}
 
@@ -674,19 +733,27 @@ namespace crg
 		}
 	}
 
+	void RunnableGraph::doCreateImageView( ImageViewId view )
+	{
+		auto ires = m_imageViews.emplace( view, VkImageView{} );
+
+		if ( ires.second )
+		{
+			auto createInfo = convert( *view.data, m_images );
+			auto res = m_context.vkCreateImageView( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, &ires.first->second );
+			checkVkResult( res, "ImageView creation" );
+			crgRegisterObject( m_context, view.data->name, ires.first->second );
+		}
+	}
+
 	void RunnableGraph::doCreateImageViews()
 	{
 		for ( auto & view : m_graph.m_imageViews )
 		{
-			VkImageView imageView;
-			auto createInfo = convert( *view.first.data, m_images );
-			auto res = m_context.vkCreateImageView( m_context.device
-				, &createInfo
-				, m_context.allocator
-				, &imageView );
-			checkVkResult( res, "ImageView creation" );
-			crgRegisterObject( m_context, view.first.data->name, imageView );
-			m_imageViews[view.first] = imageView;
+			doCreateImageView( view.first );
 		}
 	}
 }

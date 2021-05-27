@@ -76,12 +76,12 @@ namespace crg
 		m_graph.memoryBarrier( commandBuffer
 			, m_srcAttach.view
 			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, m_graph.getOutputLayout( m_pass, m_srcAttach.view ) );
+			, m_graph.updateToOutputLayout( m_pass, m_srcAttach.view ) );
 		// Put target image in wanted output layout.
 		m_graph.memoryBarrier( commandBuffer
 			, m_dstAttach.view
 			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-			, m_graph.getOutputLayout( m_pass, m_dstAttach.view ) );
+			, m_graph.updateToOutputLayout( m_pass, m_dstAttach.view ) );
 	}
 
 	VkPipelineStageFlags ImageCopy::doGetSemaphoreWaitFlags()const

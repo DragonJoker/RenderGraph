@@ -99,6 +99,7 @@ namespace crg
 		DECL_vkFunction( CmdResetQueryPool );
 		DECL_vkFunction( CmdWriteTimestamp );
 		DECL_vkFunction( CmdPipelineBarrier );
+		DECL_vkFunction( CmdBlitImage );
 		DECL_vkFunction( CmdCopyImage );
 		DECL_vkFunction( CmdExecuteCommands );
 		DECL_vkFunction( CmdResetEvent );
