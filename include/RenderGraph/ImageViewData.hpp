@@ -17,6 +17,7 @@ namespace crg
 		std::string name;
 		ImageId image;
 		VkImageViewCreateInfo info;
+		ImageViewIdArray source;
 
 		ImageViewData( std::string name = {}
 			, ImageId image = {}

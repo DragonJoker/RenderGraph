@@ -143,7 +143,7 @@ namespace crg
 				, attaches
 				, m_clearValues
 				, current
-				, m_graph.getOutputLayout( m_pass, m_pass.depthStencilInOut->view )
+				, m_graph.updateToOutputLayout( m_pass, m_pass.depthStencilInOut->view )
 				, m_context.separateDepthStencilLayouts );
 		}
 
@@ -155,7 +155,7 @@ namespace crg
 				, m_clearValues
 				, m_blendAttachs
 				, current
-				, m_graph.getOutputLayout( m_pass, attach.view )
+				, m_graph.updateToOutputLayout( m_pass, attach.view )
 				, m_context.separateDepthStencilLayouts ) );
 		}
 
@@ -222,15 +222,15 @@ namespace crg
 		if ( m_pass.depthStencilInOut )
 		{
 			attachments.push_back( m_graph.getImageView( *m_pass.depthStencilInOut ) );
-			width = m_pass.depthStencilInOut->view.data->image.data->info.extent.width;
-			height = m_pass.depthStencilInOut->view.data->image.data->info.extent.height;
+			width = m_pass.depthStencilInOut->view.data->image.data->info.extent.width >> m_pass.depthStencilInOut->view.data->info.subresourceRange.baseMipLevel;
+			height = m_pass.depthStencilInOut->view.data->image.data->info.extent.height >> m_pass.depthStencilInOut->view.data->info.subresourceRange.baseMipLevel;
 		}
 
 		for ( auto & attach : m_pass.colourInOuts )
 		{
 			attachments.push_back( m_graph.getImageView( attach ) );
-			width = attach.view.data->image.data->info.extent.width;
-			height = attach.view.data->image.data->info.extent.height;
+			width = attach.view.data->image.data->info.extent.width >> attach.view.data->info.subresourceRange.baseMipLevel;
+			height = attach.view.data->image.data->info.extent.height >> attach.view.data->info.subresourceRange.baseMipLevel;
 		}
 
 		m_renderArea.extent.width = width;

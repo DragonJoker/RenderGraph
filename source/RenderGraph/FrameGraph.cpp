@@ -22,8 +22,10 @@ namespace crg
 	FramePass & FrameGraph::createPass( std::string const & name
 		, RunnablePassCreator runnableCreator )
 	{
-		auto pass = std::make_unique< FramePass >( name
-			, runnableCreator );
+		FramePassPtr pass{ new FramePass{ *this
+			, name
+			, runnableCreator } };
+
 		if ( m_passes.end() != std::find_if( m_passes.begin()
 			, m_passes.end()
 			, [&pass]( FramePassPtr const & lookup )

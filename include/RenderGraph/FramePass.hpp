@@ -18,13 +18,18 @@ namespace crg
 
 	struct FramePass
 	{
+	protected:
+		friend class FrameGraph;
 		/**
 		*\name
 		*	Construction.
 		*/
 		/**@[*/
-		CRG_API FramePass( std::string const & name
+		CRG_API FramePass( FrameGraph & graph
+			, std::string const & name
 			, RunnablePassCreator runnableCreator );
+
+	public:
 		/**@}*/
 		/**
 		*\name
@@ -102,6 +107,19 @@ namespace crg
 		/**@}*/
 		/**
 		*\name
+		*	Image view split/merge.
+		*/
+		/**@[*/
+		/**
+		*\brief
+		*	Creates a view which represents the given views merging.
+		*/
+		CRG_API ImageViewId mergeViews( ImageViewIdArray const & views
+			, bool mergeMipLevels = true
+			, bool mergeArrayLayers = true );
+		/**@}*/
+		/**
+		*\name
 		*	Image attachments.
 		*/
 		/**@[*/
@@ -134,6 +152,11 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
 		/**
 		*\brief
+		*	Creates an transfer input/output attachment.
+		*/
+		CRG_API void FramePass::addTransferInOutView( ImageViewId view );
+		/**
+		*\brief
 		*	Creates a colour attachment.
 		*/
 		CRG_API void addColourView( std::string const & name
@@ -161,7 +184,7 @@ namespace crg
 		*/
 		void addInputColourView( ImageViewId view )
 		{
-			return addColourView( "InColour"
+			return addColourView( "Ic"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -174,7 +197,7 @@ namespace crg
 		void addInOutColourView( ImageViewId view
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
-			addColourView( "InOutColour"
+			addColourView( "IOc"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -189,7 +212,7 @@ namespace crg
 		void addOutputColourView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addColourView( "OutColour"
+			addColourView( "Oc"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -202,7 +225,7 @@ namespace crg
 		*/
 		void addInputDepthView( ImageViewId view )
 		{
-			addDepthStencilView( "InDepth"
+			addDepthStencilView( "Id"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -216,7 +239,7 @@ namespace crg
 		*/
 		void addInOutDepthView( ImageViewId view )
 		{
-			addDepthStencilView( "InOutDepth"
+			addDepthStencilView( "IOd"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -232,7 +255,7 @@ namespace crg
 		void addOutputDepthView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( "OutDepth"
+			addDepthStencilView( "Od"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -247,7 +270,7 @@ namespace crg
 		*/
 		void addInputDepthStencilView( ImageViewId view )
 		{
-			addDepthStencilView( "InDepthStencil"
+			addDepthStencilView( "Ids"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -261,7 +284,7 @@ namespace crg
 		*/
 		void addInOutDepthStencilView( ImageViewId view )
 		{
-			addDepthStencilView( "InOutDepthStencil"
+			addDepthStencilView( "IOds"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -277,7 +300,7 @@ namespace crg
 		void addOutputDepthStencilView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( "OutDepthStencil"
+			addDepthStencilView( "Ods"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -292,7 +315,7 @@ namespace crg
 		*/
 		void addInputStencilView( ImageViewId view )
 		{
-			addDepthStencilView( "InStencil"
+			addDepthStencilView( "Is"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -306,7 +329,7 @@ namespace crg
 		*/
 		void addInOutStencilView( ImageViewId view )
 		{
-			addDepthStencilView( "InOutStencil"
+			addDepthStencilView( "IOs"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -322,7 +345,7 @@ namespace crg
 		void addOutputStencilView( ImageViewId view
 			, VkClearValue clearValue = {} )
 		{
-			addDepthStencilView( "OutStencil"
+			addDepthStencilView( "Os"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -341,6 +364,7 @@ namespace crg
 			, RunnableGraph & graph )const;
 		/**@}*/
 
+		FrameGraph & graph;
 		std::string name;
 		AttachmentArray sampled;
 		AttachmentArray storage;

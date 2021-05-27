@@ -247,6 +247,9 @@ namespace crg
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
 		/**@}*/
 
+		CRG_API Attachment( ImageViewId view
+			, Attachment const & origin );
+
 	private:
 		CRG_API Attachment( ImageViewId view );
 		CRG_API Attachment( FlagKind flags
@@ -282,4 +285,9 @@ namespace crg
 
 	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 	CRG_API bool operator!=( Attachment const & lhs, Attachment const & rhs );
+
+	CRG_API bool isDepthFormat( VkFormat fmt );
+	CRG_API bool isStencilFormat( VkFormat fmt );
+	CRG_API bool isColourFormat( VkFormat fmt );
+	CRG_API bool isDepthStencilFormat( VkFormat fmt );
 }

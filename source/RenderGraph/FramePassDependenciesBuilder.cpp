@@ -26,7 +26,7 @@ namespace crg
 			struct ViewAttaches
 			{
 				ImageViewId view;
-				std::set< Attachment const * > attaches;
+				std::vector< Attachment > attaches;
 			};
 
 			using ViewAttachesArray = std::vector< ViewAttaches >;
@@ -38,7 +38,7 @@ namespace crg
 
 				for ( auto & attach : attach.attaches )
 				{
-					stream << sep << attach->name;
+					stream << sep << attach.name;
 					sep = ", ";
 				}
 
@@ -81,15 +81,12 @@ namespace crg
 				return stream;
 			}
 
-			void printDebug( ViewAttachesArray const & sampled
-				, ViewAttachesArray const & inputs
+			void printDebug( ViewAttachesArray const & inputs
 				, ViewAttachesArray const & outputs
 				, FramePassDependenciesMap const & inputTransitions
 				, FramePassDependenciesMap const & outputTransitions )
 			{
 #if CRG_DebugPassAttaches
-				std::clog << "Sampled" << std::endl;
-				std::clog << sampled << std::endl;
 				std::clog << "Inputs" << std::endl;
 				std::clog << inputs << std::endl;
 				std::clog << "Outputs" << std::endl;
@@ -123,9 +120,9 @@ namespace crg
 				, VkImageSubresourceRange const & rhs )
 			{
 				return areIntersecting( lhs.baseMipLevel
-					, lhs.levelCount
-					, rhs.baseMipLevel
-					, rhs.levelCount )
+						, lhs.levelCount
+						, rhs.baseMipLevel
+						, rhs.levelCount )
 					&& areIntersecting( lhs.baseArrayLayer
 						, lhs.layerCount
 						, rhs.baseArrayLayer
@@ -147,7 +144,6 @@ namespace crg
 			}
 
 			void insertAttach( Attachment const & attach
-				, FramePass const & pass
 				, ViewAttachesArray & cont )
 			{
 				auto it = std::find_if( cont.begin()
@@ -163,93 +159,128 @@ namespace crg
 					it = std::prev( cont.end() );
 				}
 
-				it->attaches.insert( &attach );
+				auto attachesIt = std::find( it->attaches.begin()
+					, it->attaches.end()
+					, attach );
+
+				if ( attachesIt == it->attaches.end() )
+				{
+					it->attaches.push_back( attach );
+				}
 			}
 
-			void processAttach( Attachment const & attach
-				, FramePass const & pass
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all
-				, std::function< bool( ImageViewId const & ) > processAttach )
+			void processAttachSource( ViewAttaches & lookup
+				, Attachment const & attach
+				, ImageViewId const & attachView
+				, ImageViewId const & sourceView
+				, std::function< bool( ImageViewId const &, ImageViewId const & ) > processAttach )
 			{
-				bool found{ false };
-				std::vector< FramePass const * > passes;
-
-				for ( auto & lookup : cont )
+				if ( processAttach( sourceView, attachView ) )
 				{
-					if ( processAttach( lookup.view ) )
+					if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
+						, lookup.attaches.end()
+						, attach ) )
 					{
-						if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
-							, lookup.attaches.end()
-							, &attach ) )
-						{
-							lookup.attaches.insert( &attach );
-						}
+						lookup.attaches.push_back( attach );
+					}
+				}
+			}
 
-						found = true;
+			AttachmentArray splitAttach( Attachment const & attach )
+			{
+				AttachmentArray result;
+
+				if ( attach.view.data->source.empty() )
+				{
+					result.push_back( attach );
+				}
+				else
+				{
+					for ( auto & view : attach.view.data->source )
+					{
+						result.push_back( Attachment{ view, attach } );
 					}
 				}
 
-				insertAttach( attach, pass, cont );
-				insertAttach( attach, pass, all );
+				return result;
+			}
+
+			void processAttach( Attachment const & attach
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all
+				, std::function< bool( ImageViewId const &, ImageViewId const & ) > processAttach )
+			{
+				std::vector< FramePass const * > passes;
+				auto attaches = splitAttach( attach );
+
+				for ( auto & splitAttach : attaches )
+				{
+					for ( auto & lookup : cont )
+					{
+						processAttachSource( lookup
+							, splitAttach
+							, lookup.view
+							, splitAttach.view
+							, processAttach );
+					}
+
+					insertAttach( splitAttach, cont );
+					insertAttach( splitAttach, all );
+				}
 			}
 
 			void processSampledAttach( Attachment const & attach
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				if ( attach.isSampled() )
 				{
 					processAttach( attach
-						, pass
 						, cont
 						, all
-						, [&attach]( ImageViewId const & lookup )
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
 						{
-							return areOverlapping( *lookup.data, *attach.view.data );
+							return areOverlapping( *lookupView.data, *attachView.data );
 						} );
 				}
 			}
 
 			void processColourInputAttach( Attachment const & attach
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				if ( attach.isColourInput() )
 				{
 					processAttach( attach
-						, pass
 						, cont
 						, all
-						, [&attach]( ImageViewId const & lookup )
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
 						{
-							return areOverlapping( *lookup.data, *attach.view.data );
+							return areOverlapping( *lookupView.data, *attachView.data );
 						} );
 				}
 			}
 
 			void processColourOutputAttach( Attachment const & attach
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				if ( attach.isColourOutput() )
 				{
 					return processAttach( attach
-						, pass
 						, cont
 						, all
-						, [&attach]( ImageViewId const & lookup )
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
 						{
-							return areOverlapping( *lookup.data, *attach.view.data );
+							return areOverlapping( *lookupView.data, *attachView.data );
 						} );
 				}
 			}
 
 			void processDepthOrStencilInputAttach( Attachment const & attach
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
@@ -257,18 +288,17 @@ namespace crg
 					|| attach.isStencilInput() )
 				{
 					processAttach( attach
-						, pass
 						, cont
 						, all
-						, [&attach]( ImageViewId const & lookup )
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
 						{
-							return areOverlapping( *lookup.data, *attach.view.data );
+							return areOverlapping( *lookupView.data, *attachView.data );
 						} );
 				}
 			}
 
 			void processDepthOrStencilOutputAttach( Attachment const & attach
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
@@ -276,46 +306,63 @@ namespace crg
 					|| attach.isStencilOutput() )
 				{
 					processAttach( attach
-						, pass
 						, cont
 						, all
-						, [&attach]( ImageViewId const & lookup )
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
 						{
-							return areOverlapping( *lookup.data, *attach.view.data );
+							return areOverlapping( *lookupView.data, *attachView.data );
 						} );
 				}
 			}
 
 			void processSampledAttachs( AttachmentArray const & attachs
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processSampledAttach( attach, pass, cont, all );
+					processSampledAttach( attach, cont, all );
 				}
 			}
 
 			void processColourInputAttachs( AttachmentArray const & attachs
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processColourInputAttach( attach, pass, cont, all );
+					processColourInputAttach( attach, cont, all );
 				}
 			}
 
 			void processColourOutputAttachs( AttachmentArray const & attachs
-				, FramePass const & pass
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processColourOutputAttach( attach, pass, cont, all );
+					processColourOutputAttach( attach, cont, all );
+				}
+			}
+
+			void processDepthOrStencilInputAttachs( AttachmentArray const & attachs
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
+			{
+				for ( auto & attach : attachs )
+				{
+					processDepthOrStencilInputAttach( attach, cont, all );
+				}
+			}
+
+			void processDepthOrStencilOutputAttachs( AttachmentArray const & attachs
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
+			{
+				for ( auto & attach : attachs )
+				{
+					processDepthOrStencilOutputAttach( attach, cont, all );
 				}
 			}
 
@@ -342,22 +389,80 @@ namespace crg
 				allTransitions.push_back( transitions.back() );
 			}
 
+			bool isSingleMipView( ImageViewId const & sub
+				, ImageViewId const & main )
+			{
+				return main.data->image == sub.data->image
+					&& isInRange( sub.data->info.subresourceRange.baseMipLevel
+						, main.data->info.subresourceRange.baseMipLevel
+						, main.data->info.subresourceRange.levelCount )
+					&& sub.data->info.subresourceRange.levelCount == 1u;
+			}
+
+			ImageViewId const & getInputView( ImageViewId const & lhs
+				, ImageViewId const & rhs )
+			{
+				if ( lhs == rhs )
+				{
+					return lhs;
+				}
+
+				if ( isSingleMipView( lhs, rhs ) )
+				{
+					return lhs;
+				}
+
+				return rhs;
+			}
+
+			ImageViewId const & getOutputView( ImageViewId const & lhs
+				, ImageViewId const & rhs )
+			{
+				if ( lhs == rhs )
+				{
+					return lhs;
+				}
+
+				if ( isSingleMipView( lhs, rhs ) )
+				{
+					return rhs;
+				}
+
+				return lhs;
+			}
+
 			void addDependency( Attachment const & outputAttach
 				, Attachment const & inputAttach
 				, FramePassDependenciesMap & inputTransitions
 				, FramePassDependenciesMap & outputTransitions
 				, AttachmentTransitionArray & allTransitions )
 			{
-				assert( outputAttach.view == inputAttach.view );
-				AttachmentTransition transition{ outputAttach.view, outputAttach, inputAttach };
-				allTransitions.push_back( transition );
+				assert( outputAttach.view == inputAttach.view
+					|| isSingleMipView( outputAttach.view, inputAttach.view )
+					|| isSingleMipView( inputAttach.view, outputAttach.view ) );
+				AttachmentTransition inputTransition{ getInputView( outputAttach.view, inputAttach.view )
+					, outputAttach
+					, inputAttach };
+				AttachmentTransition outputTransition{ getOutputView( outputAttach.view, inputAttach.view )
+					, outputAttach
+					, inputAttach };
+
+				if ( outputAttach.view == inputAttach.view )
+				{
+					allTransitions.push_back( inputTransition );
+				}
+				else
+				{
+					allTransitions.push_back( inputTransition );
+					allTransitions.push_back( outputTransition );
+				}
 				{
 					auto & transitions = inputTransitions.emplace( inputAttach.pass, AttachmentTransitionArray{} ).first->second;
-					transitions.push_back( transition );
+					transitions.push_back( inputTransition );
 				}
 				{
 					auto & transitions = outputTransitions.emplace( outputAttach.pass, AttachmentTransitionArray{} ).first->second;
-					transitions.push_back( transition );
+					transitions.push_back( outputTransition );
 				}
 			}
 		}
@@ -367,24 +472,23 @@ namespace crg
 			, FramePassDependenciesMap & outputTransitions
 			, AttachmentTransitionArray & allTransitions )
 		{
-			ViewAttachesArray sampled;
 			ViewAttachesArray inputs;
 			ViewAttachesArray outputs;
 			ViewAttachesArray all;
 
 			for ( auto & pass : passes )
 			{
-				processSampledAttachs( pass->sampled, *pass, inputs, all );
-				processSampledAttachs( pass->storage, *pass, inputs, all );
-				processColourInputAttachs( pass->colourInOuts, *pass, inputs, all );
-				processColourInputAttachs( pass->transferInOuts, *pass, inputs, all );
-				processColourOutputAttachs( pass->colourInOuts, *pass, outputs, all );
-				processColourOutputAttachs( pass->transferInOuts, *pass, outputs, all );
+				processSampledAttachs( pass->sampled, inputs, all );
+				processSampledAttachs( pass->storage, inputs, all );
+				processColourInputAttachs( pass->colourInOuts, inputs, all );
+				processColourInputAttachs( pass->transferInOuts, inputs, all );
+				processColourOutputAttachs( pass->colourInOuts, outputs, all );
+				processColourOutputAttachs( pass->transferInOuts, outputs, all );
 
 				if ( pass->depthStencilInOut )
 				{
-					processDepthOrStencilInputAttach( *pass->depthStencilInOut, *pass, inputs, all );
-					processDepthOrStencilOutputAttach( *pass->depthStencilInOut, *pass, outputs, all );
+					processDepthOrStencilInputAttach( *pass->depthStencilInOut, inputs, all );
+					processDepthOrStencilOutputAttach( *pass->depthStencilInOut, outputs, all );
 				}
 			}
 
@@ -404,11 +508,11 @@ namespace crg
 						{
 							for ( auto & inputAttach : input.attaches )
 							{
-								if ( inputAttach->pass->dependsOn( *outputAttach->pass
-									, outputAttach->view ) )
+								if ( inputAttach.pass->dependsOn( *outputAttach.pass
+									, getOutputView( inputAttach.view, outputAttach.view ) ) )
 								{
-									addDependency( *outputAttach
-										, *inputAttach
+									addDependency( outputAttach
+										, inputAttach
 										, inputTransitions
 										, outputTransitions
 										, allTransitions );
@@ -436,14 +540,13 @@ namespace crg
 			{
 				for ( auto & attach : remaining.attaches )
 				{
-					addRemainingDependency( *attach
+					addRemainingDependency( attach
 						, inputTransitions
 						, allTransitions );
 				}
 			}
 
-			printDebug( sampled
-				, inputs
+			printDebug( inputs
 				, outputs
 				, inputTransitions
 				, outputTransitions );

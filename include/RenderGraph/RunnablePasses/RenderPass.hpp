@@ -44,7 +44,7 @@ namespace crg
 
 	protected:
 		CRG_API void doInitialise()override final;
-		CRG_API void doRecordInto( VkCommandBuffer commandBuffer )const override final;
+		CRG_API void doRecordInto( VkCommandBuffer commandBuffer )const override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
 		CRG_API virtual void doSubInitialise() = 0;
 		CRG_API virtual void doSubRecordInto( VkCommandBuffer commandBuffer )const = 0;
