@@ -207,6 +207,25 @@ namespace crg
 			return result;
 		}
 
+		VkImageSubresourceRange adaptRange( GraphContext const & context
+			, VkFormat format
+			, VkImageSubresourceRange const & subresourceRange )
+		{
+			VkImageSubresourceRange result = subresourceRange;
+
+			if ( !context.separateDepthStencilLayouts )
+			{
+				if ( isDepthStencilFormat( format )
+					&& ( result.aspectMask == VK_IMAGE_ASPECT_DEPTH_BIT
+						|| result.aspectMask == VK_IMAGE_ASPECT_STENCIL_BIT ) )
+				{
+					result.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+				}
+			}
+
+			return result;
+		}
+
 		class DfsVisitor
 			: public GraphVisitor
 		{
@@ -246,33 +265,63 @@ namespace crg
 				for ( auto & next : nexts )
 				{
 					if ( m_visited.end() == m_visited.find( next )
-						&& getHitCount( node->getFramePass(), *getFramePass( *next ) ) == 0 )
+						&& getHitCount( node, next ) == 0 )
 					{
 						m_visited.insert( next );
 						next->accept( this );
+						auto & rhs = *getFramePass( *next );
+						auto pendingIt = m_pending.find( &rhs );
+
+						if ( pendingIt != m_pending.end() )
+						{
+							auto node = pendingIt->second;
+							m_pending.erase( pendingIt );
+							node->accept( this );
+						}
 					}
 				}
 			}
 
 		private:
-			size_t getHitCount( FramePass const & lhs
-				, FramePass const & rhs )
+			size_t getHitCount( FramePassNode const * lhsNode
+				, GraphAdjacentNode rhsNode )
 			{
+				auto & lhs = lhsNode->getFramePass();
+				auto & rhs = *getFramePass( *rhsNode );
 				auto ires = m_hitCount.emplace( &rhs, 0u );
 
 				if ( ires.second )
 				{
-					ires.first->second = rhs.depends.size();
+					ires.first->second = rhs.depends;
 				}
 
-				--ires.first->second;
-				return ires.first->second;
+				auto it = std::find( ires.first->second.begin()
+					, ires.first->second.end()
+					, &lhs );
+
+				if ( it != ires.first->second.end() )
+				{
+					ires.first->second.erase( it );
+					auto pendingIt = m_pending.find( &lhs );
+
+					if ( pendingIt != m_pending.end() )
+					{
+						m_pending.erase( pendingIt );
+					}
+				}
+				else
+				{
+					m_pending.emplace( ires.first->second.front(), rhsNode );
+				}
+
+				return ires.first->second.size();
 			}
 
 		private:
 			ConstGraphAdjacentNodeArray & m_result;
 			std::set< ConstGraphAdjacentNode > & m_visited;
-			std::unordered_map< FramePass const *, size_t > m_hitCount;
+			std::unordered_map< FramePass const *, FramePassArray > m_hitCount;
+			std::unordered_map< FramePass const *, GraphAdjacentNode > m_pending;
 		};
 	}
 
@@ -294,6 +343,20 @@ namespace crg
 				auto & renderPassNode = nodeCast< FramePassNode >( *node );
 				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
 					, *this ) );
+			}
+		}
+
+		for ( auto & pass : m_passes )
+		{
+			m_maxPassCount = std::max( m_maxPassCount
+				, pass->initialise() );
+		}
+
+		for ( uint32_t index = 1; index < m_maxPassCount; ++index )
+		{
+			for ( auto & pass : m_passes )
+			{
+				pass->initialise( index );
 			}
 		}
 	}
@@ -399,9 +462,15 @@ namespace crg
 		return it->second.first;
 	}
 
-	VkImage RunnableGraph::getImage( Attachment const & attach )const
+	VkImage RunnableGraph::getImage( ImageViewId const & view )const
 	{
-		return getImage( attach.view.data->image );
+		return getImage( view.data->image );
+	}
+
+	VkImage RunnableGraph::getImage( Attachment const & attach
+		, uint32_t index )const
+	{
+		return getImage( attach.view( index ) );
 	}
 
 	VkImageView RunnableGraph::getImageView( ImageViewId const & view )const
@@ -416,9 +485,10 @@ namespace crg
 		return it->second;
 	}
 
-	VkImageView RunnableGraph::getImageView( Attachment const & attach )const
+	VkImageView RunnableGraph::getImageView( Attachment const & attach
+		, uint32_t index )const
 	{
-		return getImageView( attach.view );
+		return getImageView( attach.view( index ) );
 	}
 
 	VertexBuffer const & RunnableGraph::createQuadVertexBuffer( bool texCoords
@@ -591,13 +661,6 @@ namespace crg
 		return newLayout;
 	}
 
-	VkImageLayout RunnableGraph::updateToOutputLayout( crg::FramePass const & pass
-		, ImageViewId view )
-	{
-		auto result = getOutputLayout( pass, view );
-		return updateCurrentLayout( view, result );
-	}
-
 	VkImageLayout RunnableGraph::getOutputLayout( crg::FramePass const & pass
 		, ImageViewId view )const
 	{
@@ -676,7 +739,9 @@ namespace crg
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
 				, getImage( view.data->image )
-				, view.data->info.subresourceRange };
+				, adaptRange( m_context
+					, view.data->info.format
+					, view.data->info.subresourceRange ) };
 			m_context.vkCmdPipelineBarrier( commandBuffer
 				, getStageMask( currentLayout )
 				, getStageMask( wantedLayout )

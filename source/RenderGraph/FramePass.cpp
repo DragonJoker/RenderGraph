@@ -17,13 +17,13 @@ namespace crg
 		{
 			AttachmentArray result;
 
-			if ( attach.view.data->source.empty() )
+			if ( attach.view().data->source.empty() )
 			{
 				result.push_back( attach );
 			}
 			else
 			{
-				for ( auto & view : attach.view.data->source )
+				for ( auto & view : attach.view().data->source )
 				{
 					result.push_back( Attachment{ view, attach } );
 				}
@@ -85,7 +85,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view == rhs
+							return lhs.view() == rhs
 								&& lhs.isColourOutput();
 						} );
 				} );
@@ -104,7 +104,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view == rhs
+							return lhs.view() == rhs
 								&& lhs.isTransferOutput();
 						} );
 				} );
@@ -121,7 +121,7 @@ namespace crg
 					, []( Attachment const & lhs
 						, ImageViewId const & rhs )
 					{
-						return lhs.view == rhs
+						return lhs.view() == rhs
 							&& ( lhs.isDepthOutput()
 								|| lhs.isStencilOutput() );
 					} );
@@ -142,7 +142,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view == rhs
+							return lhs.view() == rhs
 								&& lhs.isColourInput();
 						} );
 				} );
@@ -161,7 +161,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view == rhs
+							return lhs.view() == rhs
 								&& lhs.isTransferInput();
 						} );
 				} );
@@ -180,7 +180,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view == rhs;
+							return lhs.view() == rhs;
 						} );
 				} );
 
@@ -198,7 +198,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view == rhs;
+							return lhs.view() == rhs;
 						} );
 				} );
 
@@ -214,7 +214,7 @@ namespace crg
 					, []( Attachment const & lhs
 						, ImageViewId const & rhs )
 					{
-						return lhs.view == rhs
+						return lhs.view() == rhs
 							&& ( lhs.isDepthInput()
 								|| lhs.isStencilInput() );
 					} );
@@ -402,10 +402,11 @@ namespace crg
 		, VkImageLayout initialLayout
 		, SamplerDesc samplerDesc )
 	{
+		auto attachName = name + view.data->name + "Spl";
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Sampled )
 			, *this
-			, name + view.data->name + "Spl"
-			, std::move( view )
+			, attachName
+			, { view }
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -421,10 +422,11 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
+		auto attachName = name + view.data->name + "Str";
 		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Storage )
 			, *this
-			, name + view.data->name + "Str"
-			, std::move( view )
+			, attachName
+			, { view }
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -439,14 +441,15 @@ namespace crg
 	void FramePass::addTransferInputView( ImageViewId view
 		, VkImageLayout initialLayout )
 	{
+		auto attachName = name + view.data->name + "It";
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, this->name + view.data->name + "It"
-			, std::move( view )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
+			, attachName
+			, { view }
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, uint32_t{}
 			, SamplerDesc{}
@@ -457,14 +460,15 @@ namespace crg
 	void FramePass::addTransferOutputView( ImageViewId view
 		, VkImageLayout initialLayout )
 	{
+		auto attachName = name + view.data->name + "Ot";
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
-			, this->name + view.data->name + "Ot"
-			, std::move( view )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
+			, attachName
+			, { view }
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, uint32_t{}
 			, SamplerDesc{}
@@ -474,14 +478,15 @@ namespace crg
 
 	void FramePass::addTransferInOutView( ImageViewId view )
 	{
+		auto attachName = name + view.data->name + "IOt";
 		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
-			, this->name + view.data->name + "IOt"
-			, std::move( view )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
+			, attachName
+			, { view }
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VkImageLayout{}
 			, uint32_t{}
 			, SamplerDesc{}
@@ -497,10 +502,11 @@ namespace crg
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
+		auto attachName = this->name + view.data->name + name;
 		colourInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
-			, this->name + view.data->name + name
-			, std::move( view )
+			, attachName
+			, { view }
 			, loadOp
 			, storeOp
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -521,10 +527,157 @@ namespace crg
 		, VkImageLayout initialLayout
 		, VkClearValue clearValue )
 	{
+		auto attachName = this->name + view.data->name + name;
 		depthStencilInOut = { Attachment::FlagKind( Attachment::Flag::Depth )
 			, *this
-			, this->name + view.data->name + name
-			, std::move( view )
+			, attachName
+			, { view }
+			, loadOp
+			, storeOp
+			, stencilLoadOp
+			, stencilStoreOp
+			, initialLayout
+			, uint32_t{}
+			, SamplerDesc{}
+			, std::move( clearValue )
+			, VkPipelineColorBlendAttachmentState{} };
+	}
+
+	void FramePass::addSampledView( ImageViewIdArray views
+		, uint32_t binding
+		, VkImageLayout initialLayout
+		, SamplerDesc samplerDesc )
+	{
+		auto attachName = name + views.front().data->name + "Spl";
+		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Sampled )
+			, *this
+			, attachName
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, binding
+			, std::move( samplerDesc )
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addStorageView( ImageViewIdArray views
+		, uint32_t binding
+		, VkImageLayout initialLayout )
+	{
+		auto attachName = name + views.front().data->name + "Str";
+		sampled.push_back( { Attachment::FlagKind( Attachment::Flag::Storage )
+			, *this
+			, attachName
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, binding
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addTransferInputView( ImageViewIdArray views
+		, VkImageLayout initialLayout )
+	{
+		auto attachName = name + views.front().data->name + "It";
+		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, attachName
+			, std::move( views )
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, initialLayout
+			, uint32_t{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addTransferOutputView( ImageViewIdArray views
+		, VkImageLayout initialLayout )
+	{
+		auto attachName = name + views.front().data->name + "Ot";
+		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, attachName
+			, std::move( views )
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, initialLayout
+			, uint32_t{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addTransferInOutView( ImageViewIdArray views )
+	{
+		auto attachName = name + views.front().data->name + "IOt";
+		transferInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::Transfer ) | Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, attachName
+			, std::move( views )
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkAttachmentLoadOp{}
+			, VkAttachmentStoreOp{}
+			, VkImageLayout{}
+			, uint32_t{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addColourView( std::string const & name
+		, ImageViewIdArray views
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, VkImageLayout initialLayout
+		, VkClearValue clearValue
+		, VkPipelineColorBlendAttachmentState blendState )
+	{
+		auto attachName = this->name + views.front().data->name + name;
+		colourInOuts.push_back( { Attachment::FlagKind( Attachment::Flag::None )
+			, *this
+			, attachName
+			, std::move( views )
+			, loadOp
+			, storeOp
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, uint32_t{}
+			, SamplerDesc{}
+			, std::move( clearValue )
+			, std::move( blendState ) } );
+	}
+
+	void FramePass::addDepthStencilView( std::string const & name
+		, ImageViewIdArray views
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, VkAttachmentLoadOp stencilLoadOp
+		, VkAttachmentStoreOp stencilStoreOp
+		, VkImageLayout initialLayout
+		, VkClearValue clearValue )
+	{
+		auto attachName = this->name + views.front().data->name + name;
+		depthStencilInOut = { Attachment::FlagKind( Attachment::Flag::Depth )
+			, *this
+			, attachName
+			, std::move( views )
 			, loadOp
 			, storeOp
 			, stencilLoadOp
@@ -539,8 +692,6 @@ namespace crg
 	RunnablePassPtr FramePass::createRunnable( GraphContext const & context
 		, RunnableGraph & graph )const
 	{
-		auto result = runnableCreator( *this, context, graph );
-		result->initialise();
-		return result;
+		return runnableCreator( *this, context, graph );
 	}
 }

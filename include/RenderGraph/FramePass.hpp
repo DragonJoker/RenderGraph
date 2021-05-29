@@ -120,7 +120,7 @@ namespace crg
 		/**@}*/
 		/**
 		*\name
-		*	Image attachments.
+		*	Image single-pass attachments.
 		*/
 		/**@[*/
 		/**
@@ -178,11 +178,79 @@ namespace crg
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
+		/**@}*/
+		/**
+		*\name
+		*	Image multi-pass attachments.
+		*/
+		/**@[*/
+		/**
+		*\brief
+		*	Creates a sampled image attachment.
+		*/
+		CRG_API void addSampledView( ImageViewIdArray view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			, SamplerDesc samplerDesc = SamplerDesc{} );
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
+		CRG_API void addStorageView( ImageViewIdArray view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+		/**
+		*\brief
+		*	Creates an transfer input attachment.
+		*/
+		CRG_API void addTransferInputView( ImageViewIdArray view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
+		/**
+		*\brief
+		*	Creates an transfer output attachment.
+		*/
+		CRG_API void addTransferOutputView( ImageViewIdArray view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+		/**
+		*\brief
+		*	Creates an transfer input/output attachment.
+		*/
+		CRG_API void addTransferInOutView( ImageViewIdArray view );
+		/**
+		*\brief
+		*	Creates a colour attachment.
+		*/
+		CRG_API void addColourView( std::string const & name
+			, ImageViewIdArray view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {}
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
+		/**
+		*\brief
+		*	Creates a depth and/or stencil output attachment.
+		*/
+		CRG_API void addDepthStencilView( std::string const & name
+			, ImageViewIdArray view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkAttachmentLoadOp stencilLoadOp
+			, VkAttachmentStoreOp stencilStoreOp
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {} );
+		/**@}*/
+		/**
+		*\name
+		*	Image specified attachments.
+		*/
+		/**@[*/
 		/**
 		*\brief
 		*	Creates an input colour attachment.
 		*/
-		void addInputColourView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInputColourView( ImageViewT view )
 		{
 			return addColourView( "Ic"
 				, std::move( view )
@@ -194,7 +262,8 @@ namespace crg
 		*\brief
 		*	Creates an in/out colour attachment.
 		*/
-		void addInOutColourView( ImageViewId view
+		template< typename ImageViewT >
+		void addInOutColourView( ImageViewT view
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
 			addColourView( "IOc"
@@ -209,7 +278,8 @@ namespace crg
 		*\brief
 		*	Creates an output colour attachment.
 		*/
-		void addOutputColourView( ImageViewId view
+		template< typename ImageViewT >
+		void addOutputColourView( ImageViewT view
 			, VkClearValue clearValue = {} )
 		{
 			addColourView( "Oc"
@@ -223,7 +293,8 @@ namespace crg
 		*\brief
 		*	Creates an input depth attachment.
 		*/
-		void addInputDepthView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInputDepthView( ImageViewT view )
 		{
 			addDepthStencilView( "Id"
 				, std::move( view )
@@ -237,7 +308,8 @@ namespace crg
 		*\brief
 		*	Creates an in/out depth attachment.
 		*/
-		void addInOutDepthView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInOutDepthView( ImageViewT view )
 		{
 			addDepthStencilView( "IOd"
 				, std::move( view )
@@ -252,7 +324,8 @@ namespace crg
 		*\brief
 		*	Creates an output depth attachment.
 		*/
-		void addOutputDepthView( ImageViewId view
+		template< typename ImageViewT >
+		void addOutputDepthView( ImageViewT view
 			, VkClearValue clearValue = {} )
 		{
 			addDepthStencilView( "Od"
@@ -268,7 +341,8 @@ namespace crg
 		*\brief
 		*	Creates an input depth and stencil attachment.
 		*/
-		void addInputDepthStencilView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInputDepthStencilView( ImageViewT view )
 		{
 			addDepthStencilView( "Ids"
 				, std::move( view )
@@ -282,7 +356,8 @@ namespace crg
 		*\brief
 		*	Creates an in/out depth and stencil attachment.
 		*/
-		void addInOutDepthStencilView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInOutDepthStencilView( ImageViewT view )
 		{
 			addDepthStencilView( "IOds"
 				, std::move( view )
@@ -297,7 +372,8 @@ namespace crg
 		*\brief
 		*	Creates an output depth and stencil attachment.
 		*/
-		void addOutputDepthStencilView( ImageViewId view
+		template< typename ImageViewT >
+		void addOutputDepthStencilView( ImageViewT view
 			, VkClearValue clearValue = {} )
 		{
 			addDepthStencilView( "Ods"
@@ -313,7 +389,8 @@ namespace crg
 		*\brief
 		*	Creates an input stencil attachment.
 		*/
-		void addInputStencilView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInputStencilView( ImageViewT view )
 		{
 			addDepthStencilView( "Is"
 				, std::move( view )
@@ -327,7 +404,8 @@ namespace crg
 		*\brief
 		*	Creates an in/out stencil attachment.
 		*/
-		void addInOutStencilView( ImageViewId view )
+		template< typename ImageViewT >
+		void addInOutStencilView( ImageViewT view )
 		{
 			addDepthStencilView( "IOs"
 				, std::move( view )
@@ -342,7 +420,8 @@ namespace crg
 		*\brief
 		*	Creates an output stencil attachment.
 		*/
-		void addOutputStencilView( ImageViewId view
+		template< typename ImageViewT >
+		void addOutputStencilView( ImageViewT view
 			, VkClearValue clearValue = {} )
 		{
 			addDepthStencilView( "Os"

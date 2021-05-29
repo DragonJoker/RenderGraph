@@ -23,11 +23,12 @@ namespace crg
 			, VkImageLayout finalLayout
 			, bool separateDepthStencilLayouts )
 		{
+			auto view = attach.view();
 			VkAttachmentReference result{ uint32_t( attaches.size() )
 				, attach.getImageLayout( separateDepthStencilLayouts ) };
 			attaches.push_back( { 0u
-				, attach.view.data->info.format
-				, attach.view.data->image.data->info.samples
+				, view.data->info.format
+				, view.data->image.data->info.samples
 				, attach.loadOp
 				, attach.storeOp
 				, attach.stencilLoadOp
@@ -65,7 +66,21 @@ namespace crg
 
 		for ( auto & binding : bindings )
 		{
-			result.push_back( { binding.descriptorType, binding.descriptorCount * maxSets } );
+			auto it = std::find_if( result.begin()
+				, result.end()
+				, [&binding]( VkDescriptorPoolSize const & lookup )
+				{
+					return binding.descriptorType == lookup.type;
+				} );
+
+			if ( it == result.end() )
+			{
+				result.push_back( { binding.descriptorType, binding.descriptorCount * maxSets } );
+			}
+			else
+			{
+				it->descriptorCount += binding.descriptorCount * maxSets;
+			}
 		}
 
 		return result;
@@ -75,20 +90,22 @@ namespace crg
 
 	RenderPass::RenderPass( FramePass const & pass
 		, GraphContext const & context
-		, RunnableGraph & graph )
+		, RunnableGraph & graph
+		, uint32_t maxPassCount )
 		: RunnablePass{ pass
 			, context
-			, graph }
+			, graph
+			, maxPassCount }
 	{
 	}
 
 	RenderPass::~RenderPass()
 	{
-		if ( m_frameBuffer )
+		for ( auto frameBuffer : m_frameBuffers )
 		{
-			crgUnregisterObject( m_context, m_frameBuffer );
+			crgUnregisterObject( m_context, frameBuffer );
 			m_context.vkDestroyFramebuffer( m_context.device
-				, m_frameBuffer
+				, frameBuffer
 				, m_context.allocator );
 		}
 
@@ -108,20 +125,20 @@ namespace crg
 		doSubInitialise();
 	}
 
-	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer )const
+	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
 	{
-		VkDeviceSize offset{};
 		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
 			, nullptr
 			, m_renderPass
-			, m_frameBuffer
+			, m_frameBuffers[index]
 			, m_renderArea
 			, uint32_t( m_clearValues.size() )
 			, m_clearValues.data() };
 		m_context.vkCmdBeginRenderPass( commandBuffer
 			, &beginInfo
 			, doGetSubpassContents( 0u ) );
-		doSubRecordInto( commandBuffer );
+		doSubRecordInto( commandBuffer, index );
 		m_context.vkCmdEndRenderPass( commandBuffer );
 	}
 
@@ -138,24 +155,26 @@ namespace crg
 
 		if ( m_pass.depthStencilInOut )
 		{
-			auto current = m_graph.getCurrentLayout( m_pass.depthStencilInOut->view );
+			auto view = m_pass.depthStencilInOut->view();
+			auto transition = doGetTransition( view );
 			depthReference = addAttach( *m_pass.depthStencilInOut
 				, attaches
 				, m_clearValues
-				, current
-				, m_graph.updateToOutputLayout( m_pass, m_pass.depthStencilInOut->view )
+				, transition.fromLayout
+				, transition.toLayout
 				, m_context.separateDepthStencilLayouts );
 		}
 
-		for ( auto & attach : m_pass.colourInOuts )
+		for ( auto & colAttach : m_pass.colourInOuts )
 		{
-			auto current = m_graph.getCurrentLayout( attach.view );
-			colorReferences.push_back( addAttach( attach
+			auto view = colAttach.view();
+			auto transition = doGetTransition( view );
+			colorReferences.push_back( addAttach( colAttach
 				, attaches
 				, m_clearValues
 				, m_blendAttachs
-				, current
-				, m_graph.updateToOutputLayout( m_pass, attach.view )
+				, transition.fromLayout
+				, transition.toLayout
 				, m_context.separateDepthStencilLayouts ) );
 		}
 
@@ -214,42 +233,50 @@ namespace crg
 
 	void RenderPass::doCreateFramebuffer()
 	{
-		VkImageViewArray attachments;
-		uint32_t width{};
-		uint32_t height{};
-		uint32_t layers{ 1u };
+		m_frameBuffers.resize( m_commandBuffers.size() );
 
-		if ( m_pass.depthStencilInOut )
+		for ( uint32_t index = 0; index < m_commandBuffers.size(); ++index )
 		{
-			attachments.push_back( m_graph.getImageView( *m_pass.depthStencilInOut ) );
-			width = m_pass.depthStencilInOut->view.data->image.data->info.extent.width >> m_pass.depthStencilInOut->view.data->info.subresourceRange.baseMipLevel;
-			height = m_pass.depthStencilInOut->view.data->image.data->info.extent.height >> m_pass.depthStencilInOut->view.data->info.subresourceRange.baseMipLevel;
-		}
+			VkImageViewArray attachments;
+			uint32_t width{};
+			uint32_t height{};
+			uint32_t layers{ 1u };
 
-		for ( auto & attach : m_pass.colourInOuts )
-		{
-			attachments.push_back( m_graph.getImageView( attach ) );
-			width = attach.view.data->image.data->info.extent.width >> attach.view.data->info.subresourceRange.baseMipLevel;
-			height = attach.view.data->image.data->info.extent.height >> attach.view.data->info.subresourceRange.baseMipLevel;
-		}
+			if ( m_pass.depthStencilInOut )
+			{
+				auto view = m_pass.depthStencilInOut->view( index );
+				attachments.push_back( m_graph.getImageView( view ) );
+				width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
+				height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
+			}
 
-		m_renderArea.extent.width = width;
-		m_renderArea.extent.height = height;
-		VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
-			, nullptr
-			, 0u
-			, m_renderPass
-			, uint32_t( attachments.size() )
-			, attachments.data()
-			, width
-			, height
-			, layers };
-		auto res = m_context.vkCreateFramebuffer( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_frameBuffer );
-		checkVkResult( res, m_pass.name + " - Framebuffer creation" );
-		crgRegisterObject( m_context, m_pass.name, m_frameBuffer );
+			for ( auto & colAttach : m_pass.colourInOuts )
+			{
+				auto view = colAttach.view( index );
+				attachments.push_back( m_graph.getImageView( view ) );
+				width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
+				height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
+			}
+
+			m_renderArea.extent.width = width;
+			m_renderArea.extent.height = height;
+			auto frameBuffer = &m_frameBuffers[index];
+			VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
+				, nullptr
+				, 0u
+				, m_renderPass
+				, uint32_t( attachments.size() )
+				, attachments.data()
+				, width
+				, height
+				, layers };
+			auto res = m_context.vkCreateFramebuffer( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, frameBuffer );
+			checkVkResult( res, m_pass.name + " - Framebuffer creation" );
+			crgRegisterObject( m_context, m_pass.name, *frameBuffer );
+		}
 	}
 
 	//*********************************************************************************************

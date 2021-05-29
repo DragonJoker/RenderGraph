@@ -140,7 +140,7 @@ namespace crg
 			bool areOverlapping( Attachment const & lhs
 				, Attachment const & rhs )
 			{
-				return areOverlapping( *lhs.view.data, *rhs.view.data );
+				return areOverlapping( *lhs.view().data, *rhs.view().data );
 			}
 
 			void insertAttach( Attachment const & attach
@@ -150,12 +150,12 @@ namespace crg
 					, cont.end()
 					, [&attach]( ViewAttaches const & lookup )
 					{
-						return lookup.view == attach.view;
+						return lookup.view == attach.view();
 					} );
 
 				if ( cont.end() == it )
 				{
-					cont.push_back( ViewAttaches{ attach.view } );
+					cont.push_back( ViewAttaches{ attach.view() } );
 					it = std::prev( cont.end() );
 				}
 
@@ -190,13 +190,13 @@ namespace crg
 			{
 				AttachmentArray result;
 
-				if ( attach.view.data->source.empty() )
+				if ( attach.view().data->source.empty() )
 				{
 					result.push_back( attach );
 				}
 				else
 				{
-					for ( auto & view : attach.view.data->source )
+					for ( auto & view : attach.view().data->source )
 					{
 						result.push_back( Attachment{ view, attach } );
 					}
@@ -220,7 +220,7 @@ namespace crg
 						processAttachSource( lookup
 							, splitAttach
 							, lookup.view
-							, splitAttach.view
+							, splitAttach.view()
 							, processAttach );
 					}
 
@@ -374,16 +374,22 @@ namespace crg
 
 				if ( attach.isColourInOut() )
 				{
-					transitions.push_back( { attach.view, attach, attach } );
+					transitions.push_back( { attach.view()
+						, attach
+						, attach } );
 				}
 				else if ( attach.isColourInput()
 						|| attach.isSampled() )
 				{
-					transitions.push_back( { attach.view, Attachment::createDefault( attach.view ), attach } );
+					transitions.push_back( { attach.view()
+						, Attachment::createDefault( attach.view() )
+						, attach } );
 				}
 				else
 				{
-					transitions.push_back( { attach.view, attach, Attachment::createDefault( attach.view ) } );
+					transitions.push_back( { attach.view()
+						, attach
+						, Attachment::createDefault( attach.view() ) } );
 				}
 
 				allTransitions.push_back( transitions.back() );
@@ -437,17 +443,17 @@ namespace crg
 				, FramePassDependenciesMap & outputTransitions
 				, AttachmentTransitionArray & allTransitions )
 			{
-				assert( outputAttach.view == inputAttach.view
-					|| isSingleMipView( outputAttach.view, inputAttach.view )
-					|| isSingleMipView( inputAttach.view, outputAttach.view ) );
-				AttachmentTransition inputTransition{ getInputView( outputAttach.view, inputAttach.view )
+				assert( outputAttach.view() == inputAttach.view()
+					|| isSingleMipView( outputAttach.view(), inputAttach.view() )
+					|| isSingleMipView( inputAttach.view(), outputAttach.view() ) );
+				AttachmentTransition inputTransition{ getInputView( outputAttach.view(), inputAttach.view() )
 					, outputAttach
 					, inputAttach };
-				AttachmentTransition outputTransition{ getOutputView( outputAttach.view, inputAttach.view )
+				AttachmentTransition outputTransition{ getOutputView( outputAttach.view(), inputAttach.view() )
 					, outputAttach
 					, inputAttach };
 
-				if ( outputAttach.view == inputAttach.view )
+				if ( outputAttach.view() == inputAttach.view() )
 				{
 					allTransitions.push_back( inputTransition );
 				}
@@ -509,7 +515,8 @@ namespace crg
 							for ( auto & inputAttach : input.attaches )
 							{
 								if ( inputAttach.pass->dependsOn( *outputAttach.pass
-									, getOutputView( inputAttach.view, outputAttach.view ) ) )
+									, getOutputView( inputAttach.view()
+										, outputAttach.view() ) ) )
 								{
 									addDependency( outputAttach
 										, inputAttach

@@ -62,33 +62,23 @@ namespace crg
 		enum class Flag : FlagKind
 		{
 			None = 0x00,
-			Unique = 0x01 << 0,
-			Sampled = 0x01 << 1,
-			Storage = 0x01 << 2,
-			Depth = 0x01 << 3,
-			Clearing = 0x01 << 4,
-			Input = 0x01 << 5,
-			Output = 0x01 << 6,
-			StencilClearing = 0x01 << 7,
-			StencilInput = 0x01 << 8,
-			StencilOutput = 0x01 << 9,
-			Transfer = 0x01 << 10,
+			Sampled = 0x01 << 0,
+			Storage = 0x01 << 1,
+			Depth = 0x01 << 2,
+			Clearing = 0x01 << 3,
+			Input = 0x01 << 4,
+			Output = 0x01 << 5,
+			StencilClearing = 0x01 << 6,
+			StencilInput = 0x01 << 7,
+			StencilOutput = 0x01 << 8,
+			Transfer = 0x01 << 9,
 		};
-		/**
-		*\name
-		*	Mutators.
-		*/
-		/**@{*/
-		void setUnique()
-		{
-			setFlag( Flag::Unique, true );
-		}
-		/**@}*/
 		/**
 		*\name
 		*	Getters.
 		*/
 		/**@{*/
+		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		FlagKind getFlags()const
 		{
@@ -98,11 +88,6 @@ namespace crg
 		bool hasFlag( Flag flag )const
 		{
 			return Flag( flags & FlagKind( flag ) ) == flag;
-		}
-
-		bool isUnique()const
-		{
-			return hasFlag( Flag::Unique );
 		}
 
 		bool isSampled()const
@@ -235,7 +220,7 @@ namespace crg
 		/**@[*/
 		FramePass * pass{};
 		std::string name{};
-		ImageViewId view{};
+		ImageViewIdArray views;
 		VkAttachmentLoadOp loadOp{};
 		VkAttachmentStoreOp storeOp{};
 		VkAttachmentLoadOp stencilLoadOp{};
@@ -255,7 +240,7 @@ namespace crg
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, std::string name
-			, ImageViewId view
+			, ImageViewIdArray views
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp

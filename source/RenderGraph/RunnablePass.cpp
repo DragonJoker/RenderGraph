@@ -14,12 +14,14 @@ namespace crg
 {
 	RunnablePass::RunnablePass( FramePass const & pass
 		, GraphContext const & context
-		, RunnableGraph & graph )
+		, RunnableGraph & graph
+		, uint32_t maxPassCount )
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
 		, m_timer{ context, m_pass.name, 1u }
 	{
+		m_commandBuffers.resize( maxPassCount );
 	}
 
 	RunnablePass::~RunnablePass()
@@ -31,14 +33,6 @@ namespace crg
 				, m_fence
 				, m_context.allocator );
 		}
-		
-		if ( m_event )
-		{
-			crgUnregisterObject( m_context, m_event );
-			m_context.vkDestroyEvent( m_context.device
-				, m_event
-				, m_context.allocator );
-		}
 
 		if ( m_semaphore )
 		{
@@ -47,14 +41,14 @@ namespace crg
 				, m_semaphore
 				, m_context.allocator );
 		}
-		
-		if ( m_commandBuffer )
+
+		for ( auto & cb : m_commandBuffers )
 		{
-			crgUnregisterObject( m_context, m_commandBuffer );
+			crgUnregisterObject( m_context, cb.commandBuffer );
 			m_context.vkFreeCommandBuffers( m_context.device
 				, m_commandPool
 				, 1u
-				, &m_commandBuffer );
+				, &cb.commandBuffer );
 		}
 
 		if ( m_commandPool )
@@ -66,37 +60,153 @@ namespace crg
 		}
 	}
 
-	void RunnablePass::initialise()
+	uint32_t RunnablePass::initialise( uint32_t index )
 	{
-		doCreateCommandPool();
-		doCreateCommandBuffer();
-		doCreateSemaphore();
-		doCreateEvent();
-		doCreateFence();
-		doInitialise();
+		for ( auto & attach : m_pass.sampled )
+		{
+			auto view = attach.view( index );
+			doRegisterTransition( view
+				, { m_graph.getCurrentLayout( view )
+				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
+				, m_graph.getOutputLayout( m_pass, view ) } );
+		}
+
+		for ( auto & attach : m_pass.storage )
+		{
+			auto view = attach.view( index );
+			LayoutTransition transition;
+			doRegisterTransition( view
+				, { m_graph.getCurrentLayout( view )
+				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
+				, m_graph.getOutputLayout( m_pass, view ) } );
+		}
+
+		if ( m_pass.depthStencilInOut )
+		{
+			auto & attach = *m_pass.depthStencilInOut;
+			auto view = m_pass.depthStencilInOut->view( index );
+			doRegisterTransition( view
+				, { m_graph.getCurrentLayout( view )
+				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
+				, m_graph.getOutputLayout( m_pass, view ) } );
+		}
+
+		for ( auto & attach : m_pass.colourInOuts )
+		{
+			auto view = attach.view( index );
+			doRegisterTransition( view
+				, { m_graph.getCurrentLayout( view )
+				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
+				, m_graph.getOutputLayout( m_pass, view ) } );
+		}
+
+		for ( auto & attach : m_pass.transferInOuts )
+		{
+			auto view = attach.view( index );
+			doRegisterTransition( view
+				, { m_graph.getCurrentLayout( view )
+				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
+				, m_graph.getOutputLayout( m_pass, view ) } );
+		}
+
+		if ( !m_initialised )
+		{
+			doCreateCommandPool();
+			doCreateCommandBuffer();
+			doCreateSemaphore();
+			doCreateFence();
+			doInitialise();
+			m_initialised = true;
+		}
+
+		return uint32_t( m_commandBuffers.size() );
 	}
 
-	void RunnablePass::record()
+	void RunnablePass::record( uint32_t index )
 	{
+		auto & cb = m_commandBuffers[index];
 		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 			, nullptr
 			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 			, nullptr };
-		m_context.vkBeginCommandBuffer( m_commandBuffer, &beginInfo );
-		recordInto( m_commandBuffer );
-		m_context.vkCmdSetEvent( m_commandBuffer, m_event, doGetSemaphoreWaitFlags() );
-		m_context.vkEndCommandBuffer( m_commandBuffer );
+		m_context.vkBeginCommandBuffer( cb.commandBuffer, &beginInfo );
+		recordInto( cb.commandBuffer, index );
+		m_context.vkEndCommandBuffer( cb.commandBuffer );
+		cb.recorded = true;
 	}
 
-	void RunnablePass::recordInto( VkCommandBuffer commandBuffer )
+	void RunnablePass::recordInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
 	{
 		auto block = m_timer.start();
-		m_context.vkCmdBeginDebugBlock( m_commandBuffer
+		m_context.vkCmdBeginDebugBlock( commandBuffer
 			, { m_pass.name, m_context.getNextRainbowColour() } );
 		m_timer.beginPass( commandBuffer );
-		doRecordInto( commandBuffer );
+
+		for ( auto & sampled : m_pass.sampled )
+		{
+			auto view = sampled.view( index );
+			auto transition = doGetTransition( view );
+			m_graph.memoryBarrier( commandBuffer
+				, view
+				, transition.fromLayout
+				, transition.neededLayout );
+		}
+
+		for ( auto & storage : m_pass.storage )
+		{
+			auto view = storage.view( index );
+			auto transition = doGetTransition( view );
+			m_graph.memoryBarrier( commandBuffer
+				, view
+				, transition.fromLayout
+				, transition.neededLayout );
+		}
+
+		for ( auto & storage : m_pass.transferInOuts )
+		{
+			auto view = storage.view( index );
+			auto transition = doGetTransition( view );
+			m_graph.memoryBarrier( commandBuffer
+				, view
+				, transition.fromLayout
+				, transition.neededLayout );
+		}
+
+		doRecordInto( commandBuffer, index );
+
+		for ( auto & sampled : m_pass.sampled )
+		{
+			auto view = sampled.view( index );
+			auto transition = doGetTransition( view );
+			m_graph.memoryBarrier( commandBuffer
+				, view
+				, transition.neededLayout
+				, transition.toLayout );
+		}
+
+		for ( auto & storage : m_pass.storage )
+		{
+			auto view = storage.view( index );
+			auto transition = doGetTransition( view );
+			m_graph.memoryBarrier( commandBuffer
+				, view
+				, transition.neededLayout
+				, transition.toLayout );
+		}
+
+		for ( auto & storage : m_pass.transferInOuts )
+		{
+			auto view = storage.view( index );
+			auto transition = doGetTransition( view );
+			m_graph.memoryBarrier( commandBuffer
+				, view
+				, transition.neededLayout
+				, transition.toLayout );
+		}
+
 		m_timer.endPass( commandBuffer );
-		m_context.vkCmdEndDebugBlock( m_commandBuffer );
+		m_context.vkCmdEndDebugBlock( commandBuffer );
 	}
 
 	SemaphoreWait RunnablePass::run( SemaphoreWait toWait
@@ -111,6 +221,14 @@ namespace crg
 	SemaphoreWait RunnablePass::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
+		auto index = doGetPassIndex();
+		auto & cb = m_commandBuffers[index];
+
+		if ( !cb.recorded )
+		{
+			record( index );
+		}
+
 		m_timer.notifyPassRender();
 		std::vector< VkSemaphore > semaphores;
 		std::vector< VkPipelineStageFlags > dstStageMasks;
@@ -127,11 +245,9 @@ namespace crg
 			, semaphores.data()
 			, dstStageMasks.data()
 			, 1u
-			, &m_commandBuffer
+			, &cb.commandBuffer
 			, 1u
 			, &m_semaphore };
-		m_context.vkResetEvent( m_context.device
-			, m_event );
 		m_context.vkResetFences( m_context.device
 			, 1u
 			, &m_fence );
@@ -143,14 +259,16 @@ namespace crg
 			, doGetSemaphoreWaitFlags() };
 	}
 
-	void RunnablePass::resetCommandBuffer()
+	void RunnablePass::resetCommandBuffer( uint32_t index )
 	{
+		auto & cb = m_commandBuffers[index];
+		cb.recorded = false;
 		m_context.vkWaitForFences( m_context.device
 			, 1u
 			, &m_fence
 			, VK_TRUE
 			, 0xFFFFFFFFFFFFFFFFull );
-		m_context.vkResetCommandBuffer( m_commandBuffer
+		m_context.vkResetCommandBuffer( cb.commandBuffer
 			, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
 	}
 
@@ -170,16 +288,19 @@ namespace crg
 
 	void RunnablePass::doCreateCommandBuffer()
 	{
-		VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
-			, nullptr
-			, m_commandPool
-			, VK_COMMAND_BUFFER_LEVEL_PRIMARY
-			, 1u };
-		auto res = m_context.vkAllocateCommandBuffers( m_context.device
-			, &allocateInfo
-			, &m_commandBuffer );
-		checkVkResult( res, m_pass.name + " - CommandBuffer allocation" );
-		crgRegisterObject( m_context, m_pass.name, m_commandBuffer );
+		for ( auto & cb : m_commandBuffers )
+		{
+			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
+				, nullptr
+				, m_commandPool
+				, VK_COMMAND_BUFFER_LEVEL_PRIMARY
+				, 1u };
+			auto res = m_context.vkAllocateCommandBuffers( m_context.device
+				, &allocateInfo
+				, &cb.commandBuffer );
+			checkVkResult( res, m_pass.name + " - CommandBuffer allocation" );
+			crgRegisterObject( m_context, m_pass.name, cb.commandBuffer );
+		}
 	}
 
 	void RunnablePass::doCreateSemaphore()
@@ -195,19 +316,6 @@ namespace crg
 		crgRegisterObject( m_context, m_pass.name, m_semaphore );
 	}
 
-	void RunnablePass::doCreateEvent()
-	{
-		VkEventCreateInfo createInfo{ VK_STRUCTURE_TYPE_EVENT_CREATE_INFO
-			, nullptr
-			, 0u };
-		auto res = m_context.vkCreateEvent( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_event );
-		checkVkResult( res, m_pass.name + " - Event creation" );
-		crgRegisterObject( m_context, m_pass.name, m_event );
-	}
-
 	void RunnablePass::doCreateFence()
 	{
 		VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
@@ -221,7 +329,37 @@ namespace crg
 		crgRegisterObject( m_context, m_pass.name, m_fence );
 	}
 
-	void RunnablePass::doRecordInto( VkCommandBuffer commandBuffer )const
+	void RunnablePass::doRegisterTransition( ImageViewId view
+		, LayoutTransition transition )
 	{
+		if ( transition.toLayout == VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			transition.toLayout = transition.neededLayout;
+		}
+
+		m_transitions.emplace( view, transition );
+		m_graph.updateCurrentLayout( view, transition.toLayout );
+
+		for ( auto & source : view.data->source )
+		{
+			doRegisterTransition( source, transition );
+		}
+	}
+
+	RunnablePass::LayoutTransition const & RunnablePass::doGetTransition( ImageViewId view )const
+	{
+		auto it = m_transitions.find( view );
+		assert( it != m_transitions.end() );
+		return it->second;
+	}
+
+	void RunnablePass::doRecordInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+	}
+
+	uint32_t RunnablePass::doGetPassIndex()const
+	{
+		return 0u;
 	}
 }

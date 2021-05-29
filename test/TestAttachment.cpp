@@ -24,7 +24,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		check( attachment.binding == 1u );
 		check( attachment.samplerDesc == defaultSamplerDesc );
 		testEnd();
@@ -45,7 +45,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		check( attachment.binding == 1u );
 		testEnd();
 	}
@@ -68,7 +68,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -92,7 +92,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -111,7 +111,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -130,7 +130,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -149,7 +149,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -168,7 +168,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -187,7 +187,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -206,7 +206,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -225,7 +225,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -244,7 +244,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -263,7 +263,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -282,7 +282,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -301,7 +301,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 
@@ -320,7 +320,7 @@ namespace
 		check( attachment.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.view == view );
+		check( attachment.view() == view );
 		testEnd();
 	}
 }

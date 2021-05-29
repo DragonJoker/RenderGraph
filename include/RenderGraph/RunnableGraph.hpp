@@ -28,9 +28,12 @@ namespace crg
 			, VkQueue queue );
 		CRG_API ImageViewId createView( ImageViewData const & view );
 		CRG_API VkImage getImage( ImageId const & image )const;
-		CRG_API VkImage getImage( Attachment const & attach )const;
+		CRG_API VkImage getImage( ImageViewId const & imageView )const;
+		CRG_API VkImage getImage( Attachment const & attach
+			, uint32_t index = 0u )const;
 		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
-		CRG_API VkImageView getImageView( Attachment const & attach )const;
+		CRG_API VkImageView getImageView( Attachment const & attach
+			, uint32_t index = 0u )const;
 		CRG_API VertexBuffer const & createQuadVertexBuffer( bool texCoords
 			, bool invertU
 			, bool invertV );
@@ -39,8 +42,6 @@ namespace crg
 		CRG_API VkImageLayout getCurrentLayout( ImageViewId view )const;
 		CRG_API VkImageLayout updateCurrentLayout( ImageViewId view
 			, VkImageLayout newLayout );
-		CRG_API VkImageLayout updateToOutputLayout( crg::FramePass const & pass
-			, ImageViewId view );
 		CRG_API VkImageLayout getOutputLayout( crg::FramePass const & pass
 			, ImageViewId view )const;
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
@@ -62,5 +63,6 @@ namespace crg
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 		std::unordered_map< size_t, VkSampler > m_samplers;
 		std::unordered_map< uint32_t, VkImageLayout > m_viewsLayouts;
+		uint32_t m_maxPassCount{ 1u };
 	};
 }
