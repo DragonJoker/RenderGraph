@@ -49,6 +49,7 @@ namespace crg
 		, m_baseConfig{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > ) }
 		, m_bindingPoint{ bindingPoint }
 	{
+		m_descriptorSets.resize( m_commandBuffers.size() );
 	}
 
 	PipelinePass::~PipelinePass()
@@ -94,12 +95,17 @@ namespace crg
 		doCreateDescriptorSetLayout();
 		doCreatePipelineLayout();
 		doCreateDescriptorPool();
-		doCreateDescriptorSet();
+	}
+
+	void PipelinePass::doRecordInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		doCreateDescriptorSet( index );
+		RunnablePass::doRecordInto( commandBuffer, index );
 	}
 
 	void PipelinePass::doFillDescriptorBindings()
 	{
-		WriteDescriptorSetArray descriptorWrites;
 		VkShaderStageFlags shaderStage = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
 			? VK_SHADER_STAGE_FRAGMENT_BIT
 			: VK_SHADER_STAGE_COMPUTE_BIT );
@@ -113,12 +119,6 @@ namespace crg
 					, 1u
 					, shaderStage
 					, nullptr } );
-				m_descriptorWrites.push_back( WriteDescriptorSet{ sampled.binding
-					, 0u
-					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, VkDescriptorImageInfo{ m_graph.createSampler( sampled.samplerDesc )
-					, m_graph.getImageView( sampled )
-					, sampled.initialLayout } } );
 			}
 		}
 		else
@@ -130,12 +130,6 @@ namespace crg
 					, 1u
 					, shaderStage
 					, nullptr } );
-				m_descriptorWrites.push_back( WriteDescriptorSet{ sampled.binding
-					, 0u
-					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-					, VkDescriptorImageInfo{ VK_NULL_HANDLE
-					, m_graph.getImageView( sampled )
-					, sampled.initialLayout } } );
 			}
 		}
 
@@ -146,12 +140,6 @@ namespace crg
 				, 1u
 				, shaderStage
 				, nullptr } );
-			m_descriptorWrites.push_back( WriteDescriptorSet{ storage.binding
-				, 0u
-				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-				, VkDescriptorImageInfo{ VK_NULL_HANDLE
-				, m_graph.getImageView( storage )
-				, storage.initialLayout } } );
 		}
 
 		shaderStage = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
@@ -165,7 +153,6 @@ namespace crg
 				, uniform->descriptorCount
 				, shaderStage
 				, nullptr } );
-			m_descriptorWrites.push_back( uniform );
 		}
 
 		for ( auto & uniform : m_pass.bufferViews )
@@ -175,7 +162,6 @@ namespace crg
 				, uniform->descriptorCount
 				, shaderStage
 				, nullptr } );
-			m_descriptorWrites.push_back( uniform );
 		}
 	}
 
@@ -214,19 +200,7 @@ namespace crg
 	void PipelinePass::doCreateDescriptorPool()
 	{
 		assert( m_descriptorSetLayout );
-		VkDescriptorSetLayoutBindingArray bindings;
-		uint32_t index = 0u;
-
-		for ( auto & binding : m_pass.sampled )
-		{
-			bindings.push_back( { index++
-				, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE
-				, 1u
-				, VK_SHADER_STAGE_FRAGMENT_BIT
-				, nullptr } );
-		}
-
-		auto sizes = convert( bindings, 1u );
+		auto sizes = convert( m_descriptorBindings, m_commandBuffers.size() );
 		VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
 			, nullptr
 			, 0u
@@ -241,8 +215,55 @@ namespace crg
 		crgRegisterObject( m_context, m_pass.name, m_descriptorSetPool );
 	}
 
-	void PipelinePass::doCreateDescriptorSet()
+	void PipelinePass::doCreateDescriptorSet( uint32_t index )
 	{
+		auto & descriptorSet = m_descriptorSets[index];
+
+		if ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS )
+		{
+			for ( auto & sampled : m_pass.sampled )
+			{
+				descriptorSet.writes.push_back( WriteDescriptorSet{ sampled.binding
+					, 0u
+					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+					, VkDescriptorImageInfo{ m_graph.createSampler( sampled.samplerDesc )
+						, m_graph.getImageView( sampled.view( index ) )
+						, sampled.initialLayout } } );
+			}
+		}
+		else
+		{
+			for ( auto & sampled : m_pass.sampled )
+			{
+				descriptorSet.writes.push_back( WriteDescriptorSet{ sampled.binding
+					, 0u
+					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+					, VkDescriptorImageInfo{ VK_NULL_HANDLE
+						, m_graph.getImageView( sampled.view( index ) )
+						, sampled.initialLayout } } );
+			}
+		}
+
+		for ( auto & storage : m_pass.storage )
+		{
+			descriptorSet.writes.push_back( WriteDescriptorSet{ storage.binding
+				, 0u
+				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+				, VkDescriptorImageInfo{ VK_NULL_HANDLE
+					, m_graph.getImageView( storage.view( index ) )
+					, storage.initialLayout } } );
+		}
+
+		for ( auto & uniform : m_pass.buffers )
+		{
+			descriptorSet.writes.push_back( uniform );
+		}
+
+		for ( auto & uniform : m_pass.bufferViews )
+		{
+			descriptorSet.writes.push_back( uniform );
+		}
+
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
 			, nullptr
 			, m_descriptorSetPool
@@ -250,16 +271,16 @@ namespace crg
 			, &m_descriptorSetLayout };
 		auto res = m_context.vkAllocateDescriptorSets( m_context.device
 			, &allocateInfo
-			, &m_descriptorSet );
+			, &descriptorSet.set );
 		checkVkResult( res, m_pass.name + " - DescriptorSet allocation" );
-		crgRegisterObject( m_context, m_pass.name, m_descriptorSet );
+		crgRegisterObject( m_context, m_pass.name, descriptorSet.set );
 
-		for ( auto & write : m_descriptorWrites )
+		for ( auto & write : descriptorSet.writes )
 		{
-			write.update( m_descriptorSet );
+			write.update( descriptorSet.set );
 		}
 
-		auto descriptorWrites = makeVkArray< VkWriteDescriptorSet >( m_descriptorWrites );
+		auto descriptorWrites = makeVkArray< VkWriteDescriptorSet >( descriptorSet.writes );
 		m_context.vkUpdateDescriptorSets( m_context.device
 			, uint32_t( descriptorWrites.size() )
 			, descriptorWrites.data()

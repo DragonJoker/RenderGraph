@@ -115,7 +115,7 @@ namespace crg
 
 				if ( inputNode
 					&& outputNode
-					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass ) )
+					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.view ) )
 				{
 					outputNode->attachNode( inputNode, { transition } );
 				}

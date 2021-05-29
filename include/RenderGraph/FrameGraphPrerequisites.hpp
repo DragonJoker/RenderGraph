@@ -72,6 +72,7 @@ namespace crg
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;
 	using ImageViewMap = std::map< ImageViewId, VkImageView >;
+	using ImageIdArray = std::vector< ImageId >;
 	using ImageViewIdArray = std::vector< ImageViewId >;
 
 	template< typename DataT >

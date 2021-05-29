@@ -41,29 +41,29 @@ namespace crg
 		, Attachment const & origin )
 		: pass{ origin.pass }
 		, name{ origin.name + view.data->name }
-		, view{ std::move( view ) }
+		, views{ { view } }
 		, loadOp{ origin.loadOp }
 		, storeOp{ origin.storeOp }
 		, stencilLoadOp{ origin.stencilLoadOp }
 		, stencilStoreOp{ origin.stencilStoreOp }
-		, flags{ origin.flags }
 		, initialLayout{ origin.initialLayout }
 		, samplerDesc{ origin.samplerDesc }
 		, binding{ origin.binding }
 		, clearValue{ origin.clearValue }
 		, blendState{ origin.blendState }
+		, flags{ origin.flags }
 	{
 	}
 
 	Attachment::Attachment( ImageViewId view )
-		: view{ view }
+		: views{ 1u, view }
 	{
 	}
 
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, std::string name
-		, ImageViewId view
+		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
@@ -75,11 +75,16 @@ namespace crg
 		, VkPipelineColorBlendAttachmentState blendState )
 		: pass{ &pass }
 		, name{ std::move( name ) }
-		, view{ std::move( view ) }
+		, views{ std::move( views ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
 		, stencilStoreOp{ stencilStoreOp }
+		, initialLayout{ initialLayout }
+		, samplerDesc{ std::move( samplerDesc ) }
+		, binding{ binding }
+		, clearValue{ std::move( clearValue ) }
+		, blendState{ std::move( blendState ) }
 		, flags{ FlagKind( flags
 			| ( loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
 				? FlagKind( Flag::Clearing )
@@ -99,25 +104,27 @@ namespace crg
 			| ( stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
-		, initialLayout{ initialLayout }
-		, samplerDesc{ std::move( samplerDesc ) }
-		, binding{ binding }
-		, clearValue{ std::move( clearValue ) }
-		, blendState{ std::move( blendState ) }
 	{
-		assert( ( ( view.data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
-				&& isColourFormat( view.data->info.format ) )
-			|| ( ( view.data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
-				&& isDepthStencilFormat( view.data->info.format ) )
-			|| ( ( view.data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
-				&& isDepthFormat( view.data->info.format ) )
-			|| ( ( view.data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
-				&& isStencilFormat( view.data->info.format ) ) );
+		assert( ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
+				&& isColourFormat( view().data->info.format ) )
+			|| ( ( view().data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
+				&& isDepthStencilFormat( view().data->info.format ) )
+			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
+				&& isDepthFormat( view().data->info.format ) )
+			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
+				&& isStencilFormat( view().data->info.format ) ) );
 		assert( !isSampled()
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
+	}
+
+	ImageViewId Attachment::view( uint32_t index )const
+	{
+		return views.size() == 1u
+			? views.front()
+			: views[index];
 	}
 
 	VkImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
@@ -238,7 +245,7 @@ namespace crg
 	{
 		return lhs.pass == rhs.pass
 			&& lhs.flags == rhs.flags
-			&& lhs.view == rhs.view
+			&& lhs.views == rhs.views
 			&& lhs.loadOp == rhs.loadOp
 			&& lhs.storeOp == rhs.storeOp
 			&& lhs.stencilLoadOp == rhs.stencilLoadOp

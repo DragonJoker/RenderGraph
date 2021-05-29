@@ -36,6 +36,8 @@ namespace crg
 			WrapperT< Texcoord > texcoordConfig;
 			WrapperT< VkExtent2D > renderSize;
 			WrapperT< VkOffset2D > renderPosition;
+			WrapperT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
+			WrapperT< uint32_t const * > passIndex;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -72,6 +74,30 @@ namespace crg
 		}
 	};
 
+	template<>
+	struct DefaultValueGetterT< VkPipelineDepthStencilStateCreateInfo >
+	{
+		static VkPipelineDepthStencilStateCreateInfo const & get()
+		{
+			static VkPipelineDepthStencilStateCreateInfo const result{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
+				, nullptr
+				, 0u
+				, VK_FALSE
+				, VK_FALSE };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< uint32_t const * >
+	{
+		static uint32_t const * const & get()
+		{
+			static uint32_t const * const result{};
+			return result;
+		}
+	};
+
 	class RenderQuad
 		: public RenderPass
 	{
@@ -83,6 +109,7 @@ namespace crg
 		CRG_API RenderQuad( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
+			, uint32_t maxPassCount
 			, rq::Config config );
 		CRG_API ~RenderQuad();
 
@@ -90,13 +117,15 @@ namespace crg
 
 	protected:
 		CRG_API void doSubInitialise()override;
-		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer )const override;
+		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index )override;
+		CRG_API uint32_t doGetPassIndex()const override;
 
 		CRG_API void doFillDescriptorBindings();
 		CRG_API void doCreateDescriptorSetLayout();
 		CRG_API void doCreatePipelineLayout();
 		CRG_API void doCreateDescriptorPool();
-		CRG_API void doCreateDescriptorSet();
+		CRG_API void doCreateDescriptorSet( uint32_t index );
 		CRG_API void doCreatePipeline();
 		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
@@ -107,13 +136,17 @@ namespace crg
 	private:
 		bool m_useTexCoord{ true };
 		VertexBuffer const * m_vertexBuffer{};
-		WriteDescriptorSetArray m_descriptorWrites;
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
 		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
 		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
 		VkPipeline m_pipeline{ VK_NULL_HANDLE };
 		VkDescriptorPool m_descriptorSetPool{ VK_NULL_HANDLE };
-		VkDescriptorSet m_descriptorSet{ VK_NULL_HANDLE };
+		struct DescriptorSet
+		{
+			WriteDescriptorSetArray writes;
+			VkDescriptorSet set;
+		};
+		std::vector< DescriptorSet > m_descriptorSets;
 	};
 
 	template< typename ConfigT, typename BuilderT >
@@ -162,6 +195,24 @@ namespace crg
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
+		*\param[in] config
+		*	The depth stencil state.
+		*/
+		auto & depthStencilState( VkPipelineDepthStencilStateCreateInfo config )
+		{
+			m_config.depthStencilState = std::move( config );
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	The pass index.
+		*/
+		auto & passIndex( uint32_t const * config )
+		{
+			m_config.passIndex = config;
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
 		*\brief
 		*	Creates the RenderQuad.
 		*\param[in] device
@@ -171,11 +222,13 @@ namespace crg
 		*/
 		std::unique_ptr< RenderQuad > build( FramePass const & pass
 			, GraphContext const & context
-			, RunnableGraph & graph )
+			, RunnableGraph & graph
+			, uint32_t maxPassCount = 1u )
 		{
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph
+				, maxPassCount
 				, m_config );
 		}
 

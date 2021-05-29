@@ -26,15 +26,15 @@ namespace crg
 	ImageCopy::ImageCopy( FramePass const & pass
 		, GraphContext const & context
 		, RunnableGraph & graph
-		, VkExtent3D copySize )
+		, VkExtent3D copySize
+		, uint32_t maxPassCount
+		, uint32_t const * passIndex )
 		: RunnablePass{ pass
 			, context
-			, graph }
-		, m_srcAttach{ pass.transferInOuts.front() }
-		, m_dstAttach{ pass.transferInOuts.back() }
+			, graph
+			, maxPassCount }
 		, m_copySize{std::move( copySize ) }
-		, m_srcImage{ graph.getImage( m_srcAttach ) }
-		, m_dstImage{ graph.getImage( m_dstAttach ) }
+		, m_passIndex{ passIndex }
 	{
 		assert( pass.transferInOuts.size() == 2u );
 	}
@@ -47,45 +47,39 @@ namespace crg
 	{
 	}
 
-	void ImageCopy::doRecordInto( VkCommandBuffer commandBuffer )const
+	void ImageCopy::doRecordInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
 	{
-		// Put source image in transfer source layout.
-		m_graph.memoryBarrier( commandBuffer
-			, m_srcAttach.view
-			, m_graph.getCurrentLayout( m_srcAttach.view )
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
-		// Put target image in transfer destination layout.
-		m_graph.memoryBarrier( commandBuffer
-			, m_dstAttach.view
-			, m_graph.getCurrentLayout( m_dstAttach.view )
-			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+		auto srcAttach{ m_pass.transferInOuts.front().view() };
+		auto dstAttach{ m_pass.transferInOuts.back().view() };
+		auto srcImage{ m_graph.getImage( srcAttach ) };
+		auto dstImage{ m_graph.getImage( dstAttach ) };
+		auto srcTransition = doGetTransition( srcAttach );
+		auto dstTransition = doGetTransition( dstAttach );
 		// Copy source to target.
-		VkImageCopy copyRegion{ convert( m_srcAttach.view.data->info.subresourceRange )
+		VkImageCopy copyRegion{ convert( srcAttach.data->info.subresourceRange )
 			, {}
-			, convert( m_dstAttach.view.data->info.subresourceRange )
+			, convert( dstAttach.data->info.subresourceRange )
 			, {}
 			, m_copySize };
 		m_context.vkCmdCopyImage( commandBuffer
-			, m_srcImage
+			, srcImage
 			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, m_dstImage
+			, dstImage
 			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, 1u
 			, &copyRegion );
-		// Put source image in wanted output layout.
-		m_graph.memoryBarrier( commandBuffer
-			, m_srcAttach.view
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, m_graph.updateToOutputLayout( m_pass, m_srcAttach.view ) );
-		// Put target image in wanted output layout.
-		m_graph.memoryBarrier( commandBuffer
-			, m_dstAttach.view
-			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-			, m_graph.updateToOutputLayout( m_pass, m_dstAttach.view ) );
 	}
 
 	VkPipelineStageFlags ImageCopy::doGetSemaphoreWaitFlags()const
 	{
 		return VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+
+	uint32_t ImageCopy::doGetPassIndex()const
+	{
+		return m_passIndex
+			? *m_passIndex
+			: 0u;
 	}
 }

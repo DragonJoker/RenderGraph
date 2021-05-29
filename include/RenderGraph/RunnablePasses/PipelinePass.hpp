@@ -44,24 +44,30 @@ namespace crg
 
 	protected:
 		CRG_API void doInitialise()override;
+		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index )override;
 
 	private:
 		void doFillDescriptorBindings();
 		void doCreateDescriptorSetLayout();
 		void doCreatePipelineLayout();
 		void doCreateDescriptorPool();
-		void doCreateDescriptorSet();
+		void doCreateDescriptorSet( uint32_t index );
 
 	protected:
 		pp::ConfigData m_baseConfig;
 		VkPipelineBindPoint m_bindingPoint;
-		WriteDescriptorSetArray m_descriptorWrites;
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
 		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
 		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
 		VkPipeline m_pipeline{ VK_NULL_HANDLE };
 		VkDescriptorPool m_descriptorSetPool{ VK_NULL_HANDLE };
-		VkDescriptorSet m_descriptorSet{ VK_NULL_HANDLE };
+		struct DescriptorSet
+		{
+			WriteDescriptorSetArray writes;
+			VkDescriptorSet set;
+		};
+		std::vector< DescriptorSet > m_descriptorSets;
 	};
 
 	template< typename BuilderT >

@@ -14,19 +14,20 @@ namespace crg
 		CRG_API ImageCopy( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
-			, VkExtent3D copySize );
+			, VkExtent3D copySize
+			, uint32_t maxPassCount = 1u
+			, uint32_t const * passIndex = nullptr );
 		CRG_API ~ImageCopy();
 
 	protected:
 		CRG_API void doInitialise()override;
-		CRG_API void doRecordInto( VkCommandBuffer commandBuffer )const override;
+		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index )override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;
+		CRG_API uint32_t doGetPassIndex()const override;
 
 	private:
-		Attachment m_srcAttach;
-		Attachment m_dstAttach;
 		VkExtent3D m_copySize;
-		VkImage m_srcImage{};
-		VkImage m_dstImage{};
+		uint32_t const * m_passIndex;
 	};
 }
