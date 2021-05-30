@@ -208,6 +208,11 @@ namespace crg
 	{
 		auto & descriptorSet = m_descriptorSets[index];
 
+		if ( descriptorSet.set != VK_NULL_HANDLE )
+		{
+			return;
+		}
+
 		for ( auto & sampled : m_pass.sampled )
 		{
 			descriptorSet.writes.push_back( WriteDescriptorSet{ sampled.binding
