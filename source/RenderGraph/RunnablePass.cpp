@@ -65,6 +65,12 @@ namespace crg
 		for ( auto & attach : m_pass.sampled )
 		{
 			auto view = attach.view( index );
+
+			if ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				m_graph.updateCurrentLayout( view, attach.initialLayout );
+			}
+
 			doRegisterTransition( view
 				, { m_graph.getCurrentLayout( view )
 				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
@@ -74,7 +80,12 @@ namespace crg
 		for ( auto & attach : m_pass.storage )
 		{
 			auto view = attach.view( index );
-			LayoutTransition transition;
+
+			if ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				m_graph.updateCurrentLayout( view, attach.initialLayout );
+			}
+
 			doRegisterTransition( view
 				, { m_graph.getCurrentLayout( view )
 				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
