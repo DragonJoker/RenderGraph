@@ -93,4 +93,54 @@ namespace crg
 
 		return result;
 	}
+
+	VkExtent3D getExtent( ImageId const & image )
+	{
+		return image.data->info.extent;
+	}
+
+	VkExtent3D getExtent( ImageViewId const & image )
+	{
+		return getExtent( image.data->image );
+	}
+
+	VkFormat getFormat( ImageId const & image )
+	{
+		return image.data->info.format;
+	}
+
+	VkFormat getFormat( ImageViewId const & image )
+	{
+		return image.data->info.format;
+	}
+
+	VkImageType getImageType( ImageId const & image )
+	{
+		return image.data->info.imageType;
+	}
+
+	VkImageType getImageType( ImageViewId const & image )
+	{
+		return getImageType( image.data->image );
+	}
+
+	uint32_t getMipLevels( ImageId const & image )
+	{
+		return image.data->info.mipLevels;
+	}
+
+	uint32_t getMipLevels( ImageViewId const & image )
+	{
+		return image.data->info.subresourceRange.levelCount;
+	}
+
+	uint32_t getArrayLayers( ImageId const & image )
+	{
+		return image.data->info.arrayLayers;
+	}
+
+	uint32_t getArrayLayers( ImageViewId const & image )
+	{
+		return image.data->info.subresourceRange.layerCount;
+	}
 }
