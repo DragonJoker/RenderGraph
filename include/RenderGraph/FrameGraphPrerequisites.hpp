@@ -145,4 +145,15 @@ namespace crg
 	};
 
 	using SemaphoreWaitArray = std::vector< SemaphoreWait >;
+
+	CRG_API VkExtent3D getExtent( ImageId const & image );
+	CRG_API VkExtent3D getExtent( ImageViewId const & image );
+	CRG_API VkFormat getFormat( ImageId const & image );
+	CRG_API VkFormat getFormat( ImageViewId const & image );
+	CRG_API VkImageType getImageType( ImageId const & image );
+	CRG_API VkImageType getImageType( ImageViewId const & image );
+	CRG_API uint32_t getMipLevels( ImageId const & image );
+	CRG_API uint32_t getMipLevels( ImageViewId const & image );
+	CRG_API uint32_t getArrayLayers( ImageId const & image );
+	CRG_API uint32_t getArrayLayers( ImageViewId const & image );
 }
