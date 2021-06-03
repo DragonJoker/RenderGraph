@@ -421,6 +421,12 @@ namespace crg
 		}
 	}
 
+	SemaphoreWait RunnableGraph::run( VkQueue queue )
+	{
+		return run( SemaphoreWaitArray{}
+			, queue );
+	}
+
 	SemaphoreWait RunnableGraph::run( SemaphoreWait toWait
 		, VkQueue queue )
 	{
@@ -728,6 +734,11 @@ namespace crg
 		, VkImageLayout currentLayout
 		, VkImageLayout wantedLayout )
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		if ( currentLayout != wantedLayout )
 		{
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
@@ -757,6 +768,11 @@ namespace crg
 
 	void RunnableGraph::doCreateImages()
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		for ( auto & img : m_graph.m_images )
 		{
 			// Create image
@@ -800,6 +816,11 @@ namespace crg
 
 	void RunnableGraph::doCreateImageView( ImageViewId view )
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		auto ires = m_imageViews.emplace( view, VkImageView{} );
 
 		if ( ires.second )
