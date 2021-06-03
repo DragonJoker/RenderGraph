@@ -44,11 +44,14 @@ namespace crg
 
 		for ( auto & cb : m_commandBuffers )
 		{
-			crgUnregisterObject( m_context, cb.commandBuffer );
-			m_context.vkFreeCommandBuffers( m_context.device
-				, m_commandPool
-				, 1u
-				, &cb.commandBuffer );
+			if ( cb.commandBuffer )
+			{
+				crgUnregisterObject( m_context, cb.commandBuffer );
+				m_context.vkFreeCommandBuffers( m_context.device
+					, m_commandPool
+					, 1u
+					, &cb.commandBuffer );
+			}
 		}
 
 		if ( m_commandPool )

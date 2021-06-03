@@ -92,10 +92,10 @@ namespace crg
 		}
 
 	private:
-		void doCreateCommandPool();
-		void doCreateCommandBuffer();
-		void doCreateSemaphore();
-		void doCreateFence();
+		CRG_API virtual void doCreateCommandPool();
+		CRG_API virtual void doCreateCommandBuffer();
+		CRG_API virtual void doCreateSemaphore();
+		CRG_API virtual void doCreateFence();
 		void doRegisterTransition( ImageViewId view
 			, LayoutTransition transition );
 

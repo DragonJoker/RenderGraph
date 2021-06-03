@@ -28,7 +28,8 @@ namespace crg
 		, separateDepthStencilLayouts{ separateDepthStencilLayouts }
 	{
 #define DECL_vkFunction( name )\
-		vk##name = reinterpret_cast< PFN_vk##name >( vkGetDeviceProcAddr( device, "vk"#name ) )
+		if ( vkGetDeviceProcAddr && device )\
+			vk##name = reinterpret_cast< PFN_vk##name >( vkGetDeviceProcAddr( device, "vk"#name ) )
 
 		DECL_vkFunction( CreateGraphicsPipelines );
 		DECL_vkFunction( CreateComputePipelines );
@@ -188,7 +189,7 @@ namespace crg
 	std::array< float, 4u > GraphContext::getNextRainbowColour()const
 	{
 		static float currentColourHue{ 0.0f };
-		currentColourHue += 0.05f;
+		currentColourHue += 0.0125f;
 
 		if ( currentColourHue > 1.0f )
 		{
@@ -355,9 +356,12 @@ namespace crg
 
 	void GraphContext::doUnregisterObject( uint64_t object )const
 	{
-		auto it = m_allocated.find( object );
-		assert( it != m_allocated.end() );
-		m_allocated.erase( it );
+		if ( object )
+		{
+			auto it = m_allocated.find( object );
+			assert( it != m_allocated.end() );
+			m_allocated.erase( it );
+		}
 	}
 
 	void GraphContext::doReportRegisteredObjects()const

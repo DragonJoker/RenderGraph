@@ -84,7 +84,8 @@ namespace test
 
 	crg::ImageData createImage( std::string name
 		, VkFormat format
-		, uint32_t mipLevels )
+		, uint32_t mipLevels
+		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
 			, 0u
@@ -93,26 +94,33 @@ namespace test
 			, { 1024, 1024 }
 			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
 				| VK_IMAGE_USAGE_SAMPLED_BIT )
-			, mipLevels };
+			, mipLevels
+			, arrayLayers };
 	}
 
 	crg::ImageViewData createView( std::string name
 		, crg::ImageId image
 		, uint32_t baseMipLevel
-		, uint32_t levelCount )
+		, uint32_t levelCount
+		, uint32_t baseArrayLayer
+		, uint32_t layerCount )
 	{
 		return createView( std::move( name )
 			, image
 			, image.data->info.format
 			, baseMipLevel
-			, levelCount );
+			, levelCount
+			, baseArrayLayer
+			, layerCount );
 	}
 
 	crg::ImageViewData createView( std::string name
 		, crg::ImageId image
 		, VkFormat format
 		, uint32_t baseMipLevel
-		, uint32_t levelCount )
+		, uint32_t levelCount
+		, uint32_t baseArrayLayer
+		, uint32_t layerCount )
 	{
 		VkImageAspectFlags aspect = ( isDepthStencilFormat( format )
 			? ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_DEPTH_BIT )
@@ -126,7 +134,7 @@ namespace test
 			, 0u
 			, VK_IMAGE_VIEW_TYPE_2D
 			, format
-			, { aspect, baseMipLevel, levelCount, 0u, 1u } };
+			, { aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount } };
 	}
 
 	void display( TestCounts & testCounts
