@@ -2,6 +2,7 @@
 
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/ImageData.hpp>
+#include <RenderGraph/RunnableGraph.hpp>
 #include <RenderGraph/RunnablePass.hpp>
 
 #include <sstream>
@@ -27,6 +28,106 @@ namespace
 		}
 
 		return result.str();
+	}
+
+	using CheckViews = std::function< void( test::TestCounts &
+		, crg::FramePass const &
+		, crg::RunnableGraph const & ) >;
+
+	class DummyRunnable
+		: public crg::RunnablePass
+	{
+	public:
+		DummyRunnable( crg::FramePass const & pass
+			, crg::GraphContext const & context
+			, crg::RunnableGraph & graph
+			, test::TestCounts & testCounts
+			, VkPipelineStageFlags pipelineStageFlags
+			, CheckViews checkViews )
+			: crg::RunnablePass{ pass, context, graph }
+			, m_testCounts{ testCounts }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+			, m_checkViews{ checkViews }
+		{
+		}
+
+	private:
+		void doCreateCommandPool()override
+		{
+		}
+
+		void doCreateCommandBuffer()override
+		{
+		}
+
+		void doCreateSemaphore()override
+		{
+		}
+
+		void doCreateFence()override
+		{
+		}
+
+		void doInitialise()override
+		{
+			m_checkViews( m_testCounts
+				, m_pass
+				, m_graph );
+		}
+
+		VkPipelineStageFlags doGetSemaphoreWaitFlags()const override
+		{
+			return m_pipelineStageFlags;
+		}
+
+	private:
+		test::TestCounts & m_testCounts;
+		VkPipelineStageFlags m_pipelineStageFlags;
+		CheckViews m_checkViews;
+	};
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & pass
+		, crg::GraphContext const & context
+		, crg::RunnableGraph & graph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews )
+	{
+		return std::make_unique< DummyRunnable >( pass
+			, context
+			, graph
+			, testCounts
+			, pipelineStageFlags
+			, checkViews );
+	}
+
+	void checkDummy( test::TestCounts & testCounts
+		, crg::FramePass const & pass
+		, crg::RunnableGraph const & graph )
+	{
+	}
+
+	void checkOutputColourIsShaderReadOnly( test::TestCounts & testCounts
+		, crg::FramePass const & pass
+		, crg::RunnableGraph const & graph )
+	{
+		for ( auto & view : pass.colourInOuts )
+		{
+			if ( view.isColourOutput() )
+			{
+				check( graph.getOutputLayout( pass, view.view( 0u ) ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+			}
+		}
+	}
+
+	void checkSampledIsShaderReadOnly( test::TestCounts & testCounts
+		, crg::FramePass const & pass
+		, crg::RunnableGraph const & graph )
+	{
+		for ( auto & view : pass.sampled )
+		{
+			check( graph.getCurrentLayout( view.view( 0u ) ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		}
 	}
 
 	void testNoPass( test::TestCounts & testCounts )
@@ -1332,6 +1433,269 @@ namespace
 		checkEqualLines( sort( stream.str() ), sort( ref ) );
 		testEnd();
 	}
+
+	void testVarianceShadowMap( test::TestCounts & testCounts )
+	{
+		testBegin( "testVarianceShadowMap" );
+		crg::FrameGraph graph{ testCounts.testName };
+		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto & depthPrepass = graph.createPass( "depthPrepass"
+			, [&testCounts]( crg::FramePass const & pass
+			, crg::GraphContext const & context
+			, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
+		depthPrepass.addOutputDepthView( depthv );
+		auto previous = &depthPrepass;
+
+		auto colour = graph.createImage( test::createImage( "colour", VK_FORMAT_R16G16B16A16_SFLOAT ) );
+		auto colourv = graph.createView( test::createView( "colourv", colour, VK_FORMAT_R16G16B16A16_SFLOAT ) );
+		auto & backgroundPass = graph.createPass( "backgroundPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
+		backgroundPass.addDependency( *previous );
+		previous = &backgroundPass;
+		backgroundPass.addInOutDepthView( depthv );
+		backgroundPass.addOutputColourView( colourv );
+
+		auto dirShadowMap = graph.createImage( test::createImage( "dirShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 4u ) );
+		auto dirVarianceMap = graph.createImage( test::createImage( "dirVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 4u ) );
+		auto dirShadowMapv = graph.createView( test::createView( "dirShadowMapv", dirShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 4u ) );
+		auto dirVarianceMapv = graph.createView( test::createView( "dirVarianceMapv", dirVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 4u ) );
+		crg::ImageViewIdArray dirShadows;
+		crg::ImageViewIdArray dirVariances;
+		{
+			auto dirIntermediate = graph.createImage( test::createImage( "dirIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
+			auto dirIntermediatev = graph.createView( test::createView( "dirIntermediatev", dirIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
+
+			for ( uint32_t index = 0u; index < 4u; ++index )
+			{
+				auto shadowMapv = graph.createView( test::createView( "dirShadowMapv" + std::to_string( index ), dirShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
+				dirShadows.push_back( shadowMapv );
+				auto varianceMapv = graph.createView( test::createView( "dirVarianceMapv" + std::to_string( index ), dirVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
+				dirVariances.push_back( varianceMapv );
+				auto & shadowPass = graph.createPass( "dirShadowPass" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				shadowPass.addDependency( *previous );
+				previous = &shadowPass;
+				shadowPass.addOutputDepthView( shadowMapv );
+				shadowPass.addOutputColourView( varianceMapv );
+
+				auto & blurPassX = graph.createPass( "dirBlurPassX" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				blurPassX.addDependency( *previous );
+				previous = &blurPassX;
+				blurPassX.addSampledView( varianceMapv, 0u, {} );
+				blurPassX.addOutputColourView( dirIntermediatev );
+
+				auto & blurPassY = graph.createPass( "dirBlurPassY" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				blurPassY.addDependency( *previous );
+				previous = &blurPassY;
+				blurPassY.addSampledView( dirIntermediatev, 0u, {} );
+				blurPassY.addOutputColourView( varianceMapv );
+			}
+		}
+		auto pntShadowMap = graph.createImage( test::createImage( "pntShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 36u ) );
+		auto pntVarianceMap = graph.createImage( test::createImage( "pntVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 36u ) );
+		auto pntShadowMapv = graph.createView( test::createView( "pntShadowMapv", pntShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 36u ) );
+		auto pntVarianceMapv = graph.createView( test::createView( "pntVarianceMapv", pntVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 36u ) );
+		crg::ImageViewIdArray pntShadows;
+		crg::ImageViewIdArray pntVariances;
+		{
+			auto pntIntermediate = graph.createImage( test::createImage( "pntIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
+			auto pntIntermediatev = graph.createView( test::createView( "pntIntermediatev", pntIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
+
+			for ( uint32_t index = 0u; index < 36u; ++index )
+			{
+				auto shadowMapv = graph.createView( test::createView( "pntShadowMapv" + std::to_string( index ), pntShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
+				pntShadows.push_back( shadowMapv );
+				auto varianceMapv = graph.createView( test::createView( "pntVarianceMapv" + std::to_string( index ), pntVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
+				pntVariances.push_back( varianceMapv );
+				auto & shadowPass = graph.createPass( "pntShadowPass" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				shadowPass.addDependency( *previous );
+				previous = &shadowPass;
+				shadowPass.addOutputDepthView( shadowMapv );
+				shadowPass.addOutputColourView( varianceMapv );
+
+				auto & blurPassX = graph.createPass( "pntBlurPassX" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				blurPassX.addDependency( *previous );
+				previous = &blurPassX;
+				blurPassX.addSampledView( varianceMapv, 0u, {} );
+				blurPassX.addOutputColourView( pntIntermediatev );
+
+				auto & blurPassY = graph.createPass( "pntBlurPassY" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				blurPassY.addDependency( *previous );
+				previous = &blurPassY;
+				blurPassY.addSampledView( pntIntermediatev, 0u, {} );
+				blurPassY.addOutputColourView( varianceMapv );
+			}
+		}
+		auto sptShadowMap = graph.createImage( test::createImage( "sptShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 10u ) );
+		auto sptVarianceMap = graph.createImage( test::createImage( "pntVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 10u ) );
+		auto sptShadowMapv = graph.createView( test::createView( "sptShadowMapv", sptShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 10u ) );
+		auto sptVarianceMapv = graph.createView( test::createView( "sptVarianceMapv", sptVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 10u ) );
+		crg::ImageViewIdArray sptShadows;
+		crg::ImageViewIdArray sptVariances;
+		{
+			auto sptIntermediate = graph.createImage( test::createImage( "sptIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
+			auto sptIntermediatev = graph.createView( test::createView( "sptIntermediatev", sptIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
+
+			for ( uint32_t index = 0u; index < 10u; ++index )
+			{
+				auto shadowMapv = graph.createView( test::createView( "sptShadowMapv" + std::to_string( index ), sptShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
+				sptShadows.push_back( shadowMapv );
+				auto varianceMapv = graph.createView( test::createView( "sptVarianceMapv" + std::to_string( index ), sptVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
+				sptVariances.push_back( varianceMapv );
+				auto & shadowPass = graph.createPass( "sptShadowPass" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				shadowPass.addDependency( *previous );
+				previous = &shadowPass;
+				shadowPass.addOutputDepthView( shadowMapv );
+				shadowPass.addOutputColourView( varianceMapv );
+
+				auto & blurPassX = graph.createPass( "sptBlurPassX" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				blurPassX.addDependency( *previous );
+				previous = &blurPassX;
+				blurPassX.addSampledView( varianceMapv, 0u, {} );
+				blurPassX.addOutputColourView( sptIntermediatev );
+
+				auto & blurPassY = graph.createPass( "sptBlurPassY" + std::to_string( index )
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkOutputColourIsShaderReadOnly );
+					} );
+				blurPassY.addDependency( *previous );
+				previous = &blurPassY;
+				blurPassY.addSampledView( sptIntermediatev, 0u, {} );
+				blurPassY.addOutputColourView( varianceMapv );
+			}
+		}
+
+		auto & opaquePass = graph.createPass( "opaquePass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkSampledIsShaderReadOnly );
+			} );
+		opaquePass.addDependency( *previous );
+		previous = &opaquePass;
+		opaquePass.addSampledView( dirShadowMapv, 0u );
+		opaquePass.addSampledView( dirVarianceMapv, 1u );
+		opaquePass.addSampledView( opaquePass.mergeViews( dirShadows ), 0u );
+		opaquePass.addSampledView( opaquePass.mergeViews( dirVariances ), 1u );
+		opaquePass.addSampledView( pntShadowMapv, 2u );
+		opaquePass.addSampledView( pntVarianceMapv, 3u );
+		opaquePass.addSampledView( opaquePass.mergeViews( pntShadows ), 2u );
+		opaquePass.addSampledView( opaquePass.mergeViews( pntVariances ), 3u );
+		opaquePass.addSampledView( sptShadowMapv, 4u );
+		opaquePass.addSampledView( sptVarianceMapv, 5u );
+		opaquePass.addSampledView( opaquePass.mergeViews( sptShadows ), 4u );
+		opaquePass.addSampledView( opaquePass.mergeViews( sptVariances ), 5u );
+		opaquePass.addInOutDepthView( depthv );
+		opaquePass.addInOutColourView( colourv );
+
+		auto & transparentPass = graph.createPass( "transparentPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
+		transparentPass.addDependency( *previous );
+		previous = &transparentPass;
+		transparentPass.addInOutDepthView( depthv );
+		transparentPass.addInOutColourView( colourv );
+
+		crg::RunnableGraph runnable{ std::move( graph )
+			, crg::GraphContext{ VK_NULL_HANDLE
+				, VK_NULL_HANDLE
+				, nullptr
+				, VkPhysicalDeviceMemoryProperties{}
+				, VkPhysicalDeviceProperties{}
+				, false
+				, nullptr } };
+		testEnd();
+	}
 }
 
 int main( int argc, char ** argv )
@@ -1362,5 +1726,6 @@ int main( int argc, char ** argv )
 	testRender< true, false, false, true >( testCounts );
 	testRender< true, true, false, true >( testCounts );
 	testRender< true, true, true, true >( testCounts );
+	testVarianceShadowMap( testCounts );
 	testSuiteEnd();
 }

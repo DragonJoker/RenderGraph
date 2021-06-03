@@ -22,6 +22,7 @@ namespace crg
 		CRG_API void record();
 		CRG_API void recordInto( VkCommandBuffer commandBuffer );
 
+		CRG_API SemaphoreWait run( VkQueue queue );
 		CRG_API SemaphoreWait run( SemaphoreWait toWait
 			, VkQueue queue );
 		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait

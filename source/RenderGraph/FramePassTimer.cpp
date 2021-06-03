@@ -16,18 +16,23 @@ namespace crg
 			, uint32_t passesCount )
 		{
 			VkQueryPool result{ VK_NULL_HANDLE };
-			VkQueryPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO
-				, nullptr
-				, 0u
-				, VK_QUERY_TYPE_TIMESTAMP
-				, 2u * passesCount
-				, 0u };
-			auto res = context.vkCreateQueryPool( context.device
-				, &createInfo
-				, context.allocator
-				, &result );
-			checkVkResult( res, ( name + " VkQueryPool creation" ).c_str() );
-			crgRegisterObject( context, name + "QueryPools", result );
+
+			if ( context.device )
+			{
+				VkQueryPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO
+					, nullptr
+					, 0u
+					, VK_QUERY_TYPE_TIMESTAMP
+					, 2u * passesCount
+					, 0u };
+				auto res = context.vkCreateQueryPool( context.device
+					, &createInfo
+					, context.allocator
+					, &result );
+				checkVkResult( res, ( name + " VkQueryPool creation" ).c_str() );
+				crgRegisterObject( context, name + "QueryPools", result );
+			}
+
 			return result;
 		}
 	}
@@ -83,10 +88,13 @@ namespace crg
 
 	FramePassTimer::~FramePassTimer()
 	{
-		crgUnregisterObject( m_context, m_timerQuery );
-		m_context.vkDestroyQueryPool( m_context.device
-			, m_timerQuery
-			, m_context.allocator );
+		if ( m_timerQuery )
+		{
+			crgUnregisterObject( m_context, m_timerQuery );
+			m_context.vkDestroyQueryPool( m_context.device
+				, m_timerQuery
+				, m_context.allocator );
+		}
 	}
 
 	FramePassTimerBlock FramePassTimer::start()
