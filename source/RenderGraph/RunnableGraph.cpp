@@ -109,103 +109,6 @@ namespace crg
 			return result;
 		}
 
-		VkAccessFlags getAccessMask( VkImageLayout layout )
-		{
-			VkAccessFlags result{ 0u };
-
-			switch ( layout )
-			{
-			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-			case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
-				result |= VK_ACCESS_MEMORY_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-				result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-				result |= VK_ACCESS_SHADER_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-				result |= VK_ACCESS_TRANSFER_READ_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
-			case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
-				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-				break;
-#ifdef VK_NV_shading_rate_image
-			case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-				result |= VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
-				break;
-#endif
-#ifdef VK_EXT_fragment_density_map
-			case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
-				result |= VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
-				break;
-#endif
-			default:
-				break;
-			}
-
-			return result;
-		}
-
-		VkPipelineStageFlags getStageMask( VkImageLayout layout )
-		{
-			VkPipelineStageFlags result{ 0u };
-
-			switch ( layout )
-			{
-			case VK_IMAGE_LAYOUT_UNDEFINED:
-				result |= VK_PIPELINE_STAGE_HOST_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_GENERAL:
-				result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-			case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
-				result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-			case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
-			case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
-				result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-				result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-				break;
-#ifdef VK_EXT_fragment_density_map
-			case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
-#endif
-			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-				result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				break;
-			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-				result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-				break;
-#ifdef VK_NV_shading_rate_image
-			case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-				result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
-				break;
-#endif
-			default:
-				break;
-			}
-
-			return result;
-		}
-
 		VkImageSubresourceRange adaptRange( GraphContext const & context
 			, VkFormat format
 			, VkImageSubresourceRange const & subresourceRange )
@@ -322,6 +225,114 @@ namespace crg
 			std::unordered_map< FramePass const *, FramePassArray > m_hitCount;
 			std::unordered_map< FramePass const *, GraphAdjacentNode > m_pending;
 		};
+	}
+
+	VkImageAspectFlags getAspectMask( VkFormat format )noexcept
+	{
+		return ( isDepthStencilFormat( format )
+			? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
+			: ( isDepthFormat( format )
+				? VK_IMAGE_ASPECT_DEPTH_BIT
+				: ( isStencilFormat( format )
+					? VK_IMAGE_ASPECT_STENCIL_BIT
+					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
+	}
+
+	VkAccessFlags getAccessMask( VkImageLayout layout )noexcept
+	{
+		VkAccessFlags result{ 0u };
+
+		switch ( layout )
+		{
+		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+		case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+			result |= VK_ACCESS_MEMORY_READ_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+			result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+			result |= VK_ACCESS_SHADER_READ_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+			result |= VK_ACCESS_TRANSFER_READ_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+			result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+		case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			break;
+#ifdef VK_NV_shading_rate_image
+		case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+			result |= VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+			break;
+#endif
+#ifdef VK_EXT_fragment_density_map
+		case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+			result |= VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+			break;
+#endif
+		default:
+			break;
+		}
+
+		return result;
+	}
+
+	VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept
+	{
+		VkPipelineStageFlags result{ 0u };
+
+		switch ( layout )
+		{
+		case VK_IMAGE_LAYOUT_UNDEFINED:
+			result |= VK_PIPELINE_STAGE_HOST_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_GENERAL:
+			result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+		case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+			result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+		case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+		case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+			result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+			result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			break;
+#ifdef VK_EXT_fragment_density_map
+		case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+#endif
+		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			break;
+		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+			break;
+#ifdef VK_NV_shading_rate_image
+		case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+			result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+			break;
+#endif
+		default:
+			break;
+		}
+
+		return result;
 	}
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph

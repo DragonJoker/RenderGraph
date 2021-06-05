@@ -280,6 +280,40 @@ namespace crg
 				}
 			}
 
+			void processTransferInputAttach( Attachment const & attach
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
+			{
+				if ( attach.isTransferInput() )
+				{
+					processAttach( attach
+						, cont
+						, all
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
+						{
+							return areOverlapping( *lookupView.data, *attachView.data );
+						} );
+				}
+			}
+
+			void processTransferOutputAttach( Attachment const & attach
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
+			{
+				if ( attach.isTransferOutput() )
+				{
+					return processAttach( attach
+						, cont
+						, all
+						, []( ImageViewId const & lookupView
+							, ImageViewId const & attachView )
+						{
+							return areOverlapping( *lookupView.data, *attachView.data );
+						} );
+				}
+			}
+
 			void processDepthOrStencilInputAttach( Attachment const & attach
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
@@ -363,6 +397,26 @@ namespace crg
 				for ( auto & attach : attachs )
 				{
 					processDepthOrStencilOutputAttach( attach, cont, all );
+				}
+			}
+
+			void processTransferInputAttachs( AttachmentArray const & attachs
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
+			{
+				for ( auto & attach : attachs )
+				{
+					processTransferInputAttach( attach, cont, all );
+				}
+			}
+
+			void processTransferOutputAttachs( AttachmentArray const & attachs
+				, ViewAttachesArray & cont
+				, ViewAttachesArray & all )
+			{
+				for ( auto & attach : attachs )
+				{
+					processTransferOutputAttach( attach, cont, all );
 				}
 			}
 
@@ -487,19 +541,16 @@ namespace crg
 				processSampledAttachs( pass->sampled, inputs, all );
 				processSampledAttachs( pass->storage, inputs, all );
 				processColourInputAttachs( pass->colourInOuts, inputs, all );
-				processColourInputAttachs( pass->transferInOuts, inputs, all );
+				processTransferInputAttachs( pass->transferInOuts, inputs, all );
 				processColourOutputAttachs( pass->colourInOuts, outputs, all );
-				processColourOutputAttachs( pass->transferInOuts, outputs, all );
+				processTransferOutputAttachs( pass->transferInOuts, outputs, all );
 
 				if ( pass->depthStencilInOut )
 				{
 					processDepthOrStencilInputAttach( *pass->depthStencilInOut, inputs, all );
 					processDepthOrStencilOutputAttach( *pass->depthStencilInOut, outputs, all );
 				}
-			}
 
-			for ( auto & pass : passes )
-			{
 				inputTransitions.emplace( pass.get(), AttachmentTransitionArray{} );
 				outputTransitions.emplace( pass.get(), AttachmentTransitionArray{} );
 			}

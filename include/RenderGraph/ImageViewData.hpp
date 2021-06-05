@@ -58,7 +58,7 @@ namespace crg
 
 	inline bool operator==( ImageViewData const & lhs, ImageViewData const & rhs )
 	{
-		return lhs.name == rhs.name
+		return lhs.image == rhs.image
 			&& lhs.info == rhs.info;
 	}
 

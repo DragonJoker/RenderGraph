@@ -100,6 +100,8 @@ namespace crg
 			, LayoutTransition transition );
 
 	protected:
+		CRG_API void doUpdateFinalLayout( ImageViewId view
+			, VkImageLayout layout );
 		CRG_API LayoutTransition const & doGetTransition( ImageViewId view )const;
 		CRG_API virtual void doInitialise() = 0;
 		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer

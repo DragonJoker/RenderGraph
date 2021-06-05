@@ -4,6 +4,7 @@
 #include <RenderGraph/ImageData.hpp>
 #include <RenderGraph/RunnableGraph.hpp>
 #include <RenderGraph/RunnablePass.hpp>
+#include <RenderGraph/RunnablePasses/GenerateMipmaps.hpp>
 
 #include <sstream>
 
@@ -2140,6 +2141,84 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		testEnd();
 	}
+
+	void testEnvironmentMap( test::TestCounts & testCounts )
+	{
+		testBegin( "testEnvironmentMap" );
+		crg::FrameGraph graph{ testCounts.testName };
+		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT_S8_UINT, 1u, 6u ) );
+		auto colour = graph.createImage( test::createImage( "colour", VK_FORMAT_R16G16B16A16_SFLOAT, 8u, 6u ) );
+		auto colourv = graph.createView( test::createView( "colourv", colour, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 8u, 0u, 6u ) );
+		crg::ImageViewIdArray colourViews;
+		std::vector< crg::FramePass const * > previouses{};
+		crg::FramePass const * previous{};
+
+		for ( auto index = 0u; index < 6u; ++index )
+		{
+			auto strIndex = std::to_string( index );
+			auto colourvn = graph.createView( test::createView( "colourv" + strIndex, colour, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, index, 1u ) );
+			auto depthvn = graph.createView( test::createView( "depthv" + strIndex, depth, VK_FORMAT_D32_SFLOAT_S8_UINT, 0u, 1u, index, 1u ) );
+			auto & opaquePass = graph.createPass( "EnvOpaquePass" + strIndex
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
+			colourViews.push_back( colourvn );
+			previous = &opaquePass;
+			opaquePass.addOutputDepthView( depthvn );
+			opaquePass.addOutputColourView( colourvn );
+
+			auto & backgroundPass = graph.createPass( "EnvBackgroundPass" + strIndex
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
+			backgroundPass.addDependency( *previous );
+			previous = &backgroundPass;
+			backgroundPass.addInOutDepthView( depthvn );
+			backgroundPass.addInOutColourView( colourvn );
+
+			auto & transparentPass = graph.createPass( "EnvTransparentPass" + strIndex
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
+			transparentPass.addDependency( *previous );
+			previouses.push_back( &transparentPass );
+			transparentPass.addInputDepthView( depthvn );
+			transparentPass.addInOutColourView( colourvn );
+		}
+
+		auto & mipsGen = graph.createPass( "EnvMips"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_TRANSFER_BIT
+					, checkDummy );
+			} );
+		mipsGen.addDependencies( previouses );
+		mipsGen.addTransferInputView( mipsGen.mergeViews( colourViews ) );
+		mipsGen.addTransferOutputView( colourv );
+
+		graph.setFinalLayout( colourv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+
+		auto runnable = graph.compile( getContext() );
+		testEnd();
+	}
 }
 
 int main( int argc, char ** argv )
@@ -2171,5 +2250,6 @@ int main( int argc, char ** argv )
 	testRender< true, true, false, true >( testCounts );
 	testRender< true, true, true, true >( testCounts );
 	testVarianceShadowMap( testCounts );
+	testEnvironmentMap( testCounts );
 	testSuiteEnd();
 }

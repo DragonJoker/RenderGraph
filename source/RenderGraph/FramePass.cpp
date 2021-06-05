@@ -387,7 +387,23 @@ namespace crg
 				data.info.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
 				break;
 			case VK_IMAGE_VIEW_TYPE_2D:
-				data.info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+				if ( ( data.image.data->info.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT )
+					&& ( data.info.subresourceRange.layerCount % 6u ) == 0u
+					&& data.info.subresourceRange.baseArrayLayer == 0u )
+				{
+					if ( data.info.subresourceRange.layerCount > 6u )
+					{
+						data.info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+					}
+					else
+					{
+						data.info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+					}
+				}
+				else
+				{
+					data.info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+				}
 				break;
 			default:
 				break;
