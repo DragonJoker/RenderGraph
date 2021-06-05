@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
+#include "RenderGraph/RunnableGraph.hpp"
 #include "FramePassDependenciesBuilder.hpp"
 #include "GraphBuilder.hpp"
 #include "ResourceOptimiser.hpp"
@@ -15,7 +16,7 @@ See LICENSE file in root folder.
 namespace crg
 {
 	FrameGraph::FrameGraph( std::string name )
-		: m_root{ std::move( name ) }
+		: m_name{ std::move( name ) }
 	{
 	}
 
@@ -41,25 +42,35 @@ namespace crg
 		return *result;
 	}
 
-	void FrameGraph::compile()
+	RunnableGraphPtr FrameGraph::compile( GraphContext context )
 	{
 		if ( m_passes.empty() )
 		{
 			CRG_Exception( "No FramePass registered." );
 		}
 
+		// Transitions for which the pass is the destination.
+		FramePassDependenciesMap inputTransitions;
+		// Transitions for which the pass is the source.
+		FramePassDependenciesMap outputTransitions;
+		// All transitions.
+		AttachmentTransitionArray transitions;
 		builder::buildPassAttachDependencies( m_passes
-			, m_inputTransitions
-			, m_outputTransitions
-			, m_transitions );
-		m_nodes = builder::buildGraph( m_root
-			, m_transitions );
-		m_imageAliases = builder::optimiseImages( m_images
-			, m_inputTransitions
-			, m_root );
-		m_imageViewAliases = builder::optimiseImageViews( m_imageViews
-			, m_inputTransitions
-			, m_root );
+			, inputTransitions
+			, outputTransitions
+			, transitions );
+		RootNode root{ m_name };
+		auto nodes = builder::buildGraph( root
+			, transitions );
+		ImageMemoryMap images;
+		ImageViewMap imageViews;
+		return std::make_unique< RunnableGraph >( *this
+			, std::move( inputTransitions )
+			, std::move( outputTransitions )
+			, std::move( transitions )
+			, std::move( nodes )
+			, std::move( root )
+			, std::move( context ) );
 	}
 
 	ImageId FrameGraph::createImage( ImageData const & img )
@@ -92,6 +103,24 @@ namespace crg
 		}
 
 		return result;
+	}
+
+	void FrameGraph::setFinalLayout( ImageViewId view
+		, VkImageLayout layout )
+	{
+		m_finalLayouts[view] = layout;
+	}
+
+	VkImageLayout FrameGraph::getFinalLayout( ImageViewId view )const
+	{
+		auto it = m_finalLayouts.find( view );
+
+		if ( it == m_finalLayouts.end() )
+		{
+			return VK_IMAGE_LAYOUT_UNDEFINED;
+		}
+
+		return it->second;
 	}
 
 	VkExtent3D getExtent( ImageId const & image )

@@ -107,6 +107,17 @@ namespace
 	{
 	}
 
+	crg::GraphContext getContext()
+	{
+		return crg::GraphContext{ VK_NULL_HANDLE
+			, VK_NULL_HANDLE
+			, nullptr
+			, VkPhysicalDeviceMemoryProperties{}
+			, VkPhysicalDeviceProperties{}
+			, false
+			, nullptr };
+	}
+
 	void checkOutputColourIsShaderReadOnly( test::TestCounts & testCounts
 		, crg::FramePass const & pass
 		, crg::RunnableGraph const & graph )
@@ -134,11 +145,19 @@ namespace
 	{
 		testBegin( "testNoPass" );
 		crg::FrameGraph graph{ testCounts.testName };
-		checkThrow( graph.compile() );
+		checkThrow( graph.compile( getContext() ) );
 
 		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		auto & pass = graph.createPass( "pass1C", crg::RunnablePassCreator{} );
+		auto & pass = graph.createPass( "pass1C"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass.addOutputColourView( rtv );
 
 		testEnd();
@@ -150,11 +169,19 @@ namespace
 		crg::FrameGraph graph{ testCounts.testName };
 		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		auto & pass = graph.createPass( "pass1C", crg::RunnablePassCreator{} );
+		auto & pass = graph.createPass( "pass1C"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass.addOutputColourView(  rtv );
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
 }
 )";
@@ -166,8 +193,24 @@ namespace
 	{
 		testBegin( "testDuplicateName" );
 		crg::FrameGraph graph{ testCounts.testName };
-		checkNoThrow( graph.createPass( "pass1C", crg::RunnablePassCreator{} ) );
-		checkThrow( graph.createPass( "pass1C", crg::RunnablePassCreator{} ) );
+		checkNoThrow( graph.createPass( "pass1C"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} ) );
+		checkThrow( graph.createPass( "pass1C"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} ) );
 		testEnd();
 	}
 
@@ -177,19 +220,35 @@ namespace
 		crg::FrameGraph graph{ testCounts.testName };
 		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		auto & pass1 = graph.createPass( "pass1C", crg::RunnablePassCreator{} );
+		auto & pass1 = graph.createPass( "pass1C"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass1.addOutputColourView( rtv );
 
 		auto out = graph.createImage( test::createImage( "out", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto outv = graph.createView( test::createView( "outv", out ) );
-		auto & pass2 = graph.createPass( "pass2C", crg::RunnablePassCreator{} );
+		auto & pass2 = graph.createPass( "pass2C"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass2.addDependency( pass1 );
 		pass2.addSampledView( rtv, 0u );
 		pass2.addOutputColourView( outv );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\npass2CrtvSpl" -> "pass2C" [ label="rtv" ];
     "\nTransition to\npass2CrtvSpl" [ shape=square ];
@@ -206,26 +265,50 @@ namespace
 		crg::FrameGraph graph{ testCounts.testName };
 		auto d0 = graph.createImage( test::createImage( "d0", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
-		auto & pass0 = graph.createPass( "pass0", crg::RunnablePassCreator{} );
+		auto & pass0 = graph.createPass( "pass0"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass0.addOutputColourView( d0v );
 
 		auto d1 = graph.createImage( test::createImage( "d1", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( "d1v", d1 ) );
-		auto & pass1 = graph.createPass( "pass1", crg::RunnablePassCreator{} );
+		auto & pass1 = graph.createPass( "pass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass1.addDependency( pass0 );
 		pass1.addSampledView( d0v, 0u );
 		pass1.addOutputColourView( d1v );
 
 		auto d2 = graph.createImage( test::createImage( "d2", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( "d2v", d2 ) );
-		auto & pass2 = graph.createPass( "pass2", crg::RunnablePassCreator{} );
+		auto & pass2 = graph.createPass( "pass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass2.addDependency( pass1 );
 		pass2.addSampledView( d1v, 0u );
 		pass2.addOutputColourView( d2v );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\npass1d0vSpl" -> "pass1" [ label="d0v" ];
     "\nTransition to\npass1d0vSpl" [ shape=square ];
@@ -247,14 +330,30 @@ namespace
 		auto dstv1 = graph.createView( test::createView( "dstv1", d ) );
 		auto d0 = graph.createImage( test::createImage( "d0", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
-		auto & pass0 = graph.createPass( "pass0", crg::RunnablePassCreator{} );
+		auto & pass0 = graph.createPass( "pass0"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass0.addOutputDepthView( dstv1 );
 		pass0.addOutputColourView( d0v );
 
 		auto dstv2 = graph.createView( test::createView( "dstv2", d ) );
 		auto d1 = graph.createImage( test::createImage( "d1", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d1v = graph.createView( test::createView( "d1v", d1 ) );
-		auto & pass1 = graph.createPass( "pass1", crg::RunnablePassCreator{} );
+		auto & pass1 = graph.createPass( "pass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass1.addDependency( pass0 );
 		pass1.addSampledView( d0v, 0 );
 		pass1.addOutputDepthView( dstv2 );
@@ -262,14 +361,22 @@ namespace
 
 		auto d2 = graph.createImage( test::createImage( "d2", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d2v = graph.createView( test::createView( "d2v", d2 ) );
-		auto & pass2 = graph.createPass( "pass2", crg::RunnablePassCreator{} );
+		auto & pass2 = graph.createPass( "pass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass2.addDependency( pass1 );
 		pass2.addSampledView( d1v, 0 );
 		pass2.addOutputColourView( d2v );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\npass1d0vSpl" -> "pass1" [ label="d0v" ];
     "\nTransition to\npass1d0vSpl" [ shape=square ];
@@ -290,19 +397,35 @@ namespace
 		auto lp = graph.createImage( test::createImage( "lp", VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
 		auto m0v = graph.createView( test::createView( "m0v", lp, 0u ) );
 		auto m1v = graph.createView( test::createView( "m1v", lp, 1u ) );
-		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass1.addSampledView( m0v, 0 );
 		ssaoMinifyPass1.addOutputColourView( m1v );
 
 		auto m2v = graph.createView( test::createView( "m2v", lp, 2u ) );
-		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass2.addDependency( ssaoMinifyPass1 );
 		ssaoMinifyPass2.addSampledView( m1v, 0 );
 		ssaoMinifyPass2.addOutputColourView( m2v );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
     "\nTransition to\nssaoMinifyPass2m1vSpl" [ shape=square ];
@@ -320,25 +443,49 @@ namespace
 		auto lp = graph.createImage( test::createImage( "lp", VK_FORMAT_R32G32B32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( "m0v", lp, VK_FORMAT_R32G32B32_SFLOAT, 0u ) );
 		auto m1v = graph.createView( test::createView( "m1v", lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
-		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass1.addSampledView( m0v, 0 );
 		ssaoMinifyPass1.addOutputColourView( m1v );
 
 		auto m2v = graph.createView( test::createView( "m2v", lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
-		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass2.addDependency( ssaoMinifyPass1 );
 		ssaoMinifyPass2.addSampledView( m1v, 0 );
 		ssaoMinifyPass2.addOutputColourView( m2v );
 
 		auto m3v = graph.createView( test::createView( "m3v", lp, VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
-		auto & ssaoMinifyPass3 = graph.createPass( "ssaoMinifyPass3", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass3 = graph.createPass( "ssaoMinifyPass3"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass3.addDependency( ssaoMinifyPass2 );
 		ssaoMinifyPass3.addSampledView( m2v, 0 );
 		ssaoMinifyPass3.addOutputColourView( m3v );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
     "\nTransition to\nssaoMinifyPass2m1vSpl" [ shape=square ];
@@ -360,16 +507,32 @@ namespace
 		auto av = graph.createView( test::createView( "av", a, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto b = graph.createImage( test::createImage( "b", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & pass1 = graph.createPass( "pass1", crg::RunnablePassCreator{} );
+		auto & pass1 = graph.createPass( "pass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass1.addSampledView( bv, 0 );
 		pass1.addOutputColourView( av );
 
-		auto & pass2 = graph.createPass( "pass2", crg::RunnablePassCreator{} );
+		auto & pass2 = graph.createPass( "pass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass2.addDependency( pass1 );
 		pass2.addSampledView( av, 0 );
 		pass2.addOutputColourView( bv );
 
-		checkNoThrow( graph.compile() );
+		checkNoThrow( graph.compile( getContext() ) );
 		testEnd();
 	}
 
@@ -379,22 +542,46 @@ namespace
 		crg::FrameGraph graph{ testCounts.testName };
 		auto b = graph.createImage( test::createImage( "b", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & pass0 = graph.createPass( "pass0", crg::RunnablePassCreator{} );
+		auto & pass0 = graph.createPass( "pass0"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass0.addOutputColourView( bv );
 
 		auto a = graph.createImage( test::createImage( "a", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( "av", a, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & pass1 = graph.createPass( "pass1", crg::RunnablePassCreator{} );
+		auto & pass1 = graph.createPass( "pass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass1.addDependency( pass0 );
 		pass1.addSampledView( bv, 0 );
 		pass1.addOutputColourView( av );
 
-		auto & pass2 = graph.createPass( "pass2", crg::RunnablePassCreator{} );
+		auto & pass2 = graph.createPass( "pass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass2.addDependency( pass1 );
 		pass2.addSampledView( av, 0 );
 		pass2.addOutputColourView( bv );
 
-        checkNoThrow( graph.compile() );
+        checkNoThrow( graph.compile( getContext() ) );
 		testEnd();
 	}
 
@@ -404,32 +591,64 @@ namespace
 		crg::FrameGraph graph{ testCounts.testName };
 		auto c = graph.createImage( test::createImage( "c", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( "cv", c, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & pass0 = graph.createPass( "pass0", crg::RunnablePassCreator{} );
+		auto & pass0 = graph.createPass( "pass0"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass0.addOutputColourView( cv );
 
 		auto a = graph.createImage( test::createImage( "a", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( "av", a, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto b = graph.createImage( test::createImage( "b", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & pass1 = graph.createPass( "pass1", crg::RunnablePassCreator{} );
+		auto & pass1 = graph.createPass( "pass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass1.addDependency( pass0 );
 		pass1.addSampledView( bv, 0 );
 		pass1.addSampledView( cv, 1 );
 		pass1.addOutputColourView( av );
 
-		auto & pass2 = graph.createPass( "pass2", crg::RunnablePassCreator{} );
+		auto & pass2 = graph.createPass( "pass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass2.addDependency( pass1 );
 		pass2.addSampledView( av, 0 );
 		pass2.addSampledView( cv, 1 );
 		pass2.addOutputColourView( bv );
 
-		auto & pass3 = graph.createPass( "pass3", crg::RunnablePassCreator{} );
+		auto & pass3 = graph.createPass( "pass3"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		pass3.addDependency( pass2 );
 		pass3.addSampledView( cv, 0 );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\npass1cvSpl" -> "pass1" [ label="cv" ];
     "\nTransition to\npass1cvSpl" [ shape=square ];
@@ -451,25 +670,57 @@ namespace
 	{
 		auto lp = graph.createImage( test::createImage( "lp", VK_FORMAT_R32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( "m0v", lp, VK_FORMAT_R32_SFLOAT, 0u ) );
-		auto & ssaoLinearisePass = graph.createPass( "ssaoLinearisePass", crg::RunnablePassCreator{} );
+		auto & ssaoLinearisePass = graph.createPass( "ssaoLinearisePass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoLinearisePass.addDependency( previous );
 		ssaoLinearisePass.addSampledView( dsv, 0 );
 		ssaoLinearisePass.addOutputColourView( m0v );
 
 		auto m1v = graph.createView( test::createView( "m1v", lp, VK_FORMAT_R32_SFLOAT, 1u ) );
-		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass1.addDependency( ssaoLinearisePass );
 		ssaoMinifyPass1.addSampledView( m0v, 0 );
 		ssaoMinifyPass1.addOutputColourView( m1v );
 
 		auto m2v = graph.createView( test::createView( "m2v", lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
-		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass2.addDependency( ssaoMinifyPass1 );
 		ssaoMinifyPass2.addSampledView( m1v, 0 );
 		ssaoMinifyPass2.addOutputColourView( m2v );
 
 		auto m3v = graph.createView( test::createView( "m3v", lp, VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
-		auto & ssaoMinifyPass3 = graph.createPass( "ssaoMinifyPass3", crg::RunnablePassCreator{} );
+		auto & ssaoMinifyPass3 = graph.createPass( "ssaoMinifyPass3"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoMinifyPass3.addDependency( ssaoMinifyPass2 );
 		ssaoMinifyPass3.addSampledView( m2v, 0 );
 		ssaoMinifyPass3.addOutputColourView( m3v );
@@ -477,7 +728,15 @@ namespace
 		auto mv = graph.createView( test::createView("mv",  lp, VK_FORMAT_R32_SFLOAT, 0u, 4u ) );
 		auto rs = graph.createImage( test::createImage( "rs", VK_FORMAT_R32_SFLOAT ) );
 		auto rsv = graph.createView( test::createView( "rsv", rs, VK_FORMAT_R32_SFLOAT ) );
-		auto & ssaoRawPass = graph.createPass( "ssaoRawPass", crg::RunnablePassCreator{} );
+		auto & ssaoRawPass = graph.createPass( "ssaoRawPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoRawPass.addDependency( ssaoMinifyPass3 );
 		ssaoRawPass.addSampledView( mv, 0 );
 		ssaoRawPass.addSampledView( m3v, 1 );
@@ -485,7 +744,15 @@ namespace
 
 		auto bl = graph.createImage( test::createImage( "b1", VK_FORMAT_R32_SFLOAT ) );
 		auto blv = graph.createView( test::createView( "b1v", bl, VK_FORMAT_R32_SFLOAT ) );
-		auto & ssaoBlurPass = graph.createPass( "ssaoBlurPass", crg::RunnablePassCreator{} );
+		auto & ssaoBlurPass = graph.createPass( "ssaoBlurPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ssaoBlurPass.addDependency( ssaoRawPass );
 		ssaoBlurPass.addSampledView( rsv, 0 );
 		ssaoBlurPass.addSampledView( m3v, 1 );
@@ -510,7 +777,15 @@ namespace
 		auto d3v = graph.createView( test::createView( "d3v", d3, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4 = graph.createImage( test::createImage( "d4", VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4v = graph.createView( test::createView( "d4v", d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto & geometryPass = graph.createPass( "geometryPass", crg::RunnablePassCreator{} );
+		auto & geometryPass = graph.createPass( "geometryPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		geometryPass.addOutputColourView( d1v );
 		geometryPass.addOutputColourView( d2v );
 		geometryPass.addOutputColourView( d3v );
@@ -527,7 +802,15 @@ namespace
 
 		auto of = graph.createImage( test::createImage( "of", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto ofv = graph.createView( test::createView( "ofv", of, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & ambientPass = graph.createPass( "ambientPass", crg::RunnablePassCreator{} );
+		auto & ambientPass = graph.createPass( "ambientPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		ambientPass.addDependency( *ssaoResult.second );
 		ambientPass.addSampledView( dsv, 0 );
 		ambientPass.addSampledView( d1v, 1 );
@@ -537,9 +820,9 @@ namespace
 		ambientPass.addSampledView( ssaoResult.first, 5 );
 		ambientPass.addOutputColourView( ofv );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
     "\nTransition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
     "\nTransition to\nambientPassb1vSpl" [ shape=square ];
@@ -602,47 +885,127 @@ namespace
 		auto bl2v = graph.createView( test::createView( "bl2v", bl, VK_FORMAT_R32G32B32A32_SFLOAT, 2u ) );
 		auto bl3v = graph.createView( test::createView( "bl3v", bl, VK_FORMAT_R32G32B32A32_SFLOAT, 3u ) );
 
-		auto & hiPass = graph.createPass( "hiPass", crg::RunnablePassCreator{} );
+		auto & hiPass = graph.createPass( "hiPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		hiPass.addSampledView( scenev, 0u );
 		hiPass.addOutputColourView( hiPass.mergeViews( { hi0v, hi1v, hi2v, hi3v } ) );
 
-		auto & blurPass0X = graph.createPass( "blurPass0X", crg::RunnablePassCreator{} );
+		auto & blurPass0X = graph.createPass( "blurPass0X"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass0X.addDependency( hiPass );
 		blurPass0X.addSampledView( hi0v, 0u );
 		blurPass0X.addOutputColourView( bl0v );
-		auto & blurPass0Y = graph.createPass( "blurPass0Y", crg::RunnablePassCreator{} );
+		auto & blurPass0Y = graph.createPass( "blurPass0Y"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass0Y.addDependency( blurPass0X );
 		blurPass0Y.addSampledView( bl0v, 0u );
 		blurPass0Y.addOutputColourView( hi0v );
 
-		auto & blurPass1X = graph.createPass( "blurPass1X", crg::RunnablePassCreator{} );
+		auto & blurPass1X = graph.createPass( "blurPass1X"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass1X.addDependency( hiPass );
 		blurPass1X.addSampledView( hi1v, 0u );
 		blurPass1X.addOutputColourView( bl1v );
-		auto & blurPass1Y = graph.createPass( "blurPass1Y", crg::RunnablePassCreator{} );
+		auto & blurPass1Y = graph.createPass( "blurPass1Y"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass1Y.addDependency( blurPass1X );
 		blurPass1Y.addSampledView( bl1v, 0u );
 		blurPass1Y.addOutputColourView( hi1v );
 
-		auto & blurPass2X = graph.createPass( "blurPass2X", crg::RunnablePassCreator{} );
+		auto & blurPass2X = graph.createPass( "blurPass2X"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass2X.addDependency( hiPass );
 		blurPass2X.addSampledView( hi2v, 0u );
 		blurPass2X.addOutputColourView( bl2v );
-		auto & blurPass2Y = graph.createPass( "blurPass2Y", crg::RunnablePassCreator{} );
+		auto & blurPass2Y = graph.createPass( "blurPass2Y"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass2Y.addDependency( blurPass2X );
 		blurPass2Y.addSampledView( bl2v, 0u );
 		blurPass2Y.addOutputColourView( hi2v );
 
-		auto & blurPass3X = graph.createPass( "blurPass3X", crg::RunnablePassCreator{} );
+		auto & blurPass3X = graph.createPass( "blurPass3X"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass3X.addDependency( hiPass );
 		blurPass3X.addSampledView( hi3v, 0u );
 		blurPass3X.addOutputColourView( bl3v );
-		auto & blurPass3Y = graph.createPass( "blurPass3Y", crg::RunnablePassCreator{} );
+		auto & blurPass3Y = graph.createPass( "blurPass3Y"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		blurPass3Y.addDependency( blurPass3X );
 		blurPass3Y.addSampledView( bl3v, 0u );
 		blurPass3Y.addOutputColourView( hi3v );
 
-		auto & combinePass = graph.createPass( "combinePass", crg::RunnablePassCreator{} );
+		auto & combinePass = graph.createPass( "combinePass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		combinePass.addDependency( blurPass0Y );
 		combinePass.addDependency( blurPass1Y );
 		combinePass.addDependency( blurPass2Y );
@@ -651,9 +1014,9 @@ namespace
 		combinePass.addSampledView( combinePass.mergeViews( { hi0v, hi1v, hi2v, hi3v } ), 1u );
 		combinePass.addOutputColourView( outputv );
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		testEnd();
 	}
 
@@ -673,7 +1036,15 @@ namespace
 		auto d3v = graph.createView( test::createView( "d3v", d3, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4 = graph.createImage( test::createImage( "d4", VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto d4v = graph.createView( test::createView( "d4v", d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto & geometryPass = graph.createPass( "geometryPass", crg::RunnablePassCreator{} );
+		auto & geometryPass = graph.createPass( "geometryPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 
 		if ( previous )
 		{
@@ -691,7 +1062,15 @@ namespace
 		auto dfv = graph.createView( test::createView( "dfv", df, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto sp = graph.createImage( test::createImage( "sp", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto spv = graph.createView( test::createView( "spv", sp, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & lightingPass = graph.createPass( "lightingPass", crg::RunnablePassCreator{} );
+		auto & lightingPass = graph.createPass( "lightingPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		lightingPass.addDependency( geometryPass );
 		lightingPass.addSampledView( dtv, 0 );
 		lightingPass.addSampledView( d1v, 1 );
@@ -711,7 +1090,15 @@ namespace
 				, dsv
 				, d2v
 				, graph );
-			auto & ambientPass = graph.createPass( "ambientPass", crg::RunnablePassCreator{} );
+			auto & ambientPass = graph.createPass( "ambientPass"
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
 			ambientPass.addDependency( *ssaoResult.second );
 			ambientPass.addDependency( lightingPass );
 			ambientPass.addSampledView( dsv, 0 );
@@ -727,7 +1114,15 @@ namespace
 		}
 		else
 		{
-			auto & ambientPass = graph.createPass( "ambientPass", crg::RunnablePassCreator{} );
+			auto & ambientPass = graph.createPass( "ambientPass"
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
 			ambientPass.addDependency( lightingPass );
 			ambientPass.addSampledView( dsv, 0 );
 			ambientPass.addSampledView( d1v, 1 );
@@ -752,7 +1147,15 @@ namespace
 		auto av = graph.createView( test::createView( "av", a, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto r = graph.createImage( test::createImage( "r", VK_FORMAT_R16_SFLOAT ) );
 		auto rv = graph.createView( test::createView( "rv", r, VK_FORMAT_R16_SFLOAT ) );
-		auto & accumulationPass = graph.createPass( "accumulationPass", crg::RunnablePassCreator{} );
+		auto & accumulationPass = graph.createPass( "accumulationPass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 
 		if ( previous )
 		{
@@ -766,7 +1169,15 @@ namespace
 
 		auto c = graph.createImage( test::createImage( "c", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( "cv", c, VK_FORMAT_R32G32B32_SFLOAT ) );
-		auto & combinePass = graph.createPass( "combinePass", crg::RunnablePassCreator{} );
+		auto & combinePass = graph.createPass( "combinePass"
+			, [&testCounts]( crg::FramePass const & pass
+				, crg::GraphContext const & context
+				, crg::RunnableGraph & graph )
+			{
+				return createDummy( testCounts
+					, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+					, checkDummy );
+			} );
 		combinePass.addDependency( accumulationPass );
 		combinePass.addSampledView( dsv, 0u );
 		combinePass.addSampledView( av, 1u );
@@ -794,7 +1205,15 @@ namespace
 
 		if constexpr ( EnableDepthPrepass )
 		{
-			auto & depthPrepass = graph.createPass( "depthPrepass", crg::RunnablePassCreator{} );
+			auto & depthPrepass = graph.createPass( "depthPrepass"
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
 			depthPrepass.addOutputDepthView( dtv );
 			previous = &depthPrepass;
 		}
@@ -822,7 +1241,15 @@ namespace
 					, dtv
 					, vv
 					, graph );
-				auto & finalCombinePass = graph.createPass( "finalCombinePass", crg::RunnablePassCreator{} );
+				auto & finalCombinePass = graph.createPass( "finalCombinePass"
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkDummy );
+					} );
 				finalCombinePass.addDependency( *wbcsv.second );
 				finalCombinePass.addSampledView( dcs.first, 0 );
 				finalCombinePass.addSampledView( wbcsv.first, 1 );
@@ -831,7 +1258,15 @@ namespace
 			}
 			else
 			{
-				auto & finalCombinePass = graph.createPass( "finalCombinePass", crg::RunnablePassCreator{} );
+				auto & finalCombinePass = graph.createPass( "finalCombinePass"
+					, [&testCounts]( crg::FramePass const & pass
+						, crg::GraphContext const & context
+						, crg::RunnableGraph & graph )
+					{
+						return createDummy( testCounts
+							, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+							, checkDummy );
+					} );
 				finalCombinePass.addDependency( *dcs.second );
 				finalCombinePass.addSampledView( dcs.first, 0 );
 				finalCombinePass.addSampledView( vv, 1 );
@@ -849,7 +1284,15 @@ namespace
 				, dtv
 				, vv
 				, graph );
-			auto & finalCombinePass = graph.createPass( "finalCombinePass", crg::RunnablePassCreator{} );
+			auto & finalCombinePass = graph.createPass( "finalCombinePass"
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
 			finalCombinePass.addDependency( *wbcsv.second );
 			finalCombinePass.addSampledView( wbcsv.first, 0 );
 			finalCombinePass.addSampledView( vv, 1 );
@@ -857,7 +1300,15 @@ namespace
 		}
 		else
 		{
-			auto & finalCombinePass = graph.createPass( "finalCombinePass", crg::RunnablePassCreator{} );
+			auto & finalCombinePass = graph.createPass( "finalCombinePass"
+				, [&testCounts]( crg::FramePass const & pass
+					, crg::GraphContext const & context
+					, crg::RunnableGraph & graph )
+				{
+					return createDummy( testCounts
+						, pass, context, graph, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
+						, checkDummy );
+				} );
 
 			if ( previous )
 			{
@@ -869,9 +1320,9 @@ namespace
 		}
 		
 
-		checkNoThrow( graph.compile() );
+		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
-		test::display( testCounts, stream, graph );
+		test::display( testCounts, stream, *runnable );
 		std::string ref;
 
 		if constexpr ( EnableDepthPrepass )
@@ -1686,14 +2137,7 @@ namespace
 		transparentPass.addInOutDepthView( depthv );
 		transparentPass.addInOutColourView( colourv );
 
-		crg::RunnableGraph runnable{ std::move( graph )
-			, crg::GraphContext{ VK_NULL_HANDLE
-				, VK_NULL_HANDLE
-				, nullptr
-				, VkPhysicalDeviceMemoryProperties{}
-				, VkPhysicalDeviceProperties{}
-				, false
-				, nullptr } };
+		auto runnable = graph.compile( getContext() );
 		testEnd();
 	}
 }

@@ -26,9 +26,9 @@ namespace test
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
-		, crg::FrameGraph & value );
+		, crg::RunnableGraph & value );
 	void display( TestCounts & testCounts
-		, crg::FrameGraph & value );
+		, crg::RunnableGraph & value );
 
 	template< typename TypeT >
 	crg::Id< TypeT > makeId( TypeT const & data )

@@ -14,8 +14,7 @@ namespace crg
 {
 	namespace
 	{
-
-		void display( FrameGraph & value )
+		void display( RunnableGraph & value )
 		{
 			{
 				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
@@ -325,16 +324,25 @@ namespace crg
 		};
 	}
 
-	RunnableGraph::RunnableGraph( FrameGraph graph
+	RunnableGraph::RunnableGraph( FrameGraph & graph
+		, FramePassDependenciesMap inputTransitions
+		, FramePassDependenciesMap outputTransitions
+		, AttachmentTransitionArray transitions
+		, GraphNodePtrArray nodes
+		, RootNode rootNode
 		, GraphContext context )
-		: m_graph{ std::move( graph ) }
+		: m_graph{ graph }
+		, m_inputTransitions{ std::move( inputTransitions ) }
+		, m_outputTransitions{ std::move( outputTransitions ) }
+		, m_transitions{ std::move( transitions ) }
+		, m_nodes{ std::move( nodes ) }
+		, m_rootNode{ std::move( rootNode ) }
 		, m_context{ std::move( context ) }
 	{
-		m_graph.compile();
-		display( m_graph );
+		display( *this );
 		doCreateImages();
 		doCreateImageViews();
-		auto dfsNodes = DfsVisitor::submit( m_graph.getGraph() );
+		auto dfsNodes = DfsVisitor::submit( getGraph() );
 
 		for ( auto & node : dfsNodes )
 		{
@@ -671,8 +679,8 @@ namespace crg
 		, ImageViewId view )const
 	{
 		VkImageLayout result{ VK_IMAGE_LAYOUT_UNDEFINED };
-		auto passIt = m_graph.getOutputTransitions().find( &pass );
-		assert( passIt != m_graph.getOutputTransitions().end() );
+		auto passIt = m_outputTransitions.find( &pass );
+		assert( passIt != m_outputTransitions.end() );
 		auto it = std::find_if( passIt->second.begin()
 			, passIt->second.end()
 			, [&view]( AttachmentTransition const & lookup )
@@ -692,37 +700,42 @@ namespace crg
 		}
 		else
 		{
-			passIt = m_graph.getInputTransitions().find( &pass );
-			assert( passIt != m_graph.getInputTransitions().end() );
-			auto it = std::find_if( passIt->second.begin()
-				, passIt->second.end()
-				, [&view]( AttachmentTransition const & lookup )
-				{
-					return view == lookup.view
-						|| view.data->source.end() != std::find( view.data->source.begin()
-							, view.data->source.end()
-							, lookup.view )
-						|| lookup.view.data->source.end() != std::find( lookup.view.data->source.begin()
-							, lookup.view.data->source.end()
-							, view );
-				} );
+			result = m_graph.getFinalLayout( view );
 
-			if ( it == passIt->second.end() )
+			if ( result == VK_IMAGE_LAYOUT_UNDEFINED )
 			{
-				result = VK_IMAGE_LAYOUT_UNDEFINED;
-			}
-			else if ( it->inputAttach.getFlags() != 0u )
-			{
-				result = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-			}
-			else if ( it->outputAttach.isColourClearing()
-				|| it->outputAttach.isDepthClearing() )
-			{
-				result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			}
-			else
-			{
-				result = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+				passIt = m_inputTransitions.find( &pass );
+				assert( passIt != m_inputTransitions.end() );
+				auto it = std::find_if( passIt->second.begin()
+					, passIt->second.end()
+					, [&view]( AttachmentTransition const & lookup )
+					{
+						return view == lookup.view
+							|| view.data->source.end() != std::find( view.data->source.begin()
+								, view.data->source.end()
+								, lookup.view )
+							|| lookup.view.data->source.end() != std::find( lookup.view.data->source.begin()
+								, lookup.view.data->source.end()
+								, view );
+					} );
+
+				if ( it == passIt->second.end() )
+				{
+					result = VK_IMAGE_LAYOUT_UNDEFINED;
+				}
+				else if ( it->inputAttach.getFlags() != 0u )
+				{
+					result = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+				}
+				else if ( it->outputAttach.isColourClearing()
+					|| it->outputAttach.isDepthClearing() )
+				{
+					result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				}
+				else
+				{
+					result = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+				}
 			}
 		}
 
@@ -730,7 +743,8 @@ namespace crg
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, ImageViewId const & view
+		, ImageId const & image
+		, VkImageSubresourceRange const & subresourceRange
 		, VkImageLayout currentLayout
 		, VkImageLayout wantedLayout )
 	{
@@ -749,10 +763,10 @@ namespace crg
 				, wantedLayout
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
-				, getImage( view.data->image )
+				, getImage( image )
 				, adaptRange( m_context
-					, view.data->info.format
-					, view.data->info.subresourceRange ) };
+					, image.data->info.format
+					, subresourceRange ) };
 			m_context.vkCmdPipelineBarrier( commandBuffer
 				, getStageMask( currentLayout )
 				, getStageMask( wantedLayout )
@@ -764,6 +778,18 @@ namespace crg
 				, 1u
 				, &barrier );
 		}
+	}
+
+	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
+		, ImageViewId const & view
+		, VkImageLayout currentLayout
+		, VkImageLayout wantedLayout )
+	{
+		memoryBarrier( commandBuffer
+			, view.data->image
+			, view.data->info.subresourceRange
+			, currentLayout
+			, wantedLayout );
 	}
 
 	void RunnableGraph::doCreateImages()
