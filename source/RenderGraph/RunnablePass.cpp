@@ -351,12 +351,32 @@ namespace crg
 			transition.toLayout = transition.neededLayout;
 		}
 
-		m_transitions.emplace( view, transition );
+		auto ires = m_transitions.emplace( view, transition );
+
+		if ( !ires.second )
+		{
+			ires.first->second = transition;
+		}
+
 		m_graph.updateCurrentLayout( view, transition.toLayout );
 
 		for ( auto & source : view.data->source )
 		{
 			doRegisterTransition( source, transition );
+		}
+	}
+
+	void RunnablePass::doUpdateFinalLayout( ImageViewId view
+		, VkImageLayout layout )
+	{
+		auto it = m_transitions.find( view );
+		assert( it != m_transitions.end() );
+		it->second.toLayout = layout;
+		m_graph.updateCurrentLayout( view, it->second.toLayout );
+
+		for ( auto & source : view.data->source )
+		{
+			doUpdateFinalLayout( source, layout );
 		}
 	}
 
