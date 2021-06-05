@@ -37,7 +37,7 @@ namespace test
 
 		void displayPasses( TestCounts & testCounts
 			, std::ostream & stream
-			, crg::FrameGraph & value )
+			, crg::RunnableGraph & value )
 		{
 			crg::dot::displayPasses( stream, value );
 			std::ofstream file{ testCounts.testName + ".dot" };
@@ -46,7 +46,7 @@ namespace test
 
 		void displayTransitions( TestCounts & testCounts
 			, std::ostream & stream
-			, crg::FrameGraph & value )
+			, crg::RunnableGraph & value )
 		{
 			crg::dot::displayTransitions( stream, value );
 			std::ofstream file{ testCounts.testName + "_transitions.dot" };
@@ -139,7 +139,7 @@ namespace test
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
-		, crg::FrameGraph & value )
+		, crg::RunnableGraph & value )
 	{
 		std::stringstream trans;
 		displayTransitions( testCounts, trans, value );
@@ -147,7 +147,7 @@ namespace test
 	}
 
 	void display( TestCounts & testCounts
-		, crg::FrameGraph & value )
+		, crg::RunnableGraph & value )
 	{
 		display( testCounts, std::cout, value );
 	}

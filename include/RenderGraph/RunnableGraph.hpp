@@ -12,10 +12,19 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
+	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
+	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
+
 	class RunnableGraph
 	{
 	public:
-		CRG_API RunnableGraph( FrameGraph graph
+		CRG_API RunnableGraph( FrameGraph & graph
+			, FramePassDependenciesMap inputTransitions
+			, FramePassDependenciesMap outputTransitions
+			, AttachmentTransitionArray transitions
+			, GraphNodePtrArray nodes
+			, RootNode rootNode
 			, GraphContext context );
 		CRG_API ~RunnableGraph();
 
@@ -46,9 +55,24 @@ namespace crg
 		CRG_API VkImageLayout getOutputLayout( crg::FramePass const & pass
 			, ImageViewId view )const;
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, ImageId const & image
+			, VkImageSubresourceRange const & subresourceRange
+			, VkImageLayout currentLayout
+			, VkImageLayout wantedLayout );
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
 			, VkImageLayout currentLayout
 			, VkImageLayout wantedLayout );
+
+		ConstGraphAdjacentNode getGraph()const
+		{
+			return &m_rootNode;
+		}
+
+		AttachmentTransitionArray const & getTransitions()const
+		{
+			return m_transitions;
+		}
 
 	private:
 		void doCreateImages();
@@ -56,7 +80,12 @@ namespace crg
 		void doCreateImageViews();
 
 	private:
-		FrameGraph m_graph;
+		FrameGraph & m_graph;
+		FramePassDependenciesMap m_inputTransitions;
+		FramePassDependenciesMap m_outputTransitions;
+		AttachmentTransitionArray m_transitions;
+		GraphNodePtrArray m_nodes;
+		RootNode m_rootNode;
 		GraphContext m_context;
 		std::vector< RunnablePassPtr > m_passes;
 		ImageMemoryMap m_images;

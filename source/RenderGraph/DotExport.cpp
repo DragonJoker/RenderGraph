@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/FrameGraph.hpp"
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/GraphVisitor.hpp"
+#include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
 #include <fstream>
@@ -38,12 +39,11 @@ namespace crg::dot
 				, AttachmentTransitionArray const & transitions )
 			{
 				stream << "digraph \"Transitions\" {\n";
-				stream << "  rankdir = \"LR\"";
 
 				for ( auto & transition : transitions )
 				{
-					std::string name{ "Trans. to\\n" + transition.inputAttach.name };
-					stream << "    \"" << name << "\" [ shape=square ];\n";
+					std::string name{ transition.outputAttach.name + "\\ntransition to\\n" + transition.inputAttach.name };
+					stream << "    \"" << name << "\" [ shape=box ];\n";
 
 					if ( transition.outputAttach.pass )
 					{
@@ -90,8 +90,8 @@ namespace crg::dot
 
 				for ( auto & transition : transitions )
 				{
-					std::string name{ "\\nTransition to\\n" + transition.inputAttach.name };
-					m_stream << "    \"" << name << "\" [ shape=square ];\n";
+					std::string name{ "Transition to\\n" + transition.inputAttach.name };
+					m_stream << "    \"" << name << "\" [ shape=box ];\n";
 					m_stream << "    \"" << lhs->getName() << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 					m_stream << "    \"" << name << "\" -> \"" << rhs->getName() << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 				}
@@ -139,13 +139,13 @@ namespace crg::dot
 	}
 
 	void displayPasses( std::ostream & stream
-		, FrameGraph const & value )
+		, RunnableGraph const & value )
 	{
 		DotOutVisitor::submit( stream, value.getGraph() );
 	}
 
 	void displayTransitions( std::ostream & stream
-		, FrameGraph const & value )
+		, RunnableGraph const & value )
 	{
 		DotOutVisitor::submit( stream, value.getTransitions() );
 	}

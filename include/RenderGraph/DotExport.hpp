@@ -10,7 +10,7 @@ See LICENSE file in root folder.
 namespace crg::dot
 {
 	CRG_API void displayPasses( std::ostream & stream
-		, FrameGraph const & value );
+		, RunnableGraph const & value );
 	CRG_API void displayTransitions( std::ostream & stream
-		, FrameGraph const & value );
+		, RunnableGraph const & value );
 }

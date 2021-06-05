@@ -23,48 +23,21 @@ namespace crg
 		CRG_API FrameGraph( std::string name = "FrameGraph" );
 		CRG_API FramePass & createPass( std::string const & name
 			, RunnablePassCreator runnableCreator );
-		CRG_API void compile();
+		CRG_API RunnableGraphPtr compile( GraphContext context );
 		CRG_API ImageId createImage( ImageData const & img );
 		CRG_API ImageViewId createView( ImageViewData const & view );
-
-		GraphAdjacentNode getGraph()
-		{
-			return &m_root;
-		}
-
-		ConstGraphAdjacentNode getGraph()const
-		{
-			return &m_root;
-		}
-
-		AttachmentTransitionArray const & getTransitions()const
-		{
-			return m_transitions;
-		}
-
-		FramePassDependenciesMap const & getInputTransitions()const
-		{
-			return m_inputTransitions;
-		}
-
-		FramePassDependenciesMap const & getOutputTransitions()const
-		{
-			return m_outputTransitions;
-		}
+		CRG_API void setFinalLayout( ImageViewId view
+			, VkImageLayout layout );
+		CRG_API VkImageLayout getFinalLayout( ImageViewId view )const;
 
 	private:
+		std::string m_name;
 		FramePassPtrArray m_passes;
 		ImageIdDataOwnerCont m_images;
 		ImageViewIdDataOwnerCont m_imageViews;
-		GraphNodePtrArray m_nodes;
-		AttachmentTransitionArray m_transitions;
-		// Transitions for which the pass is the destination.
-		FramePassDependenciesMap m_inputTransitions;
-		// Transitions for which the pass is the source.
-		FramePassDependenciesMap m_outputTransitions;
-		RootNode m_root;
 		ImageIdAliasMap m_imageAliases;
 		ImageViewIdAliasMap m_imageViewAliases;
 		std::map< std::string, ImageViewId > m_attachViews;
+		std::map< ImageViewId, VkImageLayout > m_finalLayouts;
 	};
 }
