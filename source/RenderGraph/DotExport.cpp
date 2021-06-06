@@ -42,7 +42,7 @@ namespace crg::dot
 
 				for ( auto & transition : transitions )
 				{
-					std::string name{ transition.outputAttach.name + "\\ntransition to\\n" + transition.inputAttach.name };
+					std::string name{ transition.outputAttach.image.name + "\\ntransition to\\n" + transition.inputAttach.image.name };
 					stream << "    \"" << name << "\" [ shape=box ];\n";
 
 					if ( transition.outputAttach.pass )
@@ -84,13 +84,13 @@ namespace crg::dot
 					, transitions.end()
 					, []( AttachmentTransition const & lhs, AttachmentTransition const & rhs )
 					{
-						return lhs.outputAttach.name < rhs.outputAttach.name;
+						return lhs.outputAttach.image.name < rhs.outputAttach.image.name;
 					} );
 				uint32_t index{ 1u };
 
 				for ( auto & transition : transitions )
 				{
-					std::string name{ "Transition to\\n" + transition.inputAttach.name };
+					std::string name{ "Transition to\\n" + transition.inputAttach.image.name };
 					m_stream << "    \"" << name << "\" [ shape=box ];\n";
 					m_stream << "    \"" << lhs->getName() << "\" -> \"" << name << "\" [ label=\"" << transition.view.data->name << "\" ];\n";
 					m_stream << "    \"" << name << "\" -> \"" << rhs->getName() << "\" [ label=\"" << transition.view.data->name << "\" ];\n";

@@ -82,7 +82,23 @@ namespace crg
 		*\brief
 		*	Creates a storage buffer attachment.
 		*/
-		CRG_API void addStorageBuffer( VkBuffer buffer
+		CRG_API void addInputStorageBuffer( VkBuffer buffer
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a storage buffer attachment.
+		*/
+		CRG_API void addOutputStorageBuffer( VkBuffer buffer
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a storage buffer attachment.
+		*/
+		CRG_API void addInOutStorageBuffer( VkBuffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -522,8 +538,7 @@ namespace crg
 		FrameGraph & graph;
 		std::string name;
 		AttachmentArray images;
-		WriteDescriptorSetArray buffers;
-		WriteDescriptorSetArray bufferViews;
+		AttachmentArray buffers;
 		RunnablePassCreator runnableCreator;
 		FramePassArray depends;
 	};

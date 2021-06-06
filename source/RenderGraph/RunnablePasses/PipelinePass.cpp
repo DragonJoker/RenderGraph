@@ -136,18 +136,9 @@ namespace crg
 
 		for ( auto & uniform : m_pass.buffers )
 		{
-			m_descriptorBindings.push_back( { uniform->dstBinding
-				, uniform->descriptorType
-				, uniform->descriptorCount
-				, shaderStage
-				, nullptr } );
-		}
-
-		for ( auto & uniform : m_pass.bufferViews )
-		{
-			m_descriptorBindings.push_back( { uniform->dstBinding
-				, uniform->descriptorType
-				, uniform->descriptorCount
+			m_descriptorBindings.push_back( { uniform.binding
+				, uniform.getDescriptorType()
+				, 1u
 				, shaderStage
 				, nullptr } );
 		}
@@ -234,12 +225,7 @@ namespace crg
 
 		for ( auto & uniform : m_pass.buffers )
 		{
-			descriptorSet.writes.push_back( uniform );
-		}
-
-		for ( auto & uniform : m_pass.bufferViews )
-		{
-			descriptorSet.writes.push_back( uniform );
+			descriptorSet.writes.push_back( uniform.getBufferWrite() );
 		}
 
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
