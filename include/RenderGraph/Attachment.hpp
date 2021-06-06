@@ -81,6 +81,7 @@ namespace crg
 		*/
 		/**@{*/
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
+		CRG_API VkDescriptorType getDescriptorType()const;
 
 		FlagKind getFlags()const
 		{
@@ -148,6 +149,7 @@ namespace crg
 		/**@}*/
 
 	public:
+		std::string name{};
 		ImageViewIdArray views;
 		VkAttachmentLoadOp loadOp{};
 		VkAttachmentStoreOp storeOp{};
@@ -159,8 +161,10 @@ namespace crg
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
 
 	private:
+		CRG_API ImageAttachment();
 		CRG_API ImageAttachment( ImageViewId view );
 		CRG_API ImageAttachment( FlagKind flags
+			, std::string name
 			, ImageViewIdArray views
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -187,6 +191,101 @@ namespace crg
 
 		friend CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	};
+	/**
+	*\brief
+	*	A buffer (uniform or storage) attachment.
+	*/
+	struct BufferAttachment
+	{
+		friend struct Attachment;
+		friend struct FramePass;
+		/**
+		*\brief
+		*	The flags qualifying a buffer attachment.
+		*/
+		using FlagKind = uint16_t;
+		enum class Flag : FlagKind
+		{
+			None = 0x00,
+			Uniform = 0x01 << 0,
+			Storage = 0x01 << 1,
+			View = 0x01 << 2,
+		};
+
+		CRG_API VkDescriptorType getDescriptorType()const;
+		CRG_API WriteDescriptorSet getWrite( uint32_t binding )const;
+
+		FlagKind getFlags()const
+		{
+			return flags;
+		}
+
+		bool hasFlag( Flag flag )const
+		{
+			return Flag( flags & FlagKind( flag ) ) == flag;
+		}
+
+		bool isUniform()const
+		{
+			return hasFlag( Flag::Uniform );
+		}
+
+		bool isStorage()const
+		{
+			return hasFlag( Flag::Storage );
+		}
+
+		bool isView()const
+		{
+			return hasFlag( Flag::View );
+		}
+
+		bool isUniformView()const
+		{
+			return isUniform() && isView();
+		}
+
+		bool isStorageView()const
+		{
+			return isStorage() && isView();
+		}
+
+		VkBuffer buffer;
+		VkBufferView view;
+		VkDeviceSize offset;
+		VkDeviceSize range;
+
+	private:
+		CRG_API BufferAttachment();
+		CRG_API BufferAttachment( FlagKind flags
+			, VkBuffer buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		CRG_API BufferAttachment( FlagKind flags
+			, VkBuffer buffer
+			, VkBufferView view
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+
+		void setFlag( Flag flag, bool set )
+		{
+			if ( set )
+			{
+				flags |= FlagKind( flag );
+			}
+			else
+			{
+				flags &= ~FlagKind( flag );
+			}
+		}
+
+		FlagKind flags{};
+
+		friend CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
+	};
+	/**
+	*\brief
+	*	An attachment to a pass.
 	*/
 	struct Attachment
 	{
@@ -202,6 +301,7 @@ namespace crg
 			Input = 0x01 << 0,
 			Output = 0x01 << 1,
 			Image = 0x01 << 2,
+			Buffer = 0x01 << 3,
 		};
 		/**
 		*\name
@@ -210,6 +310,8 @@ namespace crg
 		/**@{*/
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
+		CRG_API VkDescriptorType getDescriptorType()const;
+		CRG_API WriteDescriptorSet getBufferWrite()const;
 
 		FlagKind getFlags()const
 		{
@@ -236,14 +338,34 @@ namespace crg
 			return hasFlag( Flag::Image );
 		}
 
+		bool isBuffer()const
+		{
+			return hasFlag( Flag::Buffer );
+		}
+
 		bool isUniformBuffer()const
 		{
-			return hasFlag( Flag::UniformBuffer );
+			return isBuffer() && buffer.isUniform();
+		}
+
+		bool isUniformBufferView()const
+		{
+			return isBuffer() && buffer.isUniformView();
 		}
 
 		bool isStorageBuffer()const
 		{
-			return hasFlag( Flag::StorageBuffer );
+			return isBuffer() && buffer.isStorage();
+		}
+
+		bool isStorageBufferView()const
+		{
+			return isBuffer() && buffer.isStorageView();
+		}
+
+		bool isBufferView()const
+		{
+			return isBuffer() && buffer.isView();
 		}
 
 		bool isSampled()const
@@ -394,9 +516,9 @@ namespace crg
 		*/
 		/**@[*/
 		FramePass * pass{};
-		std::string name{};
 		uint32_t binding{};
 		ImageAttachment image;
+		BufferAttachment buffer;
 		/**@}*/
 
 		CRG_API Attachment( ImageViewId view
@@ -404,9 +526,10 @@ namespace crg
 
 	private:
 		CRG_API Attachment( ImageViewId view );
-		CRG_API Attachment( ImageAttachment::FlagKind imageFlags
-			, FlagKind flags
+		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
+			, uint32_t binding
+			, ImageAttachment::FlagKind imageFlags
 			, std::string name
 			, ImageViewIdArray views
 			, VkAttachmentLoadOp loadOp
@@ -414,10 +537,24 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout
-			, uint32_t binding
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState );
+		CRG_API Attachment( FlagKind flags
+			, FramePass & pass
+			, uint32_t binding
+			, BufferAttachment::FlagKind bufferFlags
+			, VkBuffer buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		CRG_API Attachment( FlagKind flags
+			, FramePass & pass
+			, uint32_t binding
+			, BufferAttachment::FlagKind bufferFlags
+			, VkBuffer buffer
+			, VkBufferView view
+			, VkDeviceSize offset
+			, VkDeviceSize range );
 
 		CRG_API void setFlag( Flag flag, bool set )
 		{
@@ -436,6 +573,8 @@ namespace crg
 		friend CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 	};
 
+	CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
+	CRG_API bool operator!=( BufferAttachment const & lhs, BufferAttachment const & rhs );
 	CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	CRG_API bool operator!=( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );

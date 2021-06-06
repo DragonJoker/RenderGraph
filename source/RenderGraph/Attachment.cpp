@@ -3,6 +3,7 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/Attachment.hpp"
+#include "RenderGraph/WriteDescriptorSet.hpp"
 
 #include <cassert>
 #include <cstring>
@@ -39,9 +40,86 @@ namespace crg
 
 	//*********************************************************************************************
 
+	BufferAttachment::BufferAttachment()
+		: buffer{ VK_NULL_HANDLE }
+		, view{ VK_NULL_HANDLE }
+		, offset{}
+		, range{}
+		, flags{}
+	{
+	}
+
+	BufferAttachment::BufferAttachment( FlagKind flags
+		, VkBuffer buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+		: buffer{ buffer }
+		, view{ VK_NULL_HANDLE }
+		, offset{ offset }
+		, range{ range }
+		, flags{ flags }
+	{
+	}
+
+	BufferAttachment::BufferAttachment( FlagKind flags
+		, VkBuffer buffer
+		, VkBufferView view
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+		: buffer{ buffer }
+		, view{ view }
+		, offset{ offset }
+		, range{ range }
+		, flags{ flags }
+	{
+	}
+
+	WriteDescriptorSet BufferAttachment::getWrite( uint32_t binding )const
+	{
+		WriteDescriptorSet result{ binding
+			, 0u
+			, 1u
+			, getDescriptorType() };
+
+		if ( isView() )
+		{
+			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer, offset, range } );
+			result.texelBufferView.push_back( view );
+		}
+		else
+		{
+			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer, offset, range } );
+		}
+
+		return result;
+	}
+
+	VkDescriptorType BufferAttachment::getDescriptorType()const
+	{
+		if ( isUniformView() )
+		{
+			return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+		}
+
+		if ( isStorageView() )
+		{
+			return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+		}
+
+		if ( isUniform() )
+		{
+			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+		}
+
+		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+	}
+
+	//*********************************************************************************************
+
 	ImageAttachment::ImageAttachment( ImageViewId view
 		, ImageAttachment const & origin )
-		: views{ { view } }
+		: name{ origin.name + view.data->name }
+		, views{ { view } }
 		, loadOp{ origin.loadOp }
 		, storeOp{ origin.storeOp }
 		, stencilLoadOp{ origin.stencilLoadOp }
@@ -54,12 +132,38 @@ namespace crg
 	{
 	}
 
+	ImageAttachment::ImageAttachment()
+		: name{}
+		, views{}
+		, loadOp{}
+		, storeOp{}
+		, stencilLoadOp{}
+		, stencilStoreOp{}
+		, initialLayout{}
+		, samplerDesc{}
+		, clearValue{}
+		, blendState{}
+		, flags{}
+	{
+	}
+
 	ImageAttachment::ImageAttachment( ImageViewId view )
-		: views{ 1u, view }
+		: name{}
+		, views{ 1u, view }
+		, loadOp{}
+		, storeOp{}
+		, stencilLoadOp{}
+		, stencilStoreOp{}
+		, initialLayout{}
+		, samplerDesc{}
+		, clearValue{}
+		, blendState{}
+		, flags{}
 	{
 	}
 
 	ImageAttachment::ImageAttachment( FlagKind flags
+		, std::string name
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -69,7 +173,8 @@ namespace crg
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
-		: views{ std::move( views ) }
+		: name{ std::move( name ) }
+		, views{ std::move( views ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
@@ -108,12 +213,21 @@ namespace crg
 			: views[index];
 	}
 
+	VkDescriptorType ImageAttachment::getDescriptorType()const
+	{
+		if ( isStorage() )
+		{
+			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		}
+
+		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	}
+
 	//*********************************************************************************************
 
 	Attachment::Attachment( ImageViewId view
 		, Attachment const & origin )
 		: pass{ origin.pass }
-		, name{ origin.name + view.data->name }
 		, binding{ origin.binding }
 		, image{ origin.image }
 		, buffer{ origin.buffer }
@@ -126,9 +240,10 @@ namespace crg
 	{
 	}
 
-	Attachment::Attachment( ImageAttachment::FlagKind imageFlags
-		, FlagKind flags
+	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
+		, uint32_t binding
+		, ImageAttachment::FlagKind imageFlags
 		, std::string name
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
@@ -136,14 +251,13 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
-		, uint32_t binding
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 		: pass{ &pass }
-		, name{ std::move( name ) }
 		, binding{ binding }
 		, image{ imageFlags
+			, std::move( name )
 			, std::move( views )
 			, loadOp
 			, storeOp
@@ -167,6 +281,37 @@ namespace crg
 			| ( stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
+	{
+	}
+
+	Attachment::Attachment( FlagKind flags
+		, FramePass & pass
+		, uint32_t binding
+		, BufferAttachment::FlagKind bufferFlags
+		, VkBuffer buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+		: pass{ &pass }
+		, binding{ binding }
+		, buffer{ bufferFlags, buffer, offset, range }
+		, flags{ FlagKind( flags
+			| FlagKind( Flag::Buffer ) ) }
+	{
+	}
+
+	Attachment::Attachment( FlagKind flags
+		, FramePass & pass
+		, uint32_t binding
+		, BufferAttachment::FlagKind bufferFlags
+		, VkBuffer buffer
+		, VkBufferView view
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+		: pass{ &pass }
+		, binding{ binding }
+		, buffer{ bufferFlags, buffer, view, offset, range }
+		, flags{ FlagKind( flags
+			| FlagKind( Flag::Buffer ) ) }
 	{
 	}
 
@@ -255,6 +400,22 @@ namespace crg
 		}
 
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	}
+
+	VkDescriptorType Attachment::getDescriptorType()const
+	{
+		if ( isImage() )
+		{
+			return image.getDescriptorType();
+		}
+
+		return buffer.getDescriptorType();
+	}
+
+	WriteDescriptorSet Attachment::getBufferWrite()const
+	{
+		assert( isBuffer() );
+		return buffer.getWrite( binding );
 	}
 
 	//*********************************************************************************************

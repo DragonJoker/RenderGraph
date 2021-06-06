@@ -38,7 +38,7 @@ namespace crg
 
 				for ( auto & attach : attach.attaches )
 				{
-					stream << sep << attach.name;
+					stream << sep << attach.image.name;
 					sep = ", ";
 				}
 
