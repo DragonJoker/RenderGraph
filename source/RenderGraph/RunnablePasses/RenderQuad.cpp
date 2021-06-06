@@ -222,10 +222,10 @@ namespace crg
 				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 					, 0u
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, VkDescriptorImageInfo{ m_graph.createSampler( attach.samplerDesc )
+					, VkDescriptorImageInfo{ m_graph.createSampler( attach.image.samplerDesc )
 					, m_graph.getImageView( attach.view( index ) )
-					, ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
-						? attach.initialLayout
+					, ( attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
+						? attach.image.initialLayout
 						: attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
 			}
 			else if ( attach.isStorage() )
@@ -235,8 +235,8 @@ namespace crg
 					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 					, VkDescriptorImageInfo{ VK_NULL_HANDLE
 					, m_graph.getImageView( attach.view( index ) )
-					, ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
-						? attach.initialLayout
+					, ( attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
+						? attach.image.initialLayout
 						: attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
 			}
 		}
