@@ -17,10 +17,8 @@ namespace
 		pass.addOutputColourView( rtv );
 
 		check( pass.name == "1C" );
-		check( pass.sampled.empty() );
-		check( pass.colourInOuts.size() == 1u );
-		check( pass.colourInOuts[0].view() == rtv );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 1u );
+		check( pass.images[0].view() == rtv );
 		testEnd();
 	}
 
@@ -38,11 +36,9 @@ namespace
 		pass.addOutputColourView( rtv2 );
 
 		check( pass.name == "2C" );
-		check( pass.sampled.empty() );
-		check( pass.colourInOuts.size() == 2u );
-		check( pass.colourInOuts[0].view() == rtv1 );
-		check( pass.colourInOuts[1].view() == rtv2 );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 2u );
+		check( pass.images[0].view() == rtv1 );
+		check( pass.images[1].view() == rtv2 );
 		testEnd();
 	}
 
@@ -56,10 +52,8 @@ namespace
 		pass.addSampledView( inv, 1u );
 
 		check( pass.name == "0C_1I" );
-		check( pass.sampled.size() == 1u );
-		check( pass.sampled[0].view() == inv );
-		check( pass.colourInOuts.empty() );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 1u );
+		check( pass.images[0].view() == inv );
 		testEnd();
 	}
 
@@ -77,11 +71,9 @@ namespace
 		pass.addSampledView( inv2, 2u );
 
 		check( pass.name == "0C_2I" );
-		check( pass.sampled.size() == 2u );
-		check( pass.sampled[0].view() == inv1 );
-		check( pass.sampled[1].view() == inv2 );
-		check( pass.colourInOuts.empty() );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 2u );
+		check( pass.images[0].view() == inv1 );
+		check( pass.images[1].view() == inv2 );
 		testEnd();
 	}
 
@@ -99,11 +91,9 @@ namespace
 		pass.addSampledView( inv, 1u );
 
 		check( pass.name == "1C_1I" );
-		check( pass.sampled.size() == 1u );
-		check( pass.sampled[0].view() == inv );
-		check( pass.colourInOuts.size() == 1u );
-		check( pass.colourInOuts[0].view() == rtv );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 2u );
+		check( pass.images[0].view() == rtv );
+		check( pass.images[1].view() == inv );
 		testEnd();
 	}
 
@@ -125,12 +115,10 @@ namespace
 		pass.addSampledView( inv2, 2u );
 
 		check( pass.name == "1C_2I" );
-		check( pass.sampled.size() == 2u );
-		check( pass.sampled[0].view() == inv1 );
-		check( pass.sampled[1].view() == inv2 );
-		check( pass.colourInOuts.size() == 1u );
-		check( pass.colourInOuts[0].view() == rtv );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 3u );
+		check( pass.images[0].view() == rtv );
+		check( pass.images[1].view() == inv1 );
+		check( pass.images[2].view() == inv2 );
 		testEnd();
 	}
 
@@ -152,12 +140,10 @@ namespace
 		pass.addSampledView( inv, 1u );
 
 		check( pass.name == "2C_1I" );
-		check( pass.sampled.size() == 1u );
-		check( pass.sampled[0].view() == inv );
-		check( pass.colourInOuts.size() == 2u );
-		check( pass.colourInOuts[0].view() == rtv1 );
-		check( pass.colourInOuts[1].view() == rtv2 );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 3u );
+		check( pass.images[0].view() == rtv1 );
+		check( pass.images[1].view() == rtv2 );
+		check( pass.images[2].view() == inv );
 		testEnd();
 	}
 
@@ -183,13 +169,11 @@ namespace
 		pass.addSampledView( inv2, 2u );
 
 		check( pass.name == "2C_2I" );
-		check( pass.sampled.size() == 2u );
-		check( pass.sampled[0].view() == inv1 );
-		check( pass.sampled[1].view() == inv2 );
-		check( pass.colourInOuts.size() == 2u );
-		check( pass.colourInOuts[0].view() == rtv1 );
-		check( pass.colourInOuts[1].view() == rtv2 );
-		check( pass.depthStencilInOut == std::nullopt );
+		check( pass.images.size() == 4u );
+		check( pass.images[0].view() == rtv1 );
+		check( pass.images[1].view() == rtv2 );
+		check( pass.images[2].view() == inv1 );
+		check( pass.images[3].view() == inv2 );
 		testEnd();
 	}
 	
@@ -203,10 +187,8 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "0C_DS" );
-		check( pass.sampled.empty() );
-		check( pass.colourInOuts.empty() == 1u );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 1u );
+		check( pass.images[0].view() == dsv );
 		testEnd();
 	}
 
@@ -224,11 +206,9 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "1C_DS" );
-		check( pass.sampled.empty() );
-		check( pass.colourInOuts.size() == 1u );
-		check( pass.colourInOuts[0].view() == rtv );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 2u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == rtv );
 		testEnd();
 	}
 
@@ -250,12 +230,10 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "2C_DS" );
-		check( pass.sampled.empty() );
-		check( pass.colourInOuts.size() == 2u );
-		check( pass.colourInOuts[0].view() == rtv1 );
-		check( pass.colourInOuts[1].view() == rtv2 );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 3u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == rtv1 );
+		check( pass.images[2].view() == rtv2 );
 		testEnd();
 	}
 	
@@ -273,11 +251,9 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "0C_1I_DS" );
-		check( pass.sampled.size() == 1u );
-		check( pass.sampled[0].view() == inv );
-		check( pass.colourInOuts.empty() );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 2u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == inv );
 		testEnd();
 	}
 
@@ -299,12 +275,10 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "0C_2I_DS" );
-		check( pass.sampled.size() == 2u );
-		check( pass.sampled[0].view() == inv1 );
-		check( pass.sampled[1].view() == inv2 );
-		check( pass.colourInOuts.empty() );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 3u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == inv1 );
+		check( pass.images[2].view() == inv2 );
 		testEnd();
 	}
 
@@ -326,12 +300,10 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "1C_1I_DS" );
-		check( pass.sampled.size() == 1u );
-		check( pass.sampled[0].view() == inv );
-		check( pass.colourInOuts.size() == 1u );
-		check( pass.colourInOuts[0].view() == rtv );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 3u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == rtv );
+		check( pass.images[2].view() == inv );
 		testEnd();
 	}
 
@@ -357,13 +329,11 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "1C_2I_DS" );
-		check( pass.sampled.size() == 2u );
-		check( pass.sampled[0].view() == inv1 );
-		check( pass.sampled[1].view() == inv2 );
-		check( pass.colourInOuts.size() == 1u );
-		check( pass.colourInOuts[0].view() == rtv );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 4u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == rtv );
+		check( pass.images[2].view() == inv1 );
+		check( pass.images[3].view() == inv2 );
 		testEnd();
 	}
 
@@ -389,13 +359,11 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "2C_1I_DS" );
-		check( pass.sampled.size() == 1u );
-		check( pass.sampled[0].view() == inv );
-		check( pass.colourInOuts.size() == 2u );
-		check( pass.colourInOuts[0].view() == rtv1 );
-		check( pass.colourInOuts[1].view() == rtv2 );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 4u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == rtv1 );
+		check( pass.images[2].view() == rtv2 );
+		check( pass.images[3].view() == inv );
 		testEnd();
 	}
 
@@ -425,14 +393,12 @@ namespace
 		pass.addOutputDepthStencilView( dsv );
 
 		check( pass.name == "2C_2I_DS" );
-		check( pass.sampled.size() == 2u );
-		check( pass.sampled[0].view() == inv1 );
-		check( pass.sampled[1].view() == inv2 );
-		check( pass.colourInOuts.size() == 2u );
-		check( pass.colourInOuts[0].view() == rtv1 );
-		check( pass.colourInOuts[1].view() == rtv2 );
-		check( pass.depthStencilInOut != std::nullopt );
-		check( pass.depthStencilInOut.value().view() == dsv );
+		check( pass.images.size() == 5u );
+		check( pass.images[0].view() == dsv );
+		check( pass.images[1].view() == rtv1 );
+		check( pass.images[2].view() == rtv2 );
+		check( pass.images[3].view() == inv1 );
+		check( pass.images[4].view() == inv2 );
 		testEnd();
 	}
 }

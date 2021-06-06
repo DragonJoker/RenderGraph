@@ -115,22 +115,24 @@ namespace crg
 		VkShaderStageFlags shaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
 		auto imageDescriptor = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
-		for ( auto & sampled : m_pass.sampled )
+		for ( auto & attach : m_pass.images )
 		{
-			m_descriptorBindings.push_back( { sampled.binding
-				, imageDescriptor
-				, 1u
-				, shaderStage
-				, nullptr } );
-		}
-
-		for ( auto & storage : m_pass.storage )
-		{
-			m_descriptorBindings.push_back( { storage.binding
-				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-				, 1u
-				, shaderStage
-				, nullptr } );
+			if ( attach.isSampled() )
+			{
+				m_descriptorBindings.push_back( { attach.binding
+					, imageDescriptor
+					, 1u
+					, shaderStage
+					, nullptr } );
+			}
+			else if ( attach.isStorage() )
+			{
+				m_descriptorBindings.push_back( { attach.binding
+					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+					, 1u
+					, shaderStage
+					, nullptr } );
+			}
 		}
 
 		shaderStage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -213,28 +215,30 @@ namespace crg
 			return;
 		}
 
-		for ( auto & sampled : m_pass.sampled )
+		for ( auto & attach : m_pass.images )
 		{
-			descriptorSet.writes.push_back( WriteDescriptorSet{ sampled.binding
-				, 0u
-				, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-				, VkDescriptorImageInfo{ m_graph.createSampler( sampled.samplerDesc )
-				, m_graph.getImageView( sampled.view( index ) )
-				, ( sampled.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
-					? sampled.initialLayout
-					: sampled.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
-		}
-
-		for ( auto & storage : m_pass.storage )
-		{
-			descriptorSet.writes.push_back( WriteDescriptorSet{ storage.binding
-				, 0u
-				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-				, VkDescriptorImageInfo{ VK_NULL_HANDLE
-				, m_graph.getImageView( storage.view( index ) )
-				, ( storage.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
-					? storage.initialLayout
-					: storage.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
+			if ( attach.isSampled() )
+			{
+				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+					, 0u
+					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+					, VkDescriptorImageInfo{ m_graph.createSampler( attach.samplerDesc )
+					, m_graph.getImageView( attach.view( index ) )
+					, ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
+						? attach.initialLayout
+						: attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
+			}
+			else if ( attach.isStorage() )
+			{
+				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+					, 0u
+					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+					, VkDescriptorImageInfo{ VK_NULL_HANDLE
+					, m_graph.getImageView( attach.view( index ) )
+					, ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED
+						? attach.initialLayout
+						: attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
+			}
 		}
 
 		for ( auto & uniform : m_pass.buffers )

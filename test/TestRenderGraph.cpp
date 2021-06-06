@@ -123,7 +123,7 @@ namespace
 		, crg::FramePass const & pass
 		, crg::RunnableGraph const & graph )
 	{
-		for ( auto & view : pass.colourInOuts )
+		for ( auto & view : pass.images )
 		{
 			if ( view.isColourOutput() )
 			{
@@ -136,9 +136,12 @@ namespace
 		, crg::FramePass const & pass
 		, crg::RunnableGraph const & graph )
 	{
-		for ( auto & view : pass.sampled )
+		for ( auto & view : pass.images )
 		{
-			check( graph.getCurrentLayout( view.view( 0u ) ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+			if ( view.isSampled() )
+			{
+				check( graph.getCurrentLayout( view.view( 0u ) ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+			}
 		}
 	}
 
