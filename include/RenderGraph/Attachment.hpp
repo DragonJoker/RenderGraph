@@ -62,16 +62,17 @@ namespace crg
 		enum class Flag : FlagKind
 		{
 			None = 0x00,
-			Sampled = 0x01 << 0,
-			Storage = 0x01 << 1,
-			Depth = 0x01 << 2,
-			Clearing = 0x01 << 3,
-			Input = 0x01 << 4,
-			Output = 0x01 << 5,
-			StencilClearing = 0x01 << 6,
-			StencilInput = 0x01 << 7,
-			StencilOutput = 0x01 << 8,
-			Transfer = 0x01 << 9,
+			Input = 0x01 << 0,
+			Output = 0x01 << 1,
+			Sampled = 0x01 << 2,
+			Storage = 0x01 << 3,
+			Transfer = 0x01 << 4,
+			Depth = 0x01 << 5,
+			Stencil = 0x01 << 6,
+			Clearing = 0x01 << 7,
+			StencilClearing = 0x01 << 8,
+			StencilInput = 0x01 << 9,
+			StencilOutput = 0x01 << 10,
 		};
 		/**
 		*\name
@@ -90,6 +91,16 @@ namespace crg
 			return Flag( flags & FlagKind( flag ) ) == flag;
 		}
 
+		bool isInput()const
+		{
+			return hasFlag( Flag::Input );
+		}
+
+		bool isOutput()const
+		{
+			return hasFlag( Flag::Output );
+		}
+
 		bool isSampled()const
 		{
 			return hasFlag( Flag::Sampled );
@@ -100,58 +111,79 @@ namespace crg
 			return hasFlag( Flag::Storage );
 		}
 
+		bool isTransfer()const
+		{
+			return hasFlag( Flag::Transfer );
+		}
+
+		bool isDepth()const
+		{
+			return hasFlag( Flag::Depth );
+		}
+
+		bool isStencil()const
+		{
+			return hasFlag( Flag::Stencil );
+		}
+
 		bool isAttachment()const
 		{
 			return !isSampled()
 				&& !isStorage();
 		}
 
+		bool isClearing()const
+		{
+			return hasFlag( Flag::Clearing );
+		}
+
+		bool isColour()const
+		{
+			return !isSampled()
+				&& !isStorage()
+				&& !isTransfer()
+				&& !isDepth()
+				&& !isStencil();
+		}
+
 		bool isColourClearing()const
 		{
-			return hasFlag( Flag::Clearing )
-				&& !hasFlag( Flag::Depth );
+			return isClearing() && isColour();
 		}
 
 		bool isColourInput()const
 		{
-			return hasFlag( Flag::Input )
-				&& !hasFlag( Flag::Depth );
+			return isInput() && isColour();
 		}
 
 		bool isColourOutput()const
 		{
-			return hasFlag( Flag::Output )
-				&& !hasFlag( Flag::Depth );
+			return isOutput() && isColour();
 		}
 
 		bool isColourInOut()const
 		{
-			return isColourInput()
-				&& isColourOutput();
+			return isInput() && isOutput() && isColour();
 		}
 
 		bool isDepthClearing()const
 		{
-			return hasFlag( Flag::Clearing )
-				&& hasFlag( Flag::Depth );
+			return isClearing() && isDepth();
 		}
 
 		bool isDepthInput()const
 		{
-			return hasFlag( Flag::Input )
-				&& hasFlag( Flag::Depth );
+			return isInput() && isDepth();
 		}
 
 		bool isDepthOutput()const
 		{
-			return hasFlag( Flag::Output )
-				&& hasFlag( Flag::Depth );
+			return isOutput() && isDepth();
 		}
 
 		bool isDepthInOut()const
 		{
-			return isDepthInput()
-				&& isDepthOutput();
+			return isInput() && isOutput() && isDepth();
 		}
 
 		bool isStencilClearing()const
@@ -195,14 +227,22 @@ namespace crg
 
 		bool isTransferInput()const
 		{
-			return hasFlag( Flag::Transfer )
-				&& hasFlag( Flag::Input );
+			return isInput() && isTransfer();
 		}
 
 		bool isTransferOutput()const
 		{
-			return hasFlag( Flag::Transfer )
-				&& hasFlag( Flag::Output );
+			return isOutput() && isTransfer();
+		}
+
+		bool isStorageInput()const
+		{
+			return isInput() && isStorage();
+		}
+
+		bool isStorageOutput()const
+		{
+			return isOutput() && isStorage();
 		}
 		/**@}*/
 		/**

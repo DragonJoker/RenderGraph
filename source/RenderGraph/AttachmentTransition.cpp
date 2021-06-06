@@ -47,10 +47,14 @@ namespace crg
 				if ( transition.inputAttach.isSampled() )
 				{
 					auto inputPass = *transition.inputAttach.pass;
-					auto it = std::find( inputPass.sampled.begin()
-						, inputPass.sampled.end()
-						, transition.inputAttach );
-					result = it == inputPass.sampled.end();
+					auto it = std::find_if( inputPass.images.begin()
+						, inputPass.images.end()
+						, [&transition]( Attachment const & lookup )
+						{
+							return lookup.isSampled()
+								&& lookup == transition.inputAttach;
+						} );
+					result = it == inputPass.images.end();
 				}
 
 				return result;

@@ -153,29 +153,30 @@ namespace crg
 		VkAttachmentReferenceArray colorReferences;
 		VkAttachmentReference depthReference{};
 
-		if ( m_pass.depthStencilInOut )
+		for ( auto & attach : m_pass.images )
 		{
-			auto view = m_pass.depthStencilInOut->view();
+			auto view = attach.view();
 			auto transition = doGetTransition( view );
-			depthReference = addAttach( *m_pass.depthStencilInOut
-				, attaches
-				, m_clearValues
-				, transition.fromLayout
-				, transition.toLayout
-				, m_context.separateDepthStencilLayouts );
-		}
 
-		for ( auto & colAttach : m_pass.colourInOuts )
-		{
-			auto view = colAttach.view();
-			auto transition = doGetTransition( view );
-			colorReferences.push_back( addAttach( colAttach
-				, attaches
-				, m_clearValues
-				, m_blendAttachs
-				, transition.fromLayout
-				, transition.toLayout
-				, m_context.separateDepthStencilLayouts ) );
+			if ( attach.isDepth() || attach.isStencil() )
+			{
+				depthReference = addAttach( attach
+					, attaches
+					, m_clearValues
+					, transition.fromLayout
+					, transition.toLayout
+					, m_context.separateDepthStencilLayouts );
+			}
+			else if ( attach.isColour() )
+			{
+				colorReferences.push_back( addAttach( attach
+					, attaches
+					, m_clearValues
+					, m_blendAttachs
+					, transition.fromLayout
+					, transition.toLayout
+					, m_context.separateDepthStencilLayouts ) );
+			}
 		}
 
 		VkSubpassDescription subpassDesc{ 0u
@@ -242,20 +243,17 @@ namespace crg
 			uint32_t height{};
 			uint32_t layers{ 1u };
 
-			if ( m_pass.depthStencilInOut )
+			for ( auto & attach : m_pass.images )
 			{
-				auto view = m_pass.depthStencilInOut->view( index );
-				attachments.push_back( m_graph.getImageView( view ) );
-				width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
-				height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
-			}
-
-			for ( auto & colAttach : m_pass.colourInOuts )
-			{
-				auto view = colAttach.view( index );
-				attachments.push_back( m_graph.getImageView( view ) );
-				width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
-				height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
+				if ( attach.isColour()
+					|| attach.isDepth()
+					|| attach.isStencil() )
+				{
+					auto view = attach.view( index );
+					attachments.push_back( m_graph.getImageView( view ) );
+					width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
+					height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
+				}
 			}
 
 			m_renderArea.extent.width = width;

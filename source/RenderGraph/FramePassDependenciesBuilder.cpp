@@ -229,11 +229,11 @@ namespace crg
 				}
 			}
 
-			void processSampledAttach( Attachment const & attach
+			void processAttachs( AttachmentArray const & attachs
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
-				if ( attach.isSampled() )
+				for ( auto & attach : attachs )
 				{
 					processAttach( attach
 						, cont
@@ -246,71 +246,43 @@ namespace crg
 				}
 			}
 
-			void processColourInputAttach( Attachment const & attach
+			void processInputAttachs( AttachmentArray const & attachs
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
-				if ( attach.isColourInput() )
+				for ( auto & attach : attachs )
 				{
-					processAttach( attach
-						, cont
-						, all
-						, []( ImageViewId const & lookupView
-							, ImageViewId const & attachView )
-						{
-							return areOverlapping( *lookupView.data, *attachView.data );
-						} );
+					if ( attach.isInput() )
+					{
+						processAttach( attach
+							, cont
+							, all
+							, []( ImageViewId const & lookupView
+								, ImageViewId const & attachView )
+							{
+								return areOverlapping( *lookupView.data, *attachView.data );
+							} );
+					}
 				}
 			}
 
-			void processColourOutputAttach( Attachment const & attach
+			void processOutputAttachs( AttachmentArray const & attachs
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
-				if ( attach.isColourOutput() )
+				for ( auto & attach : attachs )
 				{
-					return processAttach( attach
-						, cont
-						, all
-						, []( ImageViewId const & lookupView
-							, ImageViewId const & attachView )
-						{
-							return areOverlapping( *lookupView.data, *attachView.data );
-						} );
-				}
-			}
-
-			void processTransferInputAttach( Attachment const & attach
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				if ( attach.isTransferInput() )
-				{
-					processAttach( attach
-						, cont
-						, all
-						, []( ImageViewId const & lookupView
-							, ImageViewId const & attachView )
-						{
-							return areOverlapping( *lookupView.data, *attachView.data );
-						} );
-				}
-			}
-
-			void processTransferOutputAttach( Attachment const & attach
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				if ( attach.isTransferOutput() )
-				{
-					return processAttach( attach
-						, cont
-						, all
-						, []( ImageViewId const & lookupView
-							, ImageViewId const & attachView )
-						{
-							return areOverlapping( *lookupView.data, *attachView.data );
-						} );
+					if ( attach.isOutput() )
+					{
+						processAttach( attach
+							, cont
+							, all
+							, []( ImageViewId const & lookupView
+								, ImageViewId const & attachView )
+							{
+								return areOverlapping( *lookupView.data, *attachView.data );
+							} );
+					}
 				}
 			}
 
@@ -350,23 +322,23 @@ namespace crg
 				}
 			}
 
-			void processSampledAttachs( AttachmentArray const & attachs
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					processSampledAttach( attach, cont, all );
-				}
-			}
-
 			void processColourInputAttachs( AttachmentArray const & attachs
 				, ViewAttachesArray & cont
 				, ViewAttachesArray & all )
 			{
 				for ( auto & attach : attachs )
 				{
-					processColourInputAttach( attach, cont, all );
+					if ( attach.isColourInput() )
+					{
+						processAttach( attach
+							, cont
+							, all
+							, []( ImageViewId const & lookupView
+								, ImageViewId const & attachView )
+							{
+								return areOverlapping( *lookupView.data, *attachView.data );
+							} );
+					}
 				}
 			}
 
@@ -376,27 +348,17 @@ namespace crg
 			{
 				for ( auto & attach : attachs )
 				{
-					processColourOutputAttach( attach, cont, all );
-				}
-			}
-
-			void processDepthOrStencilInputAttachs( AttachmentArray const & attachs
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					processDepthOrStencilInputAttach( attach, cont, all );
-				}
-			}
-
-			void processDepthOrStencilOutputAttachs( AttachmentArray const & attachs
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					processDepthOrStencilOutputAttach( attach, cont, all );
+					if ( attach.isColourOutput() )
+					{
+						return processAttach( attach
+							, cont
+							, all
+							, []( ImageViewId const & lookupView
+								, ImageViewId const & attachView )
+							{
+								return areOverlapping( *lookupView.data, *attachView.data );
+							} );
+					}
 				}
 			}
 
@@ -406,7 +368,17 @@ namespace crg
 			{
 				for ( auto & attach : attachs )
 				{
-					processTransferInputAttach( attach, cont, all );
+					if ( attach.isTransferInput() )
+					{
+						processAttach( attach
+							, cont
+							, all
+							, []( ImageViewId const & lookupView
+								, ImageViewId const & attachView )
+							{
+								return areOverlapping( *lookupView.data, *attachView.data );
+							} );
+					}
 				}
 			}
 
@@ -416,7 +388,17 @@ namespace crg
 			{
 				for ( auto & attach : attachs )
 				{
-					processTransferOutputAttach( attach, cont, all );
+					if ( attach.isTransferOutput() )
+					{
+						return processAttach( attach
+							, cont
+							, all
+							, []( ImageViewId const & lookupView
+								, ImageViewId const & attachView )
+							{
+								return areOverlapping( *lookupView.data, *attachView.data );
+							} );
+					}
 				}
 			}
 
@@ -538,19 +520,8 @@ namespace crg
 
 			for ( auto & pass : passes )
 			{
-				processSampledAttachs( pass->sampled, inputs, all );
-				processSampledAttachs( pass->storage, inputs, all );
-				processColourInputAttachs( pass->colourInOuts, inputs, all );
-				processTransferInputAttachs( pass->transferInOuts, inputs, all );
-				processColourOutputAttachs( pass->colourInOuts, outputs, all );
-				processTransferOutputAttachs( pass->transferInOuts, outputs, all );
-
-				if ( pass->depthStencilInOut )
-				{
-					processDepthOrStencilInputAttach( *pass->depthStencilInOut, inputs, all );
-					processDepthOrStencilOutputAttach( *pass->depthStencilInOut, outputs, all );
-				}
-
+				processInputAttachs( pass->images, inputs, all );
+				processOutputAttachs( pass->images, outputs, all );
 				inputTransitions.emplace( pass.get(), AttachmentTransitionArray{} );
 				outputTransitions.emplace( pass.get(), AttachmentTransitionArray{} );
 			}

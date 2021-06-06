@@ -110,36 +110,24 @@ namespace crg
 			? VK_SHADER_STAGE_FRAGMENT_BIT
 			: VK_SHADER_STAGE_COMPUTE_BIT );
 
-		if ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS )
+		for ( auto & attach : m_pass.images )
 		{
-			for ( auto & sampled : m_pass.sampled )
+			if ( attach.isSampled() )
 			{
-				m_descriptorBindings.push_back( { sampled.binding
+				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 					, 1u
 					, shaderStage
 					, nullptr } );
 			}
-		}
-		else
-		{
-			for ( auto & sampled : m_pass.sampled )
+			else if ( attach.isStorage() )
 			{
-				m_descriptorBindings.push_back( { sampled.binding
+				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 					, 1u
 					, shaderStage
 					, nullptr } );
 			}
-		}
-
-		for ( auto & storage : m_pass.storage )
-		{
-			m_descriptorBindings.push_back( { storage.binding
-				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-				, 1u
-				, shaderStage
-				, nullptr } );
 		}
 
 		shaderStage = ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS
@@ -221,37 +209,27 @@ namespace crg
 
 		if ( m_bindingPoint == VK_PIPELINE_BIND_POINT_GRAPHICS )
 		{
-			for ( auto & sampled : m_pass.sampled )
+			for ( auto & attach : m_pass.images )
 			{
-				descriptorSet.writes.push_back( WriteDescriptorSet{ sampled.binding
-					, 0u
-					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, VkDescriptorImageInfo{ m_graph.createSampler( sampled.samplerDesc )
-						, m_graph.getImageView( sampled.view( index ) )
-						, sampled.initialLayout } } );
+				if ( attach.isSampled() )
+				{
+					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+						, 0u
+						, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+						, VkDescriptorImageInfo{ m_graph.createSampler( attach.samplerDesc )
+							, m_graph.getImageView( attach.view( index ) )
+							, attach.initialLayout } } );
+				}
+				else if ( attach.isStorage() )
+				{
+					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+						, 0u
+						, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+						, VkDescriptorImageInfo{ VK_NULL_HANDLE
+							, m_graph.getImageView( attach.view( index ) )
+							, attach.initialLayout } } );
+				}
 			}
-		}
-		else
-		{
-			for ( auto & sampled : m_pass.sampled )
-			{
-				descriptorSet.writes.push_back( WriteDescriptorSet{ sampled.binding
-					, 0u
-					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-					, VkDescriptorImageInfo{ VK_NULL_HANDLE
-						, m_graph.getImageView( sampled.view( index ) )
-						, sampled.initialLayout } } );
-			}
-		}
-
-		for ( auto & storage : m_pass.storage )
-		{
-			descriptorSet.writes.push_back( WriteDescriptorSet{ storage.binding
-				, 0u
-				, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-				, VkDescriptorImageInfo{ VK_NULL_HANDLE
-					, m_graph.getImageView( storage.view( index ) )
-					, storage.initialLayout } } );
 		}
 
 		for ( auto & uniform : m_pass.buffers )

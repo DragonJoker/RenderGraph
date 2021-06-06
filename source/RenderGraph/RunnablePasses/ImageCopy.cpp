@@ -36,7 +36,7 @@ namespace crg
 		, m_copySize{std::move( copySize ) }
 		, m_passIndex{ passIndex }
 	{
-		assert( pass.transferInOuts.size() == 2u );
+		assert( pass.images.size() == 2u );
 	}
 
 	ImageCopy::~ImageCopy()
@@ -50,8 +50,8 @@ namespace crg
 	void ImageCopy::doRecordInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcAttach{ m_pass.transferInOuts.front().view() };
-		auto dstAttach{ m_pass.transferInOuts.back().view() };
+		auto srcAttach{ m_pass.images.front().view() };
+		auto dstAttach{ m_pass.images.back().view() };
 		auto srcImage{ m_graph.getImage( srcAttach ) };
 		auto dstImage{ m_graph.getImage( dstAttach ) };
 		auto srcTransition = doGetTransition( srcAttach );

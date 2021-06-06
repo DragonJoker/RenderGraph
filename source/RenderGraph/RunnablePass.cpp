@@ -65,58 +65,16 @@ namespace crg
 
 	uint32_t RunnablePass::initialise( uint32_t index )
 	{
-		for ( auto & attach : m_pass.sampled )
+		for ( auto & attach : m_pass.images )
 		{
 			auto view = attach.view( index );
 
-			if ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( ( attach.isSampled() || attach.isStorage() )
+				&& attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
 			{
 				m_graph.updateCurrentLayout( view, attach.initialLayout );
 			}
 
-			doRegisterTransition( view
-				, { m_graph.getCurrentLayout( view )
-				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
-				, m_graph.getOutputLayout( m_pass, view ) } );
-		}
-
-		for ( auto & attach : m_pass.storage )
-		{
-			auto view = attach.view( index );
-
-			if ( attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-			{
-				m_graph.updateCurrentLayout( view, attach.initialLayout );
-			}
-
-			doRegisterTransition( view
-				, { m_graph.getCurrentLayout( view )
-				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
-				, m_graph.getOutputLayout( m_pass, view ) } );
-		}
-
-		if ( m_pass.depthStencilInOut )
-		{
-			auto & attach = *m_pass.depthStencilInOut;
-			auto view = m_pass.depthStencilInOut->view( index );
-			doRegisterTransition( view
-				, { m_graph.getCurrentLayout( view )
-				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
-				, m_graph.getOutputLayout( m_pass, view ) } );
-		}
-
-		for ( auto & attach : m_pass.colourInOuts )
-		{
-			auto view = attach.view( index );
-			doRegisterTransition( view
-				, { m_graph.getCurrentLayout( view )
-				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
-				, m_graph.getOutputLayout( m_pass, view ) } );
-		}
-
-		for ( auto & attach : m_pass.transferInOuts )
-		{
-			auto view = attach.view( index );
 			doRegisterTransition( view
 				, { m_graph.getCurrentLayout( view )
 				, attach.getImageLayout( m_context.separateDepthStencilLayouts )
@@ -157,66 +115,32 @@ namespace crg
 			, { m_pass.name, m_context.getNextRainbowColour() } );
 		m_timer.beginPass( commandBuffer );
 
-		for ( auto & sampled : m_pass.sampled )
+		for ( auto & attach : m_pass.images )
 		{
-			auto view = sampled.view( index );
-			auto transition = doGetTransition( view );
-			m_graph.memoryBarrier( commandBuffer
-				, view
-				, transition.fromLayout
-				, transition.neededLayout );
-		}
-
-		for ( auto & storage : m_pass.storage )
-		{
-			auto view = storage.view( index );
-			auto transition = doGetTransition( view );
-			m_graph.memoryBarrier( commandBuffer
-				, view
-				, transition.fromLayout
-				, transition.neededLayout );
-		}
-
-		for ( auto & storage : m_pass.transferInOuts )
-		{
-			auto view = storage.view( index );
-			auto transition = doGetTransition( view );
-			m_graph.memoryBarrier( commandBuffer
-				, view
-				, transition.fromLayout
-				, transition.neededLayout );
+			if ( attach.isSampled() || attach.isStorage() || attach.isTransfer() )
+			{
+				auto view = attach.view( index );
+				auto transition = doGetTransition( view );
+				m_graph.memoryBarrier( commandBuffer
+					, view
+					, transition.fromLayout
+					, transition.neededLayout );
+			}
 		}
 
 		doRecordInto( commandBuffer, index );
 
-		for ( auto & sampled : m_pass.sampled )
+		for ( auto & attach : m_pass.images )
 		{
-			auto view = sampled.view( index );
-			auto transition = doGetTransition( view );
-			m_graph.memoryBarrier( commandBuffer
-				, view
-				, transition.neededLayout
-				, transition.toLayout );
-		}
-
-		for ( auto & storage : m_pass.storage )
-		{
-			auto view = storage.view( index );
-			auto transition = doGetTransition( view );
-			m_graph.memoryBarrier( commandBuffer
-				, view
-				, transition.neededLayout
-				, transition.toLayout );
-		}
-
-		for ( auto & storage : m_pass.transferInOuts )
-		{
-			auto view = storage.view( index );
-			auto transition = doGetTransition( view );
-			m_graph.memoryBarrier( commandBuffer
-				, view
-				, transition.neededLayout
-				, transition.toLayout );
+			if ( attach.isSampled() || attach.isStorage() || attach.isTransfer() )
+			{
+				auto view = attach.view( index );
+				auto transition = doGetTransition( view );
+				m_graph.memoryBarrier( commandBuffer
+					, view
+					, transition.neededLayout
+					, transition.toLayout );
+			}
 		}
 
 		m_timer.endPass( commandBuffer );

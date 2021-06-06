@@ -38,7 +38,7 @@ namespace crg
 
 	void GenerateMipmaps::doInitialise()
 	{
-		auto & attach = m_pass.transferInOuts.front();
+		auto & attach = m_pass.images.front();
 
 		for ( auto passIndex = 0u; passIndex < m_commandBuffers.size(); ++passIndex )
 		{
@@ -53,7 +53,7 @@ namespace crg
 	void GenerateMipmaps::doRecordInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto viewId{ m_pass.transferInOuts.front().view( index ) };
+		auto viewId{ m_pass.images.front().view( index ) };
 		auto imageId{ viewId.data->image };
 		auto image{ m_graph.getImage( imageId ) };
 		auto transition = doGetTransition( viewId );
