@@ -70,9 +70,9 @@ namespace crg
 			auto view = attach.view( index );
 
 			if ( ( attach.isSampled() || attach.isStorage() )
-				&& attach.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+				&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
 			{
-				m_graph.updateCurrentLayout( view, attach.initialLayout );
+				m_graph.updateCurrentLayout( view, attach.image.initialLayout );
 			}
 
 			doRegisterTransition( view

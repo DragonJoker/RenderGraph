@@ -49,56 +49,47 @@ namespace crg
 		, SamplerDesc const & rhs );
 	/**
 	*\brief
-	*	A sampled image, or an input/output colour/depth/stencil/depthstencil attachment.
+	*	An image attachment.
 	*/
-	struct Attachment
+	struct ImageAttachment
 	{
+		friend struct Attachment;
 		friend struct FramePass;
 		/**
 		*\brief
-		*	The flags qualifying an Attachment.
+		*	The flags qualifying the attachment.
 		*/
 		using FlagKind = uint16_t;
 		enum class Flag : FlagKind
 		{
 			None = 0x00,
-			Input = 0x01 << 0,
-			Output = 0x01 << 1,
-			Sampled = 0x01 << 2,
-			Storage = 0x01 << 3,
-			Transfer = 0x01 << 4,
-			Depth = 0x01 << 5,
-			Stencil = 0x01 << 6,
-			Clearing = 0x01 << 7,
-			StencilClearing = 0x01 << 8,
-			StencilInput = 0x01 << 9,
-			StencilOutput = 0x01 << 10,
+			Sampled = 0x01 << 0,
+			Storage = 0x01 << 1,
+			Transfer = 0x01 << 2,
+			Depth = 0x01 << 3,
+			Stencil = 0x01 << 4,
+			Clearing = 0x01 << 5,
+			StencilClearing = 0x01 << 6,
+			StencilInput = 0x01 << 7,
+			StencilOutput = 0x01 << 8,
 		};
+		CRG_API ImageAttachment( ImageViewId view
+			, ImageAttachment const & origin );
 		/**
 		*\name
 		*	Getters.
 		*/
 		/**@{*/
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
-		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
+
 		FlagKind getFlags()const
 		{
 			return flags;
 		}
-		
+
 		bool hasFlag( Flag flag )const
 		{
 			return Flag( flags & FlagKind( flag ) ) == flag;
-		}
-
-		bool isInput()const
-		{
-			return hasFlag( Flag::Input );
-		}
-
-		bool isOutput()const
-		{
-			return hasFlag( Flag::Output );
 		}
 
 		bool isSampled()const
@@ -126,15 +117,163 @@ namespace crg
 			return hasFlag( Flag::Stencil );
 		}
 
-		bool isAttachment()const
+		bool isClearing()const
+		{
+			return hasFlag( Flag::Clearing );
+		}
+
+		bool isColour()const
 		{
 			return !isSampled()
-				&& !isStorage();
+				&& !isStorage()
+				&& !isTransfer()
+				&& !isDepth()
+				&& !isStencil();
+		}
+
+		bool isStencilClearing()const
+		{
+			return hasFlag( Flag::StencilClearing );
+		}
+
+		bool isStencilInput()const
+		{
+			return hasFlag( Flag::StencilInput );
+		}
+
+		bool isStencilOutput()const
+		{
+			return hasFlag( Flag::StencilOutput );
+		}
+		/**@}*/
+
+	public:
+		ImageViewIdArray views;
+		VkAttachmentLoadOp loadOp{};
+		VkAttachmentStoreOp storeOp{};
+		VkAttachmentLoadOp stencilLoadOp{};
+		VkAttachmentStoreOp stencilStoreOp{};
+		VkImageLayout initialLayout{};
+		SamplerDesc samplerDesc{};
+		VkClearValue clearValue{};
+		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
+
+	private:
+		CRG_API ImageAttachment( ImageViewId view );
+		CRG_API ImageAttachment( FlagKind flags
+			, ImageViewIdArray views
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkAttachmentLoadOp stencilLoadOp
+			, VkAttachmentStoreOp stencilStoreOp
+			, VkImageLayout initialLayout
+			, SamplerDesc samplerDesc
+			, VkClearValue clearValue
+			, VkPipelineColorBlendAttachmentState blendState );
+
+		void setFlag( Flag flag, bool set )
+		{
+			if ( set )
+			{
+				flags |= FlagKind( flag );
+			}
+			else
+			{
+				flags &= ~FlagKind( flag );
+			}
+		}
+
+		FlagKind flags{};
+
+		friend CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
+	};
+	*/
+	struct Attachment
+	{
+		friend struct FramePass;
+		/**
+		*\brief
+		*	The flags qualifying an Attachment.
+		*/
+		using FlagKind = uint16_t;
+		enum class Flag : FlagKind
+		{
+			None = 0x00,
+			Input = 0x01 << 0,
+			Output = 0x01 << 1,
+			Image = 0x01 << 2,
+		};
+		/**
+		*\name
+		*	Getters.
+		*/
+		/**@{*/
+		CRG_API ImageViewId view( uint32_t index = 0u )const;
+		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
+
+		FlagKind getFlags()const
+		{
+			return flags;
+		}
+
+		bool hasFlag( Flag flag )const
+		{
+			return Flag( flags & FlagKind( flag ) ) == flag;
+		}
+
+		bool isInput()const
+		{
+			return hasFlag( Flag::Input );
+		}
+
+		bool isOutput()const
+		{
+			return hasFlag( Flag::Output );
+		}
+
+		bool isImage()const
+		{
+			return hasFlag( Flag::Image );
+		}
+
+		bool isUniformBuffer()const
+		{
+			return hasFlag( Flag::UniformBuffer );
+		}
+
+		bool isStorageBuffer()const
+		{
+			return hasFlag( Flag::StorageBuffer );
+		}
+
+		bool isSampled()const
+		{
+			return isImage() && image.isSampled();
+		}
+
+		bool isStorage()const
+		{
+			return isImage() && image.isStorage();
+		}
+
+		bool isTransfer()const
+		{
+			return isImage() && image.isTransfer();
+		}
+
+		bool isDepth()const
+		{
+			return isImage() && image.isDepth();
+		}
+
+		bool isStencil()const
+		{
+			return isImage() && image.isStencil();
 		}
 
 		bool isClearing()const
 		{
-			return hasFlag( Flag::Clearing );
+			return isImage() && image.isClearing();
 		}
 
 		bool isColour()const
@@ -188,41 +327,37 @@ namespace crg
 
 		bool isStencilClearing()const
 		{
-			return hasFlag( Flag::StencilClearing );
+			return isImage() && image.isStencilClearing();
 		}
 
 		bool isStencilInput()const
 		{
-			return hasFlag( Flag::StencilInput );
+			return isImage() && image.isStencilInput();
 		}
 
 		bool isStencilOutput()const
 		{
-			return hasFlag( Flag::StencilOutput );
+			return isImage() && image.isStencilOutput();
 		}
 
 		bool isStencilInOut()const
 		{
-			return isStencilInput()
-				&& isStencilOutput();
+			return isStencilInput() && isStencilOutput();
 		}
 
 		bool isDepthStencilInput()const
 		{
-			return isDepthInput()
-				&& isStencilInput();
+			return isDepthInput() && isStencilInput();
 		}
 
 		bool isDepthStencilOutput()const
 		{
-			return isDepthOutput()
-				&& isStencilOutput();
+			return isDepthOutput() && isStencilOutput();
 		}
 
 		bool isDepthStencilInOut()const
 		{
-			return isDepthInOut()
-				&& isStencilInOut();
+			return isDepthInOut() && isStencilInOut();
 		}
 
 		bool isTransferInput()const
@@ -260,16 +395,8 @@ namespace crg
 		/**@[*/
 		FramePass * pass{};
 		std::string name{};
-		ImageViewIdArray views;
-		VkAttachmentLoadOp loadOp{};
-		VkAttachmentStoreOp storeOp{};
-		VkAttachmentLoadOp stencilLoadOp{};
-		VkAttachmentStoreOp stencilStoreOp{};
-		VkImageLayout initialLayout{};
-		SamplerDesc samplerDesc{};
 		uint32_t binding{};
-		VkClearValue clearValue{};
-		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
+		ImageAttachment image;
 		/**@}*/
 
 		CRG_API Attachment( ImageViewId view
@@ -277,7 +404,8 @@ namespace crg
 
 	private:
 		CRG_API Attachment( ImageViewId view );
-		CRG_API Attachment( FlagKind flags
+		CRG_API Attachment( ImageAttachment::FlagKind imageFlags
+			, FlagKind flags
 			, FramePass & pass
 			, std::string name
 			, ImageViewIdArray views
@@ -308,6 +436,8 @@ namespace crg
 		friend CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 	};
 
+	CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
+	CRG_API bool operator!=( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 	CRG_API bool operator!=( Attachment const & lhs, Attachment const & rhs );
 

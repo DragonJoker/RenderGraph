@@ -37,30 +37,97 @@ namespace crg
 		return isDepthFormat( fmt ) && isStencilFormat( fmt );
 	}
 
-	Attachment::Attachment( ImageViewId view
-		, Attachment const & origin )
-		: pass{ origin.pass }
-		, name{ origin.name + view.data->name }
-		, views{ { view } }
+	//*********************************************************************************************
+
+	ImageAttachment::ImageAttachment( ImageViewId view
+		, ImageAttachment const & origin )
+		: views{ { view } }
 		, loadOp{ origin.loadOp }
 		, storeOp{ origin.storeOp }
 		, stencilLoadOp{ origin.stencilLoadOp }
 		, stencilStoreOp{ origin.stencilStoreOp }
 		, initialLayout{ origin.initialLayout }
 		, samplerDesc{ origin.samplerDesc }
-		, binding{ origin.binding }
 		, clearValue{ origin.clearValue }
 		, blendState{ origin.blendState }
 		, flags{ origin.flags }
 	{
 	}
 
-	Attachment::Attachment( ImageViewId view )
+	ImageAttachment::ImageAttachment( ImageViewId view )
 		: views{ 1u, view }
 	{
 	}
 
-	Attachment::Attachment( FlagKind flags
+	ImageAttachment::ImageAttachment( FlagKind flags
+		, ImageViewIdArray views
+		, VkAttachmentLoadOp loadOp
+		, VkAttachmentStoreOp storeOp
+		, VkAttachmentLoadOp stencilLoadOp
+		, VkAttachmentStoreOp stencilStoreOp
+		, VkImageLayout initialLayout
+		, SamplerDesc samplerDesc
+		, VkClearValue clearValue
+		, VkPipelineColorBlendAttachmentState blendState )
+		: views{ std::move( views ) }
+		, loadOp{ loadOp }
+		, storeOp{ storeOp }
+		, stencilLoadOp{ stencilLoadOp }
+		, stencilStoreOp{ stencilStoreOp }
+		, initialLayout{ initialLayout }
+		, samplerDesc{ std::move( samplerDesc ) }
+		, clearValue{ std::move( clearValue ) }
+		, blendState{ std::move( blendState ) }
+		, flags{ FlagKind( flags
+			| ( loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
+				? FlagKind( Flag::Clearing )
+				: FlagKind( Flag::None ) )
+			| ( stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
+				? FlagKind( Flag::Clearing )
+				: FlagKind( Flag::None ) ) ) }
+	{
+		assert( ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
+			&& isColourFormat( view().data->info.format ) )
+			|| ( ( view().data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
+				&& isDepthStencilFormat( view().data->info.format ) )
+			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
+				&& isDepthFormat( view().data->info.format ) )
+			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
+				&& isStencilFormat( view().data->info.format ) ) );
+		assert( !isSampled()
+			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
+				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
+				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
+				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
+	}
+
+	ImageViewId ImageAttachment::view( uint32_t index )const
+	{
+		return views.size() == 1u
+			? views.front()
+			: views[index];
+	}
+
+	//*********************************************************************************************
+
+	Attachment::Attachment( ImageViewId view
+		, Attachment const & origin )
+		: pass{ origin.pass }
+		, name{ origin.name + view.data->name }
+		, binding{ origin.binding }
+		, image{ origin.image }
+		, buffer{ origin.buffer }
+		, flags{ origin.flags }
+	{
+	}
+
+	Attachment::Attachment( ImageViewId view )
+		: image{ view }
+	{
+	}
+
+	Attachment::Attachment( ImageAttachment::FlagKind imageFlags
+		, FlagKind flags
 		, FramePass & pass
 		, std::string name
 		, ImageViewIdArray views
@@ -75,28 +142,24 @@ namespace crg
 		, VkPipelineColorBlendAttachmentState blendState )
 		: pass{ &pass }
 		, name{ std::move( name ) }
-		, views{ std::move( views ) }
-		, loadOp{ loadOp }
-		, storeOp{ storeOp }
-		, stencilLoadOp{ stencilLoadOp }
-		, stencilStoreOp{ stencilStoreOp }
-		, initialLayout{ initialLayout }
-		, samplerDesc{ std::move( samplerDesc ) }
 		, binding{ binding }
-		, clearValue{ std::move( clearValue ) }
-		, blendState{ std::move( blendState ) }
+		, image{ imageFlags
+			, std::move( views )
+			, loadOp
+			, storeOp
+			, stencilLoadOp
+			, stencilStoreOp
+			, initialLayout
+			, std::move( samplerDesc )
+			, std::move( clearValue )
+			, std::move( blendState ) }
 		, flags{ FlagKind( flags
-			| ( loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
-				? FlagKind( Flag::Clearing )
-				: FlagKind( Flag::None ) )
+			| FlagKind( Flag::Image )
 			| ( loadOp == VK_ATTACHMENT_LOAD_OP_LOAD
 				? FlagKind( Flag::Input )
 				: FlagKind( Flag::None ) )
 			| ( storeOp == VK_ATTACHMENT_STORE_OP_STORE
 				? FlagKind( Flag::Output )
-				: FlagKind( Flag::None ) )
-			| ( stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
-				? FlagKind( Flag::Clearing )
 				: FlagKind( Flag::None ) )
 			| ( stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD
 				? FlagKind( Flag::Input )
@@ -105,26 +168,13 @@ namespace crg
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
 	{
-		assert( ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
-				&& isColourFormat( view().data->info.format ) )
-			|| ( ( view().data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
-				&& isDepthStencilFormat( view().data->info.format ) )
-			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
-				&& isDepthFormat( view().data->info.format ) )
-			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
-				&& isStencilFormat( view().data->info.format ) ) );
-		assert( !isSampled()
-			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
-				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
-				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
-				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
 	}
 
 	ImageViewId Attachment::view( uint32_t index )const
 	{
-		return views.size() == 1u
-			? views.front()
-			: views[index];
+		return isImage()
+			? image.view( index )
+			: ImageViewId{};
 	}
 
 	VkImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
@@ -207,6 +257,8 @@ namespace crg
 		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	}
 
+	//*********************************************************************************************
+
 	bool operator==( VkClearValue const & lhs
 		, VkClearValue const & rhs )
 	{
@@ -240,11 +292,10 @@ namespace crg
 			&& lhs.maxLod == rhs.maxLod;
 	}
 
-	bool operator==( Attachment const & lhs
-		, Attachment const & rhs )
+	bool operator==( ImageAttachment const & lhs
+		, ImageAttachment const & rhs )
 	{
-		return lhs.pass == rhs.pass
-			&& lhs.flags == rhs.flags
+		return lhs.flags == rhs.flags
 			&& lhs.views == rhs.views
 			&& lhs.loadOp == rhs.loadOp
 			&& lhs.storeOp == rhs.storeOp
@@ -255,9 +306,25 @@ namespace crg
 			&& lhs.blendState == rhs.blendState;
 	}
 
+	bool operator!=( ImageAttachment const & lhs
+		, ImageAttachment const & rhs )
+	{
+		return !( lhs == rhs );
+	}
+
+	bool operator==( Attachment const & lhs
+		, Attachment const & rhs )
+	{
+		return lhs.pass == rhs.pass
+			&& lhs.flags == rhs.flags
+			&& lhs.image == rhs.image;
+	}
+
 	bool operator!=( Attachment const & lhs
 		, Attachment const & rhs )
 	{
 		return !( lhs == rhs );
 	}
+
+	//*********************************************************************************************
 }

@@ -29,13 +29,13 @@ namespace crg
 			attaches.push_back( { 0u
 				, view.data->info.format
 				, view.data->image.data->info.samples
-				, attach.loadOp
-				, attach.storeOp
-				, attach.stencilLoadOp
-				, attach.stencilStoreOp
+				, attach.image.loadOp
+				, attach.image.storeOp
+				, attach.image.stencilLoadOp
+				, attach.image.stencilStoreOp
 				, initialLayout
 				, finalLayout } );
-			clearValues.push_back( attach.clearValue );
+			clearValues.push_back( attach.image.clearValue );
 			return result;
 		}
 
@@ -47,7 +47,7 @@ namespace crg
 			, VkImageLayout finalLayout
 			, bool separateDepthStencilLayouts )
 		{
-			blendAttachs.push_back( attach.blendState );
+			blendAttachs.push_back( attach.image.blendState );
 			return addAttach( attach
 				, attaches
 				, clearValues
