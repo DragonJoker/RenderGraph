@@ -15,6 +15,7 @@ namespace crg
 		CRG_API ResourceHandler( ResourceHandler && ) = default;
 		CRG_API ResourceHandler & operator=( ResourceHandler const & ) = delete;
 		CRG_API ResourceHandler & operator=( ResourceHandler && ) = default;
+		CRG_API ~ResourceHandler();
 
 		CRG_API void clear( GraphContext const & context );
 

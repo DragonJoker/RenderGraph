@@ -605,6 +605,22 @@ namespace crg
 		}
 
 		template< typename ObjectT >
+		static void stRegisterObjectName( GraphContext const & context
+			, std::string const & name
+			, ObjectT object )
+		{
+			using MyTraits = DebugTypeTraits< ObjectT >;
+			context.doRegisterObjectName( uint64_t( object )
+#if VK_EXT_debug_utils
+				, uint32_t( MyTraits::UtilsValue )
+#elif VK_EXT_debug_marker
+				, uint32_t( MyTraits::ReportValue )
+#endif
+				, name
+				, MyTraits::getName() );
+		}
+
+		template< typename ObjectT >
 		static void stUnregisterObject( GraphContext const & context, ObjectT object )
 		{
 			context.doUnregisterObject( uint64_t( object ) );
@@ -662,6 +678,10 @@ namespace crg
 			, uint32_t objectType
 			, std::string const & name
 			, std::string const & typeName )const;
+		CRG_API void doRegisterObjectName( uint64_t object
+			, uint32_t objectType
+			, std::string const & name
+			, std::string const & typeName )const;
 		CRG_API void doUnregisterObject( uint64_t object )const;
 		CRG_API void doReportRegisteredObjects()const;
 
@@ -669,6 +689,9 @@ namespace crg
 		crg::GraphContext::stRegisterObject( Cont, TypeName, Object )
 #	define crgUnregisterObject( Cont, Object )\
 		crg::GraphContext::stUnregisterObject( Cont, Object )
+
+#	define crgRegisterObjectName( Cont, TypeName, Object )\
+		crg::GraphContext::stRegisterObjectName( Cont, TypeName, Object )
 
 #	ifndef NDEBUG
 #		define crgReportRegisteredObjects()\
