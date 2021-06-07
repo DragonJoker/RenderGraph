@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
+#include "RenderGraph/ResourceHandler.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 #include "FramePassDependenciesBuilder.hpp"
 #include "GraphBuilder.hpp"
@@ -15,8 +16,10 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	FrameGraph::FrameGraph( std::string name )
-		: m_name{ std::move( name ) }
+	FrameGraph::FrameGraph( ResourceHandler & handler
+		, std::string name )
+		: m_handler{ handler }
+		, m_name{ std::move( name ) }
 	{
 	}
 
@@ -75,33 +78,15 @@ namespace crg
 
 	ImageId FrameGraph::createImage( ImageData const & img )
 	{
-		auto data = std::make_unique< ImageData >( img );
-		ImageId result{ uint32_t( m_images.size() + 1u ), data.get() };
-		m_images.insert( { result, std::move( data ) } );
+		auto result = m_handler.createImageId( img );
+		m_images.insert( result );
 		return result;
 	}
 
 	ImageViewId FrameGraph::createView( ImageViewData const & view )
 	{
-		auto it = std::find_if( m_imageViews.begin()
-			, m_imageViews.end()
-			, [&view]( ImageViewIdDataOwnerCont::value_type const & lookup )
-			{
-				return *lookup.second == view;
-			} );
-		ImageViewId result{};
-
-		if ( it == m_imageViews.end() )
-		{
-			auto data = std::make_unique< ImageViewData >( view );
-			result = { uint32_t( m_imageViews.size() + 1u ), data.get() };
-			m_imageViews.insert( { result, std::move( data ) } );
-		}
-		else
-		{
-			result = it->first;
-		}
-
+		auto result = m_handler.createViewId( view );
+		m_imageViews.insert( result );
 		return result;
 	}
 

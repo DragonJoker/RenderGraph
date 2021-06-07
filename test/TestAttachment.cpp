@@ -4,6 +4,7 @@
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/FramePass.hpp>
 #include <RenderGraph/ImageData.hpp>
+#include <RenderGraph/ResourceHandler.hpp>
 
 namespace
 {
@@ -12,7 +13,8 @@ namespace
 	void testSampledAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testSampledAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -33,7 +35,8 @@ namespace
 	void testStorageAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testStorageAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -53,7 +56,8 @@ namespace
 	void testColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testColourAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -75,7 +79,8 @@ namespace
 	void testDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testDepthStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -99,7 +104,8 @@ namespace
 	void testInColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInColourAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -118,7 +124,8 @@ namespace
 	void testOutColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutColourAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -137,7 +144,8 @@ namespace
 	void testInOutColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutColourAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -156,7 +164,8 @@ namespace
 	void testInDepthAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInDepthAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -175,7 +184,8 @@ namespace
 	void testOutDepthAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutDepthAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -194,7 +204,8 @@ namespace
 	void testInOutDepthAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutDepthAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -213,7 +224,8 @@ namespace
 	void testInDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInDepthStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -232,7 +244,8 @@ namespace
 	void testOutDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutDepthStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -251,7 +264,8 @@ namespace
 	void testInOutDepthStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutDepthStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -270,7 +284,8 @@ namespace
 	void testInStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -289,7 +304,8 @@ namespace
 	void testOutStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testOutStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
@@ -308,7 +324,8 @@ namespace
 	void testInOutStencilAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInOutStencilAttachment" );
-		crg::FrameGraph graph{ "test" };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );

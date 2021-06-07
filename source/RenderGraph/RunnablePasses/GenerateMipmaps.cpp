@@ -61,7 +61,7 @@ namespace crg
 	{
 		auto viewId{ m_pass.images.front().view( index ) };
 		auto imageId{ viewId.data->image };
-		auto image{ m_graph.getImage( imageId ) };
+		auto image{ m_graph.createImage( imageId ) };
 		auto transition = doGetTransition( index, viewId );
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );

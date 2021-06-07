@@ -2,6 +2,7 @@
 
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/ImageData.hpp>
+#include <RenderGraph/ResourceHandler.hpp>
 #include <RenderGraph/RunnableGraph.hpp>
 #include <RenderGraph/RunnablePass.hpp>
 #include <RenderGraph/RunnablePasses/GenerateMipmaps.hpp>
@@ -127,7 +128,8 @@ namespace
 	void testNoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testNoPass" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		checkThrow( graph.compile( getContext() ) );
 
 		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
@@ -149,7 +151,8 @@ namespace
 	void testOnePass( test::TestCounts & testCounts )
 	{
 		testBegin( "testOnePass" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		auto & pass = graph.createPass( "pass1C"
@@ -175,7 +178,8 @@ namespace
 	void testDuplicateName( test::TestCounts & testCounts )
 	{
 		testBegin( "testDuplicateName" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		checkNoThrow( graph.createPass( "pass1C"
 			, [&testCounts]( crg::FramePass const & pass
 				, crg::GraphContext const & context
@@ -200,7 +204,8 @@ namespace
 	void testOneDependency( test::TestCounts & testCounts )
 	{
 		testBegin( "testOneDependency" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		auto & pass1 = graph.createPass( "pass1C"
@@ -247,7 +252,8 @@ namespace
 	void testChainedDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testChainedDependencies" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto d0 = graph.createImage( test::createImage( "d0", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
 		auto & pass0 = graph.createPass( "pass0"
@@ -313,7 +319,8 @@ namespace
 	void testSharedDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testSharedDependencies" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto d = graph.createImage( test::createImage( "d", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dstv1 = graph.createView( test::createView( "dstv1", d ) );
 		auto d0 = graph.createImage( test::createImage( "d0", VK_FORMAT_R32G32B32_SFLOAT ) );
@@ -384,7 +391,8 @@ namespace
 	void test2MipDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "test2MipDependencies" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto lp = graph.createImage( test::createImage( "lp", VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
 		auto m0v = graph.createView( test::createView( "m0v", lp, 0u ) );
 		auto m1v = graph.createView( test::createView( "m1v", lp, 1u ) );
@@ -432,7 +440,8 @@ namespace
 	void test3MipDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "test3MipDependencies" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto lp = graph.createImage( test::createImage( "lp", VK_FORMAT_R32G32B32_SFLOAT, 4u ) );
 		auto m0v = graph.createView( test::createView( "m0v", lp, VK_FORMAT_R32G32B32_SFLOAT, 0u ) );
 		auto m1v = graph.createView( test::createView( "m1v", lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
@@ -498,7 +507,8 @@ namespace
 	void testLoopDependencies( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependencies" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto a = graph.createImage( test::createImage( "a", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto av = graph.createView( test::createView( "av", a, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto b = graph.createImage( test::createImage( "b", VK_FORMAT_R32G32B32_SFLOAT ) );
@@ -535,7 +545,8 @@ namespace
 	void testLoopDependenciesWithRoot( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependenciesWithRoot" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto b = graph.createImage( test::createImage( "b", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass0 = graph.createPass( "pass0"
@@ -584,7 +595,8 @@ namespace
 	void testLoopDependenciesWithRootAndLeaf( test::TestCounts & testCounts )
 	{
 		testBegin( "testLoopDependenciesWithRootAndLeaf" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto c = graph.createImage( test::createImage( "c", VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto cv = graph.createView( test::createView( "cv", c, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass0 = graph.createPass( "pass0"
@@ -763,7 +775,8 @@ namespace
 	void testSsaoPass( test::TestCounts & testCounts )
 	{
 		testBegin( "testSsaoPass" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto d = graph.createImage( test::createImage( "d", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dtv = graph.createView( test::createView( "dtv", d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto v = graph.createImage( test::createImage( "v", VK_FORMAT_R16G16B16A16_SFLOAT ) );
@@ -883,7 +896,8 @@ namespace
 	void testBloomPostEffect( test::TestCounts & testCounts )
 	{
 		testBegin( "testBloomPostEffect" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto scene = graph.createImage( test::createImage( "scene", VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto scenev = graph.createView( test::createView( "scenev", scene, VK_FORMAT_R32G32B32A32_SFLOAT ) );
 		auto output = graph.createImage( test::createImage( "output", VK_FORMAT_R32G32B32A32_SFLOAT ) );
@@ -1212,7 +1226,8 @@ namespace
 			+ ( EnableOpaque ? std::string{ "Opaque" } : std::string{} )
 			+ ( EnableSsao ? std::string{ "Ssao" } : std::string{} )
 			+ ( EnableTransparent ? std::string{ "Transparent" } : std::string{} ) );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto d = graph.createImage( test::createImage( "d", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto dtv = graph.createView( test::createView( "dtv", d, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		crg::FramePass * previous{};
@@ -2010,7 +2025,8 @@ namespace
 	void testVarianceShadowMap( test::TestCounts & testCounts )
 	{
 		testBegin( "testVarianceShadowMap" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto & depthPrepass = graph.createPass( "depthPrepass"
@@ -2266,7 +2282,8 @@ namespace
 	void testEnvironmentMap( test::TestCounts & testCounts )
 	{
 		testBegin( "testEnvironmentMap" );
-		crg::FrameGraph graph{ testCounts.testName };
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT_S8_UINT, 1u, 6u ) );
 		auto colour = graph.createImage( test::createImage( "colour", VK_FORMAT_R16G16B16A16_SFLOAT, 8u, 6u ) );
 		auto colourv = graph.createView( test::createView( "colourv", colour, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 8u, 0u, 6u ) );

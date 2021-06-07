@@ -44,6 +44,7 @@ namespace crg
 	class FrameGraph;
 	class FramePassTimer;
 	class GraphVisitor;
+	class ResourceHandler;
 	class RunnableGraph;
 	class RunnablePass;
 

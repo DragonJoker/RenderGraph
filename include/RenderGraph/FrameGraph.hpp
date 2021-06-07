@@ -20,7 +20,8 @@ namespace crg
 		friend class RunnableGraph;
 
 	public:
-		CRG_API FrameGraph( std::string name = "FrameGraph" );
+		CRG_API FrameGraph( ResourceHandler & handler
+			, std::string name = "FrameGraph" );
 		CRG_API FramePass & createPass( std::string const & name
 			, RunnablePassCreator runnableCreator );
 		CRG_API RunnableGraphPtr compile( GraphContext context );
@@ -34,12 +35,13 @@ namespace crg
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 
 	private:
+		ResourceHandler & m_handler;
 		std::string m_name;
 		FramePassPtrArray m_passes;
-		ImageIdDataOwnerCont m_images;
-		ImageViewIdDataOwnerCont m_imageViews;
 		ImageIdAliasMap m_imageAliases;
 		ImageViewIdAliasMap m_imageViewAliases;
+		std::set< ImageId > m_images;
+		std::set< ImageViewId > m_imageViews;
 		std::map< std::string, ImageViewId > m_attachViews;
 		std::map< ImageViewId, LayoutState > m_finalLayouts;
 		std::map< VkBuffer, AccessState > m_finalAccesses;
