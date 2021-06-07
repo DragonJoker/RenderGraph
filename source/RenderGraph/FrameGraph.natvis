@@ -64,7 +64,6 @@
       <Item Name="name">name</Item>
       <Item Name="images">images</Item>
       <Item Name="buffers">buffers</Item>
-      <Item Name="bufferViews">bufferViews</Item>
       <Item Name="depends">depends</Item>
     </Expand>
   </Type>
@@ -114,7 +113,7 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::AttachmentTransition">
+  <Type Name="crg::ViewTransition">
     <DisplayString>{view.data->name} : {outputAttach.name} -> {inputAttach.name}</DisplayString>
     <Expand>
       <Item Name="view">view</Item>

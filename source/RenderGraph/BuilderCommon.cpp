@@ -22,15 +22,22 @@ namespace crg
 			// Retrieve passes for which no transition is set.
 			for ( auto & depsIt : dependencies )
 			{
-				if ( depsIt.second.empty() )
+				if ( depsIt.second.viewTransitions.empty()
+					&& depsIt.second.bufferTransitions.empty() )
 				{
 					result.insert( depsIt.first );
 				}
 				else
 				{
-					dstCount += uint32_t( std::count_if( depsIt.second.begin()
-						, depsIt.second.end()
-						, []( AttachmentTransition const & lookup )
+					dstCount += uint32_t( std::count_if( depsIt.second.viewTransitions.begin()
+						, depsIt.second.viewTransitions.end()
+						, []( ViewTransition const & lookup )
+						{
+							return lookup.inputAttach.getFlags() != 0;
+						} ) );
+					dstCount += uint32_t( std::count_if( depsIt.second.bufferTransitions.begin()
+						, depsIt.second.bufferTransitions.end()
+						, []( BufferTransition const & lookup )
 						{
 							return lookup.inputAttach.getFlags() != 0;
 						} ) );
@@ -59,12 +66,18 @@ namespace crg
 					, [&depsIt]( FramePassDependenciesMap::value_type const & lookup )
 					{
 						return lookup.first != depsIt.first
-							&& lookup.second.end() != std::find_if( lookup.second.begin()
-								, lookup.second.end()
-								, [&depsIt]( AttachmentTransition const & lookup )
+							&& ( lookup.second.viewTransitions.end() != std::find_if( lookup.second.viewTransitions.begin()
+								, lookup.second.viewTransitions.end()
+								, [&depsIt]( ViewTransition const & lookup )
 								{
 									return lookup.outputAttach.pass == depsIt.first;
-								} );
+								} )
+							|| lookup.second.bufferTransitions.end() != std::find_if( lookup.second.bufferTransitions.begin()
+								, lookup.second.bufferTransitions.end()
+								, [&depsIt]( BufferTransition const & lookup )
+								{
+									return lookup.outputAttach.pass == depsIt.first;
+								} ) );
 					} );
 
 				if ( it == dependencies.end() )

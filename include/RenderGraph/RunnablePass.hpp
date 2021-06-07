@@ -18,11 +18,21 @@ namespace crg
 		struct LayoutTransition
 		{
 			// The layout the view is in, when coming to this pass
-			VkImageLayout fromLayout;
+			LayoutState from;
 			// The layout this pass needs the view to be in
-			VkImageLayout neededLayout;
+			LayoutState needed;
 			// The layout the view needs to be, out from this pass.
-			VkImageLayout toLayout;
+			LayoutState to;
+		};
+
+		struct AccessTransition
+		{
+			// The layout the buffer is in, when coming to this pass
+			AccessState from;
+			// The layout this pass needs the buffer to be in
+			AccessState needed;
+			// The layout the buffer needs to be, out from this pass.
+			AccessState to;
 		};
 
 	public:
@@ -96,18 +106,33 @@ namespace crg
 		CRG_API virtual void doCreateCommandBuffer();
 		CRG_API virtual void doCreateSemaphore();
 		CRG_API virtual void doCreateFence();
-		void doRegisterTransition( ImageViewId view
+		void doRegisterTransition( uint32_t passIndex
+			, ImageViewId view
 			, LayoutTransition transition );
+		void doRegisterTransition( uint32_t passIndex
+			, Buffer buffer
+			, AccessTransition transition );
 
 	protected:
-		CRG_API void doUpdateFinalLayout( ImageViewId view
-			, VkImageLayout layout );
-		CRG_API LayoutTransition const & doGetTransition( ImageViewId view )const;
+		CRG_API void doUpdateFinalLayout( uint32_t passIndex
+			, ImageViewId const & view
+			, VkImageLayout layout
+			, VkAccessFlags accessMask
+			, VkPipelineStageFlags pipelineStage );
+		CRG_API void doUpdateFinalAccess( uint32_t passIndex
+			, Buffer const & buffer
+			, VkAccessFlags accessMask
+			, VkPipelineStageFlags pipelineStage );
+		CRG_API LayoutTransition const & doGetTransition( uint32_t passIndex
+			, ImageViewId const & view )const;
+		CRG_API AccessTransition const & doGetTransition( uint32_t passIndex
+			, Buffer const & buffer )const;
 		CRG_API virtual void doInitialise() = 0;
 		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
 		CRG_API virtual VkPipelineStageFlags doGetSemaphoreWaitFlags()const = 0;
 		CRG_API virtual uint32_t doGetPassIndex()const;
+		CRG_API virtual bool doIsComputePass()const;
 
 	protected:
 		struct CommandBuffer
@@ -123,7 +148,10 @@ namespace crg
 		VkSemaphore m_semaphore{ VK_NULL_HANDLE };
 		VkFence m_fence{ VK_NULL_HANDLE };
 		FramePassTimer m_timer;
-		std::map< ImageViewId, LayoutTransition > m_transitions;
+		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
+		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
+		std::vector< LayoutTransitionMap > m_layoutTransitions;
+		std::vector< AccessTransitionMap > m_accessTransitions;
 		bool m_initialised{ false };
 	};
 }

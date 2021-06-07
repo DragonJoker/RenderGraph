@@ -9,6 +9,6 @@ namespace crg
 	namespace builder
 	{
 		GraphNodePtrArray buildGraph( RootNode & rootNode
-			, AttachmentTransitionArray const & transitions );
+			, AttachmentTransitions const & transitions );
 	}
 }

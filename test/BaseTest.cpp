@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <map>
 #include <sstream>
+#include <set>
 
 namespace test
 {
@@ -304,6 +305,27 @@ namespace test
 		std::cout << "In " << data.function << ":" << data.line << ":" << std::endl;
 		std::cout << "Unhandled Exception for " << data.target << "( " << data.error << "( " << data.message << " ) )" << std::endl;
 		++testCounts.errorCount;
+	}
+
+	std::string sortLines( std::string const & value )
+	{
+		std::stringstream stream{ value };
+		std::multiset< std::string > sorted;
+		std::string line;
+
+		while ( std::getline( stream, line ) )
+		{
+			sorted.insert( line );
+		}
+
+		std::stringstream result;
+
+		for ( auto & v : sorted )
+		{
+			result << v << std::endl;
+		}
+
+		return result.str();
 	}
 
 	//*********************************************************************************************

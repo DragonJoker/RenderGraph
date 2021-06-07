@@ -29,7 +29,9 @@ namespace crg
 	struct Id;
 
 	struct Attachment;
-	struct AttachmentTransition;
+	struct AttachmentTransitions;
+	struct BufferTransition;
+	struct ViewTransition;
 	struct GraphContext;
 	struct ImageData;
 	struct ImageViewData;
@@ -61,15 +63,16 @@ namespace crg
 	using ConstGraphAdjacentNode = GraphNode const *;
 
 	using AttachmentArray = std::vector< Attachment >;
-	using AttachmentTransitionArray = std::vector< AttachmentTransition >;
+	using BufferTransitionArray = std::vector< BufferTransition >;
+	using ViewTransitionArray = std::vector< ViewTransition >;
 	using FramePassPtrArray = std::vector< FramePassPtr >;
 	using FramePassArray = std::vector< FramePass const * >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using ConstGraphAdjacentNodeArray = std::vector< ConstGraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
-	using FramePassDependenciesMap = std::map< FramePass const *, AttachmentTransitionArray >;
+	using FramePassDependenciesMap = std::map< FramePass const *, AttachmentTransitions >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
-	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitionArray >;
+	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitions >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;
 	using ImageViewMap = std::map< ImageViewId, VkImageView >;
 	using ImageIdArray = std::vector< ImageId >;
@@ -103,9 +106,29 @@ namespace crg
 	using VkViewportArray = std::vector< VkViewport >;
 	using VkWriteDescriptorSetArray = std::vector< VkWriteDescriptorSet >;
 
+	struct LayoutState
+	{
+		VkImageLayout layout;
+		VkAccessFlags access;
+		VkPipelineStageFlags pipelineStage;
+	};
+
+	struct AccessState
+	{
+		VkAccessFlags access;
+		VkPipelineStageFlags pipelineStage;
+	};
+
+	struct Buffer
+	{
+		VkBuffer buffer;
+		std::string name;
+	};
+	CRG_API bool operator==( Buffer const & lhs, Buffer const & rhs );
+
 	struct VertexBuffer
 	{
-		VkBuffer buffer{ VK_NULL_HANDLE };
+		Buffer buffer{ VK_NULL_HANDLE, std::string{} };
 		VkDeviceMemory memory{ VK_NULL_HANDLE };
 		VkVertexInputAttributeDescriptionArray vertexAttribs{};
 		VkVertexInputBindingDescriptionArray vertexBindings{};

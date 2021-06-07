@@ -22,7 +22,7 @@ namespace crg
 		CRG_API RunnableGraph( FrameGraph & graph
 			, FramePassDependenciesMap inputTransitions
 			, FramePassDependenciesMap outputTransitions
-			, AttachmentTransitionArray transitions
+			, AttachmentTransitions transitions
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
 			, GraphContext context );
@@ -49,27 +49,79 @@ namespace crg
 			, bool invertV );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
-		CRG_API VkImageLayout getCurrentLayout( ImageViewId view )const;
-		CRG_API VkImageLayout updateCurrentLayout( ImageViewId view
-			, VkImageLayout newLayout );
-		CRG_API VkImageLayout getOutputLayout( crg::FramePass const & pass
+		CRG_API LayoutState getCurrentLayout( uint32_t passIndex
 			, ImageViewId view )const;
+		CRG_API LayoutState updateCurrentLayout( uint32_t passIndex
+			, ImageViewId view
+			, LayoutState newLayout );
+		CRG_API LayoutState getOutputLayout( crg::FramePass const & pass
+			, ImageViewId view
+			, bool isCompute )const;
+		CRG_API AccessState getCurrentAccessState( uint32_t passIndex
+			, Buffer const & buffer )const;
+		CRG_API AccessState updateCurrentAccessState( uint32_t passIndex
+			, Buffer const & buffer
+			, AccessState newState );
+		CRG_API AccessState getOutputAccessState( crg::FramePass const & pass
+			, Buffer const & buffer
+			, bool isCompute )const;
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageSubresourceRange const & subresourceRange
 			, VkImageLayout currentLayout
-			, VkImageLayout wantedLayout );
+			, VkImageLayout wantedLayout
+			, VkAccessFlags currentMask
+			, VkAccessFlags wantedMask
+			, VkPipelineStageFlags previousStage
+			, VkPipelineStageFlags nextStage );
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, ImageId const & image
+			, VkImageSubresourceRange const & subresourceRange
+			, LayoutState const & currentState
+			, LayoutState const & wantedState );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
 			, VkImageLayout currentLayout
-			, VkImageLayout wantedLayout );
+			, VkImageLayout wantedLayout
+			, VkAccessFlags currentMask
+			, VkAccessFlags wantedMask
+			, VkPipelineStageFlags previousStage
+			, VkPipelineStageFlags nextStage );
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, ImageViewId const & view
+			, LayoutState const & currentState
+			, LayoutState const & wantedState );
+		CRG_API void imageMemoryBarrier( VkCommandBuffer commandBuffer
+			, Attachment const & from
+			, uint32_t fromIndex
+			, Attachment const & to
+			, uint32_t toIndex
+			, bool isCompute );
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, Buffer const & buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range
+			, VkAccessFlags currentMask
+			, VkAccessFlags wantedMask
+			, VkPipelineStageFlags previousStage
+			, VkPipelineStageFlags nextStage );
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, Buffer const & buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range
+			, AccessState const & currentState
+			, AccessState const & wantedState );
+		CRG_API void bufferMemoryBarrier( VkCommandBuffer commandBuffer
+			, Attachment const & from
+			, Attachment const & to
+			, bool isCompute );
 
 		ConstGraphAdjacentNode getGraph()const
 		{
 			return &m_rootNode;
 		}
 
-		AttachmentTransitionArray const & getTransitions()const
+		AttachmentTransitions const & getTransitions()const
 		{
 			return m_transitions;
 		}
@@ -83,7 +135,7 @@ namespace crg
 		FrameGraph & m_graph;
 		FramePassDependenciesMap m_inputTransitions;
 		FramePassDependenciesMap m_outputTransitions;
-		AttachmentTransitionArray m_transitions;
+		AttachmentTransitions m_transitions;
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;
 		GraphContext m_context;
@@ -92,7 +144,10 @@ namespace crg
 		ImageViewMap m_imageViews;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 		std::unordered_map< size_t, VkSampler > m_samplers;
-		std::unordered_map< uint32_t, VkImageLayout > m_viewsLayouts;
+		using LayoutStateMap = std::unordered_map< uint32_t, LayoutState >;
+		using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
+		std::vector< LayoutStateMap > m_viewsLayouts;
+		std::vector< AccessStateMap > m_buffersLayouts;
 		uint32_t m_maxPassCount{ 1u };
 	};
 }

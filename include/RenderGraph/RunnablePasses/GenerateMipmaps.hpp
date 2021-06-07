@@ -26,7 +26,7 @@ namespace crg
 		CRG_API uint32_t doGetPassIndex()const override;
 
 	private:
-		VkImageLayout m_outputLayout;
+		LayoutState m_outputLayout;
 		uint32_t const * m_passIndex;
 	};
 }

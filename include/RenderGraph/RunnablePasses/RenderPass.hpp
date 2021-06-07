@@ -35,6 +35,7 @@ namespace crg
 		CRG_API RenderPass( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
+			, VkExtent2D const & size = {}
 			, uint32_t maxPassCount = 1u );
 		CRG_API ~RenderPass();
 
@@ -61,6 +62,7 @@ namespace crg
 		CRG_API VkPipelineColorBlendStateCreateInfo doCreateBlendState();
 
 	protected:
+		VkExtent2D m_size;
 		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
 		std::vector< VkFramebuffer > m_frameBuffers;
 		VkRect2D m_renderArea{};

@@ -18,11 +18,11 @@ namespace crg
 		{
 			{
 				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
-				dot::displayTransitions( file, value );
+				dot::displayTransitions( file, value, true );
 			}
 			{
 				std::ofstream file{ value.getGraph()->getName() + "_passes.dot" };
-				dot::displayPasses( file, value );
+				dot::displayPasses( file, value, true );
 			}
 		}
 
@@ -338,7 +338,7 @@ namespace crg
 	RunnableGraph::RunnableGraph( FrameGraph & graph
 		, FramePassDependenciesMap inputTransitions
 		, FramePassDependenciesMap outputTransitions
-		, AttachmentTransitionArray transitions
+		, AttachmentTransitions transitions
 		, GraphNodePtrArray nodes
 		, RootNode rootNode
 		, GraphContext context )
@@ -392,11 +392,11 @@ namespace crg
 					, m_context.allocator );
 			}
 
-			if ( vertexBuffer.second->buffer )
+			if ( vertexBuffer.second->buffer.buffer )
 			{
-				crgUnregisterObject( m_context, vertexBuffer.second->buffer );
+				crgUnregisterObject( m_context, vertexBuffer.second->buffer.buffer );
 				m_context.vkDestroyBuffer( m_context.device
-					, vertexBuffer.second->buffer
+					, vertexBuffer.second->buffer.buffer
 					, m_context.allocator );
 			}
 		}
@@ -537,13 +537,13 @@ namespace crg
 			auto res = m_context.vkCreateBuffer( m_context.device
 				, &createInfo
 				, m_context.allocator
-				, &vertexBuffer->buffer );
+				, &vertexBuffer->buffer.buffer );
 			checkVkResult( res, "Vertex buffer creation" );
-			crgRegisterObject( m_context, "QuadVertexBuffer", vertexBuffer->buffer );
+			crgRegisterObject( m_context, "QuadVertexBuffer", vertexBuffer->buffer.buffer );
 
 			VkMemoryRequirements requirements{};
 			m_context.vkGetBufferMemoryRequirements( m_context.device
-				, vertexBuffer->buffer
+				, vertexBuffer->buffer.buffer
 				, &requirements );
 			uint32_t deduced = m_context.deduceMemoryType( requirements.memoryTypeBits
 				, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT );
@@ -559,7 +559,7 @@ namespace crg
 			crgRegisterObject( m_context, "QuadVertexMemory", vertexBuffer->memory );
 
 			res = m_context.vkBindBufferMemory( m_context.device
-				, vertexBuffer->buffer
+				, vertexBuffer->buffer.buffer
 				, vertexBuffer->memory
 				, 0u );
 			checkVkResult( res, "Buffer memory binding" );
@@ -657,44 +657,58 @@ namespace crg
 		return ires.first->second;
 	}
 
-	VkImageLayout RunnableGraph::getCurrentLayout( ImageViewId view )const
+	LayoutState RunnableGraph::getCurrentLayout( uint32_t passIndex
+		, ImageViewId view )const
 	{
-		auto it = m_viewsLayouts.find( view.id );
-
-		if ( it != m_viewsLayouts.end() )
+		if ( m_viewsLayouts.size() > passIndex )
 		{
-			return it->second;
-		}
+			auto & viewsLayouts = m_viewsLayouts[passIndex];
+			auto it = viewsLayouts.find( view.id );
 
-		for ( auto & source : view.data->source )
-		{
-			it = m_viewsLayouts.find( source.id );
-
-			if ( it != m_viewsLayouts.end() )
+			if ( it != viewsLayouts.end() )
 			{
 				return it->second;
 			}
+
+			for ( auto & source : view.data->source )
+			{
+				it = viewsLayouts.find( source.id );
+
+				if ( it != viewsLayouts.end() )
+				{
+					return it->second;
+				}
+			}
 		}
 
-		return VK_IMAGE_LAYOUT_UNDEFINED;
+		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 	}
 
-	VkImageLayout RunnableGraph::updateCurrentLayout( ImageViewId view
-		, VkImageLayout newLayout )
+	LayoutState RunnableGraph::updateCurrentLayout( uint32_t passIndex
+		, ImageViewId view
+		, LayoutState newLayout )
 	{
-		m_viewsLayouts[view.id] = newLayout;
+		if ( m_viewsLayouts.size() <= passIndex )
+		{
+			m_viewsLayouts.push_back( {} );
+		}
+
+		assert( m_viewsLayouts.size() > passIndex );
+		auto & viewsLayouts = m_viewsLayouts[passIndex];
+		viewsLayouts[view.id] = newLayout;
 		return newLayout;
 	}
 
-	VkImageLayout RunnableGraph::getOutputLayout( crg::FramePass const & pass
-		, ImageViewId view )const
+	LayoutState RunnableGraph::getOutputLayout( crg::FramePass const & pass
+		, ImageViewId view
+		, bool isCompute )const
 	{
-		VkImageLayout result{ VK_IMAGE_LAYOUT_UNDEFINED };
+		LayoutState result{ VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 		auto passIt = m_outputTransitions.find( &pass );
 		assert( passIt != m_outputTransitions.end() );
-		auto it = std::find_if( passIt->second.begin()
-			, passIt->second.end()
-			, [&view]( AttachmentTransition const & lookup )
+		auto it = std::find_if( passIt->second.viewTransitions.begin()
+			, passIt->second.viewTransitions.end()
+			, [&view]( ViewTransition const & lookup )
 			{
 				return view == lookup.view
 					|| view.data->source.end() != std::find( view.data->source.begin()
@@ -705,21 +719,23 @@ namespace crg
 						, view );
 			} );
 
-		if ( it != passIt->second.end() )
+		if ( it != passIt->second.viewTransitions.end() )
 		{
-			result = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+			result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+			result.access = it->inputAttach.getAccessMask();
+			result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
 		}
 		else
 		{
 			result = m_graph.getFinalLayout( view );
 
-			if ( result == VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
 			{
 				passIt = m_inputTransitions.find( &pass );
 				assert( passIt != m_inputTransitions.end() );
-				auto it = std::find_if( passIt->second.begin()
-					, passIt->second.end()
-					, [&view]( AttachmentTransition const & lookup )
+				auto it = std::find_if( passIt->second.viewTransitions.begin()
+					, passIt->second.viewTransitions.end()
+					, [&view]( ViewTransition const & lookup )
 					{
 						return view == lookup.view
 							|| view.data->source.end() != std::find( view.data->source.begin()
@@ -730,22 +746,117 @@ namespace crg
 								, view );
 					} );
 
-				if ( it == passIt->second.end() )
+				if ( it == passIt->second.viewTransitions.end() )
 				{
-					result = VK_IMAGE_LAYOUT_UNDEFINED;
+					result.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+					result.access = 0u;
+					result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 				}
 				else if ( it->inputAttach.getFlags() != 0u )
 				{
-					result = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+					result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+					result.access = it->inputAttach.getAccessMask();
+					result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
 				}
-				else if ( it->outputAttach.isColourClearing()
-					|| it->outputAttach.isDepthClearing() )
+				else if ( it->outputAttach.isColourClearingAttach()
+					|| it->outputAttach.isDepthClearingAttach() )
 				{
-					result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					result.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+					result.access = VK_ACCESS_SHADER_READ_BIT;
+					result.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 				}
 				else
 				{
-					result = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+					result.layout = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+					result.access = it->outputAttach.getAccessMask();
+					result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
+				}
+			}
+		}
+
+		return result;
+	}
+
+	AccessState RunnableGraph::getCurrentAccessState( uint32_t passIndex
+		, Buffer const & buffer )const
+	{
+		if ( m_buffersLayouts.size() > passIndex )
+		{
+			auto & buffersLayouts = m_buffersLayouts[passIndex];
+			auto it = buffersLayouts.find( buffer.buffer );
+
+			if ( it != buffersLayouts.end() )
+			{
+				return it->second;
+			}
+		}
+
+		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+	}
+
+	AccessState RunnableGraph::updateCurrentAccessState( uint32_t passIndex
+		, Buffer const & buffer
+		, AccessState newState )
+	{
+		if ( m_buffersLayouts.size() <= passIndex )
+		{
+			m_buffersLayouts.push_back( {} );
+		}
+
+		assert( m_buffersLayouts.size() > passIndex );
+		auto & buffersLayouts = m_buffersLayouts[passIndex];
+		buffersLayouts[buffer.buffer] = newState;
+		return newState;
+	}
+
+	AccessState RunnableGraph::getOutputAccessState( crg::FramePass const & pass
+		, Buffer const & buffer
+		, bool isCompute )const
+	{
+		AccessState result{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+		auto passIt = m_outputTransitions.find( &pass );
+		assert( passIt != m_outputTransitions.end() );
+		auto it = std::find_if( passIt->second.bufferTransitions.begin()
+			, passIt->second.bufferTransitions.end()
+			, [&buffer]( BufferTransition const & lookup )
+			{
+				return buffer == lookup.buffer;
+			} );
+
+		if ( it != passIt->second.bufferTransitions.end() )
+		{
+			result.access = it->inputAttach.getAccessMask();
+			result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
+		}
+		else
+		{
+			result = m_graph.getFinalAccessState( buffer );
+
+			if ( result.access == 0u )
+			{
+				passIt = m_inputTransitions.find( &pass );
+				assert( passIt != m_inputTransitions.end() );
+				auto it = std::find_if( passIt->second.bufferTransitions.begin()
+					, passIt->second.bufferTransitions.end()
+					, [&buffer]( BufferTransition const & lookup )
+					{
+						return buffer == lookup.buffer;
+					} );
+
+				if ( it == passIt->second.bufferTransitions.end() )
+				{
+					result.access = 0u;
+					result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+				}
+				else if ( it->inputAttach.getFlags() != 0u )
+				{
+					result.access = it->inputAttach.getAccessMask();
+					result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
+				}
+				else
+				{
+					result.access = it->outputAttach.getAccessMask();
+					result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
 				}
 			}
 		}
@@ -757,7 +868,11 @@ namespace crg
 		, ImageId const & image
 		, VkImageSubresourceRange const & subresourceRange
 		, VkImageLayout currentLayout
-		, VkImageLayout wantedLayout )
+		, VkImageLayout wantedLayout
+		, VkAccessFlags currentMask
+		, VkAccessFlags wantedMask
+		, VkPipelineStageFlags previousStage
+		, VkPipelineStageFlags nextStage )
 	{
 		if ( !m_context.device )
 		{
@@ -768,8 +883,8 @@ namespace crg
 		{
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
 				, nullptr
-				, getAccessMask( currentLayout )
-				, getAccessMask( wantedLayout )
+				, currentMask
+				, wantedMask
 				, currentLayout
 				, wantedLayout
 				, VK_QUEUE_FAMILY_IGNORED
@@ -779,8 +894,8 @@ namespace crg
 					, image.data->info.format
 					, subresourceRange ) };
 			m_context.vkCmdPipelineBarrier( commandBuffer
-				, getStageMask( currentLayout )
-				, getStageMask( wantedLayout )
+				, previousStage
+				, nextStage
 				, VK_DEPENDENCY_BY_REGION_BIT
 				, 0u
 				, nullptr
@@ -792,15 +907,154 @@ namespace crg
 	}
 
 	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
+		, ImageId const & image
+		, VkImageSubresourceRange const & subresourceRange
+		, LayoutState const & currentState
+		, LayoutState const & wantedState )
+	{
+		memoryBarrier( commandBuffer
+			, image
+			, subresourceRange
+			, currentState.layout
+			, wantedState.layout
+			, currentState.access
+			, wantedState.access
+			, currentState.pipelineStage
+			, wantedState.pipelineStage );
+	}
+
+	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageViewId const & view
 		, VkImageLayout currentLayout
-		, VkImageLayout wantedLayout )
+		, VkImageLayout wantedLayout
+		, VkAccessFlags currentMask
+		, VkAccessFlags wantedMask
+		, VkPipelineStageFlags previousStage
+		, VkPipelineStageFlags nextStage )
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
 			, view.data->info.subresourceRange
 			, currentLayout
-			, wantedLayout );
+			, wantedLayout
+			, currentMask
+			, wantedMask
+			, previousStage
+			, nextStage );
+	}
+
+	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
+		, ImageViewId const & view
+		, LayoutState const & currentState
+		, LayoutState const & wantedState )
+	{
+		memoryBarrier( commandBuffer
+			, view
+			, currentState.layout
+			, wantedState.layout
+			, currentState.access
+			, wantedState.access
+			, currentState.pipelineStage
+			, wantedState.pipelineStage );
+	}
+
+	void RunnableGraph::imageMemoryBarrier( VkCommandBuffer commandBuffer
+		, Attachment const & from
+		, uint32_t fromIndex
+		, Attachment const & to
+		, uint32_t toIndex
+		, bool isCompute )
+	{
+		assert( from.isImage()
+			&& to.isImage()
+			&& from.view( fromIndex ) == to.view( toIndex ) );
+		memoryBarrier( commandBuffer
+			, from.view( fromIndex )
+			, from.getImageLayout( m_context.separateDepthStencilLayouts )
+			, to.getImageLayout( m_context.separateDepthStencilLayouts )
+			, from.getAccessMask()
+			, to.getAccessMask()
+			, from.getPipelineStageFlags( isCompute )
+			, to.getPipelineStageFlags( isCompute ) );
+	}
+
+	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
+		, Buffer const & buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range
+		, VkAccessFlags currentMask
+		, VkAccessFlags wantedMask
+		, VkPipelineStageFlags previousStage
+		, VkPipelineStageFlags nextStage )
+	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
+		if ( currentMask != wantedMask )
+		{
+			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
+				, nullptr
+				, currentMask
+				, wantedMask
+				, VK_QUEUE_FAMILY_IGNORED
+				, VK_QUEUE_FAMILY_IGNORED
+				, buffer.buffer
+				, offset
+				, range };
+			m_context.vkCmdPipelineBarrier( commandBuffer
+				, previousStage
+				, nextStage
+				, VK_DEPENDENCY_BY_REGION_BIT
+				, 0u
+				, nullptr
+				, 1u
+				, &barrier
+				, 0u
+				, nullptr );
+		}
+	}
+
+	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
+		, Buffer const & buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range
+		, AccessState const & currentState
+		, AccessState const & wantedState )
+	{
+		memoryBarrier( commandBuffer
+			, buffer
+			, offset
+			, range
+			, currentState.access
+			, wantedState.access
+			, currentState.pipelineStage
+			, wantedState.pipelineStage );
+	}
+
+	void RunnableGraph::bufferMemoryBarrier( VkCommandBuffer commandBuffer
+		, Attachment const & from
+		, Attachment const & to
+		, bool isCompute )
+	{
+		assert( from.isBuffer()
+			&& to.isBuffer()
+			&& from.buffer.buffer == to.buffer.buffer
+			&& from.buffer.offset == to.buffer.offset
+			&& from.buffer.range == to.buffer.range );
+		auto previousMask = from.getAccessMask();
+		auto nextMask = to.getAccessMask();
+		auto previousStage = from.getPipelineStageFlags( isCompute );
+		auto nextStage = to.getPipelineStageFlags( isCompute );
+		memoryBarrier( commandBuffer
+			, from.buffer.buffer
+			, from.buffer.offset
+			, from.buffer.range
+			, from.getAccessMask()
+			, to.getAccessMask()
+			, from.getPipelineStageFlags( isCompute )
+			, to.getPipelineStageFlags( isCompute ) );
 	}
 
 	void RunnableGraph::doCreateImages()

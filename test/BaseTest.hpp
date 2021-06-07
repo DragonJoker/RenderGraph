@@ -74,6 +74,7 @@ namespace test
 	int reportTestSuite( TestCounts const & testCounts );
 	void reportFailure( TestCounts & testCounts, MessageData const & data );
 	void reportUnhandled( TestCounts & testCounts, MessageData const & data );
+	std::string sortLines( std::string const & value );
 
 #define testStringify( x )\
 	#x
@@ -307,6 +308,43 @@ namespace test
 	{\
 		++testCounts.totalCount;\
 		auto diff = testCounts.diffLines( x, y );\
+		if ( !diff.empty() )\
+		{\
+			throw test::Exception{ test::makeMessageData( testCounts.testName\
+				, "EQUAL"\
+				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )\nDIFF(\n" + diff + " )"\
+				, __FUNCTION__\
+				, __LINE__ ) };\
+		}\
+	}\
+	catch ( test::Exception & exc )\
+	{\
+		test::reportFailure( testCounts, exc.data );\
+	}\
+	catch ( std::exception & exc )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "EQUAL"\
+				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
+				, __FUNCTION__\
+				, __LINE__ ) );\
+	}\
+	catch ( ... )\
+	{\
+		test::reportUnhandled( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "EQUAL"\
+				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
+				, __FUNCTION__\
+				, __LINE__ ) );\
+	}
+
+#define checkEqualSortedLines( x, y )\
+	try\
+	{\
+		++testCounts.totalCount;\
+		auto diff = testCounts.diffLines( test::sortLines( x ), test::sortLines( y ) );\
 		if ( !diff.empty() )\
 		{\
 			throw test::Exception{ test::makeMessageData( testCounts.testName\

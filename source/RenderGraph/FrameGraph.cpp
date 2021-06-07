@@ -54,7 +54,7 @@ namespace crg
 		// Transitions for which the pass is the source.
 		FramePassDependenciesMap outputTransitions;
 		// All transitions.
-		AttachmentTransitionArray transitions;
+		AttachmentTransitions transitions;
 		builder::buildPassAttachDependencies( m_passes
 			, inputTransitions
 			, outputTransitions
@@ -106,18 +106,36 @@ namespace crg
 	}
 
 	void FrameGraph::setFinalLayout( ImageViewId view
-		, VkImageLayout layout )
+		, LayoutState layout )
 	{
 		m_finalLayouts[view] = layout;
 	}
 
-	VkImageLayout FrameGraph::getFinalLayout( ImageViewId view )const
+	LayoutState FrameGraph::getFinalLayout( ImageViewId view )const
 	{
 		auto it = m_finalLayouts.find( view );
 
 		if ( it == m_finalLayouts.end() )
 		{
-			return VK_IMAGE_LAYOUT_UNDEFINED;
+			return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+		}
+
+		return it->second;
+	}
+
+	void FrameGraph::setFinalAccessState( Buffer const & buffer
+		, AccessState state )
+	{
+		m_finalAccesses[buffer.buffer] = state;
+	}
+
+	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer )const
+	{
+		auto it = m_finalAccesses.find( buffer.buffer );
+
+		if ( it == m_finalAccesses.end() )
+		{
+			return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 		}
 
 		return it->second;

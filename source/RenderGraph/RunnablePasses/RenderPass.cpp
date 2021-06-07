@@ -19,8 +19,8 @@ namespace crg
 		VkAttachmentReference addAttach( Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< VkClearValue > & clearValues
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout
+			, LayoutState initialLayout
+			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
 		{
 			auto view = attach.view();
@@ -33,8 +33,8 @@ namespace crg
 				, attach.image.storeOp
 				, attach.image.stencilLoadOp
 				, attach.image.stencilStoreOp
-				, initialLayout
-				, finalLayout } );
+				, initialLayout.layout
+				, finalLayout.layout } );
 			clearValues.push_back( attach.image.clearValue );
 			return result;
 		}
@@ -43,8 +43,8 @@ namespace crg
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< VkClearValue > & clearValues
 			, VkPipelineColorBlendAttachmentStateArray & blendAttachs
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout
+			, LayoutState initialLayout
+			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
 		{
 			blendAttachs.push_back( attach.image.blendState );
@@ -91,11 +91,13 @@ namespace crg
 	RenderPass::RenderPass( FramePass const & pass
 		, GraphContext const & context
 		, RunnableGraph & graph
+		, VkExtent2D const & size
 		, uint32_t maxPassCount )
 		: RunnablePass{ pass
 			, context
 			, graph
 			, maxPassCount }
+		, m_size{ size }
 	{
 	}
 
@@ -156,25 +158,25 @@ namespace crg
 		for ( auto & attach : m_pass.images )
 		{
 			auto view = attach.view();
-			auto transition = doGetTransition( view );
+			auto transition = doGetTransition( 0u, view );
 
-			if ( attach.isDepth() || attach.isStencil() )
+			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
 				depthReference = addAttach( attach
 					, attaches
 					, m_clearValues
-					, transition.fromLayout
-					, transition.toLayout
+					, transition.from
+					, transition.to
 					, m_context.separateDepthStencilLayouts );
 			}
-			else if ( attach.isColour() )
+			else if ( attach.isColourAttach() )
 			{
 				colorReferences.push_back( addAttach( attach
 					, attaches
 					, m_clearValues
 					, m_blendAttachs
-					, transition.fromLayout
-					, transition.toLayout
+					, transition.from
+					, transition.to
 					, m_context.separateDepthStencilLayouts ) );
 			}
 		}
@@ -245,9 +247,9 @@ namespace crg
 
 			for ( auto & attach : m_pass.images )
 			{
-				if ( attach.isColour()
-					|| attach.isDepth()
-					|| attach.isStencil() )
+				if ( attach.isColourAttach()
+					|| attach.isDepthAttach()
+					|| attach.isStencilAttach() )
 				{
 					auto view = attach.view( index );
 					attachments.push_back( m_graph.getImageView( view ) );
@@ -256,6 +258,8 @@ namespace crg
 				}
 			}
 
+			width = std::max( width, m_size.width );
+			height = std::max( height, m_size.height );
 			m_renderArea.extent.width = width;
 			m_renderArea.extent.height = height;
 			auto frameBuffer = &m_frameBuffers[index];

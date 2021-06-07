@@ -10,27 +10,6 @@
 
 namespace
 {
-	std::string sort( std::string const & value )
-	{
-		std::stringstream stream{ value };
-		std::multiset< std::string > sorted;
-		std::string line;
-
-		while ( std::getline( stream, line ) )
-		{
-			sorted.insert( line );
-		}
-
-		std::stringstream result;
-
-		for ( auto & v : sorted )
-		{
-			result << v << std::endl;
-		}
-
-		return result.str();
-	}
-
 	using CheckViews = std::function< void( test::TestCounts &
 		, crg::FramePass const &
 		, crg::RunnableGraph const & ) >;
@@ -125,9 +104,9 @@ namespace
 	{
 		for ( auto & view : pass.images )
 		{
-			if ( view.isColourOutput() )
+			if ( view.isColourOutputAttach() )
 			{
-				check( graph.getOutputLayout( pass, view.view( 0u ) ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+				check( graph.getOutputLayout( pass, view.view( 0u ), false ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
 			}
 		}
 	}
@@ -138,9 +117,9 @@ namespace
 	{
 		for ( auto & view : pass.images )
 		{
-			if ( view.isSampled() )
+			if ( view.isSampledView() )
 			{
-				check( graph.getCurrentLayout( view.view( 0u ) ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+				check( graph.getCurrentLayout( 0u, view.view( 0u ) ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
 			}
 		}
 	}
@@ -189,7 +168,7 @@ namespace
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -257,9 +236,11 @@ namespace
     "Transition to\npass2CrtvSpl" -> "pass2C" [ label="rtv" ];
     "Transition to\npass2CrtvSpl" [ shape=box ];
     "pass1C" -> "Transition to\npass2CrtvSpl" [ label="rtv" ];
+    "pass1C" [ shape=ellipse ];
+    "pass2C" [ shape=ellipse ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -314,15 +295,18 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\npass1d0vSpl" -> "pass1" [ label="d0v" ];
     "Transition to\npass1d0vSpl" [ shape=box ];
-    "Transition to\npass2d1vSpl" -> "pass2" [ label="d1v" ];
-    "Transition to\npass2d1vSpl" [ shape=box ];
+    "pass0" [ shape=ellipse ];
+    "pass1" [ shape=ellipse ];
     "pass0" -> "Transition to\npass1d0vSpl" [ label="d0v" ];
+    "Transition to\npass1d0vSpl" -> "pass1" [ label="d0v" ];
+    "Transition to\npass2d1vSpl" [ shape=box ];
+    "pass2" [ shape=ellipse ];
     "pass1" -> "Transition to\npass2d1vSpl" [ label="d1v" ];
+    "Transition to\npass2d1vSpl" -> "pass2" [ label="d1v" ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -382,15 +366,18 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\npass1d0vSpl" -> "pass1" [ label="d0v" ];
     "Transition to\npass1d0vSpl" [ shape=box ];
-    "Transition to\npass2d1vSpl" -> "pass2" [ label="d1v" ];
-    "Transition to\npass2d1vSpl" [ shape=box ];
+    "pass0" [ shape=ellipse ];
+    "pass1" [ shape=ellipse ];
     "pass0" -> "Transition to\npass1d0vSpl" [ label="d0v" ];
+    "Transition to\npass1d0vSpl" -> "pass1" [ label="d0v" ];
+    "Transition to\npass2d1vSpl" [ shape=box ];
+    "pass2" [ shape=ellipse ];
     "pass1" -> "Transition to\npass2d1vSpl" [ label="d1v" ];
+    "Transition to\npass2d1vSpl" -> "pass2" [ label="d1v" ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -431,12 +418,14 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
     "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -491,15 +480,18 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
     "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
-    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass3" [ shape=ellipse ];
     "ssaoMinifyPass2" -> "Transition to\nssaoMinifyPass3m2vSpl" [ label="m2v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -654,15 +646,18 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\npass1cvSpl" -> "pass1" [ label="cv" ];
     "Transition to\npass1cvSpl" [ shape=box ];
-    "Transition to\npass2avSpl" -> "pass2" [ label="av" ];
-    "Transition to\npass2avSpl" [ shape=box ];
+    "pass0" [ shape=ellipse ];
+    "pass1" [ shape=ellipse ];
     "pass0" -> "Transition to\npass1cvSpl" [ label="cv" ];
+    "Transition to\npass1cvSpl" -> "pass1" [ label="cv" ];
+    "Transition to\npass2avSpl" [ shape=box ];
+    "pass2" [ shape=ellipse ];
     "pass1" -> "Transition to\npass2avSpl" [ label="av" ];
+    "Transition to\npass2avSpl" -> "pass2" [ label="av" ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -828,45 +823,60 @@ namespace
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
 		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
-    "Transition to\nambientPassb1vSpl" [ shape=box ];
-    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
-    "Transition to\nambientPassd1vSpl" [ shape=box ];
-    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
-    "Transition to\nambientPassd2vSpl" [ shape=box ];
-    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
-    "Transition to\nambientPassd3vSpl" [ shape=box ];
-    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
-    "Transition to\nambientPassd4vSpl" [ shape=box ];
-    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
-    "Transition to\nambientPassdsvSpl" [ shape=box ];
-    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
-    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
-    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
     "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
-    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
-    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
-    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
-    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
-    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
-    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
-    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
-    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
-    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
-    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "geometryPass" [ shape=ellipse ];
+    "ssaoLinearisePass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
-    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
     "ssaoLinearisePass" -> "Transition to\nssaoMinifyPass1m0vSpl" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass3" [ shape=ellipse ];
     "ssaoMinifyPass2" -> "Transition to\nssaoMinifyPass3m2vSpl" [ label="m2v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
+    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
+    "ssaoRawPass" [ shape=ellipse ];
     "ssaoMinifyPass3" -> "Transition to\nssaoRawPassm3vSpl" [ label="m3v" ];
+    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
+    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
+    "ssaoBlurPass" [ shape=ellipse ];
     "ssaoRawPass" -> "Transition to\nssaoBlurPassrsvSpl" [ label="rsv" ];
+    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
+    "Transition to\nambientPassb1vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
+    "Transition to\nambientPassd1vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
+    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
+    "Transition to\nambientPassd2vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
+    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
+    "Transition to\nambientPassd3vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
+    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
+    "Transition to\nambientPassd4vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
+    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
+    "Transition to\nambientPassdsvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
 }
 )";
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -1338,153 +1348,175 @@ namespace
 					if constexpr ( EnableTransparent )
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
-    "Transition to\naccumulationPassvvIOc" [ shape=box ];
-    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
-    "Transition to\nambientPassb1vSpl" [ shape=box ];
-    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
-    "Transition to\nambientPassd1vSpl" [ shape=box ];
-    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
-    "Transition to\nambientPassd2vSpl" [ shape=box ];
-    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
-    "Transition to\nambientPassd3vSpl" [ shape=box ];
-    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
-    "Transition to\nambientPassd4vSpl" [ shape=box ];
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
-    "Transition to\nambientPassdsvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
-    "Transition to\ncombinePassavSpl" [ shape=box ];
-    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
-    "Transition to\ncombinePassdsvSpl" [ shape=box ];
-    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
-    "Transition to\ncombinePassrvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
-    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
-    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
-    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
-    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
-    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
-    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
-    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
-    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
-    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
-    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
-    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
-    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
-    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
-    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
-    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
-    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
-    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
-    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
-    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
-    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
-    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
+    "ssaoLinearisePass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
     "ssaoLinearisePass" -> "Transition to\nssaoMinifyPass1m0vSpl" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass3" [ shape=ellipse ];
     "ssaoMinifyPass2" -> "Transition to\nssaoMinifyPass3m2vSpl" [ label="m2v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
+    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
+    "ssaoRawPass" [ shape=ellipse ];
     "ssaoMinifyPass3" -> "Transition to\nssaoRawPassm3vSpl" [ label="m3v" ];
+    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
+    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
+    "ssaoBlurPass" [ shape=ellipse ];
     "ssaoRawPass" -> "Transition to\nssaoBlurPassrsvSpl" [ label="rsv" ];
+    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
+    "Transition to\nambientPassb1vSpl" [ shape=box ];
+    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
+    "Transition to\nambientPassd1vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
+    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
+    "Transition to\nambientPassd2vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
+    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
+    "Transition to\nambientPassd3vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
+    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
+    "Transition to\nambientPassd4vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
+    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
+    "Transition to\nambientPassdsvSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
+    "Transition to\naccumulationPassvvIOc" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
+    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
+    "Transition to\ncombinePassavSpl" [ shape=box ];
+    "combinePass" [ shape=ellipse ];
+    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
+    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
+    "Transition to\ncombinePassdsvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
+    "Transition to\ncombinePassrvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
+    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
+    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
+    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
+    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
 					else
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
-    "Transition to\nambientPassb1vSpl" [ shape=box ];
-    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
-    "Transition to\nambientPassd1vSpl" [ shape=box ];
-    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
-    "Transition to\nambientPassd2vSpl" [ shape=box ];
-    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
-    "Transition to\nambientPassd3vSpl" [ shape=box ];
-    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
-    "Transition to\nambientPassd4vSpl" [ shape=box ];
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
-    "Transition to\nambientPassdsvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
-    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
-    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
-    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
-    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
-    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
-    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
-    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
-    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
-    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
-    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
-    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
-    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
-    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
-    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
-    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
+    "ssaoLinearisePass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
     "ssaoLinearisePass" -> "Transition to\nssaoMinifyPass1m0vSpl" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass3" [ shape=ellipse ];
     "ssaoMinifyPass2" -> "Transition to\nssaoMinifyPass3m2vSpl" [ label="m2v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
+    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
+    "ssaoRawPass" [ shape=ellipse ];
     "ssaoMinifyPass3" -> "Transition to\nssaoRawPassm3vSpl" [ label="m3v" ];
+    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
+    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
+    "ssaoBlurPass" [ shape=ellipse ];
     "ssaoRawPass" -> "Transition to\nssaoBlurPassrsvSpl" [ label="rsv" ];
+    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
+    "Transition to\nambientPassb1vSpl" [ shape=box ];
+    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
+    "Transition to\nambientPassd1vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
+    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
+    "Transition to\nambientPassd2vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
+    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
+    "Transition to\nambientPassd3vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
+    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
+    "Transition to\nambientPassd4vSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
+    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
+    "Transition to\nambientPassdsvSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
@@ -1494,81 +1526,91 @@ namespace
 					if constexpr ( EnableTransparent )
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
-    "Transition to\naccumulationPassvvIOc" [ shape=box ];
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
-    "Transition to\ncombinePassavSpl" [ shape=box ];
-    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
-    "Transition to\ncombinePassdsvSpl" [ shape=box ];
-    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
-    "Transition to\ncombinePassrvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
-    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
-    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
-    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
-    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
-    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\naccumulationPassvvIOc" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
+    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
+    "Transition to\ncombinePassavSpl" [ shape=box ];
+    "combinePass" [ shape=ellipse ];
+    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
+    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
+    "Transition to\ncombinePassdsvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
+    "Transition to\ncombinePassrvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
+    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
+    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
+    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
+    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
 					else
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
@@ -1579,30 +1621,38 @@ namespace
 				if constexpr ( EnableTransparent )
 				{
 					ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
     "Transition to\ncombinePassavSpl" [ shape=box ];
-    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
-    "Transition to\ncombinePassdsvSpl" [ shape=box ];
-    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
-    "Transition to\ncombinePassrvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
-    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "combinePass" [ shape=ellipse ];
     "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
+    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
+    "Transition to\ncombinePassdsvSpl" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
     "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
+    "Transition to\ncombinePassrvSpl" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
     "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
-    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
+    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
     "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
+    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 				}
 				else
 				{
 					ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nfinalCombinePassdsvSpl" -> "finalCombinePass" [ label="dtv" ];
     "Transition to\nfinalCombinePassdsvSpl" [ shape=box ];
+    "depthPrepass" [ shape=ellipse ];
+    "finalCombinePass" [ shape=ellipse ];
     "depthPrepass" -> "Transition to\nfinalCombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\nfinalCombinePassdsvSpl" -> "finalCombinePass" [ label="dtv" ];
 }
 )";
 				}
@@ -1617,153 +1667,205 @@ namespace
 					if constexpr ( EnableTransparent )
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
-    "Transition to\naccumulationPassvvIOc" [ shape=box ];
-    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
-    "Transition to\nambientPassb1vSpl" [ shape=box ];
-    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
-    "Transition to\nambientPassd1vSpl" [ shape=box ];
-    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
-    "Transition to\nambientPassd2vSpl" [ shape=box ];
-    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
-    "Transition to\nambientPassd3vSpl" [ shape=box ];
-    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
-    "Transition to\nambientPassd4vSpl" [ shape=box ];
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
-    "Transition to\nambientPassdsvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
-    "Transition to\ncombinePassavSpl" [ shape=box ];
-    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
-    "Transition to\ncombinePassdsvSpl" [ shape=box ];
-    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
-    "Transition to\ncombinePassrvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
-    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
-    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
-    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
-    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
-    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
-    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
-    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
-    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
-    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
-    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
-    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
-    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
-    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
-    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
-    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
-    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
-    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
-    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
-    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
-    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
-    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "ssaoLinearisePass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
     "ssaoLinearisePass" -> "Transition to\nssaoMinifyPass1m0vSpl" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass3" [ shape=ellipse ];
     "ssaoMinifyPass2" -> "Transition to\nssaoMinifyPass3m2vSpl" [ label="m2v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
+    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
+    "ssaoRawPass" [ shape=ellipse ];
     "ssaoMinifyPass3" -> "Transition to\nssaoRawPassm3vSpl" [ label="m3v" ];
+    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
+    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
+    "ssaoBlurPass" [ shape=ellipse ];
     "ssaoRawPass" -> "Transition to\nssaoBlurPassrsvSpl" [ label="rsv" ];
+    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
+    "Transition to\nambientPassb1vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
+    "Transition to\nambientPassd1vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
+    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
+    "Transition to\nambientPassd2vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
+    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
+    "Transition to\nambientPassd3vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
+    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
+    "Transition to\nambientPassd4vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
+    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
+    "Transition to\nambientPassdsvSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
+    "Transition to\naccumulationPassvvIOc" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
+    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
+    "Transition to\ncombinePassavSpl" [ shape=box ];
+    "combinePass" [ shape=ellipse ];
+    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
+    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
+    "Transition to\ncombinePassdsvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
+    "Transition to\ncombinePassrvSpl" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "combinePass" [ shape=ellipse ];
+    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
+    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
+    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
+    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
 					else
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
-    "Transition to\nambientPassb1vSpl" [ shape=box ];
-    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
-    "Transition to\nambientPassd1vSpl" [ shape=box ];
-    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
-    "Transition to\nambientPassd2vSpl" [ shape=box ];
-    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
-    "Transition to\nambientPassd3vSpl" [ shape=box ];
-    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
-    "Transition to\nambientPassd4vSpl" [ shape=box ];
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
-    "Transition to\nambientPassdsvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
-    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
-    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
-    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
-    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
-    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
-    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
-    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
-    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
-    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
-    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
-    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
-    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
-    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
-    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
-    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
-    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
+    "ssaoLinearisePass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nssaoLinearisePassdsvSpl" [ label="dtv" ];
+    "Transition to\nssaoLinearisePassdsvSpl" -> "ssaoLinearisePass" [ label="dtv" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" [ shape=box ];
+    "ssaoMinifyPass1" [ shape=ellipse ];
     "ssaoLinearisePass" -> "Transition to\nssaoMinifyPass1m0vSpl" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass1m0vSpl" -> "ssaoMinifyPass1" [ label="m0v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
+    "ssaoMinifyPass2" [ shape=ellipse ];
     "ssaoMinifyPass1" -> "Transition to\nssaoMinifyPass2m1vSpl" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass2m1vSpl" -> "ssaoMinifyPass2" [ label="m1v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" [ shape=box ];
+    "ssaoMinifyPass3" [ shape=ellipse ];
     "ssaoMinifyPass2" -> "Transition to\nssaoMinifyPass3m2vSpl" [ label="m2v" ];
+    "Transition to\nssaoMinifyPass3m2vSpl" -> "ssaoMinifyPass3" [ label="m2v" ];
+    "Transition to\nssaoRawPassm3vSpl" [ shape=box ];
+    "ssaoRawPass" [ shape=ellipse ];
     "ssaoMinifyPass3" -> "Transition to\nssaoRawPassm3vSpl" [ label="m3v" ];
+    "Transition to\nssaoRawPassm3vSpl" -> "ssaoRawPass" [ label="m3v" ];
+    "Transition to\nssaoBlurPassrsvSpl" [ shape=box ];
+    "ssaoBlurPass" [ shape=ellipse ];
     "ssaoRawPass" -> "Transition to\nssaoBlurPassrsvSpl" [ label="rsv" ];
+    "Transition to\nssaoBlurPassrsvSpl" -> "ssaoBlurPass" [ label="rsv" ];
+    "Transition to\nambientPassb1vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "ssaoBlurPass" -> "Transition to\nambientPassb1vSpl" [ label="b1v" ];
+    "Transition to\nambientPassb1vSpl" -> "ambientPass" [ label="b1v" ];
+    "Transition to\nambientPassd1vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd1vSpl" [ label="d1v" ];
+    "Transition to\nambientPassd1vSpl" -> "ambientPass" [ label="d1v" ];
+    "Transition to\nambientPassd2vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd2vSpl" [ label="d2v" ];
+    "Transition to\nambientPassd2vSpl" -> "ambientPass" [ label="d2v" ];
+    "Transition to\nambientPassd3vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd3vSpl" [ label="d3v" ];
+    "Transition to\nambientPassd3vSpl" -> "ambientPass" [ label="d3v" ];
+    "Transition to\nambientPassd4vSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassd4vSpl" [ label="d4v" ];
+    "Transition to\nambientPassd4vSpl" -> "ambientPass" [ label="d4v" ];
+    "Transition to\nambientPassdsvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nambientPassdsvSpl" [ label="dtv" ];
+    "Transition to\nambientPassdsvSpl" -> "ambientPass" [ label="dtv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
@@ -1773,81 +1875,94 @@ namespace
 					if constexpr ( EnableTransparent )
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
-    "Transition to\naccumulationPassvvIOc" [ shape=box ];
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
-    "Transition to\ncombinePassavSpl" [ shape=box ];
-    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
-    "Transition to\ncombinePassdsvSpl" [ shape=box ];
-    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
-    "Transition to\ncombinePassrvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
-    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
-    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
-    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
-    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
-    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\naccumulationPassvvIOc" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\naccumulationPassvvIOc" [ label="vv" ];
+    "Transition to\naccumulationPassvvIOc" -> "accumulationPass" [ label="vv" ];
+    "Transition to\ncombinePassavSpl" [ shape=box ];
+    "combinePass" [ shape=ellipse ];
+    "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
+    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
+    "Transition to\ncombinePassdsvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
+    "Transition to\ncombinePassrvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
+    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
+    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
+    "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
+    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
 					else
 					{
 						ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
-    "Transition to\nambientPassdfvSpl" [ shape=box ];
-    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
-    "Transition to\nambientPassspvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
-    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
-    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
     "Transition to\nlightingPassd1vSpl" [ shape=box ];
-    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
-    "Transition to\nlightingPassd2vSpl" [ shape=box ];
-    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
-    "Transition to\nlightingPassd3vSpl" [ shape=box ];
-    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
-    "Transition to\nlightingPassd4vSpl" [ shape=box ];
-    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
-    "Transition to\nlightingPassdtvSpl" [ shape=box ];
-    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
-    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "geometryPass" [ shape=ellipse ];
+    "lightingPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd1vSpl" [ label="d1v" ];
+    "Transition to\nlightingPassd1vSpl" -> "lightingPass" [ label="d1v" ];
+    "Transition to\nlightingPassd2vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd2vSpl" [ label="d2v" ];
+    "Transition to\nlightingPassd2vSpl" -> "lightingPass" [ label="d2v" ];
+    "Transition to\nlightingPassd3vSpl" [ shape=box ];
     "geometryPass" -> "Transition to\nlightingPassd3vSpl" [ label="d3v" ];
+    "Transition to\nlightingPassd3vSpl" -> "lightingPass" [ label="d3v" ];
+    "Transition to\nlightingPassd4vSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassd4vSpl" [ label="d4v" ];
+    "Transition to\nlightingPassd4vSpl" -> "lightingPass" [ label="d4v" ];
+    "Transition to\nlightingPassdtvSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
     "geometryPass" -> "Transition to\nlightingPassdtvSpl" [ label="dtv" ];
+    "Transition to\nlightingPassdtvSpl" -> "lightingPass" [ label="dtv" ];
+    "Transition to\nambientPassdfvSpl" [ shape=box ];
+    "ambientPass" [ shape=ellipse ];
     "lightingPass" -> "Transition to\nambientPassdfvSpl" [ label="dfv" ];
+    "Transition to\nambientPassdfvSpl" -> "ambientPass" [ label="dfv" ];
+    "Transition to\nambientPassspvSpl" [ shape=box ];
     "lightingPass" -> "Transition to\nambientPassspvSpl" [ label="spv" ];
+    "Transition to\nambientPassspvSpl" -> "ambientPass" [ label="spv" ];
+    "Transition to\nfinalCombinePassofvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
+    "ambientPass" -> "Transition to\nfinalCombinePassofvSpl" [ label="ofv" ];
+    "Transition to\nfinalCombinePassofvSpl" -> "finalCombinePass" [ label="ofv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "geometryPass" [ shape=ellipse ];
+    "geometryPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 					}
@@ -1858,21 +1973,24 @@ namespace
 				if constexpr ( EnableTransparent )
 				{
 					ref = R"(digraph ")" + testCounts.testName + R"(" {
-    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
     "Transition to\ncombinePassavSpl" [ shape=box ];
-    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
-    "Transition to\ncombinePassdsvSpl" [ shape=box ];
-    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
-    "Transition to\ncombinePassrvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
-    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
-    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
-    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" [ shape=ellipse ];
+    "combinePass" [ shape=ellipse ];
     "accumulationPass" -> "Transition to\ncombinePassavSpl" [ label="av" ];
+    "Transition to\ncombinePassavSpl" -> "combinePass" [ label="av" ];
+    "Transition to\ncombinePassdsvSpl" [ shape=box ];
     "accumulationPass" -> "Transition to\ncombinePassdsvSpl" [ label="dtv" ];
+    "Transition to\ncombinePassdsvSpl" -> "combinePass" [ label="dtv" ];
+    "Transition to\ncombinePassrvSpl" [ shape=box ];
     "accumulationPass" -> "Transition to\ncombinePassrvSpl" [ label="rv" ];
-    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\ncombinePassrvSpl" -> "combinePass" [ label="rv" ];
+    "Transition to\nfinalCombinePasscvSpl" [ shape=box ];
+    "finalCombinePass" [ shape=ellipse ];
     "combinePass" -> "Transition to\nfinalCombinePasscvSpl" [ label="cv" ];
+    "Transition to\nfinalCombinePasscvSpl" -> "finalCombinePass" [ label="cv" ];
+    "Transition to\nfinalCombinePassvvSpl" [ shape=box ];
+    "accumulationPass" -> "Transition to\nfinalCombinePassvvSpl" [ label="vv" ];
+    "Transition to\nfinalCombinePassvvSpl" -> "finalCombinePass" [ label="vv" ];
 }
 )";
 				}
@@ -1885,7 +2003,7 @@ namespace
 			}
 		}
 
-		checkEqualLines( sort( stream.str() ), sort( ref ) );
+		checkEqualSortedLines( stream.str(), ref );
 		testEnd();
 	}
 
@@ -2217,7 +2335,10 @@ namespace
 		mipsGen.addTransferInputView( mipsGen.mergeViews( colourViews ) );
 		mipsGen.addTransferOutputView( colourv );
 
-		graph.setFinalLayout( colourv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		graph.setFinalLayout( colourv
+			, { VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+				, crg::getAccessMask( VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
+				, crg::getStageMask( VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ) } );
 
 		auto runnable = graph.compile( getContext() );
 		testEnd();

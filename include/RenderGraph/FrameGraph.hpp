@@ -27,8 +27,11 @@ namespace crg
 		CRG_API ImageId createImage( ImageData const & img );
 		CRG_API ImageViewId createView( ImageViewData const & view );
 		CRG_API void setFinalLayout( ImageViewId view
-			, VkImageLayout layout );
-		CRG_API VkImageLayout getFinalLayout( ImageViewId view )const;
+			, LayoutState layout );
+		CRG_API LayoutState getFinalLayout( ImageViewId view )const;
+		CRG_API void setFinalAccessState( Buffer const & buffer
+			, AccessState layout );
+		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 
 	private:
 		std::string m_name;
@@ -38,6 +41,7 @@ namespace crg
 		ImageIdAliasMap m_imageAliases;
 		ImageViewIdAliasMap m_imageViewAliases;
 		std::map< std::string, ImageViewId > m_attachViews;
-		std::map< ImageViewId, VkImageLayout > m_finalLayouts;
+		std::map< ImageViewId, LayoutState > m_finalLayouts;
+		std::map< VkBuffer, AccessState > m_finalAccesses;
 	};
 }
