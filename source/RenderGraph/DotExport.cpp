@@ -16,6 +16,11 @@ namespace crg::dot
 {
 	namespace
 	{
+		static std::string_view constexpr imgColour{ "#8b008b" };
+		static std::string_view constexpr bufColour{ "#458b00" };
+		static std::string_view constexpr extColour{ "#ff7f00" };
+		static std::string_view constexpr passColour{ "#00007f" };
+
 		class DotOutVisitor
 			: public GraphVisitor
 		{
@@ -90,9 +95,9 @@ namespace crg::dot
 					std::string name{ transition.outputAttach.name + "\\ntransition to\\n" + transition.inputAttach.name };
 					displayNode( stream, name, "box", imgColour, nodes, withColours );
 					std::string srcNode = "ExternalSource";
-					std::string_view srcColour = passColour;
+					std::string_view srcColour = extColour;
 					std::string dstNode = "ExternalDestination";
-					std::string_view dstColour = passColour;
+					std::string_view dstColour = extColour;
 
 					if ( transition.outputAttach.pass )
 					{
@@ -118,9 +123,9 @@ namespace crg::dot
 					std::string name{ transition.outputAttach.name + "\\ntransition to\\n" + transition.inputAttach.name };
 					displayNode( stream, name, "box", bufColour, nodes, withColours );
 					std::string srcNode = "ExternalSource";
-					std::string_view srcColour = passColour;
+					std::string_view srcColour = extColour;
 					std::string dstNode = "ExternalDestination";
-					std::string_view dstColour = passColour;
+					std::string_view dstColour = extColour;
 
 					if ( transition.outputAttach.pass )
 					{
