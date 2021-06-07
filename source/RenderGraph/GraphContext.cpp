@@ -318,6 +318,31 @@ namespace crg
 		, std::string const & objectName
 		, std::string const & typeName )const
 	{
+		doRegisterObjectName( object
+			, objectType
+			, objectName
+			, typeName );
+		std::stringstream stream;
+		stream.imbue( std::locale{ "C" } );
+		stream << "Created " << typeName
+			<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
+			<< " - " << objectName;
+		std::clog << stream.str() << std::endl;
+		std::stringstream callStack;
+		callStack << callstack::Backtrace{ 20, 4 };
+		m_allocated.emplace( object
+			, ObjectAllocation{
+				typeName,
+				objectName,
+				callStack.str()
+			} );
+	}
+
+	void GraphContext::doRegisterObjectName( uint64_t object
+		, uint32_t objectType
+		, std::string const & objectName
+		, std::string const & typeName )const
+	{
 #	if VK_EXT_debug_utils
 		if ( vkSetDebugUtilsObjectNameEXT )
 		{
@@ -340,20 +365,6 @@ namespace crg
 			vkDebugMarkerSetObjectNameEXT( device, &nameInfo );
 		}
 #	endif
-		std::stringstream stream;
-		stream.imbue( std::locale{ "C" } );
-		stream << "Created " << typeName
-			<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
-			<< " - " << objectName;
-		std::clog << stream.str() << std::endl;
-		std::stringstream callStack;
-		callStack << callstack::Backtrace{ 20, 4 };
-		m_allocated.emplace( object
-			, ObjectAllocation{
-				typeName,
-				objectName,
-				callStack.str()
-			} );
 	}
 
 	void GraphContext::doUnregisterObject( uint64_t object )const

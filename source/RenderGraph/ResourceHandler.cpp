@@ -8,6 +8,8 @@ See LICENSE file in root folder.
 #include "RenderGraph/ImageViewData.hpp"
 
 #include <cassert>
+#include <iostream>
+#include <sstream>
 
 namespace crg
 {
@@ -24,6 +26,23 @@ namespace crg
 			auto result = data.info;
 			result.image = image;
 			return result;
+		}
+	}
+
+	ResourceHandler::~ResourceHandler()
+	{
+		for ( auto & imageView : m_imageViews )
+		{
+			std::stringstream stream;
+			stream << "Leaked [VkImageView](" << imageView.first.data->name << ")";
+			std::cerr << stream.str() << "\n";
+		}
+
+		for ( auto & image : m_images )
+		{
+			std::stringstream stream;
+			stream << "Leaked [VkImage](" << image.first.data->name << ")";
+			std::cerr << stream.str() << "\n";
 		}
 	}
 
@@ -98,7 +117,7 @@ namespace crg
 				, &ires.first->second.first );
 			auto image = ires.first->second.first;
 			checkVkResult( res, "Image creation" );
-			crgRegisterObject( context, imageId.data->name, image );
+			crgRegisterObjectName( context, imageId.data->name, image );
 
 			// Create Image memory
 			VkMemoryRequirements requirements{};
@@ -117,7 +136,7 @@ namespace crg
 				, &ires.first->second.second );
 			auto memory = ires.first->second.second;
 			checkVkResult( res, "Image memory allocation" );
-			crgRegisterObject( context, imageId.data->name, memory );
+			crgRegisterObjectName( context, imageId.data->name, memory );
 
 			// Bind image and memory
 			res = context.vkBindImageMemory( context.device
@@ -149,7 +168,7 @@ namespace crg
 				, context.allocator
 				, &ires.first->second );
 			checkVkResult( res, "ImageView creation" );
-			crgRegisterObject( context, view.data->name, ires.first->second );
+			crgRegisterObjectName( context, view.data->name, ires.first->second );
 		}
 
 		return ires.first->second;
@@ -164,9 +183,7 @@ namespace crg
 		{
 			if ( context.device )
 			{
-				crgUnregisterObject( context, it->second.second );
 				context.vkFreeMemory( context.device, it->second.second, context.allocator );
-				crgUnregisterObject( context, it->second.first );
 				context.vkDestroyImage( context.device, it->second.first, context.allocator );
 			}
 
@@ -183,7 +200,6 @@ namespace crg
 		{
 			if ( context.device )
 			{
-				crgUnregisterObject( context, it->second );
 				context.vkDestroyImageView( context.device, it->second, context.allocator );
 			}
 
