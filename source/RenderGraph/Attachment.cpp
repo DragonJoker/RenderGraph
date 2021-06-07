@@ -216,6 +216,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
@@ -225,6 +226,7 @@ namespace crg
 		, stencilLoadOp{ stencilLoadOp }
 		, stencilStoreOp{ stencilStoreOp }
 		, initialLayout{ initialLayout }
+		, finalLayout{ finalLayout }
 		, samplerDesc{ std::move( samplerDesc ) }
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
@@ -500,6 +502,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
@@ -513,6 +516,7 @@ namespace crg
 			, stencilLoadOp
 			, stencilStoreOp
 			, initialLayout
+			, finalLayout
 			, std::move( samplerDesc )
 			, std::move( clearValue )
 			, std::move( blendState ) }

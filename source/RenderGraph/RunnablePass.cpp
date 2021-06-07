@@ -68,24 +68,33 @@ namespace crg
 		for ( auto & attach : m_pass.images )
 		{
 			auto view = attach.view( index );
+			auto inputLayout = m_graph.getCurrentLayout( index, view );
 
-			if ( ( attach.isSampledView() || attach.isStorageView() )
+			if ( ( attach.isInput() )
 				&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
 			{
-				m_graph.updateCurrentLayout( index
-					, view
-					, { attach.image.initialLayout
-						, getAccessMask( attach.image.initialLayout )
-						, getStageMask( attach.image.initialLayout ) } );
+				inputLayout ={ attach.image.initialLayout
+					, getAccessMask( attach.image.initialLayout )
+					, getStageMask( attach.image.initialLayout ) };
+			}
+
+			auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
+
+			if ( ( attach.isOutput() )
+				&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				outputLayout = { attach.image.finalLayout
+					, getAccessMask( attach.image.finalLayout )
+					, getStageMask( attach.image.finalLayout ) };
 			}
 
 			doRegisterTransition( index
 				, view
-				, { m_graph.getCurrentLayout( index, view )
+				, { inputLayout
 					, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
 						, attach.getAccessMask()
 						, attach.getPipelineStageFlags( doIsComputePass() ) }
-					, m_graph.getOutputLayout( m_pass, view, doIsComputePass() ) } );
+					, outputLayout } );
 		}
 		
 		for ( auto & attach : m_pass.buffers )

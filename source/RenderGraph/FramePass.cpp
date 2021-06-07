@@ -413,6 +413,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, std::move( samplerDesc )
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -434,6 +435,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -455,6 +457,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -476,6 +479,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -496,6 +500,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -516,6 +521,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -535,6 +541,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VkImageLayout{}
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -545,6 +552,7 @@ namespace crg
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
@@ -560,6 +568,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, finalLayout
 			, SamplerDesc{}
 			, std::move( clearValue )
 			, std::move( blendState ) } );
@@ -572,6 +581,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = this->name + view.data->name + name;
@@ -587,6 +597,7 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, initialLayout
+				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{} } );
@@ -599,6 +610,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = this->name + view.data->name + name;
@@ -614,6 +626,7 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, initialLayout
+				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{} } );
@@ -626,6 +639,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = this->name + view.data->name + name;
@@ -641,6 +655,7 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, initialLayout
+				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{} } );
@@ -663,6 +678,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, std::move( samplerDesc )
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -684,6 +700,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -705,6 +722,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -726,6 +744,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -746,6 +765,7 @@ namespace crg
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -766,6 +786,7 @@ namespace crg
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
 			, initialLayout
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -785,6 +806,7 @@ namespace crg
 			, VkAttachmentLoadOp{}
 			, VkAttachmentStoreOp{}
 			, VkImageLayout{}
+			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{} } );
@@ -795,6 +817,7 @@ namespace crg
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
@@ -810,6 +833,7 @@ namespace crg
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
+			, finalLayout
 			, SamplerDesc{}
 			, std::move( clearValue )
 			, std::move( blendState ) } );
@@ -822,6 +846,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = this->name + views.front().data->name + name;
@@ -837,6 +862,7 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, initialLayout
+				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{} } );
@@ -849,6 +875,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = this->name + views.front().data->name + name;
@@ -864,6 +891,7 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, initialLayout
+				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{} } );
@@ -876,6 +904,7 @@ namespace crg
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
 		, VkImageLayout initialLayout
+		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = this->name + views.front().data->name + name;
@@ -891,6 +920,7 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, initialLayout
+				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{} } );
