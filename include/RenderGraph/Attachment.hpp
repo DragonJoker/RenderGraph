@@ -166,6 +166,7 @@ namespace crg
 		VkAttachmentLoadOp stencilLoadOp{};
 		VkAttachmentStoreOp stencilStoreOp{};
 		VkImageLayout initialLayout{};
+		VkImageLayout finalLayout{};
 		SamplerDesc samplerDesc{};
 		VkClearValue clearValue{};
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
@@ -180,6 +181,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState );
@@ -558,6 +560,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout
+			, VkImageLayout finalLayout
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState );

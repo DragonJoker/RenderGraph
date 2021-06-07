@@ -204,6 +204,7 @@ namespace crg
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {}
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		/**
@@ -217,6 +218,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
 		/**
 		*\brief
@@ -229,6 +231,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
 		/**
 		*\brief
@@ -241,6 +244,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
 		/**@}*/
 		/**
@@ -303,6 +307,7 @@ namespace crg
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {}
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		/**
@@ -316,6 +321,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
 		/**
 		*\brief
@@ -328,6 +334,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
 		/**
 		*\brief
@@ -340,6 +347,7 @@ namespace crg
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
 		/**@}*/
 		/**
@@ -352,12 +360,14 @@ namespace crg
 		*	Creates an input colour attachment.
 		*/
 		template< typename ImageViewT >
-		void addInputColourView( ImageViewT view )
+		void addInputColourView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			return addColourView( "Ic"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
 				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
@@ -366,13 +376,16 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addInOutColourView( ImageViewT view
-			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addColourView( "IOc"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_UNDEFINED
+				, initialLayout
+				, finalLayout
 				, {}
 				, std::move( blendState ) );
 		}
@@ -382,13 +395,15 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputColourView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, VkClearValue clearValue = {}
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addColourView( "Oc"
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**
@@ -396,7 +411,8 @@ namespace crg
 		*	Creates an input depth attachment.
 		*/
 		template< typename ImageViewT >
-		void addInputDepthView( ImageViewT view )
+		void addInputDepthView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthView( "Id"
 				, std::move( view )
@@ -404,6 +420,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
 				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
@@ -411,7 +428,9 @@ namespace crg
 		*	Creates an in/out depth attachment.
 		*/
 		template< typename ImageViewT >
-		void addInOutDepthView( ImageViewT view )
+		void addInOutDepthView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthView( "IOd"
 				, std::move( view )
@@ -419,7 +438,8 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_UNDEFINED
+				, initialLayout
+				, finalLayout
 				, {} );
 		}
 		/**
@@ -428,7 +448,8 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputDepthView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, VkClearValue clearValue = {}
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthView( "Od"
 				, std::move( view )
@@ -437,6 +458,7 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**
@@ -444,7 +466,8 @@ namespace crg
 		*	Creates an input depth and stencil attachment.
 		*/
 		template< typename ImageViewT >
-		void addInputDepthStencilView( ImageViewT view )
+		void addInputDepthStencilView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "Ids"
 				, std::move( view )
@@ -452,6 +475,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
 				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
@@ -459,7 +483,9 @@ namespace crg
 		*	Creates an in/out depth and stencil attachment.
 		*/
 		template< typename ImageViewT >
-		void addInOutDepthStencilView( ImageViewT view )
+		void addInOutDepthStencilView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "IOds"
 				, std::move( view )
@@ -467,7 +493,8 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_UNDEFINED
+				, initialLayout
+				, finalLayout
 				, {} );
 		}
 		/**
@@ -476,7 +503,8 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputDepthStencilView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, VkClearValue clearValue = {}
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "Ods"
 				, std::move( view )
@@ -485,6 +513,7 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**
@@ -492,7 +521,8 @@ namespace crg
 		*	Creates an input stencil attachment.
 		*/
 		template< typename ImageViewT >
-		void addInputStencilView( ImageViewT view )
+		void addInputStencilView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "Is"
 				, std::move( view )
@@ -500,6 +530,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, initialLayout
 				, VK_IMAGE_LAYOUT_UNDEFINED );
 		}
 		/**
@@ -507,7 +538,9 @@ namespace crg
 		*	Creates an in/out stencil attachment.
 		*/
 		template< typename ImageViewT >
-		void addInOutStencilView( ImageViewT view )
+		void addInOutStencilView( ImageViewT view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "IOs"
 				, std::move( view )
@@ -515,7 +548,8 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_UNDEFINED
+				, initialLayout
+				, finalLayout
 				, {} );
 		}
 		/**
@@ -524,7 +558,8 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputStencilView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, VkClearValue clearValue = {}
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "Os"
 				, std::move( view )
@@ -533,6 +568,7 @@ namespace crg
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_IMAGE_LAYOUT_UNDEFINED
+				, finalLayout
 				, std::move( clearValue ) );
 		}
 		/**@}*/
