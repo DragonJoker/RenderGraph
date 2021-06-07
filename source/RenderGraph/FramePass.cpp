@@ -604,6 +604,7 @@ namespace crg
 	}
 
 	void FramePass::addStencilView( std::string const & name
+		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -619,7 +620,8 @@ namespace crg
 				, *this
 				, uint32_t{}
 				, std::move( attachName )
-				, ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+				, ImageAttachment::FlagKind( stencilFlags
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
 				, { view }
 				, loadOp
 				, storeOp
@@ -633,6 +635,7 @@ namespace crg
 	}
 
 	void FramePass::addDepthStencilView( std::string const & name
+		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -648,7 +651,9 @@ namespace crg
 				, *this
 				, uint32_t{}
 				, std::move( attachName )
-				, Attachment::FlagKind( ImageAttachment::Flag::Depth ) | ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+				, ImageAttachment::FlagKind( stencilFlags
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
 				, { view }
 				, loadOp
 				, storeOp
@@ -869,6 +874,7 @@ namespace crg
 	}
 
 	void FramePass::addStencilView( std::string const & name
+		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -884,7 +890,8 @@ namespace crg
 				, *this
 				, uint32_t{}
 				, std::move( attachName )
-				, ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+				, ImageAttachment::FlagKind( stencilFlags
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
 				, std::move( views )
 				, loadOp
 				, storeOp
@@ -898,6 +905,7 @@ namespace crg
 	}
 
 	void FramePass::addDepthStencilView( std::string const & name
+		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -913,7 +921,9 @@ namespace crg
 				, *this
 				, uint32_t{}
 				, std::move( attachName )
-				, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth ) | ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+				, ImageAttachment::FlagKind( stencilFlags
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
 				, std::move( views )
 				, loadOp
 				, storeOp

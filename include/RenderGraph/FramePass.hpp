@@ -225,6 +225,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addStencilView( std::string const & name
+			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -238,6 +239,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addDepthStencilView( std::string const & name
+			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -328,6 +330,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addStencilView( std::string const & name
+			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -341,6 +344,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addDepthStencilView( std::string const & name
+			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -470,6 +474,7 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "Ids"
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -488,6 +493,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "IOds"
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -507,6 +513,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "Ods"
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -525,6 +532,7 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "Is"
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -543,6 +551,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "IOs"
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -562,6 +571,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "Os"
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
