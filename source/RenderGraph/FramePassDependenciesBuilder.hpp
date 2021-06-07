@@ -13,6 +13,6 @@ namespace crg
 		void buildPassAttachDependencies( FramePassPtrArray const & passes
 			, FramePassDependenciesMap & inputTransitions
 			, FramePassDependenciesMap & outputTransitions
-			, AttachmentTransitionArray & allTransitions );
+			, AttachmentTransitions & allTransitions );
 	}
 }

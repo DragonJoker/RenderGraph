@@ -59,6 +59,16 @@ namespace crg
 			, ImageViewId const & view )const;
 		/**
 		*\brief
+		*	Tells if, for given buffer, this pass directly depends on given pass.
+		*\param[in] pass
+		*	The pass to test.
+		*\param[in] view
+		*	The view.
+		*/
+		CRG_API bool dependsOn( FramePass const & pass
+			, Buffer const & buffer )const;
+		/**
+		*\brief
 		*	Tells if this pass directly depends on given pass.
 		*\param[in] pass
 		*	The pass to test.
@@ -74,7 +84,7 @@ namespace crg
 		*\brief
 		*	Creates a uniform buffer attachment.
 		*/
-		CRG_API void addUniformBuffer( VkBuffer buffer
+		CRG_API void addUniformBuffer( Buffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -82,7 +92,7 @@ namespace crg
 		*\brief
 		*	Creates a storage buffer attachment.
 		*/
-		CRG_API void addInputStorageBuffer( VkBuffer buffer
+		CRG_API void addInputStorageBuffer( Buffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -90,7 +100,7 @@ namespace crg
 		*\brief
 		*	Creates a storage buffer attachment.
 		*/
-		CRG_API void addOutputStorageBuffer( VkBuffer buffer
+		CRG_API void addOutputStorageBuffer( Buffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -98,7 +108,7 @@ namespace crg
 		*\brief
 		*	Creates a storage buffer attachment.
 		*/
-		CRG_API void addInOutStorageBuffer( VkBuffer buffer
+		CRG_API void addInOutStorageBuffer( Buffer buffer
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
@@ -106,7 +116,7 @@ namespace crg
 		*\brief
 		*	Creates a uniform texel buffer view attachment.
 		*/
-		CRG_API void addUniformBufferView( VkBuffer buffer
+		CRG_API void addUniformBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
 			, VkDeviceSize offset
@@ -115,7 +125,7 @@ namespace crg
 		*\brief
 		*	Creates a storage texel buffer view attachment.
 		*/
-		CRG_API void addStorageBufferView( VkBuffer buffer
+		CRG_API void addStorageBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
 			, VkDeviceSize offset

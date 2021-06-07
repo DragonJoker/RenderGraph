@@ -21,6 +21,7 @@ namespace crg
 		: RenderPass{ pass
 			, context
 			, graph
+			, config.renderSize ? *config.renderSize : defaultV< VkExtent2D >
 			, maxPassCount }
 		, m_config{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > )
 			, std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
@@ -106,7 +107,7 @@ namespace crg
 		VkDeviceSize offset{};
 		m_context.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline );
 		m_context.vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
-		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer, &offset );
+		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
 	}
 
@@ -117,7 +118,7 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			if ( attach.isSampled() )
+			if ( attach.isSampledView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
 					, imageDescriptor
@@ -125,7 +126,7 @@ namespace crg
 					, shaderStage
 					, nullptr } );
 			}
-			else if ( attach.isStorage() )
+			else if ( attach.isStorageView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
@@ -208,7 +209,7 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			if ( attach.isSampled() )
+			if ( attach.isSampledView() )
 			{
 				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 					, 0u
@@ -219,7 +220,7 @@ namespace crg
 						? attach.image.initialLayout
 						: attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) } } );
 			}
-			else if ( attach.isStorage() )
+			else if ( attach.isStorageView() )
 			{
 				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 					, 0u

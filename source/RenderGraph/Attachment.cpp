@@ -41,7 +41,16 @@ namespace crg
 	//*********************************************************************************************
 
 	BufferAttachment::BufferAttachment()
-		: buffer{ VK_NULL_HANDLE }
+		: buffer{ VK_NULL_HANDLE, std::string{} }
+		, view{ VK_NULL_HANDLE }
+		, offset{}
+		, range{}
+		, flags{}
+	{
+	}
+
+	BufferAttachment::BufferAttachment( Buffer buffer )
+		: buffer{ std::move( buffer ) }
 		, view{ VK_NULL_HANDLE }
 		, offset{}
 		, range{}
@@ -50,10 +59,10 @@ namespace crg
 	}
 
 	BufferAttachment::BufferAttachment( FlagKind flags
-		, VkBuffer buffer
+		, Buffer buffer
 		, VkDeviceSize offset
 		, VkDeviceSize range )
-		: buffer{ buffer }
+		: buffer{ std::move( buffer ) }
 		, view{ VK_NULL_HANDLE }
 		, offset{ offset }
 		, range{ range }
@@ -62,11 +71,11 @@ namespace crg
 	}
 
 	BufferAttachment::BufferAttachment( FlagKind flags
-		, VkBuffer buffer
+		, Buffer buffer
 		, VkBufferView view
 		, VkDeviceSize offset
 		, VkDeviceSize range )
-		: buffer{ buffer }
+		: buffer{ std::move( buffer ) }
 		, view{ view }
 		, offset{ offset }
 		, range{ range }
@@ -83,12 +92,12 @@ namespace crg
 
 		if ( isView() )
 		{
-			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer, offset, range } );
+			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, offset, range } );
 			result.texelBufferView.push_back( view );
 		}
 		else
 		{
-			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer, offset, range } );
+			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, offset, range } );
 		}
 
 		return result;
@@ -114,12 +123,52 @@ namespace crg
 		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	}
 
+	VkAccessFlags BufferAttachment::getAccessMask( bool isInput
+		, bool isOutput )const
+	{
+		VkAccessFlags result{ 0u };
+
+		if ( isStorage() )
+		{
+			if ( isInput )
+			{
+				result |= VK_ACCESS_SHADER_READ_BIT;
+			}
+
+			if ( isOutput )
+			{
+				result |= VK_ACCESS_SHADER_WRITE_BIT;
+			}
+		}
+		else
+		{
+			result |= VK_ACCESS_SHADER_READ_BIT;
+		}
+
+		return result;
+	}
+
+	VkPipelineStageFlags BufferAttachment::getPipelineStageFlags( bool isCompute )const
+	{
+		VkPipelineStageFlags result{ 0u };
+
+		if ( isCompute )
+		{
+			result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+		}
+		else
+		{
+			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+
+		return result;
+	}
+
 	//*********************************************************************************************
 
 	ImageAttachment::ImageAttachment( ImageViewId view
 		, ImageAttachment const & origin )
-		: name{ origin.name + view.data->name }
-		, views{ { view } }
+		: views{ { view } }
 		, loadOp{ origin.loadOp }
 		, storeOp{ origin.storeOp }
 		, stencilLoadOp{ origin.stencilLoadOp }
@@ -133,8 +182,7 @@ namespace crg
 	}
 
 	ImageAttachment::ImageAttachment()
-		: name{}
-		, views{}
+		: views{}
 		, loadOp{}
 		, storeOp{}
 		, stencilLoadOp{}
@@ -148,8 +196,7 @@ namespace crg
 	}
 
 	ImageAttachment::ImageAttachment( ImageViewId view )
-		: name{}
-		, views{ 1u, view }
+		: views{ 1u, view }
 		, loadOp{}
 		, storeOp{}
 		, stencilLoadOp{}
@@ -163,7 +210,6 @@ namespace crg
 	}
 
 	ImageAttachment::ImageAttachment( FlagKind flags
-		, std::string name
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -173,8 +219,7 @@ namespace crg
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
-		: name{ std::move( name ) }
-		, views{ std::move( views ) }
+		: views{ std::move( views ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
@@ -199,7 +244,7 @@ namespace crg
 				&& isDepthFormat( view().data->info.format ) )
 			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
 				&& isStencilFormat( view().data->info.format ) ) );
-		assert( !isSampled()
+		assert( !isSampledView()
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
@@ -215,12 +260,204 @@ namespace crg
 
 	VkDescriptorType ImageAttachment::getDescriptorType()const
 	{
-		if ( isStorage() )
+		if ( isStorageView() )
 		{
 			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
 		}
 
 		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	}
+
+	VkImageLayout ImageAttachment::getImageLayout( bool separateDepthStencilLayouts
+		, bool isInput
+		, bool isOutput )const
+	{
+		if ( isSampledView() )
+		{
+			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+
+		if ( isStorageView() )
+		{
+			return VK_IMAGE_LAYOUT_GENERAL;
+		}
+
+		if ( isTransferView() )
+		{
+			if ( isInput )
+			{
+				return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+			}
+
+			if ( isOutput )
+			{
+				return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			}
+		}
+
+		if ( isColourAttach() )
+		{
+			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		}
+
+#if VK_KHR_separate_depth_stencil_layouts
+		if ( separateDepthStencilLayouts )
+		{
+			if ( isOutput )
+			{
+				if ( isDepthStencilAttach() )
+				{
+					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				}
+
+				if ( isDepthAttach() )
+				{
+					return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+				}
+			}
+
+			if ( isInput )
+			{
+				if ( isDepthAttach() )
+				{
+					return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+				}
+
+				if ( isDepthStencilAttach() )
+				{
+					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+				}
+			}
+
+			if ( isStencilOutputAttach() )
+			{
+				return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+			}
+
+			if ( isStencilInputAttach() )
+			{
+				return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+			}
+		}
+		else
+#endif
+		{
+			if ( isOutput )
+			{
+				if ( isDepthAttach()
+					|| isStencilOutputAttach() )
+				{
+					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				}
+			}
+
+			if ( isInput )
+			{
+				if ( isDepthAttach()
+					|| isStencilInputAttach() )
+				{
+					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+				}
+			}
+		}
+
+		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	}
+
+	VkAccessFlags ImageAttachment::getAccessMask( bool isInput
+		, bool isOutput )const
+	{
+		VkAccessFlags result{ 0u };
+
+		if ( isSampledView() )
+		{
+			result |= VK_ACCESS_SHADER_READ_BIT;
+		}
+		else if ( isStorageView() )
+		{
+			if ( isInput )
+			{
+				result |= VK_ACCESS_SHADER_READ_BIT;
+			}
+
+			if ( isOutput )
+			{
+				result |= VK_ACCESS_SHADER_WRITE_BIT;
+			}
+		}
+		else if ( isTransferView() )
+		{
+			if ( isInput )
+			{
+				result |= VK_ACCESS_TRANSFER_READ_BIT;
+			}
+
+			if ( isOutput )
+			{
+				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+			}
+		}
+		else if ( isDepthAttach() || isStencilAttach() )
+		{
+			if ( isInput )
+			{
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+			}
+
+			if ( isOutput )
+			{
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+			}
+		}
+		else
+		{
+			if ( isInput )
+			{
+				result |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+			}
+
+			if ( isOutput )
+			{
+				result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			}
+		}
+
+		return result;
+	}
+
+	VkPipelineStageFlags ImageAttachment::getPipelineStageFlags( bool isCompute )const
+	{
+		VkPipelineStageFlags result{ 0u };
+
+		if ( isSampledView() )
+		{
+			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		}
+		else if ( isStorageView() )
+		{
+			if ( isCompute )
+			{
+				result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			}
+			else
+			{
+				result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			}
+		}
+		else if ( isTransferView() )
+		{
+			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if ( isDepthAttach() || isStencilAttach() )
+		{
+			result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		}
+		else
+		{
+			result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		}
+
+		return result;
 	}
 
 	//*********************************************************************************************
@@ -229,6 +466,7 @@ namespace crg
 		, Attachment const & origin )
 		: pass{ origin.pass }
 		, binding{ origin.binding }
+		, name{ origin.name + view.data->name }
 		, image{ origin.image }
 		, buffer{ origin.buffer }
 		, flags{ origin.flags }
@@ -237,14 +475,25 @@ namespace crg
 
 	Attachment::Attachment( ImageViewId view )
 		: image{ view }
+		, binding{}
+		, name{}
+		, flags{}
+	{
+	}
+
+	Attachment::Attachment( Buffer buffer )
+		: buffer{ buffer }
+		, binding{}
+		, name{}
+		, flags{}
 	{
 	}
 
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, uint32_t binding
-		, ImageAttachment::FlagKind imageFlags
 		, std::string name
+		, ImageAttachment::FlagKind imageFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -256,8 +505,8 @@ namespace crg
 		, VkPipelineColorBlendAttachmentState blendState )
 		: pass{ &pass }
 		, binding{ binding }
+		, name{ std::move( name ) }
 		, image{ imageFlags
-			, std::move( name )
 			, std::move( views )
 			, loadOp
 			, storeOp
@@ -287,13 +536,15 @@ namespace crg
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, uint32_t binding
+		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
-		, VkBuffer buffer
+		, Buffer buffer
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: pass{ &pass }
 		, binding{ binding }
-		, buffer{ bufferFlags, buffer, offset, range }
+		, name{ std::move( name ) }
+		, buffer{ bufferFlags, std::move( buffer ), offset, range }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{
@@ -302,14 +553,16 @@ namespace crg
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, uint32_t binding
+		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
-		, VkBuffer buffer
+		, Buffer buffer
 		, VkBufferView view
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: pass{ &pass }
 		, binding{ binding }
-		, buffer{ bufferFlags, buffer, view, offset, range }
+		, name{ std::move( name ) }
+		, buffer{ bufferFlags, std::move( buffer ), view, offset, range }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{
@@ -324,82 +577,10 @@ namespace crg
 
 	VkImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
 	{
-		if ( isSampled() )
-		{
-			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		}
-
-		if ( isStorage() )
-		{
-			return VK_IMAGE_LAYOUT_GENERAL;
-		}
-
-		if ( isTransferInput() )
-		{
-			return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		}
-
-		if ( isTransferOutput() )
-		{
-			return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		}
-
-		if ( isColourInput()
-			|| isColourOutput() )
-		{
-			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		}
-
-#if VK_KHR_separate_depth_stencil_layouts
-		if ( separateDepthStencilLayouts )
-		{
-			if ( isDepthStencilOutput() )
-			{
-				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-			}
-
-			if ( isDepthStencilInput() )
-			{
-				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-			}
-
-			if ( isDepthOutput() )
-			{
-				return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-			}
-
-			if ( isDepthInput() )
-			{
-				return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-			}
-
-			if ( isStencilOutput() )
-			{
-				return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
-			}
-
-			if ( isStencilInput() )
-			{
-				return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
-			}
-		}
-		else
-#endif
-		{
-			if ( isDepthOutput()
-				|| isStencilOutput() )
-			{
-				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-			}
-
-			if ( isDepthInput()
-				|| isStencilInput() )
-			{
-				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-			}
-		}
-
-		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		assert( isImage() );
+		return image.getImageLayout( separateDepthStencilLayouts
+			, isInput()
+			, isOutput() );
 	}
 
 	VkDescriptorType Attachment::getDescriptorType()const
@@ -416,6 +597,32 @@ namespace crg
 	{
 		assert( isBuffer() );
 		return buffer.getWrite( binding );
+	}
+
+	VkAccessFlags Attachment::getAccessMask()const
+	{
+		VkAccessFlags result{ 0u };
+
+		if ( isImage() )
+		{
+			return image.getAccessMask( isInput()
+				, isOutput() );
+		}
+
+		return buffer.getAccessMask( isInput()
+			, isOutput() );
+	}
+
+	VkPipelineStageFlags Attachment::getPipelineStageFlags( bool isCompute )const
+	{
+		VkPipelineStageFlags result{ 0u };
+
+		if ( isImage() )
+		{
+			return image.getPipelineStageFlags( isCompute );
+		}
+
+		return buffer.getPipelineStageFlags( isCompute );
 	}
 
 	//*********************************************************************************************

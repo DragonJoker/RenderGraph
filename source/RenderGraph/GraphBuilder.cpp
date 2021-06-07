@@ -62,64 +62,128 @@ namespace crg
 
 				return result;
 			}
+
+			void buildGraph( RootNode & rootNode
+				, ViewTransitionArray const & transitions
+				, GraphNodePtrArray & nodes )
+			{
+				for ( auto & transition : transitions )
+				{
+					GraphAdjacentNode outputNode{};
+					GraphAdjacentNode inputNode{};
+					auto itOutput = std::find_if( nodes.begin()
+						, nodes.end()
+						, [&transition]( auto & lookup )
+						{
+							return getFramePass( *lookup ) == transition.outputAttach.pass;
+						} );
+
+					if ( itOutput == nodes.end() )
+					{
+						if ( transition.outputAttach.pass )
+						{
+							nodes.push_back( std::make_unique< FramePassNode >( *transition.outputAttach.pass ) );
+							outputNode = nodes.back().get();
+						}
+					}
+					else
+					{
+						outputNode = itOutput->get();
+					}
+
+					auto itInput = std::find_if( nodes.begin()
+						, nodes.end()
+						, [&transition]( auto & lookup )
+						{
+							return getFramePass( *lookup ) == transition.inputAttach.pass;
+						} );
+
+					if ( itInput == nodes.end() )
+					{
+						if ( transition.inputAttach.pass )
+						{
+							nodes.push_back( std::make_unique< FramePassNode >( *transition.inputAttach.pass ) );
+							inputNode = nodes.back().get();
+						}
+					}
+					else
+					{
+						inputNode = itInput->get();
+					}
+
+					if ( inputNode
+						&& outputNode
+						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.view ) )
+					{
+						outputNode->attachNode( inputNode, { { transition }, {} } );
+					}
+				}
+			}
+
+			void buildGraph( RootNode & rootNode
+				, BufferTransitionArray const & transitions
+				, GraphNodePtrArray & nodes )
+			{
+				for ( auto & transition : transitions )
+				{
+					GraphAdjacentNode outputNode{};
+					GraphAdjacentNode inputNode{};
+					auto itOutput = std::find_if( nodes.begin()
+						, nodes.end()
+						, [&transition]( auto & lookup )
+						{
+							return getFramePass( *lookup ) == transition.outputAttach.pass;
+						} );
+
+					if ( itOutput == nodes.end() )
+					{
+						if ( transition.outputAttach.pass )
+						{
+							nodes.push_back( std::make_unique< FramePassNode >( *transition.outputAttach.pass ) );
+							outputNode = nodes.back().get();
+						}
+					}
+					else
+					{
+						outputNode = itOutput->get();
+					}
+
+					auto itInput = std::find_if( nodes.begin()
+						, nodes.end()
+						, [&transition]( auto & lookup )
+						{
+							return getFramePass( *lookup ) == transition.inputAttach.pass;
+						} );
+
+					if ( itInput == nodes.end() )
+					{
+						if ( transition.inputAttach.pass )
+						{
+							nodes.push_back( std::make_unique< FramePassNode >( *transition.inputAttach.pass ) );
+							inputNode = nodes.back().get();
+						}
+					}
+					else
+					{
+						inputNode = itInput->get();
+					}
+
+					if ( inputNode
+						&& outputNode
+						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.buffer ) )
+					{
+						outputNode->attachNode( inputNode, { {}, { transition } } );
+					}
+				}
+			}
 		}
 
 		GraphNodePtrArray buildGraph( RootNode & rootNode
-			, AttachmentTransitionArray const & transitions )
+			, AttachmentTransitions const & transitions )
 		{
 			GraphNodePtrArray nodes;
-
-			for ( auto & transition : transitions )
-			{
-				GraphAdjacentNode outputNode{};
-				GraphAdjacentNode inputNode{};
-				auto itOutput = std::find_if( nodes.begin()
-					, nodes.end()
-					, [&transition]( auto & lookup )
-					{
-						return getFramePass( *lookup ) == transition.outputAttach.pass;
-					} );
-
-				if ( itOutput == nodes.end() )
-				{
-					if ( transition.outputAttach.pass )
-					{
-						nodes.push_back( std::make_unique< FramePassNode >( *transition.outputAttach.pass ) );
-						outputNode = nodes.back().get();
-					}
-				}
-				else
-				{
-					outputNode = itOutput->get();
-				}
-
-				auto itInput = std::find_if( nodes.begin()
-					, nodes.end()
-					, [&transition]( auto & lookup )
-					{
-						return getFramePass( *lookup ) == transition.inputAttach.pass;
-					} );
-
-				if ( itInput == nodes.end() )
-				{
-					if ( transition.inputAttach.pass )
-					{
-						nodes.push_back( std::make_unique< FramePassNode >( *transition.inputAttach.pass ) );
-						inputNode = nodes.back().get();
-					}
-				}
-				else
-				{
-					inputNode = itInput->get();
-				}
-
-				if ( inputNode
-					&& outputNode
-					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.view ) )
-				{
-					outputNode->attachNode( inputNode, { transition } );
-				}
-			}
+			buildGraph( rootNode, transitions.viewTransitions, nodes );
+			buildGraph( rootNode, transitions.bufferTransitions, nodes );
 
 			for ( auto & node : nodes )
 			{

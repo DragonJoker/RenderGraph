@@ -112,7 +112,7 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			if ( attach.isSampled() )
+			if ( attach.isSampledView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
@@ -120,7 +120,7 @@ namespace crg
 					, shaderStage
 					, nullptr } );
 			}
-			else if ( attach.isStorage() )
+			else if ( attach.isStorageView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
@@ -202,7 +202,7 @@ namespace crg
 		{
 			for ( auto & attach : m_pass.images )
 			{
-				if ( attach.isSampled() )
+				if ( attach.isSampledView() )
 				{
 					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 						, 0u
@@ -211,7 +211,7 @@ namespace crg
 							, m_graph.getImageView( attach.view( index ) )
 							, attach.image.initialLayout } } );
 				}
-				else if ( attach.isStorage() )
+				else if ( attach.isStorageView() )
 				{
 					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 						, 0u

@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #include "ResourceOptimiser.hpp"
 
+#include "RenderGraph/AttachmentTransition.hpp"
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/ImageData.hpp"

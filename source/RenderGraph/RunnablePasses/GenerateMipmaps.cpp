@@ -31,7 +31,9 @@ namespace crg
 			, context
 			, graph
 			, maxPassCount }
-		, m_outputLayout{ outputLayout }
+		, m_outputLayout{ outputLayout
+			, getAccessMask( outputLayout )
+			, getStageMask( outputLayout ) }
 		, m_passIndex{ passIndex }
 	{
 	}
@@ -43,10 +45,14 @@ namespace crg
 		for ( auto passIndex = 0u; passIndex < m_commandBuffers.size(); ++passIndex )
 		{
 			auto viewId = attach.view( passIndex );
-			doUpdateFinalLayout( viewId
-				, ( m_outputLayout != VK_IMAGE_LAYOUT_UNDEFINED
-					? m_outputLayout
-					: m_graph.getOutputLayout( m_pass, viewId ) ) );
+			auto layoutState = ( m_outputLayout.layout != VK_IMAGE_LAYOUT_UNDEFINED
+				? m_outputLayout
+				: m_graph.getOutputLayout( m_pass, viewId, false ) );
+			doUpdateFinalLayout( passIndex
+				, viewId
+				, layoutState.layout
+				, layoutState.access
+				, layoutState.pipelineStage );
 		}
 	}
 
@@ -56,19 +62,21 @@ namespace crg
 		auto viewId{ m_pass.images.front().view( index ) };
 		auto imageId{ viewId.data->image };
 		auto image{ m_graph.getImage( imageId ) };
-		auto transition = doGetTransition( viewId );
+		auto transition = doGetTransition( index, viewId );
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );
-		auto srcImageLayout = transition.neededLayout;
-		auto dstImageLayout = transition.toLayout;
+		auto baseArrayLayer = viewId.data->info.subresourceRange.baseArrayLayer;
+		auto layerCount = viewId.data->info.subresourceRange.layerCount;
+		auto mipLevels = imageId.data->info.mipLevels;
+		auto srcImageLayout = transition.needed;
+		auto dstMipImageLayout = viewId.data->info.subresourceRange.levelCount == mipLevels
+			? srcImageLayout
+			: transition.to;
 
 		auto const width = int32_t( extent.width );
 		auto const height = int32_t( extent.height );
 		auto const depth = int32_t( extent.depth );
 		auto const aspectMask = getAspectMask( format );
-		auto baseArrayLayer = viewId.data->info.subresourceRange.baseArrayLayer;
-		auto layerCount = viewId.data->info.subresourceRange.layerCount;
-		auto mipLevels = imageId.data->info.mipLevels;
 
 		for ( uint32_t i = 0u; i < layerCount; ++i )
 		{
@@ -94,8 +102,10 @@ namespace crg
 			m_graph.memoryBarrier( commandBuffer
 				, imageId
 				, mipSubRange
-				, transition.fromLayout
-				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
+				, transition.from
+				, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					, VK_ACCESS_TRANSFER_READ_BIT
+					, VK_PIPELINE_STAGE_TRANSFER_BIT } );
 
 			// Copy down mips
 			while ( ++mipSubRange.baseMipLevel < mipLevels )
@@ -116,8 +126,12 @@ namespace crg
 				m_graph.memoryBarrier( commandBuffer
 					, imageId
 					, mipSubRange
-					, VK_IMAGE_LAYOUT_UNDEFINED
-					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+					, { VK_IMAGE_LAYOUT_UNDEFINED
+						, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+						, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) }
+					, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+						, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
+						, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) } );
 
 				// Perform blit
 				m_context.vkCmdBlitImage( commandBuffer 
@@ -132,7 +146,6 @@ namespace crg
 				if ( mipSubRange.baseMipLevel > 1u )
 				{
 					// Transition previous mip level to wanted output layout
-					// (Not the first one, which is handled in RunnablePass::doRecordInto)
 					m_graph.memoryBarrier( commandBuffer
 						, imageId
 						, { mipSubRange.aspectMask
@@ -140,8 +153,10 @@ namespace crg
 							, 1u
 							, mipSubRange.baseArrayLayer
 							, 1u }
-						, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-						, dstImageLayout );
+						, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
+							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) }
+						, dstMipImageLayout );
 				}
 
 				if ( mipSubRange.baseMipLevel == ( mipLevels - 1u ) )
@@ -150,8 +165,10 @@ namespace crg
 					m_graph.memoryBarrier( commandBuffer
 						, imageId
 						, mipSubRange
-						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-						, dstImageLayout );
+						, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
+							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) }
+						, dstMipImageLayout );
 				}
 				else
 				{
@@ -159,8 +176,12 @@ namespace crg
 					m_graph.memoryBarrier( commandBuffer
 						, imageId
 						, mipSubRange
-						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-						, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
+						, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
+							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) }
+						, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
+							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) } );
 				}
 			}
 		}

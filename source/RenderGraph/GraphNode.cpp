@@ -20,20 +20,33 @@ namespace crg
 	}
 
 	void GraphNode::addAttaches( GraphAdjacentNode prev
-		, AttachmentTransitionArray inAttaches )
+		, AttachmentTransitions inAttaches )
 	{
 		bool dirty = false;
 		auto * mine = &this->inputAttaches[prev];
 
-		for ( auto & attach : inAttaches )
+		for ( auto & attach : inAttaches.viewTransitions )
 		{
-			auto it = std::find( mine->begin()
-				, mine->end()
+			auto it = std::find( mine->viewTransitions.begin()
+				, mine->viewTransitions.end()
 				, attach );
 
-			if ( it == mine->end() )
+			if ( it == mine->viewTransitions.end() )
 			{
-				mine->push_back( std::move( attach ) );
+				mine->viewTransitions.push_back( std::move( attach ) );
+				dirty = true;
+			}
+		}
+
+		for ( auto & attach : inAttaches.bufferTransitions )
+		{
+			auto it = std::find( mine->bufferTransitions.begin()
+				, mine->bufferTransitions.end()
+				, attach );
+
+			if ( it == mine->bufferTransitions.end() )
+			{
+				mine->bufferTransitions.push_back( std::move( attach ) );
 				dirty = true;
 			}
 		}
@@ -45,7 +58,7 @@ namespace crg
 	}
 
 	void GraphNode::attachNode( GraphAdjacentNode next
-		, AttachmentTransitionArray inputAttaches )
+		, AttachmentTransitions inputAttaches )
 	{
 		auto it = std::find( this->next.begin()
 			, this->next.end()
@@ -73,7 +86,7 @@ namespace crg
 			: nullptr;
 	}
 
-	AttachmentTransitionArray const & GraphNode::getInputAttaches( ConstGraphAdjacentNode const pred )const
+	AttachmentTransitions const & GraphNode::getInputAttaches( ConstGraphAdjacentNode const pred )const
 	{
 		auto it = inputAttaches.find( pred );
 		assert( it != inputAttaches.end() );

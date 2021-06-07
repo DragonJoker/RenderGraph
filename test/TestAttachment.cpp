@@ -19,7 +19,7 @@ namespace
 		pass.addSampledView( view, 1u );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Spl" );
+		check( attachment.name == pass.name + view.data->name + "Spl" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -40,7 +40,7 @@ namespace
 		pass.addOutputStorageView( view, 1u );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Str" );
+		check( attachment.name == pass.name + view.data->name + "Str" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -63,7 +63,7 @@ namespace
 			, VK_ATTACHMENT_STORE_OP_STORE );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Colour" );
+		check( attachment.name == pass.name + view.data->name + "Colour" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -87,7 +87,7 @@ namespace
 			, VK_ATTACHMENT_STORE_OP_STORE );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "DepthStencil" );
+		check( attachment.name == pass.name + view.data->name + "DepthStencil" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
@@ -106,7 +106,7 @@ namespace
 		pass.addInputColourView( view );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Ic" );
+		check( attachment.name == pass.name + view.data->name + "Ic" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -125,7 +125,7 @@ namespace
 		pass.addOutputColourView( view );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Oc" );
+		check( attachment.name == pass.name + view.data->name + "Oc" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -144,7 +144,7 @@ namespace
 		pass.addInOutColourView( view );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "IOc" );
+		check( attachment.name == pass.name + view.data->name + "IOc" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -163,7 +163,7 @@ namespace
 		pass.addInputDepthView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Id" );
+		check( attachment.name == pass.name + view.data->name + "Id" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -182,7 +182,7 @@ namespace
 		pass.addOutputDepthView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Od" );
+		check( attachment.name == pass.name + view.data->name + "Od" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -201,7 +201,7 @@ namespace
 		pass.addInOutDepthView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "IOd" );
+		check( attachment.name == pass.name + view.data->name + "IOd" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -220,7 +220,7 @@ namespace
 		pass.addInputDepthStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Ids" );
+		check( attachment.name == pass.name + view.data->name + "Ids" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
@@ -239,7 +239,7 @@ namespace
 		pass.addOutputDepthStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Ods" );
+		check( attachment.name == pass.name + view.data->name + "Ods" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
@@ -258,7 +258,7 @@ namespace
 		pass.addInOutDepthStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "IOds" );
+		check( attachment.name == pass.name + view.data->name + "IOds" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
@@ -277,7 +277,7 @@ namespace
 		pass.addInputStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Is" );
+		check( attachment.name == pass.name + view.data->name + "Is" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
@@ -296,7 +296,7 @@ namespace
 		pass.addOutputStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "Os" );
+		check( attachment.name == pass.name + view.data->name + "Os" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
@@ -315,7 +315,7 @@ namespace
 		pass.addInOutStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
-		check( attachment.image.name == pass.name + view.data->name + "IOs" );
+		check( attachment.name == pass.name + view.data->name + "IOs" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD );

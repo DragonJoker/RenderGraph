@@ -14,14 +14,31 @@ namespace crg
 	*\brief
 	*	The transition between two states of an image view.
 	*/
-	struct AttachmentTransition
+	struct ViewTransition
 	{
 		ImageViewId view;
 		Attachment outputAttach;
 		Attachment inputAttach;
 	};
-	bool operator==( AttachmentTransition const & lhs, AttachmentTransition const & rhs );
+	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs );
+	/**
+	*\brief
+	*	The transition between two states of a storage buffer.
+	*/
+	struct BufferTransition
+	{
+		Buffer buffer;
+		Attachment outputAttach;
+		Attachment inputAttach;
+	};
+	bool operator==( BufferTransition const & lhs, BufferTransition const & rhs );
 
-	AttachmentTransitionArray mergeIdenticalTransitions( AttachmentTransitionArray value );
-	AttachmentTransitionArray reduceDirectPaths( AttachmentTransitionArray value );
+	struct AttachmentTransitions
+	{
+		ViewTransitionArray viewTransitions;
+		BufferTransitionArray bufferTransitions;
+	};
+
+	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions value );
+	AttachmentTransitions reduceDirectPaths( AttachmentTransitions value );
 }
