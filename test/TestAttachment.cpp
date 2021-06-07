@@ -85,6 +85,7 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addDepthStencilView("DepthStencil"
+			, crg::ImageAttachment::FlagKind( crg::ImageAttachment::Flag::StencilOutput )
 			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
 			, VK_ATTACHMENT_STORE_OP_STORE
