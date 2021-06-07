@@ -252,7 +252,7 @@ namespace crg
 					|| attach.isStencilAttach() )
 				{
 					auto view = attach.view( index );
-					attachments.push_back( m_graph.getImageView( view ) );
+					attachments.push_back( m_graph.createImageView( view ) );
 					width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
 					height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
 				}

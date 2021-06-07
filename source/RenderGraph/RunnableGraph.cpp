@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnableGraph.hpp"
 #include "RenderGraph/DotExport.hpp"
 #include "RenderGraph/GraphVisitor.hpp"
+#include "RenderGraph/ResourceHandler.hpp"
 
 #include <array>
 #include <fstream>
@@ -92,21 +93,6 @@ namespace crg
 			default:
 				return "Unknown";
 			}
-		}
-
-		VkImageCreateInfo convert( ImageData const & data )
-		{
-			return data.info;
-		}
-
-		VkImageViewCreateInfo convert( ImageViewData const & data
-			, ImageMemoryMap const & images )
-		{
-			auto it = images.find( data.image );
-			assert( it != images.end() );
-			auto result = data.info;
-			result.image = it->second.first;
-			return result;
 		}
 
 		VkImageSubresourceRange adaptRange( GraphContext const & context
@@ -403,16 +389,12 @@ namespace crg
 
 		for ( auto & view : m_imageViews )
 		{
-			crgUnregisterObject( m_context, view.second );
-			m_context.vkDestroyImageView( m_context.device, view.second, m_context.allocator );
+			m_graph.m_handler.destroyImageView( m_context, view.first );
 		}
 
 		for ( auto & img : m_images )
 		{
-			crgUnregisterObject( m_context, img.second.second );
-			m_context.vkFreeMemory( m_context.device, img.second.second, m_context.allocator );
-			crgUnregisterObject( m_context, img.second.first );
-			m_context.vkDestroyImage( m_context.device, img.second.first, m_context.allocator );
+			m_graph.m_handler.destroyImage( m_context, img.first );
 		}
 
 		for ( auto & sampler : m_samplers )
@@ -438,6 +420,20 @@ namespace crg
 		{
 			pass->recordInto( commandBuffer );
 		}
+	}
+
+	VkImage RunnableGraph::createImage( ImageId const & image )
+	{
+		auto result = m_graph.m_handler.createImage( m_context, image );
+		m_images[image] = result;
+		return result;
+	}
+
+	VkImageView RunnableGraph::createImageView( ImageViewId const & view )
+	{
+		auto result = m_graph.m_handler.createImageView( m_context, view );
+		m_imageViews[view] = result;
+		return result;
 	}
 
 	SemaphoreWait RunnableGraph::run( VkQueue queue )
@@ -471,49 +467,8 @@ namespace crg
 	ImageViewId RunnableGraph::createView( ImageViewData const & view )
 	{
 		auto result = m_graph.createView( view );
-		doCreateImageView( result );
+		createImageView( result );
 		return result;
-	}
-
-	VkImage RunnableGraph::getImage( ImageId const & image )const
-	{
-		auto it = m_images.find( image );
-
-		if ( it == m_images.end() )
-		{
-			return VK_NULL_HANDLE;
-		}
-
-		return it->second.first;
-	}
-
-	VkImage RunnableGraph::getImage( ImageViewId const & view )const
-	{
-		return getImage( view.data->image );
-	}
-
-	VkImage RunnableGraph::getImage( Attachment const & attach
-		, uint32_t index )const
-	{
-		return getImage( attach.view( index ) );
-	}
-
-	VkImageView RunnableGraph::getImageView( ImageViewId const & view )const
-	{
-		auto it = m_imageViews.find( view );
-
-		if ( it == m_imageViews.end() )
-		{
-			return VK_NULL_HANDLE;
-		}
-
-		return it->second;
-	}
-
-	VkImageView RunnableGraph::getImageView( Attachment const & attach
-		, uint32_t index )const
-	{
-		return getImageView( attach.view( index ) );
 	}
 
 	VertexBuffer const & RunnableGraph::createQuadVertexBuffer( bool texCoords
@@ -889,7 +844,7 @@ namespace crg
 				, wantedLayout
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
-				, getImage( image )
+				, createImage( image )
 				, adaptRange( m_context
 					, image.data->info.format
 					, subresourceRange ) };
@@ -1066,63 +1021,7 @@ namespace crg
 
 		for ( auto & img : m_graph.m_images )
 		{
-			// Create image
-			VkImage image;
-			auto createInfo = convert( *img.first.data );
-			auto res = m_context.vkCreateImage( m_context.device
-				, &createInfo
-				, m_context.allocator
-				, &image );
-			checkVkResult( res, "Image creation" );
-			crgRegisterObject( m_context, img.first.data->name, image );
-
-			// Create Image memory
-			VkMemoryRequirements requirements{};
-			m_context.vkGetImageMemoryRequirements( m_context.device
-				, image
-				, &requirements );
-			uint32_t deduced = m_context.deduceMemoryType( requirements.memoryTypeBits
-				, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
-			VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
-				, nullptr
-				, requirements.size
-				, deduced };
-			VkDeviceMemory memory;
-			res = m_context.vkAllocateMemory( m_context.device
-				, &allocateInfo
-				, m_context.allocator
-				, &memory );
-			checkVkResult( res, "Image memory allocation" );
-			crgRegisterObject( m_context, img.first.data->name, memory );
-
-			// Bind image and memory
-			res = m_context.vkBindImageMemory( m_context.device
-				, image
-				, memory
-				, 0u );
-			checkVkResult( res, "Image memory binding" );
-			m_images[img.first] = { image, memory };
-		}
-	}
-
-	void RunnableGraph::doCreateImageView( ImageViewId view )
-	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		auto ires = m_imageViews.emplace( view, VkImageView{} );
-
-		if ( ires.second )
-		{
-			auto createInfo = convert( *view.data, m_images );
-			auto res = m_context.vkCreateImageView( m_context.device
-				, &createInfo
-				, m_context.allocator
-				, &ires.first->second );
-			checkVkResult( res, "ImageView creation" );
-			crgRegisterObject( m_context, view.data->name, ires.first->second );
+			createImage( img );
 		}
 	}
 
@@ -1130,7 +1029,8 @@ namespace crg
 	{
 		for ( auto & view : m_graph.m_imageViews )
 		{
-			doCreateImageView( view.first );
+			createImageView( view );
+			m_imageViews[view] = m_graph.m_handler.createImageView( m_context, view );
 		}
 	}
 }

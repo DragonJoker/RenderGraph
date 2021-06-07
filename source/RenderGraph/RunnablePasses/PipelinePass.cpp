@@ -208,7 +208,7 @@ namespace crg
 						, 0u
 						, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 						, VkDescriptorImageInfo{ m_graph.createSampler( attach.image.samplerDesc )
-							, m_graph.getImageView( attach.view( index ) )
+							, m_graph.createImageView( attach.view( index ) )
 							, attach.image.initialLayout } } );
 				}
 				else if ( attach.isStorageView() )
@@ -217,7 +217,7 @@ namespace crg
 						, 0u
 						, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 						, VkDescriptorImageInfo{ VK_NULL_HANDLE
-							, m_graph.getImageView( attach.view( index ) )
+							, m_graph.createImageView( attach.view( index ) )
 							, attach.image.initialLayout } } );
 				}
 			}
