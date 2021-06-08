@@ -10,6 +10,7 @@ See LICENSE file in root folder.
 #include <fstream>
 #include <string>
 #include <type_traits>
+#include <unordered_set>
 
 namespace crg
 {
@@ -77,6 +78,14 @@ namespace crg
 			result = hashCombine( result, samplerDesc.mipLodBias );
 			result = hashCombine( result, samplerDesc.minLod );
 			result = hashCombine( result, samplerDesc.maxLod );
+			return result;
+		}
+
+		size_t makeHash( LayoutState const & state )
+		{
+			auto result = std::hash< uint32_t >{}( state.layout );
+			result = hashCombine( result, state.access );
+			result = hashCombine( result, state.pipelineStage );
 			return result;
 		}
 
@@ -211,6 +220,28 @@ namespace crg
 			std::unordered_map< FramePass const *, FramePassArray > m_hitCount;
 			std::unordered_map< FramePass const *, GraphAdjacentNode > m_pending;
 		};
+
+		bool isInRange( uint32_t lhsLeft
+			, uint32_t lhsRight
+			, uint32_t rhsLeft
+			, uint32_t rhsRight )
+		{
+			return lhsLeft >= rhsLeft
+				&& lhsRight <= rhsRight;
+		}
+
+		bool isInRange( VkImageSubresourceRange const & lhs
+			, VkImageSubresourceRange const & rhs )
+		{
+			return isInRange( lhs.baseMipLevel
+				, lhs.baseMipLevel + lhs.levelCount
+				, rhs.baseMipLevel
+				, rhs.baseMipLevel + rhs.levelCount )
+				&& isInRange( lhs.baseArrayLayer
+					, lhs.baseArrayLayer + lhs.layerCount
+					, rhs.baseArrayLayer
+					, rhs.baseArrayLayer + lhs.layerCount );
+		}
 	}
 
 	VkImageAspectFlags getAspectMask( VkFormat format )noexcept
@@ -337,6 +368,13 @@ namespace crg
 		, m_context{ std::move( context ) }
 	{
 		display( *this );
+		LayoutStateMap images;
+
+		for ( auto & pass : graph.m_passes )
+		{
+			doRegisterImages( *pass, images );
+		}
+
 		doCreateImages();
 		doCreateImageViews();
 		auto dfsNodes = DfsVisitor::submit( getGraph() );
@@ -348,7 +386,16 @@ namespace crg
 				auto & renderPassNode = nodeCast< FramePassNode >( *node );
 				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
 					, *this ) );
+				m_maxPassCount = std::max( m_maxPassCount
+					, m_passes.back()->getMaxPassCount() );
 			}
+		}
+
+		m_viewsLayouts.push_back( images );
+
+		for ( uint32_t index = 1; index < m_maxPassCount; ++index )
+		{
+			m_viewsLayouts.push_back( images );
 		}
 
 		for ( auto & pass : m_passes )
@@ -618,21 +665,12 @@ namespace crg
 		if ( m_viewsLayouts.size() > passIndex )
 		{
 			auto & viewsLayouts = m_viewsLayouts[passIndex];
-			auto it = viewsLayouts.find( view.id );
+			auto imageIt = viewsLayouts.find( view.data->image.id );
 
-			if ( it != viewsLayouts.end() )
+			if ( imageIt != viewsLayouts.end() )
 			{
-				return it->second;
-			}
-
-			for ( auto & source : view.data->source )
-			{
-				it = viewsLayouts.find( source.id );
-
-				if ( it != viewsLayouts.end() )
-				{
-					return it->second;
-				}
+				return doGetSubresourceRangeLayout( imageIt->second
+					, view.data->info.subresourceRange );
 			}
 		}
 
@@ -650,7 +688,10 @@ namespace crg
 
 		assert( m_viewsLayouts.size() > passIndex );
 		auto & viewsLayouts = m_viewsLayouts[passIndex];
-		viewsLayouts[view.id] = newLayout;
+		auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
+		doAddSubresourceRangeLayout( ires.first->second
+			, view.data->info.subresourceRange
+			, newLayout );
 		return newLayout;
 	}
 
@@ -1012,6 +1053,35 @@ namespace crg
 			, to.getPipelineStageFlags( isCompute ) );
 	}
 
+	void RunnableGraph::doRegisterImages( crg::FramePass const & pass
+		, LayoutStateMap & images )
+	{
+		static LayoutState const defaultState{ VK_IMAGE_LAYOUT_UNDEFINED
+			, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+
+		for ( auto & attach : pass.images )
+		{
+			auto image = attach.view().data->image;
+			auto ires = images.emplace( image.id, LayerLayoutStates{} );
+
+			if ( ires.second )
+			{
+				auto & layers = ires.first->second;
+
+				for ( uint32_t layer = 0; layer < image.data->info.arrayLayers; ++layer )
+				{
+					auto & levels = layers.emplace( layer, MipLayoutStates{} ).first->second;
+
+					for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
+					{
+						levels.emplace( level, defaultState );
+					}
+				}
+			}
+		}
+	}
+
 	void RunnableGraph::doCreateImages()
 	{
 		if ( !m_context.device )
@@ -1032,5 +1102,51 @@ namespace crg
 			createImageView( view );
 			m_imageViews[view] = m_graph.m_handler.createImageView( m_context, view );
 		}
+	}
+
+	LayoutState RunnableGraph::doGetSubresourceRangeLayout( LayerLayoutStates const & ranges
+		, VkImageSubresourceRange const & range )const
+	{
+		std::unordered_map< size_t, LayoutState > states;
+
+		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
+		{
+			auto & layers = ranges.find( range.baseArrayLayer + layerIdx )->second;
+
+			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+			{
+				auto state = layers.find( range.baseMipLevel + levelIdx )->second;
+				states.emplace( makeHash( state ), state );
+			}
+		}
+
+		if ( states.size() == 1u )
+		{
+			return states.begin()->second;
+		}
+
+		return { VK_IMAGE_LAYOUT_UNDEFINED
+			, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+	}
+
+	LayoutState RunnableGraph::doAddSubresourceRangeLayout( LayerLayoutStates & ranges
+		, VkImageSubresourceRange const & range
+		, LayoutState const & newLayout )
+	{
+		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
+		{
+			auto & layers = ranges.find( range.baseArrayLayer + layerIdx )->second;
+
+			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+			{
+				auto & level = layers.find( range.baseMipLevel + levelIdx )->second;
+				level.layout = newLayout.layout;
+				level.access = newLayout.access;
+				level.pipelineStage = newLayout.pipelineStage;
+			}
+		}
+
+		return newLayout;
 	}
 }
