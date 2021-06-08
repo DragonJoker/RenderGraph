@@ -4,7 +4,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RunnablePasses/PipelinePass.hpp"
+#include "RenderGraph/RunnablePasses/PipelineHolder.hpp"
 #include "RenderGraph/RunnablePasses/RenderPass.hpp"
 
 namespace crg
@@ -32,12 +32,22 @@ namespace crg
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
-			WrapperT< VkPipelineShaderStageCreateInfoArray > program;
+			pp::ConfigT< WrapperT > baseConfig;
 			WrapperT< Texcoord > texcoordConfig;
 			WrapperT< VkExtent2D > renderSize;
 			WrapperT< VkOffset2D > renderPosition;
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			WrapperT< uint32_t const * > passIndex;
+		};
+
+		template<>
+		struct ConfigT< RawTypeT >
+		{
+			RawTypeT< Texcoord > texcoordConfig;
+			RawTypeT< VkExtent2D > renderSize;
+			RawTypeT< VkOffset2D > renderPosition;
+			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
+			RawTypeT< uint32_t const * > passIndex;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -100,6 +110,7 @@ namespace crg
 
 	class RenderQuad
 		: public RenderPass
+		, public PipelineHolder
 	{
 	public:
 		template< typename ConfigT, typename BuilderT >
@@ -120,13 +131,7 @@ namespace crg
 		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
 		CRG_API uint32_t doGetPassIndex()const override;
-
-		CRG_API void doFillDescriptorBindings();
-		CRG_API void doCreateDescriptorSetLayout();
-		CRG_API void doCreatePipelineLayout();
-		CRG_API void doCreateDescriptorPool();
-		CRG_API void doCreateDescriptorSet( uint32_t index );
-		CRG_API void doCreatePipeline();
+		CRG_API void doCreatePipeline()override;
 		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
 
@@ -136,21 +141,11 @@ namespace crg
 	private:
 		bool m_useTexCoord{ true };
 		VertexBuffer const * m_vertexBuffer{};
-		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
-		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
-		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
-		VkPipeline m_pipeline{ VK_NULL_HANDLE };
-		VkDescriptorPool m_descriptorSetPool{ VK_NULL_HANDLE };
-		struct DescriptorSet
-		{
-			WriteDescriptorSetArray writes;
-			VkDescriptorSet set;
-		};
-		std::vector< DescriptorSet > m_descriptorSets;
 	};
 
 	template< typename ConfigT, typename BuilderT >
 	class RenderQuadBuilderT
+		: public PipelinePassBuilderT< BuilderT >
 	{
 		static_assert( std::is_same_v< ConfigT, rq::Config >
 			|| std::is_base_of_v< rq::Config, ConfigT >
@@ -187,15 +182,6 @@ namespace crg
 		}
 		/**
 		*\param[in] config
-		*	The pipeline program.
-		*/
-		auto & program( VkPipelineShaderStageCreateInfoArray config )
-		{
-			m_config.program = std::move( config );
-			return static_cast< BuilderT & >( *this );
-		}
-		/**
-		*\param[in] config
 		*	The depth stencil state.
 		*/
 		auto & depthStencilState( VkPipelineDepthStencilStateCreateInfo config )
@@ -225,6 +211,7 @@ namespace crg
 			, RunnableGraph & graph
 			, uint32_t maxPassCount = 1u )
 		{
+			m_config.baseConfig = std::move( m_baseConfig );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph
