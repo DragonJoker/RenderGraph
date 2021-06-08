@@ -123,8 +123,19 @@ namespace crg
 		}
 
 	private:
+		using MipLayoutStates = std::map< uint32_t, LayoutState >;
+		using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
+		using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
+
+		void doRegisterImages( crg::FramePass const & pass
+			, LayoutStateMap & images );
 		void doCreateImages();
 		void doCreateImageViews();
+		LayoutState doGetSubresourceRangeLayout( LayerLayoutStates const & layers
+			, VkImageSubresourceRange const & range )const;
+		LayoutState doAddSubresourceRangeLayout( LayerLayoutStates & layers
+			, VkImageSubresourceRange const & range
+			, LayoutState const & newLayout );
 
 	private:
 		FrameGraph & m_graph;
@@ -137,7 +148,6 @@ namespace crg
 		std::vector< RunnablePassPtr > m_passes;
 		std::map< ImageId, VkImage > m_images;
 		std::map< ImageViewId, VkImageView > m_imageViews;
-		using LayoutStateMap = std::unordered_map< uint32_t, LayoutState >;
 		using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 		std::unordered_map< size_t, VkSampler > m_samplers;

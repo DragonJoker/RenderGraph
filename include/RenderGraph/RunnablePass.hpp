@@ -101,6 +101,11 @@ namespace crg
 			return m_timer;
 		}
 
+		uint32_t getMaxPassCount()
+		{
+			return uint32_t( m_commandBuffers.size() );
+		}
+
 	private:
 		CRG_API virtual void doCreateCommandPool();
 		CRG_API virtual void doCreateCommandBuffer();
