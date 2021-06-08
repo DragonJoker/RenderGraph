@@ -31,21 +31,22 @@ namespace crg
 		using ConfigData = ConfigT< RawTypeT >;
 	}
 
-	class PipelinePass
-		: public RunnablePass
+	class PipelineHolder
 	{
 	public:
-		CRG_API PipelinePass( FramePass const & pass
+		CRG_API PipelineHolder( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, pp::Config config
 			, VkPipelineBindPoint bindingPoint );
-		CRG_API virtual ~PipelinePass();
+		CRG_API ~PipelineHolder();
 
 	protected:
-		CRG_API void doInitialise()override;
-		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
-			, uint32_t index )override;
+		CRG_API void doPreInitialise();
+		CRG_API void doPreRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+		CRG_API void doResetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API virtual void doCreatePipeline() = 0;
 
 	private:
 		void doFillDescriptorBindings();
@@ -53,6 +54,11 @@ namespace crg
 		void doCreatePipelineLayout();
 		void doCreateDescriptorPool();
 		void doCreateDescriptorSet( uint32_t index );
+
+	private:
+		FramePass const & m_phPass;
+		GraphContext const & m_phContext;
+		RunnableGraph & m_phGraph;
 
 	protected:
 		pp::ConfigData m_baseConfig;
@@ -81,12 +87,12 @@ namespace crg
 		*/
 		BuilderT & program( VkPipelineShaderStageCreateInfoArray config )
 		{
-			m_config.program = std::move( config );
+			m_baseConfig.program = std::move( config );
 			return static_cast< BuilderT & >( *this );
 		}
 
 	protected:
-		pp::Config m_config;
+		pp::Config m_baseConfig;
 	};
 
 	class PipelinePassBuilder
