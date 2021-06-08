@@ -211,7 +211,7 @@ namespace crg
 			, RunnableGraph & graph
 			, uint32_t maxPassCount = 1u )
 		{
-			m_config.baseConfig = std::move( m_baseConfig );
+			m_config.baseConfig = std::move( PipelinePassBuilderT< BuilderT >::m_baseConfig );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph
