@@ -195,8 +195,8 @@ namespace crg
 				, ImageViewData const & rhs )
 			{
 				return lhs.image == rhs.image
-					&& areIntersecting( lhs.info.subresourceRange
-						, rhs.info.subresourceRange );
+					&& areIntersecting( getVirtualRange( lhs.image, lhs.info.viewType, lhs.info.subresourceRange )
+						, getVirtualRange( rhs.image, rhs.info.viewType, rhs.info.subresourceRange ) );
 			}
 
 			bool areOverlapping( Attachment const & lhs

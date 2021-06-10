@@ -3,6 +3,8 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/Attachment.hpp"
+#include "RenderGraph/ImageData.hpp"
+#include "RenderGraph/ImageViewData.hpp"
 #include "RenderGraph/WriteDescriptorSet.hpp"
 
 #include <cassert>
@@ -10,6 +12,40 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	namespace
+	{
+		bool match( ImageId const & image
+			, VkImageViewType lhsType
+			, VkImageViewType rhsType
+			, VkImageSubresourceRange const & lhsRange
+			, VkImageSubresourceRange const & rhsRange )
+		{
+			auto result = lhsType == rhsType;
+
+			if ( !result )
+			{
+				result = ( getVirtualRange( image, lhsType, lhsRange ) == getVirtualRange( image, rhsType, rhsRange ) );
+			}
+			else
+			{
+				result = lhsRange == rhsRange;
+			}
+
+			return result;
+		}
+
+		bool match( ImageId const & image
+			, VkImageViewCreateInfo const & lhsInfo
+			, VkImageViewCreateInfo const & rhsInfo )
+		{
+			return lhsInfo.flags == rhsInfo.flags
+				&& lhsInfo.format == rhsInfo.format
+				&& match( image
+					, lhsInfo.viewType, rhsInfo.viewType
+					, lhsInfo.subresourceRange, rhsInfo.subresourceRange );
+		}
+	}
+
 	bool isDepthFormat( VkFormat fmt )
 	{
 		return fmt == VK_FORMAT_D16_UNORM
@@ -36,6 +72,31 @@ namespace crg
 	bool isDepthStencilFormat( VkFormat fmt )
 	{
 		return isDepthFormat( fmt ) && isStencilFormat( fmt );
+	}
+
+	VkImageSubresourceRange getVirtualRange( ImageId const & image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & range )
+	{
+		auto result = range;
+
+		if ( viewType == VK_IMAGE_VIEW_TYPE_3D
+			&& ( range.levelCount == 1u
+				|| range.levelCount == image.data->info.mipLevels ) )
+		{
+			result.baseArrayLayer = 0u;
+			result.layerCount = getExtent( image ).depth >> range.baseMipLevel;
+		}
+
+		return result;
+	}
+
+	bool match( ImageViewData const & lhs, ImageViewData const & rhs )
+	{
+		return lhs.image.id == rhs.image.id
+			&& match( lhs.image
+				, lhs.info
+				, rhs.info );
 	}
 
 	//*********************************************************************************************
