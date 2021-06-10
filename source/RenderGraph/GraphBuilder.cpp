@@ -176,6 +176,28 @@ namespace crg
 					}
 				}
 			}
+
+			GraphNodePtrArray sortNodes( GraphNodePtrArray nodes )
+			{
+				GraphNodePtrArray result;
+				auto nodeIt = nodes.begin();
+
+				while ( nodeIt != nodes.end() )
+				{
+					auto node = std::move( *nodeIt );
+					auto it = std::find_if( result.begin()
+						, result.end()
+						, [&node]( GraphNodePtr const & lookup )
+						{
+							return node->hasInNext( lookup.get() );
+						} );
+
+					result.emplace( it, std::move( node ) );
+					++nodeIt;
+				}
+
+				return result;
+			}
 		}
 
 		GraphNodePtrArray buildGraph( RootNode & rootNode
@@ -184,6 +206,7 @@ namespace crg
 			GraphNodePtrArray nodes;
 			buildGraph( rootNode, transitions.viewTransitions, nodes );
 			buildGraph( rootNode, transitions.bufferTransitions, nodes );
+			nodes = sortNodes( std::move( nodes ) );
 
 			for ( auto & node : nodes )
 			{

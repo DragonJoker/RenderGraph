@@ -86,6 +86,17 @@ namespace crg
 			: nullptr;
 	}
 
+	bool GraphNode::hasInNext( ConstGraphAdjacentNode const & node )const
+	{
+		auto it = std::find_if( next.begin()
+			, next.end()
+			, [&node]( GraphAdjacentNode lookup )
+			{
+				return lookup == node;
+			} );
+		return it != next.end();
+	}
+
 	AttachmentTransitions const & GraphNode::getInputAttaches( ConstGraphAdjacentNode const pred )const
 	{
 		auto it = inputAttaches.find( pred );

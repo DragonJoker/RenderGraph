@@ -33,6 +33,7 @@ namespace crg
 		CRG_API void attachNode( GraphAdjacentNode next
 			, AttachmentTransitions inputAttaches );
 		CRG_API GraphAdjacentNode findInNext( FramePass const & pass )const;
+		CRG_API bool hasInNext( ConstGraphAdjacentNode const & node )const;
 		CRG_API AttachmentTransitions const & getInputAttaches( ConstGraphAdjacentNode pred = nullptr )const;
 
 		CRG_API virtual void accept( GraphVisitor * vis )const = 0;
