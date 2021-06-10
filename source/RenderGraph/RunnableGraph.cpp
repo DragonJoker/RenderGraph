@@ -123,104 +123,6 @@ namespace crg
 			return result;
 		}
 
-		class DfsVisitor
-			: public GraphVisitor
-		{
-		public:
-			static ConstGraphAdjacentNodeArray submit( ConstGraphAdjacentNode node )
-			{
-				ConstGraphAdjacentNodeArray result;
-				std::set< ConstGraphAdjacentNode > visited;
-				DfsVisitor vis{ result, visited };
-				node->accept( &vis );
-				return result;
-			}
-
-		private:
-			DfsVisitor( ConstGraphAdjacentNodeArray & result
-				, std::set< ConstGraphAdjacentNode > & visited )
-				: m_result{ result }
-				, m_visited{ visited }
-			{
-			}
-
-			void visitRootNode( RootNode const * node )override
-			{
-				m_result.push_back( node );
-
-				for ( auto & next : node->getNext() )
-				{
-					next->accept( this );
-				}
-			}
-
-			void visitFramePassNode( FramePassNode const * node )override
-			{
-				m_result.push_back( node );
-				auto nexts = node->getNext();
-
-				for ( auto & next : nexts )
-				{
-					if ( m_visited.end() == m_visited.find( next )
-						&& getHitCount( node, next ) == 0 )
-					{
-						m_visited.insert( next );
-						next->accept( this );
-						auto & rhs = *getFramePass( *next );
-						auto pendingIt = m_pending.find( &rhs );
-
-						if ( pendingIt != m_pending.end() )
-						{
-							auto node = pendingIt->second;
-							m_pending.erase( pendingIt );
-							node->accept( this );
-						}
-					}
-				}
-			}
-
-		private:
-			size_t getHitCount( FramePassNode const * lhsNode
-				, GraphAdjacentNode rhsNode )
-			{
-				auto & lhs = lhsNode->getFramePass();
-				auto & rhs = *getFramePass( *rhsNode );
-				auto ires = m_hitCount.emplace( &rhs, 0u );
-
-				if ( ires.second )
-				{
-					ires.first->second = rhs.depends;
-				}
-
-				auto it = std::find( ires.first->second.begin()
-					, ires.first->second.end()
-					, &lhs );
-
-				if ( it != ires.first->second.end() )
-				{
-					ires.first->second.erase( it );
-					auto pendingIt = m_pending.find( &lhs );
-
-					if ( pendingIt != m_pending.end() )
-					{
-						m_pending.erase( pendingIt );
-					}
-				}
-				else
-				{
-					m_pending.emplace( ires.first->second.front(), rhsNode );
-				}
-
-				return ires.first->second.size();
-			}
-
-		private:
-			ConstGraphAdjacentNodeArray & m_result;
-			std::set< ConstGraphAdjacentNode > & m_visited;
-			std::unordered_map< FramePass const *, FramePassArray > m_hitCount;
-			std::unordered_map< FramePass const *, GraphAdjacentNode > m_pending;
-		};
-
 		bool isInRange( uint32_t lhsLeft
 			, uint32_t lhsRight
 			, uint32_t rhsLeft
@@ -377,9 +279,8 @@ namespace crg
 
 		doCreateImages();
 		doCreateImageViews();
-		auto dfsNodes = DfsVisitor::submit( getGraph() );
 
-		for ( auto & node : dfsNodes )
+		for ( auto & node : m_nodes )
 		{
 			if ( node->getKind() == GraphNode::Kind::FramePass )
 			{
