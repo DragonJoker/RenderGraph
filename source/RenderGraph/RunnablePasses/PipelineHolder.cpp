@@ -110,7 +110,13 @@ namespace crg
 
 	void PipelineHolder::doFillDescriptorBindings()
 	{
-		VkShaderStageFlags shaderStage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		VkShaderStageFlags shaderStage = ( VK_PIPELINE_BIND_POINT_COMPUTE == m_bindingPoint )
+			? VK_SHADER_STAGE_COMPUTE_BIT
+			: ( VK_SHADER_STAGE_VERTEX_BIT
+				| VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT
+				| VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
+				| VK_SHADER_STAGE_GEOMETRY_BIT
+				| VK_SHADER_STAGE_FRAGMENT_BIT );
 		auto imageDescriptor = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 		for ( auto & attach : m_phPass.images )
@@ -132,8 +138,6 @@ namespace crg
 					, nullptr } );
 			}
 		}
-
-		shaderStage = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		for ( auto & uniform : m_phPass.buffers )
 		{
