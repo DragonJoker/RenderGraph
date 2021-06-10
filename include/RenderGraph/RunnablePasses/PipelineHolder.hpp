@@ -39,7 +39,7 @@ namespace crg
 			, RunnableGraph & graph
 			, pp::Config config
 			, VkPipelineBindPoint bindingPoint );
-		CRG_API ~PipelineHolder();
+		CRG_API virtual ~PipelineHolder();
 
 	protected:
 		CRG_API void doPreInitialise();
@@ -55,7 +55,7 @@ namespace crg
 		void doCreateDescriptorPool();
 		void doCreateDescriptorSet( uint32_t index );
 
-	private:
+	protected:
 		FramePass const & m_phPass;
 		GraphContext const & m_phContext;
 		RunnableGraph & m_phGraph;
