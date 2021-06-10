@@ -91,7 +91,7 @@ namespace crg
 
 	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs )
 	{
-		return lhs.view == rhs.view
+		return match( *lhs.view.data, *rhs.view.data )
 			&& lhs.outputAttach == rhs.outputAttach
 			&& lhs.inputAttach == rhs.inputAttach;
 	}

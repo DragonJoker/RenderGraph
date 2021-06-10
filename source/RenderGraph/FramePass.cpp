@@ -85,7 +85,7 @@ namespace crg
 							, []( Attachment const & lhs
 								, ImageViewId const & rhs )
 							{
-								return lhs.view() == rhs
+								return match( *lhs.view().data, *rhs.data )
 									&& lhs.isOutput();
 							} );
 				} );
@@ -105,8 +105,8 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return lhs.view() == rhs
-								&& ( lhs.isInput() );
+							return match( *lhs.view().data, *rhs.data )
+								&& lhs.isInput();
 						} );
 				} );
 
@@ -285,6 +285,7 @@ namespace crg
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform ) | BufferAttachment::FlagKind( BufferAttachment::Flag::View )
 			, buffer
+			, view
 			, offset
 			, range } );
 	}
@@ -302,6 +303,7 @@ namespace crg
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage ) | BufferAttachment::FlagKind( BufferAttachment::Flag::View )
 			, buffer
+			, view
 			, offset
 			, range } );
 	}

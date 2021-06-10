@@ -670,7 +670,9 @@ namespace crg
 			if ( imageIt != viewsLayouts.end() )
 			{
 				return doGetSubresourceRangeLayout( imageIt->second
-					, view.data->info.subresourceRange );
+					, getVirtualRange( view.data->image
+						, view.data->info.viewType
+						, view.data->info.subresourceRange ) );
 			}
 		}
 
@@ -689,8 +691,11 @@ namespace crg
 		assert( m_viewsLayouts.size() > passIndex );
 		auto & viewsLayouts = m_viewsLayouts[passIndex];
 		auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
+		auto subresourceRange = getVirtualRange( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
 		doAddSubresourceRangeLayout( ires.first->second
-			, view.data->info.subresourceRange
+			, subresourceRange
 			, newLayout );
 		return newLayout;
 	}
@@ -706,13 +711,19 @@ namespace crg
 			, passIt->second.viewTransitions.end()
 			, [&view]( ViewTransition const & lookup )
 			{
-				return view == lookup.view
-					|| view.data->source.end() != std::find( view.data->source.begin()
+				return match( *view.data, *lookup.view.data )
+					|| view.data->source.end() != std::find_if( view.data->source.begin()
 						, view.data->source.end()
-						, lookup.view )
-					|| lookup.view.data->source.end() != std::find( lookup.view.data->source.begin()
+						, [&lookup]( ImageViewId const & lookupView )
+						{
+							return match( *lookup.view.data, *lookupView.data );
+						} )
+					|| lookup.view.data->source.end() != std::find_if( lookup.view.data->source.begin()
 						, lookup.view.data->source.end()
-						, view );
+						, [&view]( ImageViewId const & lookupView )
+						{
+							return match( *view.data, *lookupView.data );
+						} );
 			} );
 
 		if ( it != passIt->second.viewTransitions.end() )
@@ -733,13 +744,19 @@ namespace crg
 					, passIt->second.viewTransitions.end()
 					, [&view]( ViewTransition const & lookup )
 					{
-						return view == lookup.view
-							|| view.data->source.end() != std::find( view.data->source.begin()
+						return match( *view.data, *lookup.view.data )
+							|| view.data->source.end() != std::find_if( view.data->source.begin()
 								, view.data->source.end()
-								, lookup.view )
-							|| lookup.view.data->source.end() != std::find( lookup.view.data->source.begin()
+								, [&lookup]( ImageViewId const & lookupView )
+								{
+									return match( *lookup.view.data, *lookupView.data );
+								} )
+							|| lookup.view.data->source.end() != std::find_if( lookup.view.data->source.begin()
 								, lookup.view.data->source.end()
-								, view );
+								, [&view]( ImageViewId const & lookupView )
+								{
+									return match( *view.data, *lookupView.data );
+								} );
 					} );
 
 				if ( it == passIt->second.viewTransitions.end() )
@@ -1068,10 +1085,13 @@ namespace crg
 			if ( ires.second )
 			{
 				auto & layers = ires.first->second;
+				auto sliceArrayCount = ( image.data->info.extent.depth > 1u
+					? image.data->info.extent.depth
+					: image.data->info.arrayLayers );
 
-				for ( uint32_t layer = 0; layer < image.data->info.arrayLayers; ++layer )
+				for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
 				{
-					auto & levels = layers.emplace( layer, MipLayoutStates{} ).first->second;
+					auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
 
 					for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
 					{
