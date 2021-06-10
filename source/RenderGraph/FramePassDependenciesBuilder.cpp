@@ -434,6 +434,22 @@ namespace crg
 				}
 			}
 
+			bool hasTransition( ViewTransitionArray const & transitions
+				, ViewTransition const & transition )
+			{
+				return transitions.end() != std::find( transitions.begin()
+					, transitions.end()
+					, transition );
+			}
+
+			bool hasTransition( BufferTransitionArray const & transitions
+				, BufferTransition const & transition )
+			{
+				return transitions.end() != std::find( transitions.begin()
+					, transitions.end()
+					, transition );
+			}
+
 			void addRemainingDependency( Attachment const & attach
 				, FramePassDependenciesMap & inputTransitions
 				, ViewTransitionArray & allTransitions )
@@ -442,25 +458,37 @@ namespace crg
 
 				if ( attach.isColourInOutAttach() )
 				{
-					transitions.viewTransitions.push_back( { attach.view()
-						, attach
-						, attach } );
+					ViewTransition transition{ attach.view(), attach, attach };
+
+					if ( !hasTransition( transitions.viewTransitions, transition ) )
+					{
+						transitions.viewTransitions.push_back( transition );
+					}
 				}
 				else if ( attach.isColourInputAttach()
 					|| attach.isSampledView() )
 				{
-					transitions.viewTransitions.push_back( { attach.view()
-						, Attachment::createDefault( attach.view() )
-						, attach } );
+					ViewTransition transition{ attach.view(), Attachment::createDefault( attach.view() ), attach };
+
+					if ( !hasTransition( transitions.viewTransitions, transition ) )
+					{
+						transitions.viewTransitions.push_back( transition );
+					}
 				}
 				else
 				{
-					transitions.viewTransitions.push_back( { attach.view()
-						, attach
-						, Attachment::createDefault( attach.view() ) } );
+					ViewTransition transition{ attach.view(), attach, Attachment::createDefault( attach.view() ) };
+
+					if ( !hasTransition( transitions.viewTransitions, transition ) )
+					{
+						transitions.viewTransitions.push_back( transition );
+					}
 				}
 
-				allTransitions.push_back( transitions.viewTransitions.back() );
+				if ( !hasTransition( allTransitions, transitions.viewTransitions.back() ) )
+				{
+					allTransitions.push_back( transitions.viewTransitions.back() );
+				}
 			}
 
 			void addRemainingDependency( Attachment const & attach
@@ -471,25 +499,37 @@ namespace crg
 
 				if ( attach.isColourInOutAttach() )
 				{
-					transitions.bufferTransitions.push_back( { attach.buffer.buffer
-						, attach
-						, attach } );
+					BufferTransition transition{ attach.buffer.buffer, attach, attach };
+
+					if ( !hasTransition( transitions.bufferTransitions, transition ) )
+					{
+						transitions.bufferTransitions.push_back( transition );
+					}
 				}
 				else if ( attach.isColourInputAttach()
 					|| attach.isSampledView() )
 				{
-					transitions.bufferTransitions.push_back( { attach.buffer.buffer
-						, Attachment::createDefault( attach.buffer.buffer )
-						, attach } );
+					BufferTransition transition{ attach.buffer.buffer, Attachment::createDefault( attach.buffer.buffer ), attach };
+
+					if ( !hasTransition( transitions.bufferTransitions, transition ) )
+					{
+						transitions.bufferTransitions.push_back( transition );
+					}
 				}
 				else
 				{
-					transitions.bufferTransitions.push_back( { attach.buffer.buffer
-						, attach
-						, Attachment::createDefault( attach.buffer.buffer ) } );
+					BufferTransition transition{ attach.buffer.buffer, attach, Attachment::createDefault( attach.buffer.buffer ) };
+
+					if ( !hasTransition( transitions.bufferTransitions, transition ) )
+					{
+						transitions.bufferTransitions.push_back( transition );
+					}
 				}
 
-				allTransitions.push_back( transitions.bufferTransitions.back() );
+				if ( !hasTransition( allTransitions, transitions.bufferTransitions.back() ) )
+				{
+					allTransitions.push_back( transitions.bufferTransitions.back() );
+				}
 			}
 
 			void addRemainingDependency( Attachment const & attach
@@ -568,22 +608,33 @@ namespace crg
 					, outputAttach
 					, inputAttach };
 
-				if ( outputAttach.view() == inputAttach.view() )
+				if ( !hasTransition( allTransitions, inputTransition ) )
 				{
 					allTransitions.push_back( inputTransition );
 				}
-				else
+
+				if ( !match( *outputAttach.view().data, *inputAttach.view().data ) )
 				{
-					allTransitions.push_back( inputTransition );
-					allTransitions.push_back( outputTransition );
+					if ( !hasTransition( allTransitions, outputTransition ) )
+					{
+						allTransitions.push_back( outputTransition );
+					}
 				}
 				{
 					auto & transitions = inputTransitions.emplace( inputAttach.pass, AttachmentTransitions{} ).first->second;
-					transitions.viewTransitions.push_back( inputTransition );
+
+					if ( !hasTransition( transitions.viewTransitions, inputTransition ) )
+					{
+						transitions.viewTransitions.push_back( inputTransition );
+					}
 				}
 				{
 					auto & transitions = outputTransitions.emplace( outputAttach.pass, AttachmentTransitions{} ).first->second;
-					transitions.viewTransitions.push_back( outputTransition );
+
+					if ( !hasTransition( transitions.viewTransitions, outputTransition ) )
+					{
+						transitions.viewTransitions.push_back( outputTransition );
+					}
 				}
 			}
 
@@ -601,22 +652,33 @@ namespace crg
 					, outputAttach
 					, inputAttach };
 
-				if ( outputAttach.view() == inputAttach.view() )
+				if ( !hasTransition( allTransitions, inputTransition ) )
 				{
 					allTransitions.push_back( inputTransition );
 				}
-				else
+
+				if ( outputAttach.view() != inputAttach.view() )
 				{
-					allTransitions.push_back( inputTransition );
-					allTransitions.push_back( outputTransition );
+					if ( !hasTransition( allTransitions, outputTransition ) )
+					{
+						allTransitions.push_back( outputTransition );
+					}
 				}
 				{
 					auto & transitions = inputTransitions.emplace( inputAttach.pass, AttachmentTransitions{} ).first->second;
-					transitions.bufferTransitions.push_back( inputTransition );
+
+					if ( !hasTransition( transitions.bufferTransitions, inputTransition ) )
+					{
+						transitions.bufferTransitions.push_back( inputTransition );
+					}
 				}
 				{
 					auto & transitions = outputTransitions.emplace( outputAttach.pass, AttachmentTransitions{} ).first->second;
-					transitions.bufferTransitions.push_back( outputTransition );
+
+					if ( !hasTransition( transitions.bufferTransitions, outputTransition ) )
+					{
+						transitions.bufferTransitions.push_back( outputTransition );
+					}
 				}
 			}
 
