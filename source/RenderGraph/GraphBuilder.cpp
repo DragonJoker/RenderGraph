@@ -63,14 +63,44 @@ namespace crg
 				return result;
 			}
 
+			GraphAdjacentNode insertNodeBefore( GraphNodePtrArray & nodes
+				, GraphNodePtr node )
+			{
+				auto it = std::find_if( nodes.begin()
+					, nodes.end()
+					, [&node]( GraphNodePtr const & lookup )
+					{
+						return node->hasInNext( lookup.get() );
+					} );
+				auto index = std::distance( nodes.begin(), it );
+				nodes.emplace( it, std::move( node ) );
+				return ( nodes.begin() + index )->get();
+			}
+
+			GraphAdjacentNode insertNodeAfter( GraphNodePtrArray & nodes
+				, GraphNodePtr node )
+			{
+				auto it = std::find_if( nodes.rbegin()
+					, nodes.rend()
+					, [&node]( GraphNodePtr const & lookup )
+					{
+						return lookup->hasInNext( node.get() );
+					} );
+				auto index = std::distance( nodes.rbegin(), it );
+				nodes.emplace( it.base(), std::move( node ) );
+				return ( nodes.rbegin() + index )->get();
+			}
+
 			void buildGraph( RootNode & rootNode
 				, ViewTransitionArray const & transitions
 				, GraphNodePtrArray & nodes )
 			{
 				for ( auto & transition : transitions )
 				{
-					GraphAdjacentNode outputNode{};
-					GraphAdjacentNode inputNode{};
+					GraphAdjacentNode outputAdjNode{};
+					GraphAdjacentNode inputAdjNode{};
+					GraphNodePtr outputNode{};
+					GraphNodePtr inputNode{};
 					auto itOutput = std::find_if( nodes.begin()
 						, nodes.end()
 						, [&transition]( auto & lookup )
@@ -82,13 +112,13 @@ namespace crg
 					{
 						if ( transition.outputAttach.pass )
 						{
-							nodes.push_back( std::make_unique< FramePassNode >( *transition.outputAttach.pass ) );
-							outputNode = nodes.back().get();
+							outputNode = std::make_unique< FramePassNode >( *transition.outputAttach.pass );
+							outputAdjNode = outputNode.get();
 						}
 					}
 					else
 					{
-						outputNode = itOutput->get();
+						outputAdjNode = itOutput->get();
 					}
 
 					auto itInput = std::find_if( nodes.begin()
@@ -102,20 +132,30 @@ namespace crg
 					{
 						if ( transition.inputAttach.pass )
 						{
-							nodes.push_back( std::make_unique< FramePassNode >( *transition.inputAttach.pass ) );
-							inputNode = nodes.back().get();
+							inputNode = std::make_unique< FramePassNode >( *transition.inputAttach.pass );
+							inputAdjNode = inputNode.get();
 						}
 					}
 					else
 					{
-						inputNode = itInput->get();
+						inputAdjNode = itInput->get();
 					}
 
-					if ( inputNode
-						&& outputNode
+					if ( inputAdjNode
+						&& outputAdjNode
 						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.view ) )
 					{
-						outputNode->attachNode( inputNode, { { transition }, {} } );
+						outputAdjNode->attachNode( inputAdjNode, { { transition }, {} } );
+					}
+
+					if ( outputNode )
+					{
+						insertNodeBefore( nodes, std::move( outputNode ) );
+					}
+
+					if ( inputNode )
+					{
+						insertNodeAfter( nodes, std::move( inputNode ) );
 					}
 				}
 			}
@@ -126,8 +166,10 @@ namespace crg
 			{
 				for ( auto & transition : transitions )
 				{
-					GraphAdjacentNode outputNode{};
-					GraphAdjacentNode inputNode{};
+					GraphAdjacentNode outputAdjNode{};
+					GraphAdjacentNode inputAdjNode{};
+					GraphNodePtr outputNode{};
+					GraphNodePtr inputNode{};
 					auto itOutput = std::find_if( nodes.begin()
 						, nodes.end()
 						, [&transition]( auto & lookup )
@@ -139,13 +181,13 @@ namespace crg
 					{
 						if ( transition.outputAttach.pass )
 						{
-							nodes.push_back( std::make_unique< FramePassNode >( *transition.outputAttach.pass ) );
-							outputNode = nodes.back().get();
+							outputNode = std::make_unique< FramePassNode >( *transition.outputAttach.pass );
+							outputAdjNode = outputNode.get();
 						}
 					}
 					else
 					{
-						outputNode = itOutput->get();
+						outputAdjNode = itOutput->get();
 					}
 
 					auto itInput = std::find_if( nodes.begin()
@@ -159,44 +201,32 @@ namespace crg
 					{
 						if ( transition.inputAttach.pass )
 						{
-							nodes.push_back( std::make_unique< FramePassNode >( *transition.inputAttach.pass ) );
-							inputNode = nodes.back().get();
+							inputNode = std::make_unique< FramePassNode >( *transition.inputAttach.pass );
+							inputAdjNode = inputNode.get();
 						}
 					}
 					else
 					{
-						inputNode = itInput->get();
+						inputAdjNode = itInput->get();
 					}
 
-					if ( inputNode
-						&& outputNode
+					if ( inputAdjNode
+						&& outputAdjNode
 						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.buffer ) )
 					{
-						outputNode->attachNode( inputNode, { {}, { transition } } );
+						outputAdjNode->attachNode( inputAdjNode, { {}, { transition } } );
+					}
+
+					if ( outputNode )
+					{
+						insertNodeBefore( nodes, std::move( outputNode ) );
+					}
+
+					if ( inputNode )
+					{
+						insertNodeAfter( nodes, std::move( inputNode ) );
 					}
 				}
-			}
-
-			GraphNodePtrArray sortNodes( GraphNodePtrArray nodes )
-			{
-				GraphNodePtrArray result;
-				auto nodeIt = nodes.begin();
-
-				while ( nodeIt != nodes.end() )
-				{
-					auto node = std::move( *nodeIt );
-					auto it = std::find_if( result.begin()
-						, result.end()
-						, [&node]( GraphNodePtr const & lookup )
-						{
-							return node->hasInNext( lookup.get() );
-						} );
-
-					result.emplace( it, std::move( node ) );
-					++nodeIt;
-				}
-
-				return result;
 			}
 		}
 
@@ -206,7 +236,6 @@ namespace crg
 			GraphNodePtrArray nodes;
 			buildGraph( rootNode, transitions.viewTransitions, nodes );
 			buildGraph( rootNode, transitions.bufferTransitions, nodes );
-			nodes = sortNodes( std::move( nodes ) );
 
 			for ( auto & node : nodes )
 			{
