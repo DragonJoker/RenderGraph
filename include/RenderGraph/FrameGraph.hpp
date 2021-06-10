@@ -34,6 +34,11 @@ namespace crg
 			, AccessState layout );
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 
+		ResourceHandler & getHandler()
+		{
+			return m_handler;
+		}
+
 	private:
 		ResourceHandler & m_handler;
 		std::string m_name;
