@@ -16,6 +16,75 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	namespace
+	{
+		bool dependsOn( FramePass const & pass
+			, FramePass const * lookup )
+		{
+			return pass.depends.end() != std::find_if( pass.depends.begin()
+				, pass.depends.end()
+				, [lookup]( FramePass const * depLookup )
+				{
+					return depLookup == lookup;
+				} );
+		}
+
+		std::vector< FramePass const * > sortPasses( FramePassPtrArray const & passes )
+		{
+			std::vector< FramePass const * > sortedPasses;
+			std::vector< FramePass const * > unsortedPasses;
+
+			for ( auto & pass : passes )
+			{
+				unsortedPasses.push_back( pass.get() );
+			}
+
+			sortedPasses.push_back( unsortedPasses.front() );
+			unsortedPasses.erase( unsortedPasses.begin() );
+
+			while ( !unsortedPasses.empty() )
+			{
+				std::vector< FramePass const * > currentPasses;
+				std::swap( currentPasses, unsortedPasses );
+
+				for ( auto & pass : currentPasses )
+				{
+					auto it = std::find_if( sortedPasses.begin()
+						, sortedPasses.end()
+						, [&pass]( FramePass const * lookup )
+						{
+							return dependsOn( *lookup, pass );
+						} );
+
+					if ( it != sortedPasses.end() )
+					{
+						sortedPasses.insert( it, pass );
+					}
+					else
+					{
+						auto rit = std::find_if( sortedPasses.rbegin()
+							, sortedPasses.rend()
+							, [&pass]( FramePass const * lookup )
+							{
+								return dependsOn( *pass, lookup );
+							} );
+
+						if ( rit != sortedPasses.rend() )
+						{
+							sortedPasses.insert( rit.base(), pass );
+						}
+						else
+						{
+							unsortedPasses.push_back( pass );
+						}
+					}
+				}
+			}
+
+			return sortedPasses;
+		}
+	}
+
 	FrameGraph::FrameGraph( ResourceHandler & handler
 		, std::string name )
 		: m_handler{ handler }
@@ -52,18 +121,25 @@ namespace crg
 			CRG_Exception( "No FramePass registered." );
 		}
 
-		// Transitions for which the pass is the destination.
-		FramePassDependenciesMap inputTransitions;
-		// Transitions for which the pass is the source.
-		FramePassDependenciesMap outputTransitions;
-		// All transitions.
+		auto sortedPasses = sortPasses( m_passes );
+		GraphNodePtrArray nodes;
+
+		for ( auto & pass : sortedPasses )
+		{
+			auto node = std::make_unique< FramePassNode >( *pass );
+			nodes.emplace_back( std::move( node ) );
+		}
+
+		FramePassDependencies inputTransitions;
+		FramePassDependencies outputTransitions;
 		AttachmentTransitions transitions;
-		builder::buildPassAttachDependencies( m_passes
+		builder::buildPassAttachDependencies( nodes
 			, inputTransitions
 			, outputTransitions
 			, transitions );
 		RootNode root{ m_name };
-		auto nodes = builder::buildGraph( root
+		builder::buildGraph( root
+			, nodes
 			, transitions );
 		ImageMemoryMap images;
 		ImageViewMap imageViews;

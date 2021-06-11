@@ -30,8 +30,8 @@ namespace crg
 
 	struct Attachment;
 	struct AttachmentTransitions;
-	struct BufferTransition;
-	struct ViewTransition;
+	struct Buffer;
+	struct FramePassTransitions;
 	struct GraphContext;
 	struct ImageData;
 	struct ImageViewData;
@@ -63,15 +63,30 @@ namespace crg
 	using GraphAdjacentNode = GraphNode *;
 	using ConstGraphAdjacentNode = GraphNode const *;
 
+	template< typename DataT >
+	struct DataTransitionT;
+	template< typename DataT >
+	using DataTransitionArrayT = std::vector< DataTransitionT< DataT > >;
+	/**
+	*\brief
+	*	The transition between two states of an image view.
+	*/
+	using ViewTransition = DataTransitionT< ImageViewId >;
+	using ViewTransitionArray = DataTransitionArrayT< ImageViewId >;
+	/**
+	*\brief
+	*	The transition between two states of a storage buffer.
+	*/
+	using BufferTransition = DataTransitionT< Buffer >;
+	using BufferTransitionArray = DataTransitionArrayT< Buffer >;
+
 	using AttachmentArray = std::vector< Attachment >;
-	using BufferTransitionArray = std::vector< BufferTransition >;
-	using ViewTransitionArray = std::vector< ViewTransition >;
 	using FramePassPtrArray = std::vector< FramePassPtr >;
 	using FramePassArray = std::vector< FramePass const * >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using ConstGraphAdjacentNodeArray = std::vector< ConstGraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
-	using FramePassDependenciesMap = std::map< FramePass const *, AttachmentTransitions >;
+	using FramePassDependencies = std::vector< FramePassTransitions >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitions >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;

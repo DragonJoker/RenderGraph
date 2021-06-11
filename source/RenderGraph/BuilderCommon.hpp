@@ -14,8 +14,8 @@ namespace crg
 	{
 		using FramePassSet = std::set< FramePass const * >;
 
-		FramePassSet retrieveRoots( FramePassDependenciesMap const & dependencies );
-		FramePassSet retrieveLeafs( FramePassDependenciesMap const & dependencies );
+		FramePassSet retrieveRoots( FramePassDependencies const & dependencies );
+		FramePassSet retrieveLeafs( FramePassDependencies const & dependencies );
 
 		template< typename TypeT >
 		void filter( std::vector< TypeT > const & inputs

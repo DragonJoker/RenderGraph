@@ -74,7 +74,7 @@ namespace crg
 		}
 
 		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
-			, FramePassDependenciesMap const & dependencies
+			, FramePassDependencies const & dependencies
 			, RootNode const & root )
 		{
 			ImageIdAliasMap result;
@@ -92,7 +92,7 @@ namespace crg
 		}
 
 		ImageViewIdAliasMap optimiseImageViews( ImageViewIdDataOwnerCont const & imageViews
-			, FramePassDependenciesMap const & dependencies
+			, FramePassDependencies const & dependencies
 			, RootNode const & root )
 		{
 			ImageViewIdAliasMap result;

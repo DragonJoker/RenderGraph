@@ -106,7 +106,7 @@ namespace crg::dot
 					}
 
 					displayNode( stream, srcNode, "ellipse", srcColour, nodes, withColours );
-					displayEdge( stream, srcNode, name, transition.view.data->name, imgColour, withColours );
+					displayEdge( stream, srcNode, name, transition.data.data->name, imgColour, withColours );
 
 					if ( transition.inputAttach.pass )
 					{
@@ -115,7 +115,7 @@ namespace crg::dot
 					}
 
 					displayNode( stream, dstNode, "ellipse", dstColour, nodes, withColours );
-					displayEdge( stream, name, dstNode, transition.view.data->name, imgColour, withColours );
+					displayEdge( stream, name, dstNode, transition.data.data->name, imgColour, withColours );
 				}
 
 				for ( auto & transition : transitions.bufferTransitions )
@@ -134,7 +134,7 @@ namespace crg::dot
 					}
 
 					displayNode( stream, srcNode, "ellipse", srcColour, nodes, withColours );
-					displayEdge( stream, srcNode, name, transition.buffer.name, bufColour, withColours );
+					displayEdge( stream, srcNode, name, transition.data.name, bufColour, withColours );
 
 					if ( transition.inputAttach.pass )
 					{
@@ -143,7 +143,7 @@ namespace crg::dot
 					}
 
 					displayNode( stream, dstNode, "ellipse", dstColour, nodes, withColours );
-					displayEdge( stream, name, dstNode, transition.buffer.name, bufColour, withColours );
+					displayEdge( stream, name, dstNode, transition.data.name, bufColour, withColours );
 				}
 
 				stream << "}\n";
@@ -185,8 +185,8 @@ namespace crg::dot
 					displayNode( m_stream, name, "box", imgColour, m_nodes, m_withColours );
 					displayNode( m_stream, lhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
 					displayNode( m_stream, rhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
-					displayEdge( m_stream, lhs->getName(), name, transition.view.data->name, imgColour, m_withColours );
-					displayEdge( m_stream, name, rhs->getName(), transition.view.data->name, imgColour, m_withColours );
+					displayEdge( m_stream, lhs->getName(), name, transition.data.data->name, imgColour, m_withColours );
+					displayEdge( m_stream, name, rhs->getName(), transition.data.data->name, imgColour, m_withColours );
 				}
 
 				for ( auto & transition : transitions.bufferTransitions )
@@ -195,8 +195,8 @@ namespace crg::dot
 					displayNode( m_stream, name, "box", bufColour, m_nodes, m_withColours );
 					displayNode( m_stream, lhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
 					displayNode( m_stream, rhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
-					displayEdge( m_stream, lhs->getName(), name, transition.buffer.name, bufColour, m_withColours );
-					displayEdge( m_stream, name, rhs->getName(), transition.buffer.name, bufColour, m_withColours );
+					displayEdge( m_stream, lhs->getName(), name, transition.data.name, bufColour, m_withColours );
+					displayEdge( m_stream, name, rhs->getName(), transition.data.name, bufColour, m_withColours );
 				}
 			}
 

@@ -255,8 +255,8 @@ namespace crg
 	}
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph
-		, FramePassDependenciesMap inputTransitions
-		, FramePassDependenciesMap outputTransitions
+		, FramePassDependencies inputTransitions
+		, FramePassDependencies outputTransitions
 		, AttachmentTransitions transitions
 		, GraphNodePtrArray nodes
 		, RootNode rootNode
@@ -606,28 +606,33 @@ namespace crg
 		, bool isCompute )const
 	{
 		LayoutState result{ VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		auto passIt = m_outputTransitions.find( &pass );
+		auto passIt = std::find_if( m_outputTransitions.begin()
+			, m_outputTransitions.end()
+			, [&pass]( FramePassTransitions const & lookup )
+			{
+				return lookup.pass == &pass;
+			} );
 		assert( passIt != m_outputTransitions.end() );
-		auto it = std::find_if( passIt->second.viewTransitions.begin()
-			, passIt->second.viewTransitions.end()
+		auto it = std::find_if( passIt->transitions.viewTransitions.begin()
+			, passIt->transitions.viewTransitions.end()
 			, [&view]( ViewTransition const & lookup )
 			{
-				return match( *view.data, *lookup.view.data )
+				return match( *view.data, *lookup.data.data )
 					|| view.data->source.end() != std::find_if( view.data->source.begin()
 						, view.data->source.end()
 						, [&lookup]( ImageViewId const & lookupView )
 						{
-							return match( *lookup.view.data, *lookupView.data );
+							return match( *lookup.data.data, *lookupView.data );
 						} )
-					|| lookup.view.data->source.end() != std::find_if( lookup.view.data->source.begin()
-						, lookup.view.data->source.end()
+					|| lookup.data.data->source.end() != std::find_if( lookup.data.data->source.begin()
+						, lookup.data.data->source.end()
 						, [&view]( ImageViewId const & lookupView )
 						{
 							return match( *view.data, *lookupView.data );
 						} );
 			} );
 
-		if ( it != passIt->second.viewTransitions.end() )
+		if ( it != passIt->transitions.viewTransitions.end() )
 		{
 			result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
 			result.access = it->inputAttach.getAccessMask();
@@ -639,28 +644,33 @@ namespace crg
 
 			if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
 			{
-				passIt = m_inputTransitions.find( &pass );
+				passIt = std::find_if( m_inputTransitions.begin()
+					, m_inputTransitions.end()
+					, [&pass]( FramePassTransitions const & lookup )
+					{
+						return lookup.pass == &pass;
+					} );
 				assert( passIt != m_inputTransitions.end() );
-				auto it = std::find_if( passIt->second.viewTransitions.begin()
-					, passIt->second.viewTransitions.end()
+				auto it = std::find_if( passIt->transitions.viewTransitions.begin()
+					, passIt->transitions.viewTransitions.end()
 					, [&view]( ViewTransition const & lookup )
 					{
-						return match( *view.data, *lookup.view.data )
+						return match( *view.data, *lookup.data.data )
 							|| view.data->source.end() != std::find_if( view.data->source.begin()
 								, view.data->source.end()
 								, [&lookup]( ImageViewId const & lookupView )
 								{
-									return match( *lookup.view.data, *lookupView.data );
+									return match( *lookup.data.data, *lookupView.data );
 								} )
-							|| lookup.view.data->source.end() != std::find_if( lookup.view.data->source.begin()
-								, lookup.view.data->source.end()
+							|| lookup.data.data->source.end() != std::find_if( lookup.data.data->source.begin()
+								, lookup.data.data->source.end()
 								, [&view]( ImageViewId const & lookupView )
 								{
 									return match( *view.data, *lookupView.data );
 								} );
 					} );
 
-				if ( it == passIt->second.viewTransitions.end() )
+				if ( it == passIt->transitions.viewTransitions.end() )
 				{
 					result.layout = VK_IMAGE_LAYOUT_UNDEFINED;
 					result.access = 0u;
@@ -728,16 +738,21 @@ namespace crg
 		, bool isCompute )const
 	{
 		AccessState result{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		auto passIt = m_outputTransitions.find( &pass );
+		auto passIt = std::find_if( m_outputTransitions.begin()
+			, m_outputTransitions.end()
+			, [&pass]( FramePassTransitions const & lookup )
+			{
+				return lookup.pass == &pass;
+			} );
 		assert( passIt != m_outputTransitions.end() );
-		auto it = std::find_if( passIt->second.bufferTransitions.begin()
-			, passIt->second.bufferTransitions.end()
+		auto it = std::find_if( passIt->transitions.bufferTransitions.begin()
+			, passIt->transitions.bufferTransitions.end()
 			, [&buffer]( BufferTransition const & lookup )
 			{
-				return buffer == lookup.buffer;
+				return buffer == lookup.data;
 			} );
 
-		if ( it != passIt->second.bufferTransitions.end() )
+		if ( it != passIt->transitions.bufferTransitions.end() )
 		{
 			result.access = it->inputAttach.getAccessMask();
 			result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
@@ -748,16 +763,21 @@ namespace crg
 
 			if ( result.access == 0u )
 			{
-				passIt = m_inputTransitions.find( &pass );
+				passIt = std::find_if( m_inputTransitions.begin()
+					, m_inputTransitions.end()
+					, [&pass]( FramePassTransitions const & lookup )
+					{
+						return lookup.pass == &pass;
+					} );
 				assert( passIt != m_inputTransitions.end() );
-				auto it = std::find_if( passIt->second.bufferTransitions.begin()
-					, passIt->second.bufferTransitions.end()
+				auto it = std::find_if( passIt->transitions.bufferTransitions.begin()
+					, passIt->transitions.bufferTransitions.end()
 					, [&buffer]( BufferTransition const & lookup )
 					{
-						return buffer == lookup.buffer;
+						return buffer == lookup.data;
 					} );
 
-				if ( it == passIt->second.bufferTransitions.end() )
+				if ( it == passIt->transitions.bufferTransitions.end() )
 				{
 					result.access = 0u;
 					result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
