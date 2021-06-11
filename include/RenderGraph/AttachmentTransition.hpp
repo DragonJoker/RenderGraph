@@ -10,27 +10,15 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	/**
-	*\brief
-	*	The transition between two states of an image view.
-	*/
-	struct ViewTransition
+	template< typename DataT >
+	struct DataTransitionT
 	{
-		ImageViewId view;
+		DataT data;
 		Attachment outputAttach;
 		Attachment inputAttach;
 	};
+
 	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs );
-	/**
-	*\brief
-	*	The transition between two states of a storage buffer.
-	*/
-	struct BufferTransition
-	{
-		Buffer buffer;
-		Attachment outputAttach;
-		Attachment inputAttach;
-	};
 	bool operator==( BufferTransition const & lhs, BufferTransition const & rhs );
 
 	struct AttachmentTransitions
@@ -41,4 +29,10 @@ namespace crg
 
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions value );
 	AttachmentTransitions reduceDirectPaths( AttachmentTransitions value );
+
+	struct FramePassTransitions
+	{
+		FramePass const * pass;
+		AttachmentTransitions transitions;
+	};
 }

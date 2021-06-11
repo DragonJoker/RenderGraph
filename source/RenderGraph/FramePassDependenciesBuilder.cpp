@@ -7,6 +7,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/AttachmentTransition.hpp"
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
+#include "RenderGraph/GraphNode.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -23,531 +24,11 @@ namespace crg
 	{
 		namespace
 		{
-			struct ViewAttaches
-			{
-				ImageViewId view;
-				std::vector< Attachment > attaches;
-			};
-
-			using ViewAttachesArray = std::vector< ViewAttaches >;
-
-			std::ostream & operator<<( std::ostream & stream, ViewAttaches const & attach )
-			{
-				stream << attach.view.data->name;
-				std::string sep{ " -> " };
-
-				for ( auto & attach : attach.attaches )
-				{
-					stream << sep << attach.name;
-					sep = ", ";
-				}
-
-				return stream;
-			}
-
-			std::ostream & operator<<( std::ostream & stream, ViewAttachesArray const & attaches )
-			{
-				for ( auto & attach : attaches )
-				{
-					stream << attach << std::endl;
-				}
-
-				return stream;
-			}
-
-			struct BufferAttaches
-			{
-				Buffer buffer;
-				std::vector< Attachment > attaches;
-			};
-
-			using BufferAttachesArray = std::vector< BufferAttaches >;
-
-			std::ostream & operator<<( std::ostream & stream, BufferAttaches const & attach )
-			{
-				stream << attach.buffer.name;
-				std::string sep{ " -> " };
-
-				for ( auto & attach : attach.attaches )
-				{
-					stream << sep << attach.name;
-					sep = ", ";
-				}
-
-				return stream;
-			}
-
-			std::ostream & operator<<( std::ostream & stream, BufferAttachesArray const & attaches )
-			{
-				for ( auto & attach : attaches )
-				{
-					stream << attach << std::endl;
-				}
-
-				return stream;
-			}
-
-			std::ostream & operator<<( std::ostream & stream, ViewTransition const & transition )
-			{
-				stream << ( transition.outputAttach.pass ? transition.outputAttach.pass->name : std::string{ "External" } )
-					<< " -> "
-					<< ( transition.inputAttach.pass ? transition.inputAttach.pass->name : std::string{ "External" } );
-				std::string sep = " on [";
-				stream << sep << transition.view.data->name;
-				stream << "]";
-				return stream;
-			}
-
-			std::ostream & operator<<( std::ostream & stream, BufferTransition const & transition )
-			{
-				stream << ( transition.outputAttach.pass ? transition.outputAttach.pass->name : std::string{ "External" } )
-					<< " -> "
-					<< ( transition.inputAttach.pass ? transition.inputAttach.pass->name : std::string{ "External" } );
-				std::string sep = " on [";
-				stream << sep << transition.buffer.name;
-				stream << "]";
-				return stream;
-			}
-
-			std::ostream & operator<<( std::ostream & stream, FramePassDependenciesMap const & dependencies )
-			{
-				for ( auto & depsIt : dependencies )
-				{
-					stream << depsIt.first->name << std::endl;
-
-					for ( auto & transition : depsIt.second.viewTransitions )
-					{
-						stream << "  " << transition << std::endl;
-					}
-
-					for ( auto & transition : depsIt.second.bufferTransitions )
-					{
-						stream << "  " << transition << std::endl;
-					}
-				}
-
-				return stream;
-			}
-
-			void printDebug( ViewAttachesArray const & inputs
-				, ViewAttachesArray const & outputs )
-			{
-#if CRG_DebugPassAttaches
-				std::clog << "Inputs" << std::endl;
-				std::clog << inputs << std::endl;
-				std::clog << "Outputs" << std::endl;
-				std::clog << outputs << std::endl;
-#endif
-			}
-
-			void printDebug( BufferAttachesArray const & inputs
-				, BufferAttachesArray const & outputs )
-			{
-#if CRG_DebugPassAttaches
-				std::clog << "Inputs" << std::endl;
-				std::clog << inputs << std::endl;
-				std::clog << "Outputs" << std::endl;
-				std::clog << outputs << std::endl;
-#endif
-			}
-
-			void printDebug( FramePassDependenciesMap const & inputTransitions
-				, FramePassDependenciesMap const & outputTransitions )
-			{
-#if CRG_DebugPassDependencies
-				std::clog << "Input Transitions" << std::endl;
-				std::clog << inputTransitions << std::endl;
-				std::clog << "Output Transitions" << std::endl;
-				std::clog << outputTransitions << std::endl;
-#endif
-			}
-
 			bool isInRange( uint32_t value
 				, uint32_t left
 				, uint32_t count )
 			{
 				return value >= left && value < left + count;
-			}
-
-			bool areIntersecting( uint32_t lhsLBound
-				, uint32_t lhsCount
-				, uint32_t rhsLBound
-				, uint32_t rhsCount )
-			{
-				return isInRange( lhsLBound, rhsLBound, rhsCount )
-					|| isInRange( rhsLBound, lhsLBound, lhsCount );
-			}
-
-			bool areIntersecting( VkImageSubresourceRange const & lhs
-				, VkImageSubresourceRange const & rhs )
-			{
-				return areIntersecting( lhs.baseMipLevel
-						, lhs.levelCount
-						, rhs.baseMipLevel
-						, rhs.levelCount )
-					&& areIntersecting( lhs.baseArrayLayer
-						, lhs.layerCount
-						, rhs.baseArrayLayer
-						, lhs.layerCount );
-			}
-
-			bool areOverlapping( ImageViewData const & lhs
-				, ImageViewData const & rhs )
-			{
-				return lhs.image == rhs.image
-					&& areIntersecting( getVirtualRange( lhs.image, lhs.info.viewType, lhs.info.subresourceRange )
-						, getVirtualRange( rhs.image, rhs.info.viewType, rhs.info.subresourceRange ) );
-			}
-
-			bool areOverlapping( Attachment const & lhs
-				, Attachment const & rhs )
-			{
-				return areOverlapping( *lhs.view().data, *rhs.view().data );
-			}
-
-			void insertAttach( Attachment const & attach
-				, ViewAttachesArray & cont )
-			{
-				auto it = std::find_if( cont.begin()
-					, cont.end()
-					, [&attach]( ViewAttaches const & lookup )
-					{
-						return lookup.view == attach.view();
-					} );
-
-				if ( cont.end() == it )
-				{
-					cont.push_back( ViewAttaches{ attach.view() } );
-					it = std::prev( cont.end() );
-				}
-
-				auto attachesIt = std::find( it->attaches.begin()
-					, it->attaches.end()
-					, attach );
-
-				if ( attachesIt == it->attaches.end() )
-				{
-					it->attaches.push_back( attach );
-				}
-			}
-
-			void processAttachSource( ViewAttaches & lookup
-				, Attachment const & attach
-				, ImageViewId const & attachView
-				, ImageViewId const & sourceView
-				, std::function< bool( ImageViewId const &, ImageViewId const & ) > processAttach )
-			{
-				if ( processAttach( sourceView, attachView ) )
-				{
-					if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
-						, lookup.attaches.end()
-						, attach ) )
-					{
-						lookup.attaches.push_back( attach );
-					}
-				}
-			}
-
-			AttachmentArray splitAttach( Attachment const & attach )
-			{
-				AttachmentArray result;
-
-				if ( attach.view().data->source.empty() )
-				{
-					result.push_back( attach );
-				}
-				else
-				{
-					for ( auto & view : attach.view().data->source )
-					{
-						result.push_back( Attachment{ view, attach } );
-					}
-				}
-
-				return result;
-			}
-
-			void processAttach( Attachment const & attach
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all
-				, std::function< bool( ImageViewId const &, ImageViewId const & ) > processAttach )
-			{
-				std::vector< FramePass const * > passes;
-				auto attaches = splitAttach( attach );
-
-				for ( auto & splitAttach : attaches )
-				{
-					for ( auto & lookup : cont )
-					{
-						processAttachSource( lookup
-							, splitAttach
-							, lookup.view
-							, splitAttach.view()
-							, processAttach );
-					}
-
-					insertAttach( splitAttach, cont );
-					insertAttach( splitAttach, all );
-				}
-			}
-
-			void processInputAttachs( AttachmentArray const & attachs
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					if ( attach.isInput() )
-					{
-						processAttach( attach
-							, cont
-							, all
-							, []( ImageViewId const & lookupView
-								, ImageViewId const & attachView )
-							{
-								return areOverlapping( *lookupView.data, *attachView.data );
-							} );
-					}
-				}
-			}
-
-			void processOutputAttachs( AttachmentArray const & attachs
-				, ViewAttachesArray & cont
-				, ViewAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					if ( attach.isOutput() )
-					{
-						processAttach( attach
-							, cont
-							, all
-							, []( ImageViewId const & lookupView
-								, ImageViewId const & attachView )
-							{
-								return areOverlapping( *lookupView.data, *attachView.data );
-							} );
-					}
-				}
-			}
-
-			void insertAttach( Attachment const & attach
-				, BufferAttachesArray & cont )
-			{
-				auto it = std::find_if( cont.begin()
-					, cont.end()
-					, [&attach]( BufferAttaches const & lookup )
-					{
-						return lookup.buffer == attach.buffer.buffer;
-					} );
-
-				if ( cont.end() == it )
-				{
-					cont.push_back( BufferAttaches{ attach.buffer.buffer } );
-					it = std::prev( cont.end() );
-				}
-
-				auto attachesIt = std::find( it->attaches.begin()
-					, it->attaches.end()
-					, attach );
-
-				if ( attachesIt == it->attaches.end() )
-				{
-					it->attaches.push_back( attach );
-				}
-			}
-
-			void processAttachSource( BufferAttaches & lookup
-				, Attachment const & attach
-				, Buffer const & attachView
-				, Buffer const & sourceView
-				, std::function< bool( Buffer const &, Buffer const & ) > processAttach )
-			{
-				if ( processAttach( sourceView, attachView ) )
-				{
-					if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
-						, lookup.attaches.end()
-						, attach ) )
-					{
-						lookup.attaches.push_back( attach );
-					}
-				}
-			}
-
-			void processAttach( Attachment const & attach
-				, BufferAttachesArray & cont
-				, BufferAttachesArray & all
-				, std::function< bool( Buffer const &, Buffer const & ) > processAttach )
-			{
-				std::vector< FramePass const * > passes;
-
-				for ( auto & lookup : cont )
-				{
-					processAttachSource( lookup
-						, attach
-						, lookup.buffer
-						, attach.buffer.buffer
-						, processAttach );
-				}
-
-				insertAttach( attach, cont );
-				insertAttach( attach, all );
-			}
-
-			void processInputAttachs( AttachmentArray const & attachs
-				, BufferAttachesArray & cont
-				, BufferAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					if ( attach.isInput() && attach.isStorageBuffer() )
-					{
-						processAttach( attach
-							, cont
-							, all
-							, []( Buffer const & lookupView
-								, Buffer const & attachView )
-							{
-								return lookupView == attachView;
-							} );
-					}
-				}
-			}
-
-			void processOutputAttachs( AttachmentArray const & attachs
-				, BufferAttachesArray & cont
-				, BufferAttachesArray & all )
-			{
-				for ( auto & attach : attachs )
-				{
-					if ( attach.isOutput() && attach.isStorageBuffer() )
-					{
-						processAttach( attach
-							, cont
-							, all
-							, []( Buffer const & lookupView
-								, Buffer const & attachView )
-							{
-								return lookupView == attachView;
-							} );
-					}
-				}
-			}
-
-			bool hasTransition( ViewTransitionArray const & transitions
-				, ViewTransition const & transition )
-			{
-				return transitions.end() != std::find( transitions.begin()
-					, transitions.end()
-					, transition );
-			}
-
-			bool hasTransition( BufferTransitionArray const & transitions
-				, BufferTransition const & transition )
-			{
-				return transitions.end() != std::find( transitions.begin()
-					, transitions.end()
-					, transition );
-			}
-
-			void addRemainingDependency( Attachment const & attach
-				, FramePassDependenciesMap & inputTransitions
-				, ViewTransitionArray & allTransitions )
-			{
-				auto & transitions = inputTransitions.emplace( attach.pass, AttachmentTransitions{} ).first->second;
-
-				if ( attach.isColourInOutAttach() )
-				{
-					ViewTransition transition{ attach.view(), attach, attach };
-
-					if ( !hasTransition( transitions.viewTransitions, transition ) )
-					{
-						transitions.viewTransitions.push_back( transition );
-					}
-				}
-				else if ( attach.isColourInputAttach()
-					|| attach.isSampledView() )
-				{
-					ViewTransition transition{ attach.view(), Attachment::createDefault( attach.view() ), attach };
-
-					if ( !hasTransition( transitions.viewTransitions, transition ) )
-					{
-						transitions.viewTransitions.push_back( transition );
-					}
-				}
-				else
-				{
-					ViewTransition transition{ attach.view(), attach, Attachment::createDefault( attach.view() ) };
-
-					if ( !hasTransition( transitions.viewTransitions, transition ) )
-					{
-						transitions.viewTransitions.push_back( transition );
-					}
-				}
-
-				if ( !hasTransition( allTransitions, transitions.viewTransitions.back() ) )
-				{
-					allTransitions.push_back( transitions.viewTransitions.back() );
-				}
-			}
-
-			void addRemainingDependency( Attachment const & attach
-				, FramePassDependenciesMap & inputTransitions
-				, BufferTransitionArray & allTransitions )
-			{
-				auto & transitions = inputTransitions.emplace( attach.pass, AttachmentTransitions{} ).first->second;
-
-				if ( attach.isColourInOutAttach() )
-				{
-					BufferTransition transition{ attach.buffer.buffer, attach, attach };
-
-					if ( !hasTransition( transitions.bufferTransitions, transition ) )
-					{
-						transitions.bufferTransitions.push_back( transition );
-					}
-				}
-				else if ( attach.isColourInputAttach()
-					|| attach.isSampledView() )
-				{
-					BufferTransition transition{ attach.buffer.buffer, Attachment::createDefault( attach.buffer.buffer ), attach };
-
-					if ( !hasTransition( transitions.bufferTransitions, transition ) )
-					{
-						transitions.bufferTransitions.push_back( transition );
-					}
-				}
-				else
-				{
-					BufferTransition transition{ attach.buffer.buffer, attach, Attachment::createDefault( attach.buffer.buffer ) };
-
-					if ( !hasTransition( transitions.bufferTransitions, transition ) )
-					{
-						transitions.bufferTransitions.push_back( transition );
-					}
-				}
-
-				if ( !hasTransition( allTransitions, transitions.bufferTransitions.back() ) )
-				{
-					allTransitions.push_back( transitions.bufferTransitions.back() );
-				}
-			}
-
-			void addRemainingDependency( Attachment const & attach
-				, FramePassDependenciesMap & inputTransitions
-				, AttachmentTransitions & allTransitions )
-			{
-				if ( attach.isImage() )
-				{
-					addRemainingDependency( attach
-						, inputTransitions
-						, allTransitions.viewTransitions );
-				}
-				else
-				{
-					addRemainingDependency( attach
-						, inputTransitions
-						, allTransitions.bufferTransitions );
-				}
 			}
 
 			bool isSingleMipView( ImageViewId const & sub
@@ -592,202 +73,608 @@ namespace crg
 				return lhs;
 			}
 
-			void addDependency( Attachment const & outputAttach
-				, Attachment const & inputAttach
-				, FramePassDependenciesMap & inputTransitions
-				, FramePassDependenciesMap & outputTransitions
+			template< typename DataT >
+			struct AttachDataTraitsT;
+
+			template<>
+			struct AttachDataTraitsT< ImageViewId >
+			{
+				static ImageViewId get( Attachment const & attach )
+				{
+					return attach.view();
+				}
+
+				static ImageViewId getOutput( Attachment const & inputAttach
+					, Attachment const & outputAttach )
+				{
+					return getOutputView( inputAttach.view()
+						, outputAttach.view() );
+				}
+
+				static ImageViewId getInput( Attachment const & inputAttach
+					, Attachment const & outputAttach )
+				{
+					return getInputView( inputAttach.view()
+						, outputAttach.view() );
+				}
+
+				static DataTransitionArrayT< ImageViewId > & getTransitions( AttachmentTransitions & transitions )
+				{
+					return transitions.viewTransitions;
+				}
+
+				static AttachmentArray split( Attachment const & attach )
+				{
+					AttachmentArray result;
+
+					if ( attach.view().data->source.empty() )
+					{
+						result.push_back( attach );
+					}
+					else
+					{
+						for ( auto & view : attach.view().data->source )
+						{
+							result.push_back( Attachment{ view, attach } );
+						}
+					}
+
+					return result;
+				}
+
+				static bool isInput( Attachment const & attach )
+				{
+					return attach.isInput();
+				}
+
+				static bool isOutput( Attachment const & attach )
+				{
+					return attach.isOutput();
+				}
+			};
+
+			template<>
+			struct AttachDataTraitsT< Buffer >
+			{
+				static Buffer get( Attachment const & attach )
+				{
+					return attach.buffer.buffer;
+				}
+
+				static Buffer getOutput( Attachment const & inputAttach
+					, Attachment const & outputAttach )
+				{
+					return inputAttach.buffer.buffer;
+				}
+
+				static Buffer getInput( Attachment const & inputAttach
+					, Attachment const & outputAttach )
+				{
+					return inputAttach.buffer.buffer;
+				}
+
+				static DataTransitionArrayT< Buffer > & getTransitions( AttachmentTransitions & transitions )
+				{
+					return transitions.bufferTransitions;
+				}
+
+				static AttachmentArray split( Attachment const & attach )
+				{
+					return { attach };
+				}
+
+				static bool isInput( Attachment const & attach )
+				{
+					return attach.isInput() && attach.isStorageBuffer();
+				}
+
+				static bool isOutput( Attachment const & attach )
+				{
+					return attach.isOutput() && attach.isStorageBuffer();
+				}
+			};
+
+			template< typename DataT >
+			DataT const & getAttachOutputData( Attachment const & inputAttach
+				, Attachment const & outputAttach )
+			{
+				return AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach );
+			}
+
+			template< typename DataT >
+			DataT const & getAttachInputData( Attachment const & inputAttach
+				, Attachment const & outputAttach )
+			{
+				return AttachDataTraitsT< DataT >::getInput( inputAttach, outputAttach );
+			}
+
+			std::string const & getAttachDataName( ImageViewId const & data )
+			{
+				return data.data->name;
+			}
+
+			std::string const & getAttachDataName( Buffer const & data )
+			{
+				return data.name;
+			}
+
+			template< typename DataT >
+			struct AttachesT
+			{
+				DataT data;
+				std::vector< Attachment > attaches;
+			};
+
+			template< typename DataT >
+			using AttachesArrayT = std::vector< AttachesT< DataT > >;
+
+			using ViewAttaches = AttachesT< ImageViewId >;
+			using BufferAttaches = AttachesT< Buffer >;
+
+			using ViewAttachesArray = AttachesArrayT< ImageViewId >;
+			using BufferAttachesArray = AttachesArrayT< Buffer >;
+
+			template< typename DataT >
+			std::ostream & operator<<( std::ostream & stream, AttachesT< DataT > const & attach )
+			{
+				stream << getAttachDataName( attach.data );
+				std::string sep{ " -> " };
+
+				for ( auto & attach : attach.attaches )
+				{
+					stream << sep << attach.name;
+					sep = ", ";
+				}
+
+				return stream;
+			}
+
+			template< typename DataT >
+			std::ostream & operator<<( std::ostream & stream, AttachesArrayT< DataT > const & attaches )
+			{
+				for ( auto & attach : attaches )
+				{
+					stream << attach << std::endl;
+				}
+
+				return stream;
+			}
+
+			template< typename DataT >
+			std::ostream & operator<<( std::ostream & stream, DataTransitionT< DataT > const & transition )
+			{
+				stream << ( transition.outputAttach.pass ? transition.outputAttach.pass->name : std::string{ "External" } )
+					<< " -> "
+					<< ( transition.inputAttach.pass ? transition.inputAttach.pass->name : std::string{ "External" } );
+				std::string sep = " on [";
+				stream << sep << getAttachDataName( transition.data );
+				stream << "]";
+				return stream;
+			}
+
+			std::ostream & operator<<( std::ostream & stream, FramePassDependencies const & dependencies )
+			{
+				for ( auto & depsIt : dependencies )
+				{
+					stream << depsIt.pass->name << std::endl;
+
+					for ( auto & transition : depsIt.transitions.viewTransitions )
+					{
+						stream << "  " << transition << std::endl;
+					}
+
+					for ( auto & transition : depsIt.transitions.bufferTransitions )
+					{
+						stream << "  " << transition << std::endl;
+					}
+				}
+
+				return stream;
+			}
+
+			void printDebug( ViewAttachesArray const & inputs
+				, ViewAttachesArray const & outputs )
+			{
+#if CRG_DebugPassAttaches
+				std::clog << "Inputs" << std::endl;
+				std::clog << inputs << std::endl;
+				std::clog << "Outputs" << std::endl;
+				std::clog << outputs << std::endl;
+#endif
+			}
+
+			void printDebug( BufferAttachesArray const & inputs
+				, BufferAttachesArray const & outputs )
+			{
+#if CRG_DebugPassAttaches
+				std::clog << "Inputs" << std::endl;
+				std::clog << inputs << std::endl;
+				std::clog << "Outputs" << std::endl;
+				std::clog << outputs << std::endl;
+#endif
+			}
+
+			void printDebug( FramePassDependencies const & inputTransitions
+				, FramePassDependencies const & outputTransitions )
+			{
+#if CRG_DebugPassDependencies
+				std::clog << "Input Transitions" << std::endl;
+				std::clog << inputTransitions << std::endl;
+				std::clog << "Output Transitions" << std::endl;
+				std::clog << outputTransitions << std::endl;
+#endif
+			}
+
+			bool areIntersecting( uint32_t lhsLBound
+				, uint32_t lhsCount
+				, uint32_t rhsLBound
+				, uint32_t rhsCount )
+			{
+				return isInRange( lhsLBound, rhsLBound, rhsCount )
+					|| isInRange( rhsLBound, lhsLBound, lhsCount );
+			}
+
+			bool areIntersecting( VkImageSubresourceRange const & lhs
+				, VkImageSubresourceRange const & rhs )
+			{
+				return areIntersecting( lhs.baseMipLevel
+					, lhs.levelCount
+					, rhs.baseMipLevel
+					, rhs.levelCount )
+					&& areIntersecting( lhs.baseArrayLayer
+						, lhs.layerCount
+						, rhs.baseArrayLayer
+						, lhs.layerCount );
+			}
+
+			bool areOverlapping( ImageViewData const & lhs
+				, ImageViewData const & rhs )
+			{
+				return lhs.image == rhs.image
+					&& areIntersecting( getVirtualRange( lhs.image, lhs.info.viewType, lhs.info.subresourceRange )
+						, getVirtualRange( rhs.image, rhs.info.viewType, rhs.info.subresourceRange ) );
+			}
+
+			bool areOverlapping( ImageViewId const & lhs
+				, ImageViewId const & rhs )
+			{
+				return areOverlapping( *lhs.data, *rhs.data );
+			}
+
+			bool areOverlapping( Buffer const & lhs
+				, Buffer const & rhs )
+			{
+				return lhs.buffer == rhs.buffer;
+			}
+
+			template< typename DataT >
+			bool areOverlapping( Attachment const & lhs
+				, Attachment const & rhs )
+			{
+				return areOverlapping( AttachDataTraitsT< DataT >::get( lhs )
+					, AttachDataTraitsT< DataT >::get( rhs ) );
+			}
+
+			template< typename DataT >
+			void insertAttach( Attachment const & attach
+				, AttachesArrayT< DataT > & cont )
+			{
+				auto it = std::find_if( cont.begin()
+					, cont.end()
+					, [&attach]( AttachesT< DataT > const & lookup )
+					{
+						return lookup.data == AttachDataTraitsT< DataT >::get( attach );
+					} );
+
+				if ( cont.end() == it )
+				{
+					cont.push_back( AttachesT< DataT >{ AttachDataTraitsT< DataT >::get( attach ) } );
+					it = std::prev( cont.end() );
+				}
+
+				auto attachesIt = std::find( it->attaches.begin()
+					, it->attaches.end()
+					, attach );
+
+				if ( attachesIt == it->attaches.end() )
+				{
+					it->attaches.push_back( attach );
+				}
+			}
+
+			template< typename DataT >
+			void processAttachSource( AttachesT< DataT > & lookup
+				, Attachment const & attach
+				, DataT const & attachView
+				, DataT const & sourceView
+				, std::function< bool( DataT const &, DataT const & ) > processAttach )
+			{
+				if ( processAttach( sourceView, attachView ) )
+				{
+					if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
+						, lookup.attaches.end()
+						, attach ) )
+					{
+						lookup.attaches.push_back( attach );
+					}
+				}
+			}
+
+			template< typename DataT >
+			void processAttach( Attachment const & attach
+				, AttachesArrayT< DataT > & cont
+				, AttachesArrayT< DataT > & all
+				, std::function< bool( DataT const &, DataT const & ) > processAttach )
+			{
+				std::vector< FramePass const * > passes;
+				auto attaches = AttachDataTraitsT< DataT >::split( attach );
+
+				for ( auto & splitAttach : attaches )
+				{
+					for ( auto & lookup : cont )
+					{
+						processAttachSource( lookup
+							, splitAttach
+							, lookup.data
+							, AttachDataTraitsT< DataT >::get( splitAttach )
+							, processAttach );
+					}
+
+					insertAttach( splitAttach, cont );
+					insertAttach( splitAttach, all );
+				}
+			}
+
+			template< typename DataT >
+			void processInputAttachs( AttachmentArray const & attachs
+				, AttachesArrayT< DataT > & cont
+				, AttachesArrayT< DataT > & all )
+			{
+				for ( auto & attach : attachs )
+				{
+					if ( AttachDataTraitsT< DataT >::isInput( attach ) )
+					{
+						processAttach< DataT >( attach
+							, cont
+							, all
+							, []( DataT const & lookupView
+								, DataT const & attachView )
+							{
+								return areOverlapping( lookupView, attachView );
+							} );
+					}
+				}
+			}
+
+			template< typename DataT >
+			void processOutputAttachs( AttachmentArray const & attachs
+				, AttachesArrayT< DataT > & cont
+				, AttachesArrayT< DataT > & all )
+			{
+				for ( auto & attach : attachs )
+				{
+					if ( AttachDataTraitsT< DataT >::isOutput( attach ) )
+					{
+						processAttach< DataT >( attach
+							, cont
+							, all
+							, []( DataT const & lookupView
+								, DataT const & attachView )
+							{
+								return areOverlapping( lookupView, attachView );
+							} );
+					}
+				}
+			}
+
+			template< typename DataT >
+			bool hasTransition( DataTransitionArrayT< DataT > const & transitions
+				, DataTransitionT< DataT > const & transition )
+			{
+				return transitions.end() != std::find( transitions.begin()
+					, transitions.end()
+					, transition );
+			}
+
+			FramePassTransitions & insertPass( FramePass const * pass
+				, FramePassDependencies & transitions )
+			{
+				auto passIt = std::find_if( transitions.begin()
+					, transitions.end()
+					, [pass]( FramePassTransitions const & lookup )
+					{
+						return lookup.pass == pass;
+					} );
+
+				if ( passIt == transitions.end() )
+				{
+					transitions.push_back( FramePassTransitions{ pass, {} } );
+					return transitions.back();
+				}
+
+				return *passIt;
+			}
+
+			template< typename DataT >
+			bool dependsOn( DataTransitionT< DataT > const & transition
+				, DataTransitionT< DataT > const & lookup )
+			{
+				return transition.inputAttach.pass
+					&& transition.outputAttach.pass
+					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass
+					, transition.data );
+			}
+
+			template< typename DataT >
+			void insertTransition( DataTransitionT< DataT > const & transition
+				, DataTransitionArrayT< DataT > & transitions )
+			{
+				if ( !hasTransition( transitions, transition ) )
+				{
+					auto it = std::find_if( transitions.begin()
+						, transitions.end()
+						, [&transition]( DataTransitionT< DataT > const & lookup )
+						{
+							return dependsOn( lookup, transition );
+						} );
+
+					if ( it != transitions.end() )
+					{
+						transitions.insert( it, transition );
+					}
+					else
+					{
+						auto rit = std::find_if( transitions.rbegin()
+							, transitions.rend()
+							, [&transition]( DataTransitionT< DataT > const & lookup )
+							{
+								return dependsOn( transition, lookup );
+							} );
+
+						if ( rit != transitions.rend() )
+						{
+							transitions.insert( rit.base(), transition );
+						}
+						else
+						{
+							transitions.push_back( transition );
+						}
+					}
+				}
+			}
+
+			void addRemainingDependency( Attachment const & attach
+				, FramePassDependencies & inputTransitions
 				, ViewTransitionArray & allTransitions )
 			{
-				assert( outputAttach.view() == inputAttach.view()
-					|| isSingleMipView( outputAttach.view(), inputAttach.view() )
-					|| isSingleMipView( inputAttach.view(), outputAttach.view() ) );
-				ViewTransition inputTransition{ getInputView( outputAttach.view(), inputAttach.view() )
-					, outputAttach
-					, inputAttach };
-				ViewTransition outputTransition{ getOutputView( outputAttach.view(), inputAttach.view() )
-					, outputAttach
-					, inputAttach };
+				auto & transitions = insertPass( attach.pass, inputTransitions ).transitions;
 
-				if ( !hasTransition( allTransitions, inputTransition ) )
+				if ( attach.isColourInOutAttach() )
 				{
-					allTransitions.push_back( inputTransition );
+					ViewTransition transition{ attach.view(), attach, attach };
+					insertTransition( transition, transitions.viewTransitions );
+				}
+				else if ( attach.isColourInputAttach()
+					|| attach.isSampledView() )
+				{
+					ViewTransition transition{ attach.view(), Attachment::createDefault( attach.view() ), attach };
+					insertTransition( transition, transitions.viewTransitions );
+				}
+				else
+				{
+					ViewTransition transition{ attach.view(), attach, Attachment::createDefault( attach.view() ) };
+					insertTransition( transition, transitions.viewTransitions );
 				}
 
-				if ( !match( *outputAttach.view().data, *inputAttach.view().data ) )
-				{
-					if ( !hasTransition( allTransitions, outputTransition ) )
-					{
-						allTransitions.push_back( outputTransition );
-					}
-				}
-				{
-					auto & transitions = inputTransitions.emplace( inputAttach.pass, AttachmentTransitions{} ).first->second;
-
-					if ( !hasTransition( transitions.viewTransitions, inputTransition ) )
-					{
-						transitions.viewTransitions.push_back( inputTransition );
-					}
-				}
-				{
-					auto & transitions = outputTransitions.emplace( outputAttach.pass, AttachmentTransitions{} ).first->second;
-
-					if ( !hasTransition( transitions.viewTransitions, outputTransition ) )
-					{
-						transitions.viewTransitions.push_back( outputTransition );
-					}
-				}
+				insertTransition( transitions.viewTransitions.back(), allTransitions );
 			}
 
-			void addDependency( Attachment const & outputAttach
-				, Attachment const & inputAttach
-				, FramePassDependenciesMap & inputTransitions
-				, FramePassDependenciesMap & outputTransitions
+			void addRemainingDependency( Attachment const & attach
+				, FramePassDependencies & inputTransitions
 				, BufferTransitionArray & allTransitions )
 			{
-				assert( outputAttach.buffer.buffer == inputAttach.buffer.buffer );
-				BufferTransition inputTransition{ outputAttach.buffer.buffer
-					, outputAttach
-					, inputAttach };
-				BufferTransition outputTransition{ outputAttach.buffer.buffer
-					, outputAttach
-					, inputAttach };
+				auto & transitions = insertPass( attach.pass, inputTransitions ).transitions;
 
-				if ( !hasTransition( allTransitions, inputTransition ) )
+				if ( attach.isColourInOutAttach() )
 				{
-					allTransitions.push_back( inputTransition );
+					BufferTransition transition{ attach.buffer.buffer, attach, attach };
+					insertTransition( transition, transitions.bufferTransitions );
+				}
+				else if ( attach.isColourInputAttach()
+					|| attach.isSampledView() )
+				{
+					BufferTransition transition{ attach.buffer.buffer, Attachment::createDefault( attach.buffer.buffer ), attach };
+					insertTransition( transition, transitions.bufferTransitions );
+				}
+				else
+				{
+					BufferTransition transition{ attach.buffer.buffer, attach, Attachment::createDefault( attach.buffer.buffer ) };
+					insertTransition( transition, transitions.bufferTransitions );
 				}
 
-				if ( outputAttach.view() != inputAttach.view() )
-				{
-					if ( !hasTransition( allTransitions, outputTransition ) )
-					{
-						allTransitions.push_back( outputTransition );
-					}
-				}
-				{
-					auto & transitions = inputTransitions.emplace( inputAttach.pass, AttachmentTransitions{} ).first->second;
-
-					if ( !hasTransition( transitions.bufferTransitions, inputTransition ) )
-					{
-						transitions.bufferTransitions.push_back( inputTransition );
-					}
-				}
-				{
-					auto & transitions = outputTransitions.emplace( outputAttach.pass, AttachmentTransitions{} ).first->second;
-
-					if ( !hasTransition( transitions.bufferTransitions, outputTransition ) )
-					{
-						transitions.bufferTransitions.push_back( outputTransition );
-					}
-				}
+				insertTransition( transitions.bufferTransitions.back(), allTransitions );
 			}
 
-			void addDependency( Attachment const & outputAttach
-				, Attachment const & inputAttach
-				, FramePassDependenciesMap & inputTransitions
-				, FramePassDependenciesMap & outputTransitions
+			void addRemainingDependency( Attachment const & attach
+				, FramePassDependencies & inputTransitions
 				, AttachmentTransitions & allTransitions )
 			{
-				if ( outputAttach.isImage() )
+				if ( attach.isImage() )
 				{
-					assert( inputAttach.isImage() );
-					addDependency( outputAttach
-						, inputAttach
+					addRemainingDependency( attach
 						, inputTransitions
-						, outputTransitions
 						, allTransitions.viewTransitions );
 				}
 				else
 				{
-					assert( inputAttach.isBuffer() );
-					addDependency( outputAttach
-						, inputAttach
+					addRemainingDependency( attach
 						, inputTransitions
-						, outputTransitions
 						, allTransitions.bufferTransitions );
 				}
 			}
 
-			void buildPassViewDependencies( ViewAttachesArray const & inputs
-				, ViewAttachesArray const & outputs
-				, ViewAttachesArray & all
-				, FramePassDependenciesMap & inputTransitions
-				, FramePassDependenciesMap & outputTransitions
-				, AttachmentTransitions & allTransitions )
+			bool match( Buffer const & lhs, Buffer const & rhs )
 			{
-				for ( auto & output : outputs )
-				{
-					for ( auto & input : inputs )
-					{
-						if ( areOverlapping( *input.view.data, *output.view.data ) )
-						{
-							for ( auto & outputAttach : output.attaches )
-							{
-								for ( auto & inputAttach : input.attaches )
-								{
-									if ( inputAttach.pass->dependsOn( *outputAttach.pass
-										, getOutputView( inputAttach.view()
-											, outputAttach.view() ) ) )
-									{
-										addDependency( outputAttach
-											, inputAttach
-											, inputTransitions
-											, outputTransitions
-											, allTransitions );
-									}
-								}
-							}
-
-							auto it = std::find_if( all.begin()
-								, all.end()
-								, [&input]( ViewAttaches const & lookup )
-								{
-									return lookup.view == input.view;
-								} );
-
-							if ( all.end() != it )
-							{
-								all.erase( it );
-							}
-						}
-					}
-				}
-
-				// `all` should now only contain sampled/input/output from/to nothing attaches.
-				for ( auto & remaining : all )
-				{
-					for ( auto & attach : remaining.attaches )
-					{
-						addRemainingDependency( attach
-							, inputTransitions
-							, allTransitions );
-					}
-				}
-
-				printDebug( inputs, outputs );
+				return lhs.buffer != rhs.buffer;
 			}
 
-			void buildPassBufferDependencies( BufferAttachesArray const & inputs
-				, BufferAttachesArray const & outputs
-				, BufferAttachesArray & all
-				, FramePassDependenciesMap & inputTransitions
-				, FramePassDependenciesMap & outputTransitions
+			bool match( ImageViewId const & lhs, ImageViewId const & rhs )
+			{
+				return match( *lhs.data, *rhs.data );
+			}
+
+			template< typename DataT >
+			void addDependency( Attachment const & outputAttach
+				, Attachment const & inputAttach
+				, FramePassDependencies & inputTransitions
+				, FramePassDependencies & outputTransitions
 				, AttachmentTransitions & allTransitions )
 			{
-				for ( auto & output : outputs )
+				DataTransitionT< DataT > inputTransition{ AttachDataTraitsT< DataT >::getInput( outputAttach, inputAttach )
+					, outputAttach
+					, inputAttach };
+				DataTransitionT< DataT > outputTransition{ AttachDataTraitsT< DataT >::getOutput( outputAttach, inputAttach )
+					, outputAttach
+					, inputAttach };
+				insertTransition( inputTransition, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
+
+				if ( !match( AttachDataTraitsT< DataT >::get( outputAttach )
+					, AttachDataTraitsT< DataT >::get( inputAttach ) ) )
 				{
-					for ( auto & input : inputs )
+					insertTransition( outputTransition, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
+				}
+				{
+					auto & transitions = insertPass( inputAttach.pass, inputTransitions ).transitions;
+					insertTransition( inputTransition, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
+				}
+				{
+					auto & transitions = insertPass( outputAttach.pass, outputTransitions ).transitions;
+					insertTransition( outputTransition, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
+				}
+			}
+
+			template< typename DataT >
+			void buildPassDependencies( AttachesArrayT< DataT > const & inputs
+				, AttachesArrayT< DataT > const & outputs
+				, AttachesArrayT< DataT > & all
+				, FramePassDependencies & inputTransitions
+				, FramePassDependencies & outputTransitions
+				, AttachmentTransitions & allTransitions )
+			{
+				for ( AttachesT< DataT > const & output : outputs )
+				{
+					for ( AttachesT< DataT > const & input : inputs )
 					{
-						if ( input.buffer == output.buffer )
+						if ( areOverlapping( input.data, output.data ) )
 						{
-							for ( auto & outputAttach : output.attaches )
+							for ( Attachment const & outputAttach : output.attaches )
 							{
-								for ( auto & inputAttach : input.attaches )
+								for ( Attachment const & inputAttach : input.attaches )
 								{
 									if ( inputAttach.pass->dependsOn( *outputAttach.pass
-										, inputAttach.buffer.buffer ) )
+										, AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach ) ) )
 									{
-										addDependency( outputAttach
+										addDependency< DataT >( outputAttach
 											, inputAttach
 											, inputTransitions
 											, outputTransitions
@@ -798,9 +685,9 @@ namespace crg
 
 							auto it = std::find_if( all.begin()
 								, all.end()
-								, [&input]( BufferAttaches const & lookup )
+								, [&input]( AttachesT< DataT > const & lookup )
 								{
-									return lookup.buffer == input.buffer;
+									return lookup.data == input.data;
 								} );
 
 							if ( all.end() != it )
@@ -826,9 +713,9 @@ namespace crg
 			}
 		}
 
-		void buildPassAttachDependencies( std::vector< FramePassPtr > const & passes
-			, FramePassDependenciesMap & inputTransitions
-			, FramePassDependenciesMap & outputTransitions
+		void buildPassAttachDependencies( GraphNodePtrArray const & nodes
+			, FramePassDependencies & inputTransitions
+			, FramePassDependencies & outputTransitions
 			, AttachmentTransitions & allTransitions )
 		{
 			ViewAttachesArray imgInputs;
@@ -838,23 +725,25 @@ namespace crg
 			BufferAttachesArray bufOutputs;
 			BufferAttachesArray bufAll;
 
-			for ( auto & pass : passes )
+			for ( auto & node : nodes )
 			{
+				auto pass = getFramePass( *node );
+				assert( pass );
 				processInputAttachs( pass->images, imgInputs, imgAll );
 				processOutputAttachs( pass->images, imgOutputs, imgAll );
 				processInputAttachs( pass->buffers, bufInputs, bufAll );
 				processOutputAttachs( pass->buffers, bufOutputs, bufAll );
-				inputTransitions.emplace( pass.get(), AttachmentTransitions{} );
-				outputTransitions.emplace( pass.get(), AttachmentTransitions{} );
+				insertPass( pass, inputTransitions );
+				insertPass( pass, outputTransitions );
 			}
 
-			buildPassViewDependencies( imgInputs
+			buildPassDependencies( imgInputs
 				, imgOutputs
 				, imgAll
 				, inputTransitions
 				, outputTransitions
 				, allTransitions );
-			buildPassBufferDependencies( bufInputs
+			buildPassDependencies( bufInputs
 				, bufOutputs
 				, bufAll
 				, inputTransitions

@@ -8,7 +8,8 @@ namespace crg
 {
 	namespace builder
 	{
-		GraphNodePtrArray buildGraph( RootNode & rootNode
-			, AttachmentTransitions const & transitions );
+		void buildGraph( RootNode & rootNode
+			, GraphNodePtrArray const & passes
+			, AttachmentTransitions & transitions );
 	}
 }

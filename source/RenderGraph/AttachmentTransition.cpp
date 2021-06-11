@@ -91,14 +91,14 @@ namespace crg
 
 	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs )
 	{
-		return match( *lhs.view.data, *rhs.view.data )
+		return match( *lhs.data.data, *rhs.data.data )
 			&& lhs.outputAttach == rhs.outputAttach
 			&& lhs.inputAttach == rhs.inputAttach;
 	}
 
 	bool operator==( BufferTransition const & lhs, BufferTransition const & rhs )
 	{
-		return lhs.buffer == rhs.buffer
+		return lhs.data == rhs.data
 			&& lhs.outputAttach == rhs.outputAttach
 			&& lhs.inputAttach == rhs.inputAttach;
 	}

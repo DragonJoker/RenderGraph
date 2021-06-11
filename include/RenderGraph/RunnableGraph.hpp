@@ -19,9 +19,17 @@ namespace crg
 	class RunnableGraph
 	{
 	public:
+		/**
+		*\param inputTransitions
+		*	Transitions for which the pass is the destination.
+		*\param outputTransitions
+		*	Transitions for which the pass is the source.
+		*\param transitions
+		*	All transitions.
+		*/
 		CRG_API RunnableGraph( FrameGraph & graph
-			, FramePassDependenciesMap inputTransitions
-			, FramePassDependenciesMap outputTransitions
+			, FramePassDependencies inputTransitions
+			, FramePassDependencies outputTransitions
 			, AttachmentTransitions transitions
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
@@ -139,8 +147,8 @@ namespace crg
 
 	private:
 		FrameGraph & m_graph;
-		FramePassDependenciesMap m_inputTransitions;
-		FramePassDependenciesMap m_outputTransitions;
+		FramePassDependencies m_inputTransitions;
+		FramePassDependencies m_outputTransitions;
 		AttachmentTransitions m_transitions;
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;

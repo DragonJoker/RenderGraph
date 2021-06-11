@@ -40,21 +40,44 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::Attachment">
-    <DisplayString>{name} {view} {pass}</DisplayString>
+  <Type Name="crg::BufferAttachment">
+	  <DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Uniform) != 0">Uniform {buffer}</DisplayString>
+	  <DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Storage) != 0">Storage {buffer}</DisplayString>
     <Expand>
-      <Item Name="name">name</Item>
-      <Item Name="view">view</Item>
-      <Item Name="pass">*pass</Item>
-      <Item Condition="(flags &amp; crg::Attachment::Sampled)" Name="sampled">true</Item>
-      <Item Condition="(flags &amp; crg::Attachment::Storage)" Name="storage">true</Item>
-      <Item Condition="(flags &amp; crg::Attachment::Transfer)" Name="transfer">true</Item>
-      <Item Condition="!(flags &amp; crg::Attachment::Sampled) &amp;&amp; !(flags &amp; crg::Attachment::Storage) &amp;&amp; !(flags &amp; crg::Attachment::Transfer)" Name="loadOp">loadOp</Item>
-      <Item Condition="!(flags &amp; crg::Attachment::Sampled) &amp;&amp; !(flags &amp; crg::Attachment::Storage) &amp;&amp; !(flags &amp; crg::Attachment::Transfer)" Name="storeOp">storeOp</Item>
-      <Item Condition="!(flags &amp; crg::Attachment::Sampled) &amp;&amp; !(flags &amp; crg::Attachment::Storage) &amp;&amp; !(flags &amp; crg::Attachment::Transfer)" Name="stencilLoadOp">stencilLoadOp</Item>
-      <Item Condition="!(flags &amp; crg::Attachment::Sampled) &amp;&amp; !(flags &amp; crg::Attachment::Storage) &amp;&amp; !(flags &amp; crg::Attachment::Transfer)" Name="stencilStoreOp">stencilStoreOp</Item>
+      <Item Name="buffer">buffer</Item>
+      <Item Condition="(flags &amp; crg::BufferAttachment::Flag::View)" Name="view">view</Item>
+      <Item Name="offset">offset</Item>
+      <Item Name="range">range</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::ImageAttachment">
+    <DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Sampled) != 0">Sampled {views[0]}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Storage) != 0">Storage {views[0]}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Transfer) != 0">Transfer {views[0]}"</DisplayString>
+    <Expand>
+      <Item Name="views">views</Item>
+      <Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="loadOp">loadOp</Item>
+      <Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="storeOp">storeOp</Item>
+      <Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="stencilLoadOp">stencilLoadOp</Item>
+      <Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="stencilStoreOp">stencilStoreOp</Item>
       <Item Name="initialLayout">initialLayout</Item>
       <Item Name="finalLayout">finalLayout</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::Attachment">
+    <DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {image} {*pass}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {image} {*pass}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {image} {*pass}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {buffer} {*pass}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {buffer} {*pass}"</DisplayString>
+    <DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {buffer} {*pass}"</DisplayString>
+    <Expand>
+      <Item Name="name">name</Item>
+		<Item Condition="(flags &amp; crg::Attachment::Flag::Image)" Name="image">image</Item>
+		<Item Condition="(flags &amp; crg::Attachment::Flag::Buffer)" Name="buffer">buffer</Item>
+      <Item Name="pass">*pass</Item>
     </Expand>
   </Type>
 
@@ -113,10 +136,19 @@
     </Expand>
   </Type>
 
-  <Type Name="crg::ViewTransition">
-    <DisplayString>{view.data->name} : {outputAttach.name} -> {inputAttach.name}</DisplayString>
+  <Type Name="crg::DataTransitionT&lt;crg::Id&lt;crg::ImageViewData&gt;&gt;">
+    <DisplayString>{data.data->name} : {outputAttach.name} -> {inputAttach.name}</DisplayString>
     <Expand>
-      <Item Name="view">view</Item>
+      <Item Name="data">data</Item>
+      <Item Name="src">outputAttach</Item>
+      <Item Name="dst">inputAttach</Item>
+    </Expand>
+  </Type>
+
+  <Type Name="crg::DataTransitionT&lt;crg::Buffer&gt;">
+    <DisplayString>{data.name} : {outputAttach.name} -> {inputAttach.name}</DisplayString>
+    <Expand>
+      <Item Name="buffer">data</Item>
       <Item Name="src">outputAttach</Item>
       <Item Name="dst">inputAttach</Item>
     </Expand>

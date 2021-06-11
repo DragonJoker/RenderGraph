@@ -10,10 +10,10 @@ namespace crg
 	{
 		void mergeViews( FramePassPtrArray const & passes );
 		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
-			, FramePassDependenciesMap const & dependencies
+			, FramePassDependencies const & dependencies
 			, RootNode const & root );
 		ImageViewIdAliasMap optimiseImageViews( ImageViewIdDataOwnerCont const & imageViews
-			, FramePassDependenciesMap const & dependencies
+			, FramePassDependencies const & dependencies
 			, RootNode const & root );
 	}
 }
