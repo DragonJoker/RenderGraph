@@ -36,11 +36,21 @@ namespace crg
 
 			for ( auto & pass : passes )
 			{
-				unsortedPasses.push_back( pass.get() );
+				if ( pass->depends.empty() )
+				{
+					sortedPasses.push_back( pass.get() );
+				}
+				else
+				{
+					unsortedPasses.push_back( pass.get() );
+				}
 			}
 
-			sortedPasses.push_back( unsortedPasses.front() );
-			unsortedPasses.erase( unsortedPasses.begin() );
+			if ( sortedPasses.empty() )
+			{
+				sortedPasses.push_back( unsortedPasses.front() );
+				unsortedPasses.erase( unsortedPasses.begin() );
+			}
 
 			while ( !unsortedPasses.empty() )
 			{
