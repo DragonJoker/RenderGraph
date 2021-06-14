@@ -124,14 +124,15 @@ namespace crg
 			, rq::Config config );
 		CRG_API ~RenderQuad();
 
-		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index = 0u );
 
 	protected:
-		CRG_API void doSubInitialise()override;
+		CRG_API void doSubInitialise( uint32_t index )override;
 		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
 		CRG_API uint32_t doGetPassIndex()const override;
-		CRG_API void doCreatePipeline()override;
+		CRG_API void doCreatePipeline( uint32_t index )override;
 		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
 

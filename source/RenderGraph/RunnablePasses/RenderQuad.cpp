@@ -27,7 +27,8 @@ namespace crg
 			, context
 			, graph
 			, config.baseConfig
-			, VK_PIPELINE_BIND_POINT_GRAPHICS }
+			, VK_PIPELINE_BIND_POINT_GRAPHICS
+			, maxPassCount }
 		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > )
@@ -42,19 +43,24 @@ namespace crg
 	{
 	}
 
-	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
+	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config
+		, uint32_t index )
 	{
-		resetCommandBuffer();
-		doResetPipeline( std::move( config ) );
-		record();
+		resetCommandBuffer( index );
+		doResetPipeline( std::move( config ), index );
+		record( index );
 	}
 
-	void RenderQuad::doSubInitialise()
+	void RenderQuad::doSubInitialise( uint32_t index )
 	{
-		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
-			, m_config.texcoordConfig.invertU
-			, m_config.texcoordConfig.invertV );
-		doPreInitialise();
+		if ( index == 0u )
+		{
+			m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
+				, m_config.texcoordConfig.invertU
+				, m_config.texcoordConfig.invertV );
+		}
+
+		doPreInitialise( index );
 	}
 
 	void RenderQuad::doSubRecordInto( VkCommandBuffer commandBuffer
@@ -66,7 +72,7 @@ namespace crg
 		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
 	}
 
-	void RenderQuad::doCreatePipeline()
+	void RenderQuad::doCreatePipeline( uint32_t index )
 	{
 		VkVertexInputAttributeDescriptionArray vertexAttribs;
 		VkVertexInputBindingDescriptionArray vertexBindings;
@@ -101,11 +107,13 @@ namespace crg
 			, 0.0f
 			, 0.0f
 			, 0.0f };
+		auto & program = doGetProgram( index );
+		auto & pipeline = doGetPipeline( index );
 		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
 			, nullptr
 			, 0u
-			, uint32_t( m_baseConfig.program.size() )
-			, m_baseConfig.program.data()
+			, uint32_t( program.size() )
+			, program.data()
 			, &m_vertexBuffer->inputState
 			, &iaState
 			, nullptr
@@ -125,9 +133,9 @@ namespace crg
 			, 1u
 			, &createInfo
 			, m_context.allocator
-			, &m_pipeline );
+			, &pipeline );
 		checkVkResult( res, m_pass.name + " - Pipeline creation" );
-		crgRegisterObject( m_context, m_pass.name, m_pipeline );
+		crgRegisterObject( m_context, m_pass.name, pipeline );
 	}
 
 	VkPipelineViewportStateCreateInfo RenderQuad::doCreateViewportState( VkViewportArray & viewports

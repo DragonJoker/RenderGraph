@@ -11,11 +11,11 @@ See LICENSE file in root folder.
 namespace crg
 {
 	template<>
-	struct DefaultValueGetterT< VkPipelineShaderStageCreateInfoArray >
+	struct DefaultValueGetterT< std::vector< VkPipelineShaderStageCreateInfoArray > >
 	{
-		static VkPipelineShaderStageCreateInfoArray get()
+		static std::vector< VkPipelineShaderStageCreateInfoArray > get()
 		{
-			return VkPipelineShaderStageCreateInfoArray{};
+			return std::vector< VkPipelineShaderStageCreateInfoArray >{};
 		}
 	};
 
@@ -24,7 +24,7 @@ namespace crg
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
-			WrapperT< VkPipelineShaderStageCreateInfoArray > program;
+			WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -38,15 +38,19 @@ namespace crg
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, pp::Config config
-			, VkPipelineBindPoint bindingPoint );
+			, VkPipelineBindPoint bindingPoint
+			, uint32_t maxPassCount );
 		CRG_API virtual ~PipelineHolder();
 
 	protected:
-		CRG_API void doPreInitialise();
+		CRG_API VkPipelineShaderStageCreateInfoArray const & doGetProgram( uint32_t index )const;
+		CRG_API VkPipeline & doGetPipeline( uint32_t index );
+		CRG_API void doPreInitialise( uint32_t index );
 		CRG_API void doPreRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
-		CRG_API void doResetPipeline( VkPipelineShaderStageCreateInfoArray config );
-		CRG_API virtual void doCreatePipeline() = 0;
+		CRG_API void doResetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index );
+		CRG_API virtual void doCreatePipeline( uint32_t index ) = 0;
 
 	private:
 		void doFillDescriptorBindings();
@@ -66,7 +70,6 @@ namespace crg
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
 		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
 		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
-		VkPipeline m_pipeline{ VK_NULL_HANDLE };
 		VkDescriptorPool m_descriptorSetPool{ VK_NULL_HANDLE };
 		struct DescriptorSet
 		{
@@ -74,6 +77,9 @@ namespace crg
 			VkDescriptorSet set;
 		};
 		std::vector< DescriptorSet > m_descriptorSets;
+
+	private:
+		std::vector< VkPipeline > m_pipelines{};
 	};
 
 	template< typename BuilderT >
@@ -87,7 +93,16 @@ namespace crg
 		*/
 		BuilderT & program( VkPipelineShaderStageCreateInfoArray config )
 		{
-			m_baseConfig.program = std::move( config );
+			m_baseConfig.programs = { std::move( config ) };
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	The pipeline programs.
+		*/
+		BuilderT & programs( std::vector< VkPipelineShaderStageCreateInfoArray > config )
+		{
+			m_baseConfig.programs = std::move( config );
 			return static_cast< BuilderT & >( *this );
 		}
 
