@@ -38,8 +38,13 @@ namespace crg
 	{
 	}
 
-	void GenerateMipmaps::doInitialise()
+	void GenerateMipmaps::doInitialise( uint32_t index )
 	{
+		if ( index > 0 )
+		{
+			return;
+		}
+
 		auto & attach = m_pass.images.front();
 
 		for ( auto passIndex = 0u; passIndex < m_commandBuffers.size(); ++passIndex )

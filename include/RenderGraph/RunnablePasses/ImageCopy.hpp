@@ -20,7 +20,7 @@ namespace crg
 		CRG_API ~ImageCopy();
 
 	protected:
-		CRG_API void doInitialise()override;
+		CRG_API void doInitialise( uint32_t index )override;
 		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;

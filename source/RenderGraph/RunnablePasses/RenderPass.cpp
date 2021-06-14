@@ -120,11 +120,15 @@ namespace crg
 		}
 	}
 
-	void RenderPass::doInitialise()
+	void RenderPass::doInitialise( uint32_t index )
 	{
-		doCreateRenderPass();
-		doCreateFramebuffer();
-		doSubInitialise();
+		if ( index == 0u )
+		{
+			doCreateRenderPass();
+			doCreateFramebuffer();
+		}
+
+		doSubInitialise( index );
 	}
 
 	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer

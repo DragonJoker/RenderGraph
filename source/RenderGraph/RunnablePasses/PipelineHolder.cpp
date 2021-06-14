@@ -31,13 +31,15 @@ namespace crg
 		, GraphContext const & context
 		, RunnableGraph & graph
 		, pp::Config config
-		, VkPipelineBindPoint bindingPoint )
+		, VkPipelineBindPoint bindingPoint
+		, uint32_t maxPassCount )
 		: m_phPass{ pass }
 		, m_phContext{ context }
 		, m_phGraph{ graph }
-		, m_baseConfig{ std::move( config.program ? *config.program : defaultV< VkPipelineShaderStageCreateInfoArray > ) }
+		, m_baseConfig{ std::move( config.programs ? *config.programs : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > > ) }
 		, m_bindingPoint{ bindingPoint }
 	{
+		m_pipelines.resize( maxPassCount );
 	}
 
 	PipelineHolder::~PipelineHolder()
@@ -52,11 +54,11 @@ namespace crg
 				, m_phContext.allocator );
 		}
 
-		if ( m_pipeline )
+		for ( auto & pipeline : m_pipelines )
 		{
-			crgUnregisterObject( m_phContext, m_pipeline );
+			crgUnregisterObject( m_phContext, pipeline );
 			m_phContext.vkDestroyPipeline( m_phContext.device
-				, m_pipeline
+				, pipeline
 				, m_phContext.allocator );
 		}
 
@@ -77,35 +79,66 @@ namespace crg
 		}
 	}
 
-	void PipelineHolder::doPreInitialise()
+	VkPipelineShaderStageCreateInfoArray const & PipelineHolder::doGetProgram( uint32_t index )const
 	{
-		doFillDescriptorBindings();
-		doCreateDescriptorSetLayout();
-		doCreatePipelineLayout();
-		doCreateDescriptorPool();
-		doCreatePipeline();
+		if ( m_baseConfig.programs.size() == 1u )
+		{
+			return m_baseConfig.programs[0];
+		}
+
+		assert( m_baseConfig.programs.size() > index );
+		return m_baseConfig.programs[index];
+	}
+
+	VkPipeline & PipelineHolder::doGetPipeline( uint32_t index )
+	{
+		if ( m_baseConfig.programs.size() == 1u )
+		{
+			assert( m_pipelines.size() == 1u );
+			return m_pipelines[0];
+		}
+
+		assert( m_pipelines.size() > index );
+		return m_pipelines[index];
+	}
+
+	void PipelineHolder::doPreInitialise( uint32_t index )
+	{
+		if ( index == 0u )
+		{
+			doFillDescriptorBindings();
+			doCreateDescriptorSetLayout();
+			doCreatePipelineLayout();
+			doCreateDescriptorPool();
+		}
+
+		doCreatePipeline( index );
 	}
 
 	void PipelineHolder::doPreRecordInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		doCreateDescriptorSet( index );
-		m_phContext.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline );
+		m_phContext.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[index] );
 		m_phContext.vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
-	void PipelineHolder::doResetPipeline( VkPipelineShaderStageCreateInfoArray config )
+	void PipelineHolder::doResetPipeline( VkPipelineShaderStageCreateInfoArray config
+		, uint32_t index )
 	{
-		if ( m_pipeline )
+		assert( m_pipelines.size() > index );
+
+		if ( m_pipelines[index] )
 		{
-			crgUnregisterObject( m_phContext, m_pipeline );
+			crgUnregisterObject( m_phContext, m_pipelines[index] );
 			m_phContext.vkDestroyPipeline( m_phContext.device
-				, m_pipeline
+				, m_pipelines[index]
 				, m_phContext.allocator );
 		}
 
-		m_baseConfig.program = std::move( config );
-		doCreatePipeline();
+		assert( m_baseConfig.programs.size() > index );
+		m_baseConfig.programs[index] = std::move( config );
+		doCreatePipeline( index );
 	}
 
 	void PipelineHolder::doFillDescriptorBindings()

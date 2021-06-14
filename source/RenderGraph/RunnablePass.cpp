@@ -117,10 +117,10 @@ namespace crg
 			doCreateCommandBuffer();
 			doCreateSemaphore();
 			doCreateFence();
-			doInitialise();
 			m_initialised = true;
 		}
 
+		doInitialise( index );
 		return uint32_t( m_commandBuffers.size() );
 	}
 

@@ -49,7 +49,7 @@ namespace
 		{
 		}
 
-		void doInitialise()override
+		void doInitialise( uint32_t index )override
 		{
 			m_checkViews( m_testCounts
 				, m_pass

@@ -132,7 +132,7 @@ namespace crg
 			, ImageViewId const & view )const;
 		CRG_API AccessTransition const & doGetTransition( uint32_t passIndex
 			, Buffer const & buffer )const;
-		CRG_API virtual void doInitialise() = 0;
+		CRG_API virtual void doInitialise( uint32_t index ) = 0;
 		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
 		CRG_API virtual VkPipelineStageFlags doGetSemaphoreWaitFlags()const = 0;
