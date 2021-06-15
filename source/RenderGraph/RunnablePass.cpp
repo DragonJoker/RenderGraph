@@ -158,7 +158,7 @@ namespace crg
 	{
 		auto block = m_timer.start();
 		m_context.vkCmdBeginDebugBlock( commandBuffer
-			, { m_pass.name, { 0.5f, 0.5f, 0.5f, 1.0f } } );
+			, { m_pass.name, m_context.getNextRainbowColour() } );
 		m_timer.beginPass( commandBuffer );
 
 		for ( auto & attach : m_pass.images )
@@ -231,7 +231,7 @@ namespace crg
 		, uint32_t index )
 	{
 		m_context.vkCmdBeginDebugBlock( commandBuffer
-			, { m_pass.name, m_context.getNextRainbowColour() } );
+			, { m_pass.name, { 0.5f, 0.5f, 0.5f, 1.0f } } );
 		doRecordDisabledInto( commandBuffer, index );
 
 		for ( auto & attach : m_pass.images )
