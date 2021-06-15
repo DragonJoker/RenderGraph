@@ -41,6 +41,10 @@ namespace
 		{
 		}
 
+		void doCreateDisabledCommandBuffer()override
+		{
+		}
+
 		void doCreateSemaphore()override
 		{
 		}
