@@ -92,11 +92,13 @@ namespace crg
 		, GraphContext const & context
 		, RunnableGraph & graph
 		, VkExtent2D const & size
-		, uint32_t maxPassCount )
+		, uint32_t maxPassCount
+		, bool optional )
 		: RunnablePass{ pass
 			, context
 			, graph
-			, maxPassCount }
+			, maxPassCount
+			, optional }
 		, m_size{ size }
 	{
 	}
@@ -148,6 +150,23 @@ namespace crg
 		m_context.vkCmdEndRenderPass( commandBuffer );
 	}
 
+	void RenderPass::doRecordDisabledInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
+			, nullptr
+			, m_renderPass
+			, m_frameBuffers[index]
+			, m_renderArea
+			, uint32_t( m_clearValues.size() )
+			, m_clearValues.data() };
+		m_context.vkCmdBeginRenderPass( commandBuffer
+			, &beginInfo
+			, doGetSubpassContents( 0u ) );
+		m_context.vkCmdEndRenderPass( commandBuffer );
+		doSubRecordDisabledInto( commandBuffer, index );
+	}
+
 	VkPipelineStageFlags RenderPass::doGetSemaphoreWaitFlags()const
 	{
 		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -162,7 +181,7 @@ namespace crg
 		for ( auto & attach : m_pass.images )
 		{
 			auto view = attach.view();
-			auto transition = doGetTransition( 0u, view );
+			auto transition = getTransition( 0u, view );
 
 			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
@@ -284,6 +303,11 @@ namespace crg
 			checkVkResult( res, m_pass.name + " - Framebuffer creation" );
 			crgRegisterObject( m_context, m_pass.name, *frameBuffer );
 		}
+	}
+
+	void RenderPass::doSubRecordDisabledInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
 	}
 
 	//*********************************************************************************************

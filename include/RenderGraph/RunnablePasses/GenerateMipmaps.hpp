@@ -16,7 +16,9 @@ namespace crg
 			, RunnableGraph & graph
 			, VkImageLayout outputLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, uint32_t maxPassCount = 1u
-			, uint32_t const * passIndex = nullptr );
+			, bool optional = false
+			, uint32_t const * passIndex = nullptr
+			, bool const * enabled = nullptr );
 
 	protected:
 		CRG_API void doInitialise( uint32_t index )override;
@@ -24,9 +26,11 @@ namespace crg
 			, uint32_t index )override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;
 		CRG_API uint32_t doGetPassIndex()const override;
+		CRG_API bool doIsEnabled()const override;
 
 	private:
 		LayoutState m_outputLayout;
 		uint32_t const * m_passIndex;
+		bool const * m_enabled;
 	};
 }

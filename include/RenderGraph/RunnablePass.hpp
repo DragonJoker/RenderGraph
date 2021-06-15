@@ -39,7 +39,8 @@ namespace crg
 		CRG_API RunnablePass( FramePass const & pass
 			, GraphContext const & context
 			, RunnableGraph & graph
-			, uint32_t maxPassCount = 1u );
+			, uint32_t maxPassCount = 1u
+			, bool optional = false );
 		CRG_API virtual ~RunnablePass();
 		/**
 		*\brief
@@ -48,19 +49,29 @@ namespace crg
 		CRG_API uint32_t initialise( uint32_t index = 0u );
 		/**
 		*\brief
-		*	Records the render pass into the given command buffer.
-		*\param[in,out] commandBuffer
-		*	The command buffer.
+		*	Records the pass commands into its command buffer.
+		*\param[in] index
+		*	The pass index.
 		*/
 		CRG_API void record( uint32_t index = 0u );
 		/**
 		*\brief
-		*	Records the render pass into the given command buffer.
+		*	Records the pass commands into the given command buffer.
 		*\param[in,out] commandBuffer
 		*	The command buffer.
+		*\param[in] index
+		*	The pass index.
 		*/
 		CRG_API void recordInto( VkCommandBuffer commandBuffer
 			, uint32_t index = 0u );
+		/**
+		*\brief
+		*	Records the disabled pass commands into the given command buffer.
+		*\param[in,out] commandBuffer
+		*	The command buffer.
+		*/
+		CRG_API void recordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
 		/**
 		*\brief
 		*	Submits this pass' command buffer to the given queue.
@@ -90,6 +101,15 @@ namespace crg
 		*	Resets the command buffer to initial state.
 		*/
 		CRG_API void resetCommandBuffer( uint32_t index = 0u );
+		CRG_API LayoutTransition const & getTransition( uint32_t passIndex
+			, ImageViewId const & view )const;
+		CRG_API AccessTransition const & getTransition( uint32_t passIndex
+			, Buffer const & buffer )const;
+
+		bool isOptional()const
+		{
+			return m_optional;
+		}
 
 		FramePassTimer const & getTimer()const
 		{
@@ -101,7 +121,7 @@ namespace crg
 			return m_timer;
 		}
 
-		uint32_t getMaxPassCount()
+		uint32_t getMaxPassCount()const
 		{
 			return uint32_t( m_commandBuffers.size() );
 		}
@@ -109,6 +129,7 @@ namespace crg
 	private:
 		CRG_API virtual void doCreateCommandPool();
 		CRG_API virtual void doCreateCommandBuffer();
+		CRG_API virtual void doCreateDisabledCommandBuffer();
 		CRG_API virtual void doCreateSemaphore();
 		CRG_API virtual void doCreateFence();
 		void doRegisterTransition( uint32_t passIndex
@@ -128,15 +149,14 @@ namespace crg
 			, Buffer const & buffer
 			, VkAccessFlags accessMask
 			, VkPipelineStageFlags pipelineStage );
-		CRG_API LayoutTransition const & doGetTransition( uint32_t passIndex
-			, ImageViewId const & view )const;
-		CRG_API AccessTransition const & doGetTransition( uint32_t passIndex
-			, Buffer const & buffer )const;
 		CRG_API virtual void doInitialise( uint32_t index ) = 0;
 		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
+		CRG_API virtual void doRecordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
 		CRG_API virtual VkPipelineStageFlags doGetSemaphoreWaitFlags()const = 0;
 		CRG_API virtual uint32_t doGetPassIndex()const;
+		CRG_API virtual bool doIsEnabled()const;
 		CRG_API virtual bool doIsComputePass()const;
 
 	protected:
@@ -148,8 +168,10 @@ namespace crg
 		FramePass const & m_pass;
 		GraphContext const & m_context;
 		RunnableGraph & m_graph;
+		bool m_optional;
 		VkCommandPool m_commandPool{ VK_NULL_HANDLE };
 		std::vector< CommandBuffer > m_commandBuffers;
+		std::vector< CommandBuffer > m_disabledCommandBuffers;
 		VkSemaphore m_semaphore{ VK_NULL_HANDLE };
 		VkFence m_fence{ VK_NULL_HANDLE };
 		FramePassTimer m_timer;

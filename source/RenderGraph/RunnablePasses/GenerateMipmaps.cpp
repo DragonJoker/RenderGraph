@@ -26,15 +26,19 @@ namespace crg
 		, RunnableGraph & graph
 		, VkImageLayout outputLayout
 		, uint32_t maxPassCount
-		, uint32_t const * passIndex )
+		, bool optional
+		, uint32_t const * passIndex
+		, bool const * enabled )
 		: RunnablePass{ pass
 			, context
 			, graph
-			, maxPassCount }
+			, maxPassCount
+			, optional }
 		, m_outputLayout{ outputLayout
 			, getAccessMask( outputLayout )
 			, getStageMask( outputLayout ) }
 		, m_passIndex{ passIndex }
+		, m_enabled{ enabled }
 	{
 	}
 
@@ -67,7 +71,7 @@ namespace crg
 		auto viewId{ m_pass.images.front().view( index ) };
 		auto imageId{ viewId.data->image };
 		auto image{ m_graph.createImage( imageId ) };
-		auto transition = doGetTransition( index, viewId );
+		auto transition = getTransition( index, viewId );
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );
 		auto baseArrayLayer = viewId.data->info.subresourceRange.baseArrayLayer;
@@ -202,5 +206,12 @@ namespace crg
 		return m_passIndex
 			? *m_passIndex
 			: 0u;
+	}
+
+	bool GenerateMipmaps::doIsEnabled()const
+	{
+		return m_enabled
+			? *m_enabled
+			: true;
 	}
 }

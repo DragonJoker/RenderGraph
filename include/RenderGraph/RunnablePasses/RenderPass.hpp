@@ -36,7 +36,8 @@ namespace crg
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, VkExtent2D const & size = {}
-			, uint32_t maxPassCount = 1u );
+			, uint32_t maxPassCount = 1u
+			, bool optional = false );
 		CRG_API ~RenderPass();
 
 		VkRenderPass getRenderPass()const
@@ -48,10 +49,14 @@ namespace crg
 		CRG_API void doInitialise( uint32_t index )override final;
 		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
+		CRG_API void doRecordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index )override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
 		CRG_API virtual void doSubInitialise( uint32_t index ) = 0;
 		CRG_API virtual void doSubRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index ) = 0;
+		CRG_API virtual void doSubRecordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
 		CRG_API virtual VkSubpassContents doGetSubpassContents( uint32_t subpassIndex )const
 		{
 			return VK_SUBPASS_CONTENTS_INLINE;

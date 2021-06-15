@@ -69,6 +69,8 @@ namespace crg
 		CRG_API AccessState getOutputAccessState( crg::FramePass const & pass
 			, Buffer const & buffer
 			, bool isCompute )const;
+		CRG_API RunnablePass::LayoutTransition getTransition( crg::FramePass const & pass
+			, crg::ImageViewId const & view )const;
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageSubresourceRange const & subresourceRange
