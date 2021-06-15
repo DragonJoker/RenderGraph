@@ -16,7 +16,9 @@ namespace crg
 			, RunnableGraph & graph
 			, VkExtent3D copySize
 			, uint32_t maxPassCount = 1u
-			, uint32_t const * passIndex = nullptr );
+			, bool optional = false
+			, uint32_t const * passIndex = nullptr
+			, bool const * enabled = nullptr );
 		CRG_API ~ImageCopy();
 
 	protected:
@@ -25,9 +27,11 @@ namespace crg
 			, uint32_t index )override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;
 		CRG_API uint32_t doGetPassIndex()const override;
+		CRG_API bool doIsEnabled()const override;
 
 	private:
 		VkExtent3D m_copySize;
 		uint32_t const * m_passIndex;
+		bool const * m_enabled;
 	};
 }

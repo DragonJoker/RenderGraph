@@ -28,13 +28,17 @@ namespace crg
 		, RunnableGraph & graph
 		, VkExtent3D copySize
 		, uint32_t maxPassCount
-		, uint32_t const * passIndex )
+		, bool optional
+		, uint32_t const * passIndex
+		, bool const * enabled )
 		: RunnablePass{ pass
 			, context
 			, graph
-			, maxPassCount }
+			, maxPassCount
+			, optional }
 		, m_copySize{std::move( copySize ) }
 		, m_passIndex{ passIndex }
+		, m_enabled{ enabled }
 	{
 		assert( pass.images.size() == 2u );
 	}
@@ -54,8 +58,8 @@ namespace crg
 		auto dstAttach{ m_pass.images.back().view() };
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
-		auto srcTransition = doGetTransition( index, srcAttach );
-		auto dstTransition = doGetTransition( index, dstAttach );
+		auto srcTransition = getTransition( index, srcAttach );
+		auto dstTransition = getTransition( index, dstAttach );
 		// Copy source to target.
 		VkImageCopy copyRegion{ convert( srcAttach.data->info.subresourceRange )
 			, {}
@@ -81,5 +85,12 @@ namespace crg
 		return m_passIndex
 			? *m_passIndex
 			: 0u;
+	}
+
+	bool ImageCopy::doIsEnabled()const
+	{
+		return m_enabled
+			? *m_enabled
+			: true;
 	}
 }

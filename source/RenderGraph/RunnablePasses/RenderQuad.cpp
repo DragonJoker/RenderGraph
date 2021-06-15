@@ -22,18 +22,21 @@ namespace crg
 			, context
 			, graph
 			, config.renderSize ? *config.renderSize : defaultV< VkExtent2D >
-			, maxPassCount }
+			, maxPassCount
+			, config.enabled ? true : false }
 		, PipelineHolder{ pass
 			, context
 			, graph
-			, config.baseConfig
+			, std::move( config.baseConfig )
 			, VK_PIPELINE_BIND_POINT_GRAPHICS
 			, maxPassCount }
 		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > )
 			, std::move( config.depthStencilState ? *config.depthStencilState : defaultV< VkPipelineDepthStencilStateCreateInfo > )
-			, std::move( config.passIndex ? *config.passIndex : defaultV< uint32_t const * > ) }
+			, std::move( config.passIndex ? *config.passIndex : defaultV< uint32_t const * > )
+			, std::move( config.enabled ? *config.enabled : defaultV< bool const * > )
+			, std::move( config.recordDisabledInto ? *config.recordDisabledInto : defaultV< rq::RecordDisabledIntoFunc > ) }
 		, m_useTexCoord{ config.texcoordConfig }
 	{
 		m_descriptorSets.resize( m_commandBuffers.size() );
@@ -70,6 +73,15 @@ namespace crg
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
+	}
+
+	void RenderQuad::doSubRecordDisabledInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		if ( m_config.recordDisabledInto )
+		{
+			m_config.recordDisabledInto( *this, commandBuffer, index );
+		}
 	}
 
 	void RenderQuad::doCreatePipeline( uint32_t index )
@@ -163,5 +175,12 @@ namespace crg
 		return m_config.passIndex
 			? *m_config.passIndex
 			: 0u;
+	}
+
+	bool RenderQuad::doIsEnabled()const
+	{
+		return m_config.enabled
+			? *m_config.enabled
+			: true;
 	}
 }

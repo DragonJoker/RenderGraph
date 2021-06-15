@@ -29,6 +29,8 @@ namespace crg
 			bool invertV{ false };
 		};
 
+		using RecordDisabledIntoFunc = std::function< void( RunnablePass const &, VkCommandBuffer, uint32_t ) >;
+
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
@@ -38,6 +40,8 @@ namespace crg
 			WrapperT< VkOffset2D > renderPosition;
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			WrapperT< uint32_t const * > passIndex;
+			WrapperT< bool const * > enabled;
+			WrapperT< RecordDisabledIntoFunc > recordDisabledInto;
 		};
 
 		template<>
@@ -48,6 +52,8 @@ namespace crg
 			RawTypeT< VkOffset2D > renderPosition;
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			RawTypeT< uint32_t const * > passIndex;
+			RawTypeT< bool const * > enabled;
+			RawTypeT< RecordDisabledIntoFunc > recordDisabledInto;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -108,6 +114,26 @@ namespace crg
 		}
 	};
 
+	template<>
+	struct DefaultValueGetterT< bool const * >
+	{
+		static bool const * const & get()
+		{
+			static bool const * const result{};
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< rq::RecordDisabledIntoFunc >
+	{
+		static rq::RecordDisabledIntoFunc const & get()
+		{
+			static rq::RecordDisabledIntoFunc const result{ []( crg::RunnablePass const &, VkCommandBuffer, uint32_t ){} };
+			return result;
+		}
+	};
+
 	class RenderQuad
 		: public RenderPass
 		, public PipelineHolder
@@ -131,7 +157,10 @@ namespace crg
 		CRG_API void doSubInitialise( uint32_t index )override;
 		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
+		CRG_API void doSubRecordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index )override;
 		CRG_API uint32_t doGetPassIndex()const override;
+		CRG_API bool doIsEnabled()const override;
 		CRG_API void doCreatePipeline( uint32_t index )override;
 		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
@@ -197,6 +226,24 @@ namespace crg
 		auto & passIndex( uint32_t const * config )
 		{
 			m_config.passIndex = config;
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	The pass index.
+		*/
+		auto & enabled( bool const * config )
+		{
+			m_config.enabled = config;
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	The pass index.
+		*/
+		auto & recordDisabledInto( rq::RecordDisabledIntoFunc config )
+		{
+			m_config.recordDisabledInto = config;
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
