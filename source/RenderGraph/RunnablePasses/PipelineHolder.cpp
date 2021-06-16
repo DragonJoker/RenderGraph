@@ -31,15 +31,14 @@ namespace crg
 		, GraphContext const & context
 		, RunnableGraph & graph
 		, pp::Config config
-		, VkPipelineBindPoint bindingPoint
-		, uint32_t maxPassCount )
+		, VkPipelineBindPoint bindingPoint )
 		: m_phPass{ pass }
 		, m_phContext{ context }
 		, m_phGraph{ graph }
 		, m_baseConfig{ std::move( config.programs ? *config.programs : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > > ) }
 		, m_bindingPoint{ bindingPoint }
 	{
-		m_pipelines.resize( maxPassCount );
+		m_pipelines.resize( m_baseConfig.programs.size() );
 	}
 
 	PipelineHolder::~PipelineHolder()
@@ -119,7 +118,8 @@ namespace crg
 		, uint32_t index )
 	{
 		doCreateDescriptorSet( index );
-		m_phContext.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[index] );
+		auto & pipeline = doGetPipeline( index );
+		m_phContext.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
 		m_phContext.vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
