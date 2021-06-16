@@ -39,6 +39,11 @@ namespace crg
 			return m_handler;
 		}
 
+		std::string const & getName()const
+		{
+			return m_name;
+		}
+
 	private:
 		ResourceHandler & m_handler;
 		std::string m_name;
