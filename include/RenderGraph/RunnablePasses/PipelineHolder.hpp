@@ -38,8 +38,7 @@ namespace crg
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, pp::Config config
-			, VkPipelineBindPoint bindingPoint
-			, uint32_t maxPassCount );
+			, VkPipelineBindPoint bindingPoint );
 		CRG_API virtual ~PipelineHolder();
 
 	protected:

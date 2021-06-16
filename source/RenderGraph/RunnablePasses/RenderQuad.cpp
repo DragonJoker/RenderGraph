@@ -28,8 +28,7 @@ namespace crg
 			, context
 			, graph
 			, std::move( config.baseConfig )
-			, VK_PIPELINE_BIND_POINT_GRAPHICS
-			, maxPassCount }
+			, VK_PIPELINE_BIND_POINT_GRAPHICS }
 		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > )
