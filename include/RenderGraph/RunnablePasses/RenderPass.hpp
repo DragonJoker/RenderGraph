@@ -24,6 +24,66 @@ namespace crg
 		return result;
 	}
 
+	class RenderPassHolder
+	{
+	public:
+		CRG_API RenderPassHolder( FramePass const & pass
+			, GraphContext const & context
+			, RunnableGraph & graph
+			, uint32_t maxPassCount
+			, VkExtent2D const & size = {} );
+		CRG_API ~RenderPassHolder();
+
+		CRG_API void initialise( crg::RunnablePass const & runnable
+			, uint32_t index );
+		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index );
+		CRG_API void begin( VkCommandBuffer commandBuffer
+			, VkSubpassContents subpassContents
+			, uint32_t index );
+		CRG_API void end( VkCommandBuffer commandBuffer );
+		CRG_API VkPipelineColorBlendStateCreateInfo createBlendState();
+
+		VkRenderPass getRenderPass()const
+		{
+			return m_renderPass;
+		}
+
+		VkFramebuffer getFramebuffer( uint32_t index )const
+		{
+			return m_frameBuffers[index];
+		}
+
+		VkRect2D const & getRenderArea()const
+		{
+			return m_renderArea;
+		}
+
+		std::vector< VkClearValue > const & getClearValues()const
+		{
+			return m_clearValues;
+		}
+
+		VkPipelineColorBlendAttachmentStateArray const & getBlendAttachs()const
+		{
+			return m_blendAttachs;
+		}
+
+	protected:
+		CRG_API void doCreateRenderPass( crg::RunnablePass const & runnable );
+		CRG_API void doCreateFramebuffer();
+
+	protected:
+		FramePass const & m_pass;
+		GraphContext const & m_context;
+		RunnableGraph & m_graph;
+		VkExtent2D m_size;
+		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
+		std::vector< VkFramebuffer > m_frameBuffers;
+		VkRect2D m_renderArea{};
+		std::vector< VkClearValue > m_clearValues;
+		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
+	};
+
 	class RenderPass
 		: public RunnablePass
 	{
@@ -38,11 +98,10 @@ namespace crg
 			, VkExtent2D const & size = {}
 			, uint32_t maxPassCount = 1u
 			, bool optional = false );
-		CRG_API ~RenderPass();
 
 		VkRenderPass getRenderPass()const
 		{
-			return m_renderPass;
+			return m_holder.getRenderPass();
 		}
 
 	protected:
@@ -62,16 +121,17 @@ namespace crg
 			return VK_SUBPASS_CONTENTS_INLINE;
 		}
 
-		CRG_API void doCreateRenderPass();
-		CRG_API void doCreateFramebuffer();
-		CRG_API VkPipelineColorBlendStateCreateInfo doCreateBlendState();
+		VkPipelineColorBlendStateCreateInfo doCreateBlendState()
+		{
+			return m_holder.createBlendState();
+		}
 
-	protected:
-		VkExtent2D m_size;
-		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
-		std::vector< VkFramebuffer > m_frameBuffers;
-		VkRect2D m_renderArea{};
-		std::vector< VkClearValue > m_clearValues;
-		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
+		VkPipelineColorBlendAttachmentStateArray const & doGetBlendAttachs()const
+		{
+			return m_holder.getBlendAttachs();
+		}
+
+	private:
+		RenderPassHolder m_holder;
 	};
 }

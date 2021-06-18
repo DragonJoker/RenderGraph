@@ -5,6 +5,7 @@ See LICENSE file in root folder
 #define ___CRG_RenderPassTimer_H___
 
 #include "FrameGraphPrerequisites.hpp"
+#include "Signal.hpp"
 
 #include <chrono>
 
@@ -12,6 +13,9 @@ namespace crg
 {
 	using Clock = std::chrono::high_resolution_clock;
 	using Nanoseconds = std::chrono::nanoseconds;
+	using FramePassDestroyFunc = std::function< void( FramePassTimer & ) >;
+	using OnFramePassDestroy = Signal< FramePassDestroyFunc >;
+	using OnFramePassDestroyConnection = SignalConnection< OnFramePassDestroy >;
 
 	class FramePassTimerBlock
 	{
@@ -133,6 +137,8 @@ namespace crg
 			return m_name;
 		}
 		/**@}*/
+
+		OnFramePassDestroy onDestroy;
 
 	private:
 		void stop();

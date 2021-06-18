@@ -217,6 +217,7 @@ namespace crg
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
 			, buffer
@@ -233,6 +234,7 @@ namespace crg
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, buffer
@@ -249,6 +251,7 @@ namespace crg
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, buffer
@@ -265,6 +268,7 @@ namespace crg
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, buffer
@@ -282,6 +286,7 @@ namespace crg
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform ) | BufferAttachment::FlagKind( BufferAttachment::Flag::View )
 			, buffer
@@ -300,6 +305,7 @@ namespace crg
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage ) | BufferAttachment::FlagKind( BufferAttachment::Flag::View )
 			, buffer
@@ -407,6 +413,7 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
 			, { view }
@@ -429,6 +436,7 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, { view }
@@ -451,6 +459,7 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, { view }
@@ -473,6 +482,7 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
+			, 1u
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, { view }
@@ -493,6 +503,7 @@ namespace crg
 		auto attachName = name + view.data->name + "It";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
+			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
@@ -515,6 +526,7 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, uint32_t{}
+			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, { view }
@@ -534,6 +546,7 @@ namespace crg
 		auto attachName = name + view.data->name + "IOt";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
+			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
@@ -561,6 +574,7 @@ namespace crg
 		auto attachName = this->name + view.data->name + name;
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
+			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
@@ -590,6 +604,7 @@ namespace crg
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
+				, uint32_t{}
 				, uint32_t{}
 				, std::move( attachName )
 				, Attachment::FlagKind( ImageAttachment::Flag::Depth )
@@ -621,6 +636,7 @@ namespace crg
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
 				, uint32_t{}
+				, uint32_t{}
 				, std::move( attachName )
 				, ImageAttachment::FlagKind( stencilFlags
 					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
@@ -652,6 +668,7 @@ namespace crg
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
 				, uint32_t{}
+				, uint32_t{}
 				, std::move( attachName )
 				, ImageAttachment::FlagKind( stencilFlags
 					| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
@@ -677,6 +694,32 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
+			, std::move( attachName )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, VkImageLayout{}
+			, std::move( samplerDesc )
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addSampledViews( ImageViewIdArray views
+		, uint32_t binding
+		, VkImageLayout initialLayout
+		, SamplerDesc samplerDesc )
+	{
+		auto count = uint32_t( views.size() );
+		auto attachName = name + views.front().data->name + "Spl";
+		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, binding
+			, count
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
 			, std::move( views )
@@ -699,6 +742,31 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
+			, 1u
+			, std::move( attachName )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, VkImageLayout{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addInputStorageViews( ImageViewIdArray views
+		, uint32_t binding
+		, VkImageLayout initialLayout )
+	{
+		auto count = uint32_t( views.size() );
+		auto attachName = name + views.front().data->name + "Str";
+		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, binding
+			, count
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
@@ -721,6 +789,31 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
+			, 1u
+			, std::move( attachName )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, VkImageLayout{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addOutputStorageViews( ImageViewIdArray views
+		, uint32_t binding
+		, VkImageLayout initialLayout )
+	{
+		auto count = uint32_t( views.size() );
+		auto attachName = name + views.front().data->name + "Str";
+		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, binding
+			, count
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
@@ -743,6 +836,31 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
+			, 1u
+			, std::move( attachName )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, initialLayout
+			, VkImageLayout{}
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{} } );
+	}
+
+	void FramePass::addInOutStorageViews( ImageViewIdArray views
+		, uint32_t binding
+		, VkImageLayout initialLayout )
+	{
+		auto count = uint32_t( views.size() );
+		auto attachName = name + views.front().data->name + "Str";
+		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, binding
+			, count
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
@@ -763,6 +881,7 @@ namespace crg
 		auto attachName = name + views.front().data->name + "It";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
+			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
@@ -785,6 +904,7 @@ namespace crg
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, uint32_t{}
+			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
@@ -804,6 +924,7 @@ namespace crg
 		auto attachName = name + views.front().data->name + "IOt";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
+			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
@@ -831,6 +952,7 @@ namespace crg
 		auto attachName = this->name + views.front().data->name + name;
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
+			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
@@ -860,6 +982,7 @@ namespace crg
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
+				, uint32_t{}
 				, uint32_t{}
 				, std::move( attachName )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
@@ -891,6 +1014,7 @@ namespace crg
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
 				, uint32_t{}
+				, uint32_t{}
 				, std::move( attachName )
 				, ImageAttachment::FlagKind( stencilFlags
 					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
@@ -921,6 +1045,7 @@ namespace crg
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
+				, uint32_t{}
 				, uint32_t{}
 				, std::move( attachName )
 				, ImageAttachment::FlagKind( stencilFlags

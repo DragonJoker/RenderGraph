@@ -80,6 +80,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ResourceHandler.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Signal.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/WriteDescriptorSet.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.hpp

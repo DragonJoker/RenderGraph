@@ -18,6 +18,15 @@ namespace crg
 			return std::vector< VkPipelineShaderStageCreateInfoArray >{};
 		}
 	};
+	
+	template<>
+	struct DefaultValueGetterT< std::vector< VkDescriptorSetLayout > >
+	{
+		static std::vector< VkDescriptorSetLayout > get()
+		{
+			return std::vector< VkDescriptorSetLayout >{};
+		}
+	};
 
 	namespace pp
 	{
@@ -25,6 +34,7 @@ namespace crg
 		struct ConfigT
 		{
 			WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs;
+			WrapperT< std::vector< VkDescriptorSetLayout > > layouts;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -38,30 +48,50 @@ namespace crg
 			, GraphContext const & context
 			, RunnableGraph & graph
 			, pp::Config config
-			, VkPipelineBindPoint bindingPoint );
+			, VkPipelineBindPoint bindingPoint
+			, uint32_t maxPassCount );
 		CRG_API virtual ~PipelineHolder();
 
-	protected:
-		CRG_API VkPipelineShaderStageCreateInfoArray const & doGetProgram( uint32_t index )const;
-		CRG_API VkPipeline & doGetPipeline( uint32_t index );
-		CRG_API void doPreInitialise( uint32_t index );
-		CRG_API void doPreRecordInto( VkCommandBuffer commandBuffer
+		CRG_API void initialise();
+		CRG_API VkPipelineShaderStageCreateInfoArray const & getProgram( uint32_t index )const;
+		CRG_API VkPipeline & getPipeline( uint32_t index );
+		CRG_API void recordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
-		CRG_API void doResetPipeline( VkPipelineShaderStageCreateInfoArray config
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
 			, uint32_t index );
-		CRG_API virtual void doCreatePipeline( uint32_t index ) = 0;
+		CRG_API void createDescriptorSet( uint32_t index );
+
+		VkDescriptorSet getDescriptorSet( uint32_t index )
+		{
+			createDescriptorSet( index );
+			return m_descriptorSets[index].set;
+		}
+
+		VkPipelineLayout getPipelineLayout()const
+		{
+			return m_pipelineLayout;
+		}
+
+		FramePass const & getPass()
+		{
+			return m_pass;
+		}
+
+		GraphContext const & getContext()
+		{
+			return m_context;
+		}
 
 	private:
 		void doFillDescriptorBindings();
 		void doCreateDescriptorSetLayout();
 		void doCreatePipelineLayout();
 		void doCreateDescriptorPool();
-		void doCreateDescriptorSet( uint32_t index );
 
 	protected:
-		FramePass const & m_phPass;
-		GraphContext const & m_phContext;
-		RunnableGraph & m_phGraph;
+		FramePass const & m_pass;
+		GraphContext const & m_context;
+		RunnableGraph & m_graph;
 
 	protected:
 		pp::ConfigData m_baseConfig;
