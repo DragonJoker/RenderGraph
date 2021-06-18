@@ -88,6 +88,8 @@ namespace crg
 
 	FramePassTimer::~FramePassTimer()
 	{
+		onDestroy( *this );
+
 		if ( m_timerQuery )
 		{
 			crgUnregisterObject( m_context, m_timerQuery );

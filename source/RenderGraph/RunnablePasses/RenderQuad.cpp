@@ -24,11 +24,6 @@ namespace crg
 			, config.renderSize ? *config.renderSize : defaultV< VkExtent2D >
 			, maxPassCount
 			, config.enabled ? true : false }
-		, PipelineHolder{ pass
-			, context
-			, graph
-			, std::move( config.baseConfig )
-			, VK_PIPELINE_BIND_POINT_GRAPHICS }
 		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > )
@@ -37,8 +32,13 @@ namespace crg
 			, std::move( config.enabled ? *config.enabled : defaultV< bool const * > )
 			, std::move( config.recordDisabledInto ? *config.recordDisabledInto : defaultV< rq::RecordDisabledIntoFunc > ) }
 		, m_useTexCoord{ config.texcoordConfig }
+		, m_holder{ pass
+			, context
+			, graph
+			, std::move( config.baseConfig )
+			, VK_PIPELINE_BIND_POINT_GRAPHICS
+			, uint32_t( m_commandBuffers.size() ) }
 	{
-		m_descriptorSets.resize( m_commandBuffers.size() );
 	}
 
 	RenderQuad::~RenderQuad()
@@ -49,7 +49,8 @@ namespace crg
 		, uint32_t index )
 	{
 		resetCommandBuffer( index );
-		doResetPipeline( std::move( config ), index );
+		m_holder.resetPipeline( std::move( config ), index );
+		doCreatePipeline( index );
 		record( index );
 	}
 
@@ -60,15 +61,16 @@ namespace crg
 			m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
 				, m_config.texcoordConfig.invertU
 				, m_config.texcoordConfig.invertV );
+			m_holder.initialise();
 		}
 
-		doPreInitialise( index );
+		doCreatePipeline( index );
 	}
 
 	void RenderQuad::doSubRecordInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		doPreRecordInto( commandBuffer, index );
+		m_holder.recordInto( commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
@@ -118,8 +120,8 @@ namespace crg
 			, 0.0f
 			, 0.0f
 			, 0.0f };
-		auto & program = doGetProgram( index );
-		auto & pipeline = doGetPipeline( index );
+		auto & program = m_holder.getProgram( index );
+		auto & pipeline = m_holder.getPipeline( index );
 		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
 			, nullptr
 			, 0u
@@ -134,8 +136,8 @@ namespace crg
 			, &m_config.depthStencilState
 			, &cbState
 			, nullptr
-			, m_pipelineLayout
-			, m_renderPass
+			, m_holder.getPipelineLayout()
+			, getRenderPass()
 			, 0u
 			, VK_NULL_HANDLE
 			, 0u };

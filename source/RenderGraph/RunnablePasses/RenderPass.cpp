@@ -88,22 +88,20 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RenderPass::RenderPass( FramePass const & pass
+	RenderPassHolder::RenderPassHolder( FramePass const & pass
 		, GraphContext const & context
 		, RunnableGraph & graph
-		, VkExtent2D const & size
 		, uint32_t maxPassCount
-		, bool optional )
-		: RunnablePass{ pass
-			, context
-			, graph
-			, maxPassCount
-			, optional }
+		, VkExtent2D const & size )
+		: m_pass{ pass }
+		, m_context{ context }
+		, m_graph{ graph }
 		, m_size{ size }
 	{
+		m_frameBuffers.resize( maxPassCount );
 	}
 
-	RenderPass::~RenderPass()
+	RenderPassHolder::~RenderPassHolder()
 	{
 		for ( auto frameBuffer : m_frameBuffers )
 		{
@@ -122,57 +120,43 @@ namespace crg
 		}
 	}
 
-	void RenderPass::doInitialise( uint32_t index )
+	void RenderPassHolder::initialise( crg::RunnablePass const & runnable
+		, uint32_t index )
 	{
 		if ( index == 0u )
 		{
-			doCreateRenderPass();
+			doCreateRenderPass( runnable );
 			doCreateFramebuffer();
 		}
-
-		doSubInitialise( index );
 	}
 
-	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer
+	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )
+	{
+		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
+			, nullptr
+			, getRenderPass()
+			, getFramebuffer( index )
+			, getRenderArea()
+			, uint32_t( getClearValues().size() )
+			, getClearValues().data() };
+	}
+
+	void RenderPassHolder::begin( VkCommandBuffer commandBuffer
+		, VkSubpassContents subpassContents
 		, uint32_t index )
 	{
-		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
-			, nullptr
-			, m_renderPass
-			, m_frameBuffers[index]
-			, m_renderArea
-			, uint32_t( m_clearValues.size() )
-			, m_clearValues.data() };
+		auto beginInfo = getBeginInfo( index );
 		m_context.vkCmdBeginRenderPass( commandBuffer
 			, &beginInfo
-			, doGetSubpassContents( 0u ) );
-		doSubRecordInto( commandBuffer, index );
+			, subpassContents );
+	}
+
+	void RenderPassHolder::end( VkCommandBuffer commandBuffer )
+	{
 		m_context.vkCmdEndRenderPass( commandBuffer );
 	}
 
-	void RenderPass::doRecordDisabledInto( VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-		VkRenderPassBeginInfo beginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
-			, nullptr
-			, m_renderPass
-			, m_frameBuffers[index]
-			, m_renderArea
-			, uint32_t( m_clearValues.size() )
-			, m_clearValues.data() };
-		m_context.vkCmdBeginRenderPass( commandBuffer
-			, &beginInfo
-			, doGetSubpassContents( 0u ) );
-		m_context.vkCmdEndRenderPass( commandBuffer );
-		doSubRecordDisabledInto( commandBuffer, index );
-	}
-
-	VkPipelineStageFlags RenderPass::doGetSemaphoreWaitFlags()const
-	{
-		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	}
-
-	void RenderPass::doCreateRenderPass()
+	void RenderPassHolder::doCreateRenderPass( crg::RunnablePass const & runnable )
 	{
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
@@ -181,7 +165,7 @@ namespace crg
 		for ( auto & attach : m_pass.images )
 		{
 			auto view = attach.view();
-			auto transition = getTransition( 0u, view );
+			auto transition = runnable.getTransition( 0u, view );
 
 			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
@@ -246,7 +230,7 @@ namespace crg
 		crgRegisterObject( m_context, m_pass.name, m_renderPass );
 	}
 
-	VkPipelineColorBlendStateCreateInfo RenderPass::doCreateBlendState()
+	VkPipelineColorBlendStateCreateInfo RenderPassHolder::createBlendState()
 	{
 		return { VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO
 			, nullptr
@@ -257,11 +241,9 @@ namespace crg
 			, m_blendAttachs.data() };
 	}
 
-	void RenderPass::doCreateFramebuffer()
+	void RenderPassHolder::doCreateFramebuffer()
 	{
-		m_frameBuffers.resize( m_commandBuffers.size() );
-
-		for ( uint32_t index = 0; index < m_commandBuffers.size(); ++index )
+		for ( uint32_t index = 0; index < m_frameBuffers.size(); ++index )
 		{
 			VkImageViewArray attachments;
 			uint32_t width{};
@@ -303,6 +285,58 @@ namespace crg
 			checkVkResult( res, m_pass.name + " - Framebuffer creation" );
 			crgRegisterObject( m_context, m_pass.name, *frameBuffer );
 		}
+	}
+
+	//*********************************************************************************************
+
+	RenderPass::RenderPass( FramePass const & pass
+		, GraphContext const & context
+		, RunnableGraph & graph
+		, VkExtent2D const & size
+		, uint32_t maxPassCount
+		, bool optional )
+		: RunnablePass{ pass
+			, context
+			, graph
+			, maxPassCount
+			, optional }
+		, m_holder{ pass
+			, context
+			, graph
+			, maxPassCount
+			, size }
+	{
+	}
+
+	void RenderPass::doInitialise( uint32_t index )
+	{
+		m_holder.initialise( *this, index );
+		doSubInitialise( index );
+	}
+
+	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		m_holder.begin( commandBuffer
+			, doGetSubpassContents( 0u )
+			, index );
+		doSubRecordInto( commandBuffer, index );
+		m_holder.end( commandBuffer );
+	}
+
+	void RenderPass::doRecordDisabledInto( VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		m_holder.begin( commandBuffer
+			, doGetSubpassContents( 0u )
+			, index );
+		m_holder.end( commandBuffer );
+		doSubRecordDisabledInto( commandBuffer, index );
+	}
+
+	VkPipelineStageFlags RenderPass::doGetSemaphoreWaitFlags()const
+	{
+		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	}
 
 	void RenderPass::doSubRecordDisabledInto( VkCommandBuffer commandBuffer

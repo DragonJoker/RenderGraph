@@ -68,36 +68,78 @@ namespace crg
 
 	uint32_t RunnablePass::initialise( uint32_t index )
 	{
+		if ( index >= m_commandBuffers.size() )
+		{
+			return 0u;
+		}
+
 		for ( auto & attach : m_pass.images )
 		{
-			auto view = attach.view( index );
-			auto inputLayout = m_graph.getCurrentLayout( index, view );
-
-			if ( ( attach.isInput() )
-				&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( attach.count <= 1u )
 			{
-				inputLayout ={ attach.image.initialLayout
-					, getAccessMask( attach.image.initialLayout )
-					, getStageMask( attach.image.initialLayout ) };
+				auto view = attach.view( index );
+				auto inputLayout = m_graph.getCurrentLayout( index, view );
+
+				if ( ( attach.isInput() )
+					&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+				{
+					inputLayout = { attach.image.initialLayout
+						, getAccessMask( attach.image.initialLayout )
+						, getStageMask( attach.image.initialLayout ) };
+				}
+
+				auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
+
+				if ( ( attach.isOutput() )
+					&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+				{
+					outputLayout = { attach.image.finalLayout
+						, getAccessMask( attach.image.finalLayout )
+						, getStageMask( attach.image.finalLayout ) };
+				}
+
+				doRegisterTransition( index
+					, view
+					, { inputLayout
+						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
+							, attach.getAccessMask()
+							, attach.getPipelineStageFlags( doIsComputePass() ) }
+						, outputLayout } );
 			}
-
-			auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
-
-			if ( ( attach.isOutput() )
-				&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			else
 			{
-				outputLayout = { attach.image.finalLayout
-					, getAccessMask( attach.image.finalLayout )
-					, getStageMask( attach.image.finalLayout ) };
-			}
+				for ( uint32_t i = 0u; i < attach.count; ++i )
+				{
+					auto view = attach.view( i );
+					auto inputLayout = m_graph.getCurrentLayout( index, view );
 
-			doRegisterTransition( index
-				, view
-				, { inputLayout
-					, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-						, attach.getAccessMask()
-						, attach.getPipelineStageFlags( doIsComputePass() ) }
-					, outputLayout } );
+					if ( ( attach.isInput() )
+						&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+					{
+						inputLayout = { attach.image.initialLayout
+							, getAccessMask( attach.image.initialLayout )
+							, getStageMask( attach.image.initialLayout ) };
+					}
+
+					auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
+
+					if ( ( attach.isOutput() )
+						&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+					{
+						outputLayout = { attach.image.finalLayout
+							, getAccessMask( attach.image.finalLayout )
+							, getStageMask( attach.image.finalLayout ) };
+					}
+
+					doRegisterTransition( index
+						, view
+						, { inputLayout
+							, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
+								, attach.getAccessMask()
+								, attach.getPipelineStageFlags( doIsComputePass() ) }
+							, outputLayout } );
+				}
+			}
 		}
 		
 		for ( auto & attach : m_pass.buffers )
@@ -165,13 +207,29 @@ namespace crg
 		{
 			if ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() )
 			{
-				auto view = attach.view( index );
-				auto transition = getTransition( index
-					, view );
-				m_graph.memoryBarrier( commandBuffer
-					, view
-					, transition.from
-					, transition.needed );
+				if ( attach.count <= 1u )
+				{
+					auto view = attach.view( index );
+					auto transition = getTransition( index
+						, view );
+					m_graph.memoryBarrier( commandBuffer
+						, view
+						, transition.from
+						, transition.needed );
+				}
+				else
+				{
+					for ( uint32_t i = 0u; i < attach.count; ++i )
+					{
+						auto view = attach.view( i );
+						auto transition = getTransition( index
+							, view );
+						m_graph.memoryBarrier( commandBuffer
+							, view
+							, transition.from
+							, transition.needed );
+					}
+				}
 			}
 		}
 
@@ -197,13 +255,29 @@ namespace crg
 		{
 			if ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() )
 			{
-				auto view = attach.view( index );
-				auto transition = getTransition( index
-					, view );
-				m_graph.memoryBarrier( commandBuffer
-					, view
-					, transition.needed
-					, transition.to );
+				if ( attach.count <= 1u )
+				{
+					auto view = attach.view( index );
+					auto transition = getTransition( index
+						, view );
+					m_graph.memoryBarrier( commandBuffer
+						, view
+						, transition.needed
+						, transition.to );
+				}
+				else
+				{
+					for ( uint32_t i = 0u; i < attach.count; ++i )
+					{
+						auto view = attach.view( i );
+						auto transition = getTransition( index
+							, view );
+						m_graph.memoryBarrier( commandBuffer
+							, view
+							, transition.needed
+							, transition.to );
+					}
+				}
 			}
 		}
 
@@ -231,20 +305,37 @@ namespace crg
 		, uint32_t index )
 	{
 		m_context.vkCmdBeginDebugBlock( commandBuffer
-			, { m_pass.name, { 0.5f, 0.5f, 0.5f, 1.0f } } );
+			, { "(Disabled)" + m_pass.name, { 0.5f, 0.5f, 0.5f, 1.0f } } );
+		m_timer.beginPass( commandBuffer );
 		doRecordDisabledInto( commandBuffer, index );
 
 		for ( auto & attach : m_pass.images )
 		{
 			if ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() )
 			{
-				auto view = attach.view( index );
-				auto transition = getTransition( index
-					, view );
-				m_graph.memoryBarrier( commandBuffer
-					, view
-					, transition.from
-					, transition.to );
+				if ( attach.count <= 1u )
+				{
+					auto view = attach.view( index );
+					auto transition = getTransition( index
+						, view );
+					m_graph.memoryBarrier( commandBuffer
+						, view
+						, transition.from
+						, transition.to );
+				}
+				else
+				{
+					for ( uint32_t i = 0u; i < attach.count; ++i )
+					{
+						auto view = attach.view( i );
+						auto transition = getTransition( index
+							, view );
+						m_graph.memoryBarrier( commandBuffer
+							, view
+							, transition.from
+							, transition.to );
+					}
+				}
 			}
 		}
 
@@ -264,6 +355,7 @@ namespace crg
 			}
 		}
 
+		m_timer.endPass( commandBuffer );
 		m_context.vkCmdEndDebugBlock( commandBuffer );
 	}
 

@@ -136,7 +136,6 @@ namespace crg
 
 	class RenderQuad
 		: public RenderPass
-		, public PipelineHolder
 	{
 	public:
 		template< typename ConfigT, typename BuilderT >
@@ -161,7 +160,7 @@ namespace crg
 			, uint32_t index )override;
 		CRG_API uint32_t doGetPassIndex()const override;
 		CRG_API bool doIsEnabled()const override;
-		CRG_API void doCreatePipeline( uint32_t index )override;
+		CRG_API void doCreatePipeline( uint32_t index );
 		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
 
@@ -171,6 +170,7 @@ namespace crg
 	private:
 		bool m_useTexCoord{ true };
 		VertexBuffer const * m_vertexBuffer{};
+		PipelineHolder m_holder;
 	};
 
 	template< typename ConfigT, typename BuilderT >

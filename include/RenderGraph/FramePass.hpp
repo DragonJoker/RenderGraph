@@ -264,9 +264,24 @@ namespace crg
 			, SamplerDesc samplerDesc = SamplerDesc{} );
 		/**
 		*\brief
+		*	Creates a sampled image array attachment.
+		*/
+		CRG_API void addSampledViews( ImageViewIdArray views
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			, SamplerDesc samplerDesc = SamplerDesc{} );
+		/**
+		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addInputStorageView( ImageViewIdArray view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+		/**
+		*\brief
+		*	Creates a storage image array attachment.
+		*/
+		CRG_API void addInputStorageViews( ImageViewIdArray view
 			, uint32_t binding
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
 		/**
@@ -278,9 +293,23 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
 		/**
 		*\brief
+		*	Creates a storage image array attachment.
+		*/
+		CRG_API void addOutputStorageViews( ImageViewIdArray view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+		/**
+		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addInOutStorageView( ImageViewIdArray view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+		/**
+		*\brief
+		*	Creates a storage image array attachment.
+		*/
+		CRG_API void addInOutStorageViews( ImageViewIdArray view
 			, uint32_t binding
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
 		/**
