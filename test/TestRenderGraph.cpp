@@ -92,15 +92,16 @@ namespace
 	{
 	}
 
-	crg::GraphContext getContext()
+	crg::GraphContext & getContext()
 	{
-		return crg::GraphContext{ VK_NULL_HANDLE
+		static crg::GraphContext context{ VK_NULL_HANDLE
 			, VK_NULL_HANDLE
 			, nullptr
 			, VkPhysicalDeviceMemoryProperties{}
 			, VkPhysicalDeviceProperties{}
 			, false
 			, nullptr };
+		return context;
 	}
 
 	void checkOutputColourIsShaderReadOnly( test::TestCounts & testCounts

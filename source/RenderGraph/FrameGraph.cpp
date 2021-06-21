@@ -159,7 +159,7 @@ namespace crg
 			, std::move( transitions )
 			, std::move( nodes )
 			, std::move( root )
-			, std::move( context ) );
+			, context );
 	}
 
 	ImageId FrameGraph::createImage( ImageData const & img )
