@@ -37,7 +37,7 @@ namespace crg
 
 	public:
 		CRG_API RunnablePass( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount = 1u
 			, bool optional = false );
@@ -166,7 +166,7 @@ namespace crg
 			bool recorded{};
 		};
 		FramePass const & m_pass;
-		GraphContext const & m_context;
+		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		bool m_optional;
 		VkCommandPool m_commandPool{ VK_NULL_HANDLE };

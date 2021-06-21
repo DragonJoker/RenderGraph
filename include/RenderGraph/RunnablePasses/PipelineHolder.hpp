@@ -45,7 +45,7 @@ namespace crg
 	{
 	public:
 		CRG_API PipelineHolder( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, pp::Config config
 			, VkPipelineBindPoint bindingPoint
@@ -72,12 +72,12 @@ namespace crg
 			return m_pipelineLayout;
 		}
 
-		FramePass const & getPass()
+		FramePass const & getPass()const
 		{
 			return m_pass;
 		}
 
-		GraphContext const & getContext()
+		GraphContext & getContext()const
 		{
 			return m_context;
 		}
@@ -90,7 +90,7 @@ namespace crg
 
 	protected:
 		FramePass const & m_pass;
-		GraphContext const & m_context;
+		GraphContext & m_context;
 		RunnableGraph & m_graph;
 
 	protected:

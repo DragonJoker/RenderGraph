@@ -439,6 +439,11 @@ namespace crg
 
 	struct GraphContext
 	{
+		CRG_API GraphContext( GraphContext  const & ) = delete;
+		CRG_API GraphContext( GraphContext  && ) = delete;
+		CRG_API GraphContext & operator=( GraphContext  const & ) = delete;
+		CRG_API GraphContext & operator=( GraphContext  && ) = delete;
+
 		CRG_API GraphContext( VkDevice device
 			, VkPipelineCache cache
 			, VkAllocationCallbacks const * allocator
@@ -585,11 +590,11 @@ namespace crg
 			std::string callstack;
 		};
 
-		mutable std::unordered_map< size_t, ObjectAllocation > m_allocated;
+		std::unordered_map< size_t, ObjectAllocation > m_allocated;
 
 	public:
 		template< typename ObjectT >
-		static void stRegisterObject( GraphContext const & context
+		static void stRegisterObject( GraphContext & context
 			, std::string const & name
 			, ObjectT object )
 		{
@@ -605,7 +610,7 @@ namespace crg
 		}
 
 		template< typename ObjectT >
-		static void stRegisterObjectName( GraphContext const & context
+		static void stRegisterObjectName( GraphContext & context
 			, std::string const & name
 			, ObjectT object )
 		{
@@ -621,7 +626,7 @@ namespace crg
 		}
 
 		template< typename ObjectT >
-		static void stUnregisterObject( GraphContext const & context, ObjectT object )
+		static void stUnregisterObject( GraphContext & context, ObjectT object )
 		{
 			context.doUnregisterObject( uint64_t( object ) );
 		}
@@ -677,13 +682,13 @@ namespace crg
 		CRG_API void doRegisterObject( uint64_t object
 			, uint32_t objectType
 			, std::string const & name
-			, std::string const & typeName )const;
+			, std::string const & typeName );
 		CRG_API void doRegisterObjectName( uint64_t object
 			, uint32_t objectType
 			, std::string const & name
-			, std::string const & typeName )const;
-		CRG_API void doUnregisterObject( uint64_t object )const;
-		CRG_API void doReportRegisteredObjects()const;
+			, std::string const & typeName );
+		CRG_API void doUnregisterObject( uint64_t object );
+		CRG_API void doReportRegisteredObjects();
 
 #	define crgRegisterObject( Cont, TypeName, Object )\
 		crg::GraphContext::stRegisterObject( Cont, TypeName, Object )

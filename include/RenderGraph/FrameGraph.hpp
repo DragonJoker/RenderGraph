@@ -24,7 +24,7 @@ namespace crg
 			, std::string name = "FrameGraph" );
 		CRG_API FramePass & createPass( std::string const & name
 			, RunnablePassCreator runnableCreator );
-		CRG_API RunnableGraphPtr compile( GraphContext context );
+		CRG_API RunnableGraphPtr compile( GraphContext & context );
 		CRG_API ImageId createImage( ImageData const & img );
 		CRG_API ImageViewId createView( ImageViewData const & view );
 		CRG_API void setFinalLayout( ImageViewId view

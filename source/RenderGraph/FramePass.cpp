@@ -1063,7 +1063,7 @@ namespace crg
 				, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	RunnablePassPtr FramePass::createRunnable( GraphContext const & context
+	RunnablePassPtr FramePass::createRunnable( GraphContext & context
 		, RunnableGraph & graph )const
 	{
 		return runnableCreator( *this, context, graph );

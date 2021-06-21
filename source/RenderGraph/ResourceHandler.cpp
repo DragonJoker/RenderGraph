@@ -46,7 +46,7 @@ namespace crg
 		}
 	}
 
-	void ResourceHandler::clear( GraphContext const & context )
+	void ResourceHandler::clear( GraphContext & context )
 	{
 		for ( auto & imageView : m_imageViewIds )
 		{
@@ -97,7 +97,7 @@ namespace crg
 		return result;
 	}
 
-	VkImage ResourceHandler::createImage( GraphContext const & context
+	VkImage ResourceHandler::createImage( GraphContext & context
 		, ImageId imageId )
 	{
 		if ( !context.device )
@@ -149,7 +149,7 @@ namespace crg
 		return ires.first->second.first;
 	}
 
-	VkImageView ResourceHandler::createImageView( GraphContext const & context
+	VkImageView ResourceHandler::createImageView( GraphContext & context
 		, ImageViewId view )
 	{
 		if ( !context.device )
@@ -174,7 +174,7 @@ namespace crg
 		return ires.first->second;
 	}
 
-	void ResourceHandler::destroyImage( GraphContext const & context
+	void ResourceHandler::destroyImage( GraphContext & context
 		, ImageId imageId )
 	{
 		auto it = m_images.find( imageId );
@@ -191,7 +191,7 @@ namespace crg
 		}
 	}
 
-	void ResourceHandler::destroyImageView( GraphContext const & context
+	void ResourceHandler::destroyImageView( GraphContext & context
 		, ImageViewId viewId )
 	{
 		auto it = m_imageViews.find( viewId );

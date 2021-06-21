@@ -13,7 +13,7 @@ See LICENSE file in root folder.
 namespace crg
 {
 	using RunnablePassCreator = std::function< RunnablePassPtr( FramePass const &
-		, GraphContext const &
+		, GraphContext &
 		, RunnableGraph & ) >;
 
 	struct FramePass
@@ -616,7 +616,7 @@ namespace crg
 		*	Graph compilation.
 		*/
 		/**@[*/
-		CRG_API RunnablePassPtr createRunnable( GraphContext const & context
+		CRG_API RunnablePassPtr createRunnable( GraphContext & context
 			, RunnableGraph & graph )const;
 		/**@}*/
 

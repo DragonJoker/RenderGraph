@@ -28,7 +28,7 @@ namespace crg
 	{
 	public:
 		CRG_API RenderPassHolder( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
 			, VkExtent2D const & size = {} );
@@ -74,7 +74,7 @@ namespace crg
 
 	protected:
 		FramePass const & m_pass;
-		GraphContext const & m_context;
+		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		VkExtent2D m_size;
 		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
@@ -93,7 +93,7 @@ namespace crg
 
 	public:
 		CRG_API RenderPass( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, VkExtent2D const & size = {}
 			, uint32_t maxPassCount = 1u

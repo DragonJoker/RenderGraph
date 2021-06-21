@@ -14,7 +14,7 @@ See LICENSE file in root folder.
 namespace crg
 {
 	RenderQuad::RenderQuad( FramePass const & pass
-		, GraphContext const & context
+		, GraphContext & context
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
 		, rq::Config config )
