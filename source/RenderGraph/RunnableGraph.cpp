@@ -271,10 +271,12 @@ namespace crg
 	{
 		display( *this );
 		LayoutStateMap images;
+		AccessStateMap buffers;
 
 		for ( auto & pass : graph.m_passes )
 		{
 			doRegisterImages( *pass, images );
+			doRegisterBuffers( *pass, buffers );
 		}
 
 		doCreateImages();
@@ -287,30 +289,43 @@ namespace crg
 				auto & renderPassNode = nodeCast< FramePassNode >( *node );
 				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
 					, *this ) );
-				m_maxPassCount = std::max( m_maxPassCount
-					, m_passes.back()->getMaxPassCount() );
+				auto & pass = m_passes.back();
+				auto passCount = pass->getMaxPassCount();
+				m_passesLayouts.emplace( &pass->getPass()
+					, RemainingPasses{ passCount, {}, {} } );
+				m_maxPassCount *= passCount;
 			}
 		}
 
-		m_viewsLayouts.push_back( images );
-
-		for ( uint32_t index = 1; index < m_maxPassCount; ++index )
+		for ( uint32_t index = 0; index < m_maxPassCount; ++index )
 		{
 			m_viewsLayouts.push_back( images );
+			m_buffersLayouts.push_back( buffers );
+		}
+
+		auto remainingCount = m_maxPassCount;
+		uint32_t index = 0u;
+
+		for ( auto & node : m_nodes )
+		{
+			auto it = m_passesLayouts.find( getFramePass( *node ) );
+			remainingCount /= it->second.count;
+			it->second.count = remainingCount;
+
+			for ( uint32_t i = 0u; i < m_passes[index]->getMaxPassCount(); ++i )
+			{
+				it->second.views.push_back( { m_viewsLayouts.begin() + ( i * remainingCount )
+					, m_viewsLayouts.begin() + ( ( i + 1 ) * remainingCount ) } );
+				it->second.buffers.push_back( { m_buffersLayouts.begin() + ( i * remainingCount )
+					, m_buffersLayouts.begin() + ( ( i + 1 ) * remainingCount ) } );
+			}
+
+			++index;
 		}
 
 		for ( auto & pass : m_passes )
 		{
-			m_maxPassCount = std::max( m_maxPassCount
-				, pass->initialise() );
-		}
-
-		for ( uint32_t index = 1; index < m_maxPassCount; ++index )
-		{
-			for ( auto & pass : m_passes )
-			{
-				pass->initialise( index );
-			}
+			pass->initialise();
 		}
 	}
 
@@ -359,14 +374,6 @@ namespace crg
 		for ( auto & pass : m_passes )
 		{
 			pass->record();
-		}
-	}
-
-	void RunnableGraph::recordInto( VkCommandBuffer commandBuffer )
-	{
-		for ( auto & pass : m_passes )
-		{
-			pass->recordInto( commandBuffer );
 		}
 	}
 
@@ -560,48 +567,52 @@ namespace crg
 		return ires.first->second;
 	}
 
-	LayoutState RunnableGraph::getCurrentLayout( uint32_t passIndex
+	LayoutState RunnableGraph::getCurrentLayout( FramePass const & pass
+		, uint32_t passIndex
 		, ImageViewId view )const
 	{
-		if ( m_viewsLayouts.size() > passIndex )
-		{
-			auto & viewsLayouts = m_viewsLayouts[passIndex];
-			auto imageIt = viewsLayouts.find( view.data->image.id );
+		auto it = m_passesLayouts.find( &pass );
+		assert( it != m_passesLayouts.end() );
+		assert( it->second.views.size() >= passIndex );
+		auto & viewsLayouts = *it->second.views[passIndex].begin;
+		auto imageIt = viewsLayouts.find( view.data->image.id );
 
-			if ( imageIt != viewsLayouts.end() )
-			{
-				return doGetSubresourceRangeLayout( imageIt->second
-					, getVirtualRange( view.data->image
-						, view.data->info.viewType
-						, view.data->info.subresourceRange ) );
-			}
+		if ( imageIt != viewsLayouts.end() )
+		{
+			return doGetSubresourceRangeLayout( imageIt->second
+				, getVirtualRange( view.data->image
+					, view.data->info.viewType
+					, view.data->info.subresourceRange ) );
 		}
 
 		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 	}
 
-	LayoutState RunnableGraph::updateCurrentLayout( uint32_t passIndex
+	LayoutState RunnableGraph::updateCurrentLayout( FramePass const & pass
+		, uint32_t passIndex
 		, ImageViewId view
 		, LayoutState newLayout )
 	{
-		if ( m_viewsLayouts.size() <= passIndex )
-		{
-			m_viewsLayouts.push_back( {} );
-		}
-
-		assert( m_viewsLayouts.size() > passIndex );
-		auto & viewsLayouts = m_viewsLayouts[passIndex];
-		auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
+		auto it = m_passesLayouts.find( &pass );
+		assert( it != m_passesLayouts.end() );
+		assert( it->second.views.size() >= passIndex );
 		auto subresourceRange = getVirtualRange( view.data->image
 			, view.data->info.viewType
 			, view.data->info.subresourceRange );
-		doAddSubresourceRangeLayout( ires.first->second
-			, subresourceRange
-			, newLayout );
+		auto & views = it->second.views[passIndex];
+		std::for_each( views.begin
+			, views.end
+			, [this, &subresourceRange, &newLayout, &view]( LayoutStateMap & viewsLayouts )
+			{
+				auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
+				doAddSubresourceRangeLayout( ires.first->second
+					, subresourceRange
+					, newLayout );
+			} );
 		return newLayout;
 	}
 
-	LayoutState RunnableGraph::getOutputLayout( crg::FramePass const & pass
+	LayoutState RunnableGraph::getOutputLayout( FramePass const & pass
 		, ImageViewId view
 		, bool isCompute )const
 	{
@@ -701,39 +712,43 @@ namespace crg
 		return result;
 	}
 
-	AccessState RunnableGraph::getCurrentAccessState( uint32_t passIndex
+	AccessState RunnableGraph::getCurrentAccessState( FramePass const & pass
+		, uint32_t passIndex
 		, Buffer const & buffer )const
 	{
-		if ( m_buffersLayouts.size() > passIndex )
-		{
-			auto & buffersLayouts = m_buffersLayouts[passIndex];
-			auto it = buffersLayouts.find( buffer.buffer );
+		auto it = m_passesLayouts.find( &pass );
+		assert( it != m_passesLayouts.end() );
+		assert( it->second.buffers.size() >= passIndex );
+		auto & buffersLayouts = *it->second.buffers[passIndex].begin;
+		auto bufferIt = buffersLayouts.find( buffer.buffer );
 
-			if ( it != buffersLayouts.end() )
-			{
-				return it->second;
-			}
+		if ( bufferIt != buffersLayouts.end() )
+		{
+			return bufferIt->second;
 		}
 
 		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 	}
 
-	AccessState RunnableGraph::updateCurrentAccessState( uint32_t passIndex
+	AccessState RunnableGraph::updateCurrentAccessState( FramePass const & pass
+		, uint32_t passIndex
 		, Buffer const & buffer
 		, AccessState newState )
 	{
-		if ( m_buffersLayouts.size() <= passIndex )
-		{
-			m_buffersLayouts.push_back( {} );
-		}
-
-		assert( m_buffersLayouts.size() > passIndex );
-		auto & buffersLayouts = m_buffersLayouts[passIndex];
-		buffersLayouts[buffer.buffer] = newState;
+		auto it = m_passesLayouts.find( &pass );
+		assert( it != m_passesLayouts.end() );
+		assert( it->second.buffers.size() >= passIndex );
+		auto & buffers = it->second.buffers[passIndex];
+		std::for_each( buffers.begin
+			, buffers.end
+			, [this, &newState, &buffer]( AccessStateMap & buffersLayouts )
+			{
+				buffersLayouts[buffer.buffer] = newState;
+			} );
 		return newState;
 	}
 
-	AccessState RunnableGraph::getOutputAccessState( crg::FramePass const & pass
+	AccessState RunnableGraph::getOutputAccessState( FramePass const & pass
 		, Buffer const & buffer
 		, bool isCompute )const
 	{
@@ -991,7 +1006,7 @@ namespace crg
 			, to.getPipelineStageFlags( isCompute ) );
 	}
 
-	void RunnableGraph::doRegisterImages( crg::FramePass const & pass
+	void RunnableGraph::doRegisterImages( FramePass const & pass
 		, LayoutStateMap & images )
 	{
 		static LayoutState const defaultState{ VK_IMAGE_LAYOUT_UNDEFINED
@@ -1020,6 +1035,19 @@ namespace crg
 					}
 				}
 			}
+		}
+	}
+
+	void RunnableGraph::doRegisterBuffers( FramePass const & pass
+		, AccessStateMap & buffers )
+	{
+		static AccessState const defaultState{ getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+
+		for ( auto & attach : pass.buffers )
+		{
+			auto buffer = attach.buffer.buffer.buffer;
+			buffers.emplace( buffer, defaultState );
 		}
 	}
 

@@ -121,21 +121,21 @@ namespace crg
 		m_context.vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
-	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
-		, uint32_t index )
+	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
 	{
-		assert( m_pipelines.size() > index );
-
-		if ( m_pipelines[index] )
+		for ( uint32_t index = 0; index < m_pipelines.size(); ++index )
 		{
-			crgUnregisterObject( m_context, m_pipelines[index] );
-			m_context.vkDestroyPipeline( m_context.device
-				, m_pipelines[index]
-				, m_context.allocator );
-		}
+			if ( m_pipelines[index] )
+			{
+				crgUnregisterObject( m_context, m_pipelines[index] );
+				m_context.vkDestroyPipeline( m_context.device
+					, m_pipelines[index]
+					, m_context.allocator );
+			}
 
-		assert( m_baseConfig.programs.size() > index );
-		m_baseConfig.programs[index] = std::move( config );
+			assert( m_baseConfig.programs.size() > index );
+			m_baseConfig.programs[index] = std::move( config );
+		}
 	}
 
 	void PipelineHolder::createDescriptorSet( uint32_t index )

@@ -37,7 +37,6 @@ namespace crg
 		CRG_API ~RunnableGraph();
 
 		CRG_API void record();
-		CRG_API void recordInto( VkCommandBuffer commandBuffer );
 
 		CRG_API VkImage createImage( ImageId const & image );
 		CRG_API VkImageView createImageView( ImageViewId const & view );
@@ -53,24 +52,28 @@ namespace crg
 			, bool invertV );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
-		CRG_API LayoutState getCurrentLayout( uint32_t passIndex
+		CRG_API LayoutState getCurrentLayout( FramePass const & pass
+			, uint32_t passIndex
 			, ImageViewId view )const;
-		CRG_API LayoutState updateCurrentLayout( uint32_t passIndex
+		CRG_API LayoutState updateCurrentLayout( FramePass const & pass
+			, uint32_t passIndex
 			, ImageViewId view
 			, LayoutState newLayout );
-		CRG_API LayoutState getOutputLayout( crg::FramePass const & pass
+		CRG_API LayoutState getOutputLayout( FramePass const & pass
 			, ImageViewId view
 			, bool isCompute )const;
-		CRG_API AccessState getCurrentAccessState( uint32_t passIndex
+		CRG_API AccessState getCurrentAccessState( FramePass const & pass
+			, uint32_t passIndex
 			, Buffer const & buffer )const;
-		CRG_API AccessState updateCurrentAccessState( uint32_t passIndex
+		CRG_API AccessState updateCurrentAccessState( FramePass const & pass
+			, uint32_t passIndex
 			, Buffer const & buffer
 			, AccessState newState );
-		CRG_API AccessState getOutputAccessState( crg::FramePass const & pass
+		CRG_API AccessState getOutputAccessState( FramePass const & pass
 			, Buffer const & buffer
 			, bool isCompute )const;
-		CRG_API RunnablePass::LayoutTransition getTransition( crg::FramePass const & pass
-			, crg::ImageViewId const & view )const;
+		CRG_API RunnablePass::LayoutTransition getTransition( FramePass const & pass
+			, ImageViewId const & view )const;
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageSubresourceRange const & subresourceRange
@@ -136,9 +139,33 @@ namespace crg
 		using MipLayoutStates = std::map< uint32_t, LayoutState >;
 		using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
 		using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
+		using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
+
+		struct ViewLayoutRange
+		{
+			std::vector< LayoutStateMap >::iterator begin;
+			std::vector< LayoutStateMap >::iterator end;
+		};
+		using ViewLayoutRanges = std::vector< ViewLayoutRange >;
+
+		struct BufferLayoutRange
+		{
+			std::vector< AccessStateMap >::iterator begin;
+			std::vector< AccessStateMap >::iterator end;
+		};
+		using BufferLayoutRanges = std::vector< BufferLayoutRange >;
+
+		struct RemainingPasses
+		{
+			uint32_t count;
+			ViewLayoutRanges views;
+			BufferLayoutRanges buffers;
+		};
 
 		void doRegisterImages( crg::FramePass const & pass
 			, LayoutStateMap & images );
+		void doRegisterBuffers( crg::FramePass const & pass
+			, AccessStateMap & buffers );
 		void doCreateImages();
 		void doCreateImageViews();
 		LayoutState doGetSubresourceRangeLayout( LayerLayoutStates const & layers
@@ -158,11 +185,11 @@ namespace crg
 		std::vector< RunnablePassPtr > m_passes;
 		std::map< ImageId, VkImage > m_images;
 		std::map< ImageViewId, VkImageView > m_imageViews;
-		using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 		std::unordered_map< size_t, VkSampler > m_samplers;
 		std::vector< LayoutStateMap > m_viewsLayouts;
 		std::vector< AccessStateMap > m_buffersLayouts;
+		std::map< FramePass const *, RemainingPasses > m_passesLayouts;
 		uint32_t m_maxPassCount{ 1u };
 	};
 }

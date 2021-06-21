@@ -45,26 +45,21 @@ namespace crg
 	{
 	}
 
-	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config
-		, uint32_t index )
+	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
 	{
-		resetCommandBuffer( index );
-		m_holder.resetPipeline( std::move( config ), index );
-		doCreatePipeline( index );
-		record( index );
+		resetCommandBuffer();
+		m_holder.resetPipeline( std::move( config ) );
+		doCreatePipeline();
+		record();
 	}
 
-	void RenderQuad::doSubInitialise( uint32_t index )
+	void RenderQuad::doSubInitialise()
 	{
-		if ( index == 0u )
-		{
-			m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
-				, m_config.texcoordConfig.invertU
-				, m_config.texcoordConfig.invertV );
-			m_holder.initialise();
-		}
-
-		doCreatePipeline( index );
+		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
+			, m_config.texcoordConfig.invertU
+			, m_config.texcoordConfig.invertV );
+		m_holder.initialise();
+		doCreatePipeline();
 	}
 
 	void RenderQuad::doSubRecordInto( VkCommandBuffer commandBuffer
@@ -85,7 +80,7 @@ namespace crg
 		}
 	}
 
-	void RenderQuad::doCreatePipeline( uint32_t index )
+	void RenderQuad::doCreatePipeline()
 	{
 		VkVertexInputAttributeDescriptionArray vertexAttribs;
 		VkVertexInputBindingDescriptionArray vertexBindings;
@@ -120,35 +115,39 @@ namespace crg
 			, 0.0f
 			, 0.0f
 			, 0.0f };
-		auto & program = m_holder.getProgram( index );
-		auto & pipeline = m_holder.getPipeline( index );
-		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
-			, nullptr
-			, 0u
-			, uint32_t( program.size() )
-			, program.data()
-			, &m_vertexBuffer->inputState
-			, &iaState
-			, nullptr
-			, &vpState
-			, &rsState
-			, &msState
-			, &m_config.depthStencilState
-			, &cbState
-			, nullptr
-			, m_holder.getPipelineLayout()
-			, getRenderPass()
-			, 0u
-			, VK_NULL_HANDLE
-			, 0u };
-		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
-			, m_context.cache
-			, 1u
-			, &createInfo
-			, m_context.allocator
-			, &pipeline );
-		checkVkResult( res, m_pass.name + " - Pipeline creation" );
-		crgRegisterObject( m_context, m_pass.name, pipeline );
+
+		for ( auto index = 0u; index < m_commandBuffers.size(); ++index )
+		{
+			auto & program = m_holder.getProgram( index );
+			auto & pipeline = m_holder.getPipeline( index );
+			VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
+				, nullptr
+				, 0u
+				, uint32_t( program.size() )
+				, program.data()
+				, &m_vertexBuffer->inputState
+				, &iaState
+				, nullptr
+				, &vpState
+				, &rsState
+				, &msState
+				, &m_config.depthStencilState
+				, &cbState
+				, nullptr
+				, m_holder.getPipelineLayout()
+				, getRenderPass()
+				, 0u
+				, VK_NULL_HANDLE
+				, 0u };
+			auto res = m_context.vkCreateGraphicsPipelines( m_context.device
+				, m_context.cache
+				, 1u
+				, &createInfo
+				, m_context.allocator
+				, &pipeline );
+			checkVkResult( res, m_pass.name + " - Pipeline creation" );
+			crgRegisterObject( m_context, m_pass.name, pipeline );
+		}
 	}
 
 	VkPipelineViewportStateCreateInfo RenderQuad::doCreateViewportState( VkViewportArray & viewports

@@ -66,52 +66,16 @@ namespace crg
 		}
 	}
 
-	uint32_t RunnablePass::initialise( uint32_t index )
+	uint32_t RunnablePass::initialise()
 	{
-		if ( index >= m_commandBuffers.size() )
+		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
 		{
-			return 0u;
-		}
-
-		for ( auto & attach : m_pass.images )
-		{
-			if ( attach.count <= 1u )
+			for ( auto & attach : m_pass.images )
 			{
-				auto view = attach.view( index );
-				auto inputLayout = m_graph.getCurrentLayout( index, view );
-
-				if ( ( attach.isInput() )
-					&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+				if ( attach.count <= 1u )
 				{
-					inputLayout = { attach.image.initialLayout
-						, getAccessMask( attach.image.initialLayout )
-						, getStageMask( attach.image.initialLayout ) };
-				}
-
-				auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
-
-				if ( ( attach.isOutput() )
-					&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-				{
-					outputLayout = { attach.image.finalLayout
-						, getAccessMask( attach.image.finalLayout )
-						, getStageMask( attach.image.finalLayout ) };
-				}
-
-				doRegisterTransition( index
-					, view
-					, { inputLayout
-						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-							, attach.getAccessMask()
-							, attach.getPipelineStageFlags( doIsComputePass() ) }
-						, outputLayout } );
-			}
-			else
-			{
-				for ( uint32_t i = 0u; i < attach.count; ++i )
-				{
-					auto view = attach.view( i );
-					auto inputLayout = m_graph.getCurrentLayout( index, view );
+					auto view = attach.view( index );
+					auto inputLayout = m_graph.getCurrentLayout( m_pass, index, view );
 
 					if ( ( attach.isInput() )
 						&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
@@ -134,64 +98,97 @@ namespace crg
 					doRegisterTransition( index
 						, view
 						, { inputLayout
+						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
+						, attach.getAccessMask()
+						, attach.getPipelineStageFlags( doIsComputePass() ) }
+					, outputLayout } );
+				}
+				else
+				{
+					for ( uint32_t i = 0u; i < attach.count; ++i )
+					{
+						auto view = attach.view( i );
+						auto inputLayout = m_graph.getCurrentLayout( m_pass, index, view );
+
+						if ( ( attach.isInput() )
+							&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+						{
+							inputLayout = { attach.image.initialLayout
+								, getAccessMask( attach.image.initialLayout )
+								, getStageMask( attach.image.initialLayout ) };
+						}
+
+						auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
+
+						if ( ( attach.isOutput() )
+							&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+						{
+							outputLayout = { attach.image.finalLayout
+								, getAccessMask( attach.image.finalLayout )
+								, getStageMask( attach.image.finalLayout ) };
+						}
+
+						doRegisterTransition( index
+							, view
+							, { inputLayout
 							, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-								, attach.getAccessMask()
-								, attach.getPipelineStageFlags( doIsComputePass() ) }
-							, outputLayout } );
+							, attach.getAccessMask()
+							, attach.getPipelineStageFlags( doIsComputePass() ) }
+						, outputLayout } );
+					}
+				}
+			}
+
+			for ( auto & attach : m_pass.buffers )
+			{
+				if ( attach.isStorageBuffer() )
+				{
+					auto buffer = attach.buffer.buffer;
+					doRegisterTransition( index
+						, buffer
+						, { m_graph.getCurrentAccessState( m_pass, index, buffer )
+						, { attach.getAccessMask()
+						, attach.getPipelineStageFlags( doIsComputePass() ) }
+					, m_graph.getOutputAccessState( m_pass, buffer, doIsComputePass() ) } );
 				}
 			}
 		}
-		
-		for ( auto & attach : m_pass.buffers )
-		{
-			if ( attach.isStorageBuffer() )
-			{
-				auto buffer = attach.buffer.buffer;
-				doRegisterTransition( index
-					, buffer
-					, { m_graph.getCurrentAccessState( index, buffer )
-						, { attach.getAccessMask()
-							, attach.getPipelineStageFlags( doIsComputePass() ) }
-						, m_graph.getOutputAccessState( m_pass, buffer, doIsComputePass() ) } );
-			}
-		}
 
-		if ( !m_initialised )
-		{
-			doCreateCommandPool();
-			doCreateCommandBuffer();
-			doCreateDisabledCommandBuffer();
-			doCreateSemaphore();
-			doCreateFence();
-			m_initialised = true;
-		}
-
-		doInitialise( index );
+		doCreateCommandPool();
+		doCreateCommandBuffer();
+		doCreateDisabledCommandBuffer();
+		doCreateSemaphore();
+		doCreateFence();
+		doInitialise();
 		return uint32_t( m_commandBuffers.size() );
 	}
 
-	void RunnablePass::record( uint32_t index )
+	void RunnablePass::record()
 	{
-		auto & cb = m_commandBuffers[index];
-		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-			, nullptr
-			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
-			, nullptr };
-		m_context.vkBeginCommandBuffer( cb.commandBuffer, &beginInfo );
-		recordInto( cb.commandBuffer, index );
-		m_context.vkEndCommandBuffer( cb.commandBuffer );
-		cb.recorded = true;
-
-		if ( isOptional() )
+		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
 		{
-			auto & cb = m_disabledCommandBuffers[index];
+			auto & cb = m_commandBuffers[index];
 			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 				, nullptr
 				, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 				, nullptr };
 			m_context.vkBeginCommandBuffer( cb.commandBuffer, &beginInfo );
-			recordDisabledInto( cb.commandBuffer, index );
+			recordInto( cb.commandBuffer, index );
 			m_context.vkEndCommandBuffer( cb.commandBuffer );
+			cb.recorded = true;
+
+			if ( isOptional() )
+			{
+				auto & cb = m_disabledCommandBuffers[index];
+				VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+					, nullptr
+					, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
+					, nullptr };
+				m_context.vkBeginCommandBuffer( cb.commandBuffer, &beginInfo );
+				recordDisabledInto( cb.commandBuffer, index );
+				m_context.vkEndCommandBuffer( cb.commandBuffer );
+				cb.recorded = true;
+			}
 		}
 	}
 
@@ -384,12 +381,7 @@ namespace crg
 		auto & cb = doIsEnabled()
 			? m_commandBuffers[index]
 			: m_disabledCommandBuffers[index];
-
-		if ( !cb.recorded )
-		{
-			record( index );
-		}
-
+		assert( cb.recorded );
 		m_timer.notifyPassRender();
 		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 			, nullptr
@@ -412,17 +404,19 @@ namespace crg
 			, doGetSemaphoreWaitFlags() };
 	}
 
-	void RunnablePass::resetCommandBuffer( uint32_t index )
+	void RunnablePass::resetCommandBuffer()
 	{
-		auto & cb = m_commandBuffers[index];
-		cb.recorded = false;
-		m_context.vkWaitForFences( m_context.device
-			, 1u
-			, &m_fence
-			, VK_TRUE
-			, 0xFFFFFFFFFFFFFFFFull );
-		m_context.vkResetCommandBuffer( cb.commandBuffer
-			, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+		for ( auto & cb : m_commandBuffers )
+		{
+			cb.recorded = false;
+			m_context.vkWaitForFences( m_context.device
+				, 1u
+				, &m_fence
+				, VK_TRUE
+				, 0xFFFFFFFFFFFFFFFFull );
+			m_context.vkResetCommandBuffer( cb.commandBuffer
+				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+		}
 	}
 
 	RunnablePass::LayoutTransition const & RunnablePass::getTransition( uint32_t passIndex
@@ -543,7 +537,10 @@ namespace crg
 			ires.first->second = transition;
 		}
 
-		m_graph.updateCurrentLayout( passIndex, view, transition.to );
+		m_graph.updateCurrentLayout( m_pass
+			, passIndex
+			, view
+			, transition.to );
 
 		for ( auto & source : view.data->source )
 		{
@@ -575,7 +572,10 @@ namespace crg
 			ires.first->second = transition;
 		}
 
-		m_graph.updateCurrentAccessState( passIndex, buffer, transition.to );
+		m_graph.updateCurrentAccessState( m_pass
+			, passIndex
+			, buffer
+			, transition.to );
 	}
 
 	void RunnablePass::doUpdateFinalLayout( uint32_t passIndex
@@ -591,11 +591,16 @@ namespace crg
 		it->second.to.layout = layout;
 		it->second.to.access = accessMask;
 		it->second.to.pipelineStage = pipelineStage;
-		m_graph.updateCurrentLayout( passIndex, view, it->second.to );
+		m_graph.updateCurrentLayout( m_pass
+			, passIndex, view, it->second.to );
 
 		for ( auto & source : view.data->source )
 		{
-			doUpdateFinalLayout( passIndex, source, layout, accessMask, pipelineStage );
+			doUpdateFinalLayout( passIndex
+				, source
+				, layout
+				, accessMask
+				, pipelineStage );
 		}
 	}
 
@@ -610,7 +615,10 @@ namespace crg
 		assert( it != accessTransitions.end() );
 		it->second.to.access = accessMask;
 		it->second.to.pipelineStage = pipelineStage;
-		m_graph.updateCurrentAccessState( passIndex, buffer, it->second.to );
+		m_graph.updateCurrentAccessState( m_pass
+			, passIndex
+			, buffer
+			, it->second.to );
 	}
 
 	void RunnablePass::doRecordInto( VkCommandBuffer commandBuffer

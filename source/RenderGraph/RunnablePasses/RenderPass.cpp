@@ -120,14 +120,10 @@ namespace crg
 		}
 	}
 
-	void RenderPassHolder::initialise( crg::RunnablePass const & runnable
-		, uint32_t index )
+	void RenderPassHolder::initialise( crg::RunnablePass const & runnable )
 	{
-		if ( index == 0u )
-		{
-			doCreateRenderPass( runnable );
-			doCreateFramebuffer();
-		}
+		doCreateRenderPass( runnable );
+		doCreateFramebuffer();
 	}
 
 	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )
@@ -308,17 +304,17 @@ namespace crg
 	{
 	}
 
-	void RenderPass::doInitialise( uint32_t index )
+	void RenderPass::doInitialise()
 	{
-		m_holder.initialise( *this, index );
-		doSubInitialise( index );
+		m_holder.initialise( *this );
+		doSubInitialise();
 	}
 
 	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		m_holder.begin( commandBuffer
-			, doGetSubpassContents( 0u )
+			, doGetSubpassContents()
 			, index );
 		doSubRecordInto( commandBuffer, index );
 		m_holder.end( commandBuffer );
@@ -328,7 +324,7 @@ namespace crg
 		, uint32_t index )
 	{
 		m_holder.begin( commandBuffer
-			, doGetSubpassContents( 0u )
+			, doGetSubpassContents()
 			, index );
 		m_holder.end( commandBuffer );
 		doSubRecordDisabledInto( commandBuffer, index );
