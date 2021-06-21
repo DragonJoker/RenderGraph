@@ -47,7 +47,7 @@ namespace crg
 	{
 	}
 
-	void ImageCopy::doInitialise( uint32_t index )
+	void ImageCopy::doInitialise()
 	{
 	}
 

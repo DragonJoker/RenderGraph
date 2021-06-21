@@ -53,7 +53,7 @@ namespace
 		{
 		}
 
-		void doInitialise( uint32_t index )override
+		void doInitialise()override
 		{
 			m_checkViews( m_testCounts
 				, m_pass
@@ -125,7 +125,7 @@ namespace
 		{
 			if ( view.isSampledView() )
 			{
-				check( graph.getCurrentLayout( 0u, view.view( 0u ) ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+				check( graph.getCurrentLayout( pass, 0u, view.view( 0u ) ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
 			}
 		}
 	}

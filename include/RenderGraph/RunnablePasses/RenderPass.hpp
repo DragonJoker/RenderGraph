@@ -34,8 +34,7 @@ namespace crg
 			, VkExtent2D const & size = {} );
 		CRG_API ~RenderPassHolder();
 
-		CRG_API void initialise( crg::RunnablePass const & runnable
-			, uint32_t index );
+		CRG_API void initialise( crg::RunnablePass const & runnable );
 		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index );
 		CRG_API void begin( VkCommandBuffer commandBuffer
 			, VkSubpassContents subpassContents
@@ -105,18 +104,18 @@ namespace crg
 		}
 
 	protected:
-		CRG_API void doInitialise( uint32_t index )override final;
+		CRG_API void doInitialise()override final;
 		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
 		CRG_API void doRecordDisabledInto( VkCommandBuffer commandBuffer
 			, uint32_t index )override;
 		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
-		CRG_API virtual void doSubInitialise( uint32_t index ) = 0;
+		CRG_API virtual void doSubInitialise() = 0;
 		CRG_API virtual void doSubRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index ) = 0;
 		CRG_API virtual void doSubRecordDisabledInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
-		CRG_API virtual VkSubpassContents doGetSubpassContents( uint32_t subpassIndex )const
+		CRG_API virtual VkSubpassContents doGetSubpassContents()const
 		{
 			return VK_SUBPASS_CONTENTS_INLINE;
 		}

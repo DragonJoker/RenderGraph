@@ -46,32 +46,14 @@ namespace crg
 		*\brief
 		*	Initialises the descriptor set.
 		*/
-		CRG_API uint32_t initialise( uint32_t index = 0u );
+		CRG_API uint32_t initialise();
 		/**
 		*\brief
 		*	Records the pass commands into its command buffer.
 		*\param[in] index
 		*	The pass index.
 		*/
-		CRG_API void record( uint32_t index = 0u );
-		/**
-		*\brief
-		*	Records the pass commands into the given command buffer.
-		*\param[in,out] commandBuffer
-		*	The command buffer.
-		*\param[in] index
-		*	The pass index.
-		*/
-		CRG_API void recordInto( VkCommandBuffer commandBuffer
-			, uint32_t index = 0u );
-		/**
-		*\brief
-		*	Records the disabled pass commands into the given command buffer.
-		*\param[in,out] commandBuffer
-		*	The command buffer.
-		*/
-		CRG_API void recordDisabledInto( VkCommandBuffer commandBuffer
-			, uint32_t index );
+		CRG_API void record();
 		/**
 		*\brief
 		*	Submits this pass' command buffer to the given queue.
@@ -100,7 +82,7 @@ namespace crg
 		*\brief
 		*	Resets the command buffer to initial state.
 		*/
-		CRG_API void resetCommandBuffer( uint32_t index = 0u );
+		CRG_API void resetCommandBuffer();
 		CRG_API LayoutTransition const & getTransition( uint32_t passIndex
 			, ImageViewId const & view )const;
 		CRG_API AccessTransition const & getTransition( uint32_t passIndex
@@ -109,6 +91,11 @@ namespace crg
 		bool isOptional()const
 		{
 			return m_optional;
+		}
+
+		FramePass const & getPass()const
+		{
+			return m_pass;
 		}
 
 		FramePassTimer const & getTimer()const
@@ -127,6 +114,11 @@ namespace crg
 		}
 
 	private:
+		void recordInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+		void recordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+
 		CRG_API virtual void doCreateCommandPool();
 		CRG_API virtual void doCreateCommandBuffer();
 		CRG_API virtual void doCreateDisabledCommandBuffer();
@@ -149,7 +141,7 @@ namespace crg
 			, Buffer const & buffer
 			, VkAccessFlags accessMask
 			, VkPipelineStageFlags pipelineStage );
-		CRG_API virtual void doInitialise( uint32_t index ) = 0;
+		CRG_API virtual void doInitialise() = 0;
 		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
 		CRG_API virtual void doRecordDisabledInto( VkCommandBuffer commandBuffer
@@ -179,6 +171,5 @@ namespace crg
 		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
 		std::vector< LayoutTransitionMap > m_layoutTransitions;
 		std::vector< AccessTransitionMap > m_accessTransitions;
-		bool m_initialised{ false };
 	};
 }
