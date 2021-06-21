@@ -14,6 +14,16 @@ namespace crg
 {
 	namespace
 	{
+		bool match( VkImageSubresourceRange const & lhsRange
+			, VkImageSubresourceRange const & rhsRange )
+		{
+			return ( ( lhsRange.aspectMask & rhsRange.aspectMask ) != 0 )
+				&& lhsRange.baseArrayLayer == rhsRange.baseArrayLayer
+				&& lhsRange.layerCount == rhsRange.layerCount
+				&& lhsRange.baseMipLevel == rhsRange.baseMipLevel
+				&& lhsRange.levelCount == rhsRange.levelCount;
+		}
+
 		bool match( ImageId const & image
 			, VkImageViewType lhsType
 			, VkImageViewType rhsType
@@ -24,11 +34,12 @@ namespace crg
 
 			if ( !result )
 			{
-				result = ( getVirtualRange( image, lhsType, lhsRange ) == getVirtualRange( image, rhsType, rhsRange ) );
+				result = match( getVirtualRange( image, lhsType, lhsRange )
+					, getVirtualRange( image, rhsType, rhsRange ) );
 			}
 			else
 			{
-				result = lhsRange == rhsRange;
+				result = match( lhsRange, rhsRange );
 			}
 
 			return result;
