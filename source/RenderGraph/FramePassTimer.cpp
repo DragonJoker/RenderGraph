@@ -11,7 +11,7 @@ namespace crg
 	
 	namespace
 	{
-		VkQueryPool createQueryPool( GraphContext const & context
+		VkQueryPool createQueryPool( GraphContext & context
 			, std::string const & name
 			, uint32_t passesCount )
 		{
@@ -71,7 +71,7 @@ namespace crg
 
 	//*********************************************************************************************
 
-	FramePassTimer::FramePassTimer( GraphContext const & context
+	FramePassTimer::FramePassTimer( GraphContext & context
 		, std::string const & name
 		, uint32_t passesCount )
 		: m_context{ context }

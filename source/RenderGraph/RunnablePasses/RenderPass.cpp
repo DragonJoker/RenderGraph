@@ -89,7 +89,7 @@ namespace crg
 	//*********************************************************************************************
 
 	RenderPassHolder::RenderPassHolder( FramePass const & pass
-		, GraphContext const & context
+		, GraphContext & context
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
 		, VkExtent2D const & size )
@@ -290,7 +290,7 @@ namespace crg
 	//*********************************************************************************************
 
 	RenderPass::RenderPass( FramePass const & pass
-		, GraphContext const & context
+		, GraphContext & context
 		, RunnableGraph & graph
 		, VkExtent2D const & size
 		, uint32_t maxPassCount

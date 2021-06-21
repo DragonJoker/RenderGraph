@@ -12,7 +12,7 @@ namespace crg
 	{
 	public:
 		CRG_API ImageCopy( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, VkExtent3D copySize
 			, uint32_t maxPassCount = 1u

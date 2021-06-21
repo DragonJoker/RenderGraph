@@ -104,7 +104,7 @@ namespace crg
 			}
 		}
 
-		VkImageSubresourceRange adaptRange( GraphContext const & context
+		VkImageSubresourceRange adaptRange( GraphContext & context
 			, VkFormat format
 			, VkImageSubresourceRange const & subresourceRange )
 		{
@@ -260,14 +260,14 @@ namespace crg
 		, AttachmentTransitions transitions
 		, GraphNodePtrArray nodes
 		, RootNode rootNode
-		, GraphContext context )
+		, GraphContext & context )
 		: m_graph{ graph }
+		, m_context{ context }
 		, m_inputTransitions{ std::move( inputTransitions ) }
 		, m_outputTransitions{ std::move( outputTransitions ) }
 		, m_transitions{ std::move( transitions ) }
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
-		, m_context{ std::move( context ) }
 	{
 		display( *this );
 		LayoutStateMap images;

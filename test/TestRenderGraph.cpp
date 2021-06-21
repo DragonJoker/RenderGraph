@@ -20,7 +20,7 @@ namespace
 	{
 	public:
 		DummyRunnable( crg::FramePass const & pass
-			, crg::GraphContext const & context
+			, crg::GraphContext & context
 			, crg::RunnableGraph & graph
 			, test::TestCounts & testCounts
 			, VkPipelineStageFlags pipelineStageFlags
@@ -73,7 +73,7 @@ namespace
 
 	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
 		, crg::FramePass const & pass
-		, crg::GraphContext const & context
+		, crg::GraphContext & context
 		, crg::RunnableGraph & graph
 		, VkPipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews )
@@ -140,7 +140,7 @@ namespace
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		auto & pass = graph.createPass( "pass1C"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -161,7 +161,7 @@ namespace
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		auto & pass = graph.createPass( "pass1C"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -186,7 +186,7 @@ namespace
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		checkNoThrow( graph.createPass( "pass1C"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -195,7 +195,7 @@ namespace
 			} ) );
 		checkThrow( graph.createPass( "pass1C"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -214,7 +214,7 @@ namespace
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		auto & pass1 = graph.createPass( "pass1C"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -227,7 +227,7 @@ namespace
 		auto outv = graph.createView( test::createView( "outv", out ) );
 		auto & pass2 = graph.createPass( "pass2C"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -262,7 +262,7 @@ namespace
 		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
 		auto & pass0 = graph.createPass( "pass0"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -275,7 +275,7 @@ namespace
 		auto d1v = graph.createView( test::createView( "d1v", d1 ) );
 		auto & pass1 = graph.createPass( "pass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -290,7 +290,7 @@ namespace
 		auto d2v = graph.createView( test::createView( "d2v", d2 ) );
 		auto & pass2 = graph.createPass( "pass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -331,7 +331,7 @@ namespace
 		auto d0v = graph.createView( test::createView( "d0v", d0 ) );
 		auto & pass0 = graph.createPass( "pass0"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -346,7 +346,7 @@ namespace
 		auto d1v = graph.createView( test::createView( "d1v", d1 ) );
 		auto & pass1 = graph.createPass( "pass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -362,7 +362,7 @@ namespace
 		auto d2v = graph.createView( test::createView( "d2v", d2 ) );
 		auto & pass2 = graph.createPass( "pass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -402,7 +402,7 @@ namespace
 		auto m1v = graph.createView( test::createView( "m1v", lp, 1u ) );
 		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -415,7 +415,7 @@ namespace
 		auto m2v = graph.createView( test::createView( "m2v", lp, 2u ) );
 		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -451,7 +451,7 @@ namespace
 		auto m1v = graph.createView( test::createView( "m1v", lp, VK_FORMAT_R32G32B32_SFLOAT, 1u ) );
 		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -464,7 +464,7 @@ namespace
 		auto m2v = graph.createView( test::createView( "m2v", lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
 		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -478,7 +478,7 @@ namespace
 		auto m3v = graph.createView( test::createView( "m3v", lp, VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
 		auto & ssaoMinifyPass3 = graph.createPass( "ssaoMinifyPass3"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -519,7 +519,7 @@ namespace
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass1 = graph.createPass( "pass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -531,7 +531,7 @@ namespace
 
 		auto & pass2 = graph.createPass( "pass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -555,7 +555,7 @@ namespace
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass0 = graph.createPass( "pass0"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -568,7 +568,7 @@ namespace
 		auto av = graph.createView( test::createView( "av", a, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass1 = graph.createPass( "pass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -581,7 +581,7 @@ namespace
 
 		auto & pass2 = graph.createPass( "pass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -605,7 +605,7 @@ namespace
 		auto cv = graph.createView( test::createView( "cv", c, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass0 = graph.createPass( "pass0"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -620,7 +620,7 @@ namespace
 		auto bv = graph.createView( test::createView( "bv", b, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & pass1 = graph.createPass( "pass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -634,7 +634,7 @@ namespace
 
 		auto & pass2 = graph.createPass( "pass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -648,7 +648,7 @@ namespace
 
 		auto & pass3 = graph.createPass( "pass3"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -687,7 +687,7 @@ namespace
 		auto m0v = graph.createView( test::createView( "m0v", lp, VK_FORMAT_R32_SFLOAT, 0u ) );
 		auto & ssaoLinearisePass = graph.createPass( "ssaoLinearisePass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -701,7 +701,7 @@ namespace
 		auto m1v = graph.createView( test::createView( "m1v", lp, VK_FORMAT_R32_SFLOAT, 1u ) );
 		auto & ssaoMinifyPass1 = graph.createPass( "ssaoMinifyPass1"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -715,7 +715,7 @@ namespace
 		auto m2v = graph.createView( test::createView( "m2v", lp, VK_FORMAT_R32G32B32_SFLOAT, 2u ) );
 		auto & ssaoMinifyPass2 = graph.createPass( "ssaoMinifyPass2"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -729,7 +729,7 @@ namespace
 		auto m3v = graph.createView( test::createView( "m3v", lp, VK_FORMAT_R32G32B32_SFLOAT, 3u ) );
 		auto & ssaoMinifyPass3 = graph.createPass( "ssaoMinifyPass3"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -745,7 +745,7 @@ namespace
 		auto rsv = graph.createView( test::createView( "rsv", rs, VK_FORMAT_R32_SFLOAT ) );
 		auto & ssaoRawPass = graph.createPass( "ssaoRawPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -761,7 +761,7 @@ namespace
 		auto blv = graph.createView( test::createView( "b1v", bl, VK_FORMAT_R32_SFLOAT ) );
 		auto & ssaoBlurPass = graph.createPass( "ssaoBlurPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -795,7 +795,7 @@ namespace
 		auto d4v = graph.createView( test::createView( "d4v", d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto & geometryPass = graph.createPass( "geometryPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -820,7 +820,7 @@ namespace
 		auto ofv = graph.createView( test::createView( "ofv", of, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & ambientPass = graph.createPass( "ambientPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -919,7 +919,7 @@ namespace
 
 		auto & hiPass = graph.createPass( "hiPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -931,7 +931,7 @@ namespace
 
 		auto & blurPass0X = graph.createPass( "blurPass0X"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -943,7 +943,7 @@ namespace
 		blurPass0X.addOutputColourView( bl0v );
 		auto & blurPass0Y = graph.createPass( "blurPass0Y"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -956,7 +956,7 @@ namespace
 
 		auto & blurPass1X = graph.createPass( "blurPass1X"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -968,7 +968,7 @@ namespace
 		blurPass1X.addOutputColourView( bl1v );
 		auto & blurPass1Y = graph.createPass( "blurPass1Y"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -981,7 +981,7 @@ namespace
 
 		auto & blurPass2X = graph.createPass( "blurPass2X"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -993,7 +993,7 @@ namespace
 		blurPass2X.addOutputColourView( bl2v );
 		auto & blurPass2Y = graph.createPass( "blurPass2Y"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1006,7 +1006,7 @@ namespace
 
 		auto & blurPass3X = graph.createPass( "blurPass3X"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1018,7 +1018,7 @@ namespace
 		blurPass3X.addOutputColourView( bl3v );
 		auto & blurPass3Y = graph.createPass( "blurPass3Y"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1031,7 +1031,7 @@ namespace
 
 		auto & combinePass = graph.createPass( "combinePass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1070,7 +1070,7 @@ namespace
 		auto d4v = graph.createView( test::createView( "d4v", d4, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto & geometryPass = graph.createPass( "geometryPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1096,7 +1096,7 @@ namespace
 		auto spv = graph.createView( test::createView( "spv", sp, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & lightingPass = graph.createPass( "lightingPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1124,7 +1124,7 @@ namespace
 				, graph );
 			auto & ambientPass = graph.createPass( "ambientPass"
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -1148,7 +1148,7 @@ namespace
 		{
 			auto & ambientPass = graph.createPass( "ambientPass"
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -1181,7 +1181,7 @@ namespace
 		auto rv = graph.createView( test::createView( "rv", r, VK_FORMAT_R16_SFLOAT ) );
 		auto & accumulationPass = graph.createPass( "accumulationPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1203,7 +1203,7 @@ namespace
 		auto cv = graph.createView( test::createView( "cv", c, VK_FORMAT_R32G32B32_SFLOAT ) );
 		auto & combinePass = graph.createPass( "combinePass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -1240,7 +1240,7 @@ namespace
 		{
 			auto & depthPrepass = graph.createPass( "depthPrepass"
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -1276,7 +1276,7 @@ namespace
 					, graph );
 				auto & finalCombinePass = graph.createPass( "finalCombinePass"
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -1293,7 +1293,7 @@ namespace
 			{
 				auto & finalCombinePass = graph.createPass( "finalCombinePass"
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -1319,7 +1319,7 @@ namespace
 				, graph );
 			auto & finalCombinePass = graph.createPass( "finalCombinePass"
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -1335,7 +1335,7 @@ namespace
 		{
 			auto & finalCombinePass = graph.createPass( "finalCombinePass"
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -2035,7 +2035,7 @@ namespace
 		auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT_S8_UINT ) );
 		auto & depthPrepass = graph.createPass( "depthPrepass"
 			, [&testCounts]( crg::FramePass const & pass
-			, crg::GraphContext const & context
+			, crg::GraphContext & context
 			, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -2049,7 +2049,7 @@ namespace
 		auto colourv = graph.createView( test::createView( "colourv", colour, VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto & backgroundPass = graph.createPass( "backgroundPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -2079,7 +2079,7 @@ namespace
 				dirVariances.push_back( varianceMapv );
 				auto & shadowPass = graph.createPass( "dirShadowPass" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2093,7 +2093,7 @@ namespace
 
 				auto & blurPassX = graph.createPass( "dirBlurPassX" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2107,7 +2107,7 @@ namespace
 
 				auto & blurPassY = graph.createPass( "dirBlurPassY" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2138,7 +2138,7 @@ namespace
 				pntVariances.push_back( varianceMapv );
 				auto & shadowPass = graph.createPass( "pntShadowPass" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2152,7 +2152,7 @@ namespace
 
 				auto & blurPassX = graph.createPass( "pntBlurPassX" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2166,7 +2166,7 @@ namespace
 
 				auto & blurPassY = graph.createPass( "pntBlurPassY" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2197,7 +2197,7 @@ namespace
 				sptVariances.push_back( varianceMapv );
 				auto & shadowPass = graph.createPass( "sptShadowPass" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2211,7 +2211,7 @@ namespace
 
 				auto & blurPassX = graph.createPass( "sptBlurPassX" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2225,7 +2225,7 @@ namespace
 
 				auto & blurPassY = graph.createPass( "sptBlurPassY" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
-						, crg::GraphContext const & context
+						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
 					{
 						return createDummy( testCounts
@@ -2241,7 +2241,7 @@ namespace
 
 		auto & opaquePass = graph.createPass( "opaquePass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -2267,7 +2267,7 @@ namespace
 
 		auto & transparentPass = graph.createPass( "transparentPass"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts
@@ -2302,7 +2302,7 @@ namespace
 			auto depthvn = graph.createView( test::createView( "depthv" + strIndex, depth, VK_FORMAT_D32_SFLOAT_S8_UINT, 0u, 1u, index, 1u ) );
 			auto & opaquePass = graph.createPass( "EnvOpaquePass" + strIndex
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -2316,7 +2316,7 @@ namespace
 
 			auto & backgroundPass = graph.createPass( "EnvBackgroundPass" + strIndex
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -2330,7 +2330,7 @@ namespace
 
 			auto & transparentPass = graph.createPass( "EnvTransparentPass" + strIndex
 				, [&testCounts]( crg::FramePass const & pass
-					, crg::GraphContext const & context
+					, crg::GraphContext & context
 					, crg::RunnableGraph & graph )
 				{
 					return createDummy( testCounts
@@ -2345,7 +2345,7 @@ namespace
 
 		auto & mipsGen = graph.createPass( "EnvMips"
 			, [&testCounts]( crg::FramePass const & pass
-				, crg::GraphContext const & context
+				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
 			{
 				return createDummy( testCounts

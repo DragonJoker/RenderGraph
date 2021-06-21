@@ -124,7 +124,7 @@ namespace crg
 		return *result;
 	}
 
-	RunnableGraphPtr FrameGraph::compile( GraphContext context )
+	RunnableGraphPtr FrameGraph::compile( GraphContext & context )
 	{
 		if ( m_passes.empty() )
 		{

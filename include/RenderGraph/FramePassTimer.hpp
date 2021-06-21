@@ -51,7 +51,7 @@ namespace crg
 		*\param[in] passesCount
 		*	The number of render passes.
 		*/
-		CRG_API FramePassTimer( GraphContext const & context
+		CRG_API FramePassTimer( GraphContext & context
 			, std::string const & name
 			, uint32_t passesCount = 1u );
 		CRG_API ~FramePassTimer();
@@ -144,7 +144,7 @@ namespace crg
 		void stop();
 
 	private:
-		GraphContext const & m_context;
+		GraphContext & m_context;
 		uint32_t m_passesCount;
 		std::string m_name;
 		Clock::time_point m_cpuSaveTime;

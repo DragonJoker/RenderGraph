@@ -316,7 +316,7 @@ namespace crg
 	void GraphContext::doRegisterObject( uint64_t object
 		, uint32_t objectType
 		, std::string const & objectName
-		, std::string const & typeName )const
+		, std::string const & typeName )
 	{
 		doRegisterObjectName( object
 			, objectType
@@ -341,7 +341,7 @@ namespace crg
 	void GraphContext::doRegisterObjectName( uint64_t object
 		, uint32_t objectType
 		, std::string const & objectName
-		, std::string const & typeName )const
+		, std::string const & typeName )
 	{
 #	if VK_EXT_debug_utils
 		if ( vkSetDebugUtilsObjectNameEXT )
@@ -367,7 +367,7 @@ namespace crg
 #	endif
 	}
 
-	void GraphContext::doUnregisterObject( uint64_t object )const
+	void GraphContext::doUnregisterObject( uint64_t object )
 	{
 		if ( object )
 		{
@@ -377,7 +377,7 @@ namespace crg
 		}
 	}
 
-	void GraphContext::doReportRegisteredObjects()const
+	void GraphContext::doReportRegisteredObjects()
 	{
 		for ( auto & alloc : m_allocated )
 		{

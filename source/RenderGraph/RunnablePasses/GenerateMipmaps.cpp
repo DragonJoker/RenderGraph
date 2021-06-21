@@ -22,7 +22,7 @@ namespace crg
 	}
 
 	GenerateMipmaps::GenerateMipmaps( FramePass const & pass
-		, GraphContext const & context
+		, GraphContext & context
 		, RunnableGraph & graph
 		, VkImageLayout outputLayout
 		, uint32_t maxPassCount

@@ -12,7 +12,7 @@ namespace crg
 	{
 	public:
 		CRG_API GenerateMipmaps( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, VkImageLayout outputLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, uint32_t maxPassCount = 1u

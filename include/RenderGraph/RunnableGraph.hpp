@@ -33,7 +33,7 @@ namespace crg
 			, AttachmentTransitions transitions
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
-			, GraphContext context );
+			, GraphContext & context );
 		CRG_API ~RunnableGraph();
 
 		CRG_API void record();
@@ -149,12 +149,12 @@ namespace crg
 
 	private:
 		FrameGraph & m_graph;
+		GraphContext & m_context;
 		FramePassDependencies m_inputTransitions;
 		FramePassDependencies m_outputTransitions;
 		AttachmentTransitions m_transitions;
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;
-		GraphContext m_context;
 		std::vector< RunnablePassPtr > m_passes;
 		std::map< ImageId, VkImage > m_images;
 		std::map< ImageViewId, VkImageView > m_imageViews;

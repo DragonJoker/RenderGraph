@@ -143,7 +143,7 @@ namespace crg
 
 	public:
 		CRG_API RenderQuad( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
 			, rq::Config config );
@@ -255,7 +255,7 @@ namespace crg
 		*	The render pass.
 		*/
 		std::unique_ptr< RenderQuad > build( FramePass const & pass
-			, GraphContext const & context
+			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount = 1u )
 		{

@@ -17,18 +17,18 @@ namespace crg
 		CRG_API ResourceHandler & operator=( ResourceHandler && ) = default;
 		CRG_API ~ResourceHandler();
 
-		CRG_API void clear( GraphContext const & context );
+		CRG_API void clear( GraphContext & context );
 
 		CRG_API ImageId createImageId( ImageData const & img );
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
 
-		CRG_API VkImage createImage( GraphContext const & context
+		CRG_API VkImage createImage( GraphContext & context
 			, ImageId imageId );
-		CRG_API VkImageView createImageView( GraphContext const & context
+		CRG_API VkImageView createImageView( GraphContext & context
 			, ImageViewId viewId );
-		CRG_API void destroyImage( GraphContext const & context
+		CRG_API void destroyImage( GraphContext & context
 			, ImageId imageId );
-		CRG_API void destroyImageView( GraphContext const & context
+		CRG_API void destroyImageView( GraphContext & context
 			, ImageViewId viewId );
 
 		CRG_API VkImage getImage( ImageId const & image )const;

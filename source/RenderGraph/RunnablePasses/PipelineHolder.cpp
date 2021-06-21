@@ -28,7 +28,7 @@ namespace crg
 	}
 
 	PipelineHolder::PipelineHolder( FramePass const & pass
-		, GraphContext const & context
+		, GraphContext & context
 		, RunnableGraph & graph
 		, pp::Config config
 		, VkPipelineBindPoint bindingPoint

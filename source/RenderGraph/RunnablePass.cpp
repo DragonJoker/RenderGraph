@@ -13,7 +13,7 @@ See LICENSE file in root folder.
 namespace crg
 {
 	RunnablePass::RunnablePass( FramePass const & pass
-		, GraphContext const & context
+		, GraphContext & context
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
 		, bool optional )
