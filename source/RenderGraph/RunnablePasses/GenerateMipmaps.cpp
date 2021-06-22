@@ -72,8 +72,9 @@ namespace crg
 		auto baseArrayLayer = viewId.data->info.subresourceRange.baseArrayLayer;
 		auto layerCount = viewId.data->info.subresourceRange.layerCount;
 		auto mipLevels = imageId.data->info.mipLevels;
+		auto arrayLayers = imageId.data->info.arrayLayers;
 		auto srcImageLayout = transition.needed;
-		auto dstMipImageLayout = viewId.data->info.subresourceRange.levelCount == mipLevels
+		auto dstMipImageLayout = ( viewId.data->info.subresourceRange.levelCount == mipLevels || viewId.data->info.subresourceRange.layerCount == arrayLayers )
 			? srcImageLayout
 			: transition.to;
 
@@ -106,7 +107,7 @@ namespace crg
 			m_graph.memoryBarrier( commandBuffer
 				, imageId
 				, mipSubRange
-				, transition.from
+				, srcImageLayout
 				, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 					, VK_ACCESS_TRANSFER_READ_BIT
 					, VK_PIPELINE_STAGE_TRANSFER_BIT } );
