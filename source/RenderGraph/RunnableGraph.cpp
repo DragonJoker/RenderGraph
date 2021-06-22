@@ -1009,7 +1009,7 @@ namespace crg
 			{
 				for ( uint32_t i = 0u; i < attach.count; ++i )
 				{
-					auto & view = attach.view( i );
+					auto view = attach.view( i );
 					auto image = view.data->image;
 					createImage( image );
 					createImageView( view );
@@ -1036,7 +1036,7 @@ namespace crg
 			}
 			else
 			{
-				auto & view = attach.view();
+				auto view = attach.view();
 				auto image = view.data->image;
 				createImage( image );
 				createImageView( view );
