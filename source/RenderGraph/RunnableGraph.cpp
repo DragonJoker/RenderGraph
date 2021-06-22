@@ -350,16 +350,6 @@ namespace crg
 			}
 		}
 
-		for ( auto & view : m_imageViews )
-		{
-			m_graph.m_handler.destroyImageView( m_context, view.first );
-		}
-
-		for ( auto & img : m_images )
-		{
-			m_graph.m_handler.destroyImage( m_context, img.first );
-		}
-
 		for ( auto & sampler : m_samplers )
 		{
 			crgUnregisterObject( m_context, sampler.second );
@@ -1015,23 +1005,58 @@ namespace crg
 
 		for ( auto & attach : pass.images )
 		{
-			auto image = attach.view().data->image;
-			auto ires = images.emplace( image.id, LayerLayoutStates{} );
-
-			if ( ires.second )
+			if ( attach.count > 1u )
 			{
-				auto & layers = ires.first->second;
-				auto sliceArrayCount = ( image.data->info.extent.depth > 1u
-					? image.data->info.extent.depth
-					: image.data->info.arrayLayers );
-
-				for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
+				for ( uint32_t i = 0u; i < attach.count; ++i )
 				{
-					auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
+					auto & view = attach.view( i );
+					auto image = view.data->image;
+					createImage( image );
+					createImageView( view );
+					auto ires = images.emplace( image.id, LayerLayoutStates{} );
 
-					for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
+					if ( ires.second )
 					{
-						levels.emplace( level, defaultState );
+						auto & layers = ires.first->second;
+						auto sliceArrayCount = ( image.data->info.extent.depth > 1u
+							? image.data->info.extent.depth
+							: image.data->info.arrayLayers );
+
+						for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
+						{
+							auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
+
+							for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
+							{
+								levels.emplace( level, defaultState );
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				auto & view = attach.view();
+				auto image = view.data->image;
+				createImage( image );
+				createImageView( view );
+				auto ires = images.emplace( image.id, LayerLayoutStates{} );
+
+				if ( ires.second )
+				{
+					auto & layers = ires.first->second;
+					auto sliceArrayCount = ( image.data->info.extent.depth > 1u
+						? image.data->info.extent.depth
+						: image.data->info.arrayLayers );
+
+					for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
+					{
+						auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
+
+						for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
+						{
+							levels.emplace( level, defaultState );
+						}
 					}
 				}
 			}
