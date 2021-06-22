@@ -74,7 +74,7 @@ namespace crg
 		auto mipLevels = imageId.data->info.mipLevels;
 		auto arrayLayers = imageId.data->info.arrayLayers;
 		auto srcImageLayout = transition.needed;
-		auto dstMipImageLayout = ( viewId.data->info.subresourceRange.levelCount == mipLevels || viewId.data->info.subresourceRange.layerCount == arrayLayers )
+		auto dstMipImageLayout = ( viewId.data->info.subresourceRange.levelCount == mipLevels )
 			? srcImageLayout
 			: transition.to;
 
