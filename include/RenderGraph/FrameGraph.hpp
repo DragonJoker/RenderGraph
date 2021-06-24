@@ -20,6 +20,11 @@ namespace crg
 		friend class RunnableGraph;
 
 	public:
+		CRG_API FrameGraph( FrameGraph const & ) = delete;
+		CRG_API FrameGraph & operator=( FrameGraph const & ) = delete;
+		CRG_API FrameGraph( FrameGraph && ) = default;
+		CRG_API FrameGraph & operator=( FrameGraph && ) = delete;
+
 		CRG_API FrameGraph( ResourceHandler & handler
 			, std::string name = "FrameGraph" );
 		CRG_API FramePass & createPass( std::string const & name
