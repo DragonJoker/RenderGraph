@@ -405,15 +405,16 @@ namespace crg
 	}
 
 	void RunnablePass::resetCommandBuffer()
-	{
+{
+		m_context.vkWaitForFences( m_context.device
+			, 1u
+			, &m_fence
+			, VK_TRUE
+			, 0xFFFFFFFFFFFFFFFFull );
+
 		for ( auto & cb : m_commandBuffers )
 		{
 			cb.recorded = false;
-			m_context.vkWaitForFences( m_context.device
-				, 1u
-				, &m_fence
-				, VK_TRUE
-				, 0xFFFFFFFFFFFFFFFFull );
 			m_context.vkResetCommandBuffer( cb.commandBuffer
 				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
 		}
