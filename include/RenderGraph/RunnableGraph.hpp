@@ -47,7 +47,7 @@ namespace crg
 		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
 		CRG_API ImageViewId createView( ImageViewData const & view );
-		CRG_API VertexBuffer const & createQuadVertexBuffer( bool texCoords
+		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
 			, bool invertU
 			, bool invertV );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );

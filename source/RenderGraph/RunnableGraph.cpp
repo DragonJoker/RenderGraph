@@ -416,7 +416,7 @@ namespace crg
 		return result;
 	}
 
-	VertexBuffer const & RunnableGraph::createQuadVertexBuffer( bool texCoords
+	VertexBuffer const & RunnableGraph::createQuadTriVertexBuffer( bool texCoords
 		, bool invertU
 		, bool invertV )
 	{
@@ -429,7 +429,7 @@ namespace crg
 			VkBufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
 				, nullptr
 				, 0u
-				, 4u * sizeof( Quad::Vertex )
+				, 3u * sizeof( Quad::Vertex )
 				, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 				, VK_SHARING_MODE_EXCLUSIVE
 				, 0u
@@ -475,21 +475,17 @@ namespace crg
 
 			if ( buffer )
 			{
-				std::array< Quad::Vertex, 4u > vertexData{ Quad::Vertex{ { -1.0, -1.0 }
+				std::array< Quad::Vertex, 3u > vertexData{ Quad::Vertex{ { -1.0, -3.0 }
 					, ( texCoords
-						? Quad::Data{ ( invertU ? 1.0f : 0.0f ), ( invertV ? 1.0f : 0.0f ) }
+						? Quad::Data{ ( invertU ? 2.0f : 0.0f ), ( invertV ? 1.0f : -1.0f ) }
 						: Quad::Data{ 0.0f, 0.0f } ) }
 					, Quad::Vertex{ { -1.0, +1.0 }
 						, ( texCoords
-							? Quad::Data{ ( invertU ? 1.0f : 0.0f ), ( invertV ? 0.0f : 1.0f ) }
+							? Quad::Data{ ( invertU ? 2.0f : 0.0f ), ( invertV ? -1.0f : 1.0f ) }
 							: Quad::Data{ 0.0f, 0.0f } ) }
-					, Quad::Vertex{ { +1.0f, -1.0f }
+					, Quad::Vertex{ { +3.0f, +1.0f }
 						, ( texCoords
-							? Quad::Data{ ( invertU ? 0.0f : 1.0f ), ( invertV ? 1.0f : 0.0f ) }
-							: Quad::Data{ 0.0f, 0.0f } ) }
-					, Quad::Vertex{ { +1.0f, +1.0f }
-						, ( texCoords
-							? Quad::Data{ ( invertU ? 0.0f : 1.0f ), ( invertV ? 0.0f : 1.0f ) }
+							? Quad::Data{ ( invertU ? 0.0f : 2.0f ), ( invertV ? -1.0f : 1.0f ) }
 							: Quad::Data{ 0.0f, 0.0f } ) } };
 				std::copy( vertexData.begin(), vertexData.end(), buffer );
 
