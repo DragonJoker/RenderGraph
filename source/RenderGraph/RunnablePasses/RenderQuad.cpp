@@ -55,7 +55,7 @@ namespace crg
 
 	void RenderQuad::doSubInitialise()
 	{
-		m_vertexBuffer = &m_graph.createQuadVertexBuffer( m_useTexCoord
+		m_vertexBuffer = &m_graph.createQuadTriVertexBuffer( m_useTexCoord
 			, m_config.texcoordConfig.invertU
 			, m_config.texcoordConfig.invertV );
 		m_holder.initialise();
@@ -68,7 +68,7 @@ namespace crg
 		m_holder.recordInto( commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
-		m_context.vkCmdDraw( commandBuffer, 4u, 1u, 0u, 0u );
+		m_context.vkCmdDraw( commandBuffer, 3u, 1u, 0u, 0u );
 	}
 
 	void RenderQuad::doSubRecordDisabledInto( VkCommandBuffer commandBuffer
