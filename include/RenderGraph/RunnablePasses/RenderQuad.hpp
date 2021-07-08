@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
+#include "RenderGraph/RunnableGraph.hpp"
 #include "RenderGraph/RunnablePasses/PipelineHolder.hpp"
 #include "RenderGraph/RunnablePasses/RenderPass.hpp"
 
@@ -11,24 +12,6 @@ namespace crg
 {
 	namespace rq
 	{
-		/**
-		*\brief
-		*	Tells how the texture coordinates from the vertex buffer are built.
-		*/
-		struct Texcoord
-		{
-			/**
-			*\brief
-			*	Tells if the U coordinate of UV must be inverted, thus mirroring vertically the resulting image.
-			*/
-			bool invertU{ false };
-			/**
-			*\brief
-			*	Tells if the U coordinate of UV must be inverted, thus mirroring horizontally the resulting image.
-			*/
-			bool invertV{ false };
-		};
-
 		using RecordDisabledIntoFunc = std::function< void( RunnablePass const &, VkCommandBuffer, uint32_t ) >;
 
 		template< template< typename ValueT > typename WrapperT >
@@ -61,11 +44,11 @@ namespace crg
 	}
 
 	template<>
-	struct DefaultValueGetterT< rq::Texcoord >
+	struct DefaultValueGetterT< Texcoord >
 	{
-		static rq::Texcoord const & get()
+		static Texcoord const & get()
 		{
-			static rq::Texcoord const result{ false, false };
+			static Texcoord const result{ false, false };
 			return result;
 		}
 	};
@@ -186,7 +169,7 @@ namespace crg
 		*\param[in] config
 		*	The texture coordinates configuration.
 		*/
-		auto & texcoordConfig( rq::Texcoord config )
+		auto & texcoordConfig( Texcoord config )
 		{
 			m_config.texcoordConfig = std::move( config );
 			return static_cast< BuilderT & >( *this );

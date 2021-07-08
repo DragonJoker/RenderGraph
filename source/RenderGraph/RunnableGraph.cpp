@@ -40,15 +40,6 @@ namespace crg
 			Vertex vertex[6];
 		};
 
-		size_t makeHash( bool texCoords
-			, bool invertU
-			, bool invertV )
-		{
-			return ( ( texCoords ? 0x01 : 0x00 ) << 0 )
-				| ( ( invertU ? 0x01 : 0x00 ) << 1 )
-				| ( ( invertV ? 0x01 : 0x00 ) << 2 );
-		}
-
 		template< typename T >
 		inline size_t hashCombine( size_t hash
 			, T const & rhs )
@@ -65,6 +56,15 @@ namespace crg
 
 			hash = static_cast< std::size_t >( b * kMul );
 			return hash;
+		}
+
+		size_t makeHash( bool texCoords
+			, Texcoord const & config )
+		{
+			size_t result{ ( ( texCoords ? 0x01u : 0x00u ) << 0u )
+				| ( ( config.invertU ? 0x01u : 0x00u ) << 1u )
+				| ( ( config.invertV ? 0x01u : 0x00u ) << 2u ) };
+			return result;
 		}
 
 		size_t makeHash( SamplerDesc const & samplerDesc )
@@ -417,10 +417,9 @@ namespace crg
 	}
 
 	VertexBuffer const & RunnableGraph::createQuadTriVertexBuffer( bool texCoords
-		, bool invertU
-		, bool invertV )
+		, Texcoord const & config )
 	{
-		auto hash = makeHash( texCoords, invertU, invertV );
+		auto hash = makeHash( texCoords, config );
 		auto ires = m_vertexBuffers.emplace( hash, std::make_unique< VertexBuffer >() );
 
 		if ( ires.second )
@@ -475,18 +474,20 @@ namespace crg
 
 			if ( buffer )
 			{
-				std::array< Quad::Vertex, 3u > vertexData{ Quad::Vertex{ { -1.0, -3.0 }
-					, ( texCoords
-						? Quad::Data{ ( invertU ? 2.0f : 0.0f ), ( invertV ? 1.0f : -1.0f ) }
-						: Quad::Data{ 0.0f, 0.0f } ) }
-					, Quad::Vertex{ { -1.0, +1.0 }
-						, ( texCoords
-							? Quad::Data{ ( invertU ? 2.0f : 0.0f ), ( invertV ? -1.0f : 1.0f ) }
-							: Quad::Data{ 0.0f, 0.0f } ) }
-					, Quad::Vertex{ { +3.0f, +1.0f }
-						, ( texCoords
-							? Quad::Data{ ( invertU ? 0.0f : 2.0f ), ( invertV ? -1.0f : 1.0f ) }
-							: Quad::Data{ 0.0f, 0.0f } ) } };
+				auto rangeU = 1.0;
+				auto minU = 0.0;
+				auto maxU = minU + 2.0 * rangeU;
+				auto rangeV = 1.0;
+				auto minV = -rangeV;
+				auto maxV = minV + 2.0 * rangeV;
+				auto realMinU = float( config.invertU ? maxU : minU );
+				auto realMaxU = float( config.invertU ? minU : maxU );
+				auto realMinV = float( config.invertV ? maxV : minV );
+				auto realMaxV = float( config.invertV ? minV : maxV );
+				std::array< Quad::Vertex, 3u > vertexData
+					{ Quad::Vertex{ Quad::Data{ -1.0f, -3.0f }, Quad::Data{ realMinU, realMinV } }
+					, Quad::Vertex{ Quad::Data{ -1.0f, +1.0f }, Quad::Data{ realMinU, realMaxV } }
+					, Quad::Vertex{ Quad::Data{ +3.0f, +1.0f }, Quad::Data{ realMaxU, realMaxV } } };
 				std::copy( vertexData.begin(), vertexData.end(), buffer );
 
 				VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
