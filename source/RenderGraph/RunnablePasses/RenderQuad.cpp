@@ -24,7 +24,7 @@ namespace crg
 			, config.renderSize ? *config.renderSize : defaultV< VkExtent2D >
 			, maxPassCount
 			, config.enabled ? true : false }
-		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< rq::Texcoord > )
+		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > )
 			, std::move( config.depthStencilState ? *config.depthStencilState : defaultV< VkPipelineDepthStencilStateCreateInfo > )
@@ -56,8 +56,7 @@ namespace crg
 	void RenderQuad::doSubInitialise()
 	{
 		m_vertexBuffer = &m_graph.createQuadTriVertexBuffer( m_useTexCoord
-			, m_config.texcoordConfig.invertU
-			, m_config.texcoordConfig.invertV );
+			, m_config.texcoordConfig );
 		m_holder.initialise();
 		doCreatePipeline();
 	}

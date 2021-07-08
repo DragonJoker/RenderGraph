@@ -12,6 +12,24 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	/**
+	*\brief
+	*	Tells how the texture coordinates from the vertex buffer are built.
+	*/
+	struct Texcoord
+	{
+		/**
+		*\brief
+		*	Tells if the U coordinate of UV must be inverted, thus mirroring vertically the resulting image.
+		*/
+		bool invertU{ false };
+		/**
+		*\brief
+		*	Tells if the U coordinate of UV must be inverted, thus mirroring horizontally the resulting image.
+		*/
+		bool invertV{ false };
+	};
+
 	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
 	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
 	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
@@ -48,8 +66,7 @@ namespace crg
 			, VkQueue queue );
 		CRG_API ImageViewId createView( ImageViewData const & view );
 		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
-			, bool invertU
-			, bool invertV );
+			, Texcoord const & config );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
 		CRG_API LayoutState getCurrentLayout( FramePass const & pass
