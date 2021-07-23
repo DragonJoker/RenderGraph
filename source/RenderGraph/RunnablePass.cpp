@@ -12,14 +12,107 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	//*********************************************************************************************
+
+	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
+		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags )
+		: Callbacks{ std::move( initialise )
+			, std::move( getSemaphoreWaitFlags )
+			, getDefaultV< RecordCallback >()
+			, getDefaultV< RecordCallback >()
+			, getDefaultV< GetPassIndexCallback >()
+			, getDefaultV< IsEnabledCallback >()
+			, getDefaultV< IsComputePassCallback >() }
+	{
+	}
+
+	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
+		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, RecordCallback record )
+		: Callbacks{ std::move( initialise )
+			, std::move( getSemaphoreWaitFlags )
+			, std::move( record )
+			, getDefaultV< RecordCallback >()
+			, getDefaultV< GetPassIndexCallback >()
+			, getDefaultV< IsEnabledCallback >()
+			, getDefaultV< IsComputePassCallback >() }
+	{
+	}
+
+	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
+		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, RecordCallback record
+		, RecordCallback recordDisabled )
+		: Callbacks{ std::move( initialise )
+			, std::move( getSemaphoreWaitFlags )
+			, std::move( record )
+			, std::move( recordDisabled )
+			, getDefaultV< GetPassIndexCallback >()
+			, getDefaultV< IsEnabledCallback >()
+			, getDefaultV< IsComputePassCallback >() }
+	{
+	}
+
+	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
+		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, RecordCallback record
+		, RecordCallback recordDisabled
+		, GetPassIndexCallback getPassIndex )
+		: Callbacks{ std::move( initialise )
+			, std::move( getSemaphoreWaitFlags )
+			, std::move( record )
+			, std::move( recordDisabled )
+			, std::move( getPassIndex )
+			, getDefaultV< IsEnabledCallback >()
+			, getDefaultV< IsComputePassCallback >() }
+	{
+	}
+
+	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
+		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, RecordCallback record
+		, RecordCallback recordDisabled
+		, GetPassIndexCallback getPassIndex
+		, IsEnabledCallback isEnabled )
+		: Callbacks{ std::move( initialise )
+			, std::move( getSemaphoreWaitFlags )
+			, std::move( record )
+			, std::move( recordDisabled )
+			, std::move( getPassIndex )
+			, std::move( isEnabled )
+			, getDefaultV< IsComputePassCallback >() }
+	{
+	}
+
+	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
+		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, RecordCallback record
+		, RecordCallback recordDisabled
+		, GetPassIndexCallback getPassIndex
+		, IsEnabledCallback isEnabled
+		, IsComputePassCallback isComputePass )
+		: initialise{ std::move( initialise ) }
+		, getSemaphoreWaitFlags{ std::move( getSemaphoreWaitFlags ) }
+		, record{ std::move( record ) }
+		, recordDisabled{ std::move( recordDisabled ) }
+		, getPassIndex{ std::move( getPassIndex ) }
+		, isEnabled{ std::move( isEnabled ) }
+		, isComputePass{ std::move( isComputePass ) }
+	{
+	}
+
+	//*********************************************************************************************
+
 	RunnablePass::RunnablePass( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
+		, Callbacks callbacks
 		, uint32_t maxPassCount
 		, bool optional )
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
+		, m_callbacks{ std::move( callbacks ) }
 		, m_optional{ optional }
 		, m_timer{ context, m_pass.name, 1u }
 	{
@@ -85,7 +178,7 @@ namespace crg
 							, getStageMask( attach.image.initialLayout ) };
 					}
 
-					auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
+					auto outputLayout = m_graph.getOutputLayout( m_pass, view, m_callbacks.isComputePass() );
 
 					if ( ( attach.isOutput() )
 						&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
@@ -100,7 +193,7 @@ namespace crg
 						, { inputLayout
 						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
 						, attach.getAccessMask()
-						, attach.getPipelineStageFlags( doIsComputePass() ) }
+						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
 					, outputLayout } );
 				}
 				else
@@ -118,7 +211,7 @@ namespace crg
 								, getStageMask( attach.image.initialLayout ) };
 						}
 
-						auto outputLayout = m_graph.getOutputLayout( m_pass, view, doIsComputePass() );
+						auto outputLayout = m_graph.getOutputLayout( m_pass, view, m_callbacks.isComputePass() );
 
 						if ( ( attach.isOutput() )
 							&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
@@ -133,7 +226,7 @@ namespace crg
 							, { inputLayout
 							, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
 							, attach.getAccessMask()
-							, attach.getPipelineStageFlags( doIsComputePass() ) }
+							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
 						, outputLayout } );
 					}
 				}
@@ -148,8 +241,8 @@ namespace crg
 						, buffer
 						, { m_graph.getCurrentAccessState( m_pass, index, buffer )
 						, { attach.getAccessMask()
-						, attach.getPipelineStageFlags( doIsComputePass() ) }
-					, m_graph.getOutputAccessState( m_pass, buffer, doIsComputePass() ) } );
+						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
+					, m_graph.getOutputAccessState( m_pass, buffer, m_callbacks.isComputePass() ) } );
 				}
 			}
 		}
@@ -159,7 +252,7 @@ namespace crg
 		doCreateDisabledCommandBuffer();
 		doCreateSemaphore();
 		doCreateFence();
-		doInitialise();
+		m_callbacks.initialise();
 		return uint32_t( m_commandBuffers.size() );
 	}
 
@@ -246,7 +339,7 @@ namespace crg
 			}
 		}
 
-		doRecordInto( commandBuffer, index );
+		m_callbacks.record( commandBuffer, index );
 
 		for ( auto & attach : m_pass.images )
 		{
@@ -304,7 +397,7 @@ namespace crg
 		m_context.vkCmdBeginDebugBlock( commandBuffer
 			, { "(Disabled)" + m_pass.name, { 0.5f, 0.5f, 0.5f, 1.0f } } );
 		m_timer.beginPass( commandBuffer );
-		doRecordDisabledInto( commandBuffer, index );
+		m_callbacks.recordDisabled( commandBuffer, index );
 
 		for ( auto & attach : m_pass.images )
 		{
@@ -377,8 +470,8 @@ namespace crg
 			dstStageMasks.push_back( wait.dstStageMask );
 		}
 
-		auto index = doGetPassIndex();
-		auto & cb = doIsEnabled()
+		auto index = m_callbacks.getPassIndex();
+		auto & cb = m_callbacks.isEnabled()
 			? m_commandBuffers[index]
 			: m_disabledCommandBuffers[index];
 		assert( cb.recorded );
@@ -401,7 +494,7 @@ namespace crg
 			, m_fence );
 
 		return { m_semaphore
-			, doGetSemaphoreWaitFlags() };
+			, m_callbacks.getSemaphoreWaitFlags() };
 	}
 
 	void RunnablePass::resetCommandBuffer()
@@ -620,30 +713,5 @@ namespace crg
 			, passIndex
 			, buffer
 			, it->second.to );
-	}
-
-	void RunnablePass::doRecordInto( VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-	}
-
-	void RunnablePass::doRecordDisabledInto( VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-	}
-
-	uint32_t RunnablePass::doGetPassIndex()const
-	{
-		return 0u;
-	}
-
-	bool RunnablePass::doIsEnabled()const
-	{
-		return true;
-	}
-
-	bool RunnablePass::doIsComputePass()const
-	{
-		return false;
 	}
 }

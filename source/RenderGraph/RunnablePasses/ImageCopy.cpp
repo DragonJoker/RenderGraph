@@ -34,6 +34,12 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
+			, { [this](){ doInitialise(); }
+				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
+				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordInto( cb, i ); }
+				, defaultV< RunnablePass::RecordCallback >
+				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
+				, IsEnabledCallback( [this](){ return doIsEnabled(); } ) }
 			, maxPassCount
 			, optional }
 		, m_copySize{std::move( copySize ) }
@@ -41,10 +47,6 @@ namespace crg
 		, m_enabled{ enabled }
 	{
 		assert( pass.images.size() == 2u );
-	}
-
-	ImageCopy::~ImageCopy()
-	{
 	}
 
 	void ImageCopy::doInitialise()

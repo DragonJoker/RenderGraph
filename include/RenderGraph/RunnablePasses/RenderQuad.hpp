@@ -24,7 +24,9 @@ namespace crg
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			WrapperT< uint32_t const * > passIndex;
 			WrapperT< bool const * > enabled;
+			WrapperT< RunnablePass::RecordCallback > recordInto;
 			WrapperT< RecordDisabledIntoFunc > recordDisabledInto;
+			WrapperT< bool > recordDisabledRenderPass{ true };
 		};
 
 		template<>
@@ -36,7 +38,9 @@ namespace crg
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			RawTypeT< uint32_t const * > passIndex;
 			RawTypeT< bool const * > enabled;
+			RawTypeT< RunnablePass::RecordCallback > recordInto;
 			RawTypeT< RecordDisabledIntoFunc > recordDisabledInto;
+			RawTypeT< bool > recordDisabledRenderPass{ true };
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -46,7 +50,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< Texcoord >
 	{
-		static Texcoord const & get()
+		static Texcoord get()
 		{
 			static Texcoord const result{ false, false };
 			return result;
@@ -56,7 +60,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< VkExtent2D >
 	{
-		static VkExtent2D const & get()
+		static VkExtent2D get()
 		{
 			static VkExtent2D const result{};
 			return result;
@@ -66,7 +70,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< VkOffset2D >
 	{
-		static VkOffset2D const & get()
+		static VkOffset2D get()
 		{
 			static VkOffset2D const result{};
 			return result;
@@ -76,7 +80,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< VkPipelineDepthStencilStateCreateInfo >
 	{
-		static VkPipelineDepthStencilStateCreateInfo const & get()
+		static VkPipelineDepthStencilStateCreateInfo get()
 		{
 			static VkPipelineDepthStencilStateCreateInfo const result{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
 				, nullptr
@@ -90,7 +94,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< uint32_t const * >
 	{
-		static uint32_t const * const & get()
+		static uint32_t const * get()
 		{
 			static uint32_t const * const result{};
 			return result;
@@ -100,7 +104,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< bool const * >
 	{
-		static bool const * const & get()
+		static bool const * get()
 		{
 			static bool const * const result{};
 			return result;
@@ -110,7 +114,7 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< rq::RecordDisabledIntoFunc >
 	{
-		static rq::RecordDisabledIntoFunc const & get()
+		static rq::RecordDisabledIntoFunc get()
 		{
 			static rq::RecordDisabledIntoFunc const result{ []( crg::RunnablePass const &, VkCommandBuffer, uint32_t ){} };
 			return result;
@@ -118,7 +122,7 @@ namespace crg
 	};
 
 	class RenderQuad
-		: public RenderPass
+		: public RunnablePass
 	{
 	public:
 		template< typename ConfigT, typename BuilderT >
@@ -135,16 +139,19 @@ namespace crg
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 
 	protected:
-		CRG_API void doSubInitialise()override;
-		CRG_API void doSubRecordInto( VkCommandBuffer commandBuffer
-			, uint32_t index )override;
-		CRG_API void doSubRecordDisabledInto( VkCommandBuffer commandBuffer
-			, uint32_t index )override;
-		CRG_API uint32_t doGetPassIndex()const override;
-		CRG_API bool doIsEnabled()const override;
 		CRG_API void doCreatePipeline();
 		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
 			, VkScissorArray & scissors );
+
+	private:
+		void doInitialise();
+		void doRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+		void doRecordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+		VkPipelineStageFlags doGetSemaphoreWaitFlags()const;
+		uint32_t doGetPassIndex()const;
+		bool doIsEnabled()const;
 
 	protected:
 		rq::ConfigData m_config;
@@ -152,7 +159,8 @@ namespace crg
 	private:
 		bool m_useTexCoord{ true };
 		VertexBuffer const * m_vertexBuffer{};
-		PipelineHolder m_holder;
+		PipelineHolder m_pipeline;
+		RenderPassHolder m_renderPass;
 	};
 
 	template< typename ConfigT, typename BuilderT >
@@ -212,7 +220,7 @@ namespace crg
 		}
 		/**
 		*\param[in] config
-		*	The pass index.
+		*	The enabled control variable.
 		*/
 		auto & enabled( bool const * config )
 		{
@@ -221,11 +229,29 @@ namespace crg
 		}
 		/**
 		*\param[in] config
-		*	The pass index.
+		*	The callback to recording the pass.
+		*/
+		auto & recordInto( RunnablePass::RecordCallback config )
+		{
+			m_config.recordInto = config;
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	The callback to recording the disabled pass.
 		*/
 		auto & recordDisabledInto( rq::RecordDisabledIntoFunc config )
 		{
 			m_config.recordDisabledInto = config;
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	Tells if disabled pass should record render pass begin/end.
+		*/
+		auto & recordDisabledRenderPass( bool config )
+		{
+			m_config.recordDisabledRenderPass = config;
 			return static_cast< BuilderT & >( *this );
 		}
 		/**

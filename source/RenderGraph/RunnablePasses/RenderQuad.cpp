@@ -18,26 +18,38 @@ namespace crg
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
 		, rq::Config config )
-		: RenderPass{ pass
+		: RunnablePass{ pass
 			, context
 			, graph
-			, config.renderSize ? *config.renderSize : defaultV< VkExtent2D >
+			, { [this](){ doInitialise(); }
+				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
+				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordInto( cb, i ); }
+				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( cb, i ); }
+				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
+				, IsEnabledCallback( [this](){ return doIsEnabled(); } ) }
 			, maxPassCount
-			, config.enabled ? true : false }
+			, ( config.enabled ? true : false ) }
 		, m_config{ std::move( config.texcoordConfig ? *config.texcoordConfig : defaultV< Texcoord > )
 			, std::move( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > )
 			, std::move( config.renderPosition ? *config.renderPosition : defaultV< VkOffset2D > )
 			, std::move( config.depthStencilState ? *config.depthStencilState : defaultV< VkPipelineDepthStencilStateCreateInfo > )
 			, std::move( config.passIndex ? *config.passIndex : defaultV< uint32_t const * > )
 			, std::move( config.enabled ? *config.enabled : defaultV< bool const * > )
-			, std::move( config.recordDisabledInto ? *config.recordDisabledInto : defaultV< rq::RecordDisabledIntoFunc > ) }
+			, std::move( config.recordInto ? *config.recordInto : getDefaultV< RunnablePass::RecordCallback >() )
+			, std::move( config.recordDisabledInto ? *config.recordDisabledInto : getDefaultV< rq::RecordDisabledIntoFunc >() )
+			, std::move( config.recordDisabledRenderPass ? *config.recordDisabledRenderPass : true ) }
 		, m_useTexCoord{ config.texcoordConfig }
-		, m_holder{ pass
+		, m_pipeline{ pass
 			, context
 			, graph
 			, std::move( config.baseConfig )
 			, VK_PIPELINE_BIND_POINT_GRAPHICS
 			, uint32_t( m_commandBuffers.size() ) }
+		, m_renderPass{ pass
+			, context
+			, graph
+			, maxPassCount
+			, ( config.renderSize ? *config.renderSize : defaultV< VkExtent2D > ) }
 	{
 	}
 
@@ -48,35 +60,50 @@ namespace crg
 	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
 	{
 		resetCommandBuffer();
-		m_holder.resetPipeline( std::move( config ) );
+		m_pipeline.resetPipeline( std::move( config ) );
 		doCreatePipeline();
 		record();
 	}
 
-	void RenderQuad::doSubInitialise()
+	void RenderQuad::doInitialise()
 	{
+		m_renderPass.initialise( *this );
 		m_vertexBuffer = &m_graph.createQuadTriVertexBuffer( m_useTexCoord
 			, m_config.texcoordConfig );
-		m_holder.initialise();
+		m_pipeline.initialise();
 		doCreatePipeline();
 	}
 
-	void RenderQuad::doSubRecordInto( VkCommandBuffer commandBuffer
+	void RenderQuad::doRecordInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		m_holder.recordInto( commandBuffer, index );
+		m_renderPass.begin( commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
+		m_pipeline.recordInto( commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 3u, 1u, 0u, 0u );
+		m_renderPass.end( commandBuffer );
+		m_config.recordInto( commandBuffer, index );
 	}
 
-	void RenderQuad::doSubRecordDisabledInto( VkCommandBuffer commandBuffer
+	void RenderQuad::doRecordDisabledInto( VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
+		if ( m_config.recordDisabledRenderPass )
+		{
+			m_renderPass.begin( commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
+			m_renderPass.end( commandBuffer );
+		}
+
 		if ( m_config.recordDisabledInto )
 		{
 			m_config.recordDisabledInto( *this, commandBuffer, index );
 		}
+	}
+
+	VkPipelineStageFlags RenderQuad::doGetSemaphoreWaitFlags()const
+	{
+		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	}
 
 	void RenderQuad::doCreatePipeline()
@@ -86,7 +113,7 @@ namespace crg
 		VkViewportArray viewports;
 		VkScissorArray scissors;
 		auto vpState = doCreateViewportState( viewports, scissors );
-		auto cbState = doCreateBlendState();
+		auto cbState = m_renderPass.createBlendState();
 		VkPipelineInputAssemblyStateCreateInfo iaState{ VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
 			, nullptr
 			, 0u
@@ -117,8 +144,8 @@ namespace crg
 
 		for ( auto index = 0u; index < m_commandBuffers.size(); ++index )
 		{
-			auto & program = m_holder.getProgram( index );
-			auto & pipeline = m_holder.getPipeline( index );
+			auto & program = m_pipeline.getProgram( index );
+			auto & pipeline = m_pipeline.getPipeline( index );
 			VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
 				, nullptr
 				, 0u
@@ -133,8 +160,8 @@ namespace crg
 				, &m_config.depthStencilState
 				, &cbState
 				, nullptr
-				, m_holder.getPipelineLayout()
-				, getRenderPass()
+				, m_pipeline.getPipelineLayout()
+				, m_renderPass.getRenderPass()
 				, 0u
 				, VK_NULL_HANDLE
 				, 0u };

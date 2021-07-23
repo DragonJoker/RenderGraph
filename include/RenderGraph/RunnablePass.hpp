@@ -35,10 +35,91 @@ namespace crg
 			AccessState to;
 		};
 
+		struct PassIndexT{};
+		struct SemaphoreWaitFlagsT{};
+		struct EnabledT{};
+		struct ComputePassT{};
+
+		template< typename StrongT, typename ValueT >
+		struct GetValueCallbackT
+		{
+			using CallbackT = std::function< ValueT() >;
+
+			GetValueCallbackT() = default;
+			GetValueCallbackT( GetValueCallbackT const & ) = default;
+			GetValueCallbackT( GetValueCallbackT && ) = default;
+			GetValueCallbackT & operator=( GetValueCallbackT const & ) = default;
+			GetValueCallbackT & operator=( GetValueCallbackT && ) = default;
+
+			/**
+			*\notes
+			*	Intentionnally non explicit
+			*/
+			GetValueCallbackT( CallbackT callback )
+				: m_callback{ std::move( callback ) }
+			{
+			}
+
+			ValueT operator()()
+			{
+				return m_callback();
+			}
+
+		private:
+			CallbackT m_callback;
+		};
+
+		using InitialiseCallback = std::function< void () >;
+		using RecordCallback = std::function< void ( VkCommandBuffer, uint32_t ) >;
+		using GetSemaphoreWaitFlagsCallback = GetValueCallbackT< SemaphoreWaitFlagsT, VkPipelineStageFlags >;
+		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
+		using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
+		using IsComputePassCallback = GetValueCallbackT< ComputePassT, bool >;
+
+		struct Callbacks
+		{
+			CRG_API Callbacks( InitialiseCallback initialise
+				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, RecordCallback record );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, RecordCallback record
+				, RecordCallback recordDisabled );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, RecordCallback record
+				, RecordCallback recordDisabled
+				, GetPassIndexCallback getPassIndex );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, RecordCallback record
+				, RecordCallback recordDisabled
+				, GetPassIndexCallback getPassIndex
+				, IsEnabledCallback isEnabled );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, RecordCallback record
+				, RecordCallback recordDisabled
+				, GetPassIndexCallback getPassIndex
+				, IsEnabledCallback isEnabled
+				, IsComputePassCallback isComputePass );
+
+			InitialiseCallback initialise;
+			GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags;
+			RecordCallback record;
+			RecordCallback recordDisabled;
+			GetPassIndexCallback getPassIndex;
+			IsEnabledCallback isEnabled;
+			IsComputePassCallback isComputePass;
+		};
+
 	public:
 		CRG_API RunnablePass( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
+			, Callbacks callbacks
 			, uint32_t maxPassCount = 1u
 			, bool optional = false );
 		CRG_API virtual ~RunnablePass();
@@ -119,11 +200,11 @@ namespace crg
 		void recordDisabledInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
 
-		CRG_API virtual void doCreateCommandPool();
-		CRG_API virtual void doCreateCommandBuffer();
-		CRG_API virtual void doCreateDisabledCommandBuffer();
-		CRG_API virtual void doCreateSemaphore();
-		CRG_API virtual void doCreateFence();
+		void doCreateCommandPool();
+		void doCreateCommandBuffer();
+		void doCreateDisabledCommandBuffer();
+		void doCreateSemaphore();
+		void doCreateFence();
 		void doRegisterTransition( uint32_t passIndex
 			, ImageViewId view
 			, LayoutTransition transition );
@@ -141,15 +222,6 @@ namespace crg
 			, Buffer const & buffer
 			, VkAccessFlags accessMask
 			, VkPipelineStageFlags pipelineStage );
-		CRG_API virtual void doInitialise() = 0;
-		CRG_API virtual void doRecordInto( VkCommandBuffer commandBuffer
-			, uint32_t index );
-		CRG_API virtual void doRecordDisabledInto( VkCommandBuffer commandBuffer
-			, uint32_t index );
-		CRG_API virtual VkPipelineStageFlags doGetSemaphoreWaitFlags()const = 0;
-		CRG_API virtual uint32_t doGetPassIndex()const;
-		CRG_API virtual bool doIsEnabled()const;
-		CRG_API virtual bool doIsComputePass()const;
 
 	protected:
 		struct CommandBuffer
@@ -160,6 +232,7 @@ namespace crg
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
+		Callbacks m_callbacks;
 		bool m_optional;
 		VkCommandPool m_commandPool{ VK_NULL_HANDLE };
 		std::vector< CommandBuffer > m_commandBuffers;
@@ -171,5 +244,65 @@ namespace crg
 		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
 		std::vector< LayoutTransitionMap > m_layoutTransitions;
 		std::vector< AccessTransitionMap > m_accessTransitions;
+	};
+
+	template<>
+	struct DefaultValueGetterT< RunnablePass::InitialiseCallback >
+	{
+		static RunnablePass::InitialiseCallback get()
+		{
+			RunnablePass::InitialiseCallback const result{ [](){} };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< RunnablePass::GetSemaphoreWaitFlagsCallback >
+	{
+		static RunnablePass::GetSemaphoreWaitFlagsCallback get()
+		{
+			RunnablePass::GetSemaphoreWaitFlagsCallback const result{ [](){ return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; } };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< RunnablePass::RecordCallback >
+	{
+		static RunnablePass::RecordCallback get()
+		{
+			RunnablePass::RecordCallback const result{ []( VkCommandBuffer, uint32_t ){} };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< RunnablePass::GetPassIndexCallback >
+	{
+		static RunnablePass::GetPassIndexCallback get()
+		{
+			RunnablePass::GetPassIndexCallback const result{ [](){ return 0u; } };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< RunnablePass::IsEnabledCallback >
+	{
+		static RunnablePass::IsEnabledCallback get()
+		{
+			RunnablePass::IsEnabledCallback const result{ [](){ return true; } };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< RunnablePass::IsComputePassCallback >
+	{
+		static RunnablePass::IsComputePassCallback get()
+		{
+			RunnablePass::IsComputePassCallback const result{ [](){ return false; } };
+			return result;
+		}
 	};
 }

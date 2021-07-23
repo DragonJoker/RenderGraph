@@ -166,7 +166,13 @@ namespace crg
 	struct DefaultValueGetterT;
 
 	template< typename TypeT >
-	static inline TypeT const & defaultV = DefaultValueGetterT< TypeT >::get();
+	static inline TypeT defaultV = DefaultValueGetterT< TypeT >::get();
+
+	template< typename TypeT >
+	static inline TypeT getDefaultV()
+	{
+		return DefaultValueGetterT< TypeT >::get();
+	}
 
 	template< typename TypeT >
 	struct RawTyperT
