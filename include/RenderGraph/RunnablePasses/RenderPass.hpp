@@ -90,10 +90,47 @@ namespace crg
 		template< typename ConfigT, typename BuilderT >
 		friend class RenderQuadBuilderT;
 
+		struct SubpassContentsT;
+		using GetSubpassContentsCallback = RunnablePass::GetValueCallbackT< SubpassContentsT, VkSubpassContents >;
+
+		struct Callbacks
+		{
+			CRG_API Callbacks( InitialiseCallback initialise
+				, RecordCallback record );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, RecordCallback record
+				, RecordCallback recordDisabled );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, RecordCallback record
+				, RecordCallback recordDisabled
+				, GetSubpassContentsCallback getSubpassContents );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, RecordCallback record
+				, RecordCallback recordDisabled
+				, GetSubpassContentsCallback getSubpassContents
+				, GetPassIndexCallback getPassIndex );
+			CRG_API Callbacks( InitialiseCallback initialise
+				, RecordCallback record
+				, RecordCallback recordDisabled
+				, GetSubpassContentsCallback getSubpassContents
+				, GetPassIndexCallback getPassIndex
+				, IsEnabledCallback isEnabled );
+
+			// RenderPass specifics
+			RunnablePass::InitialiseCallback initialise;
+			RunnablePass::RecordCallback record;
+			RunnablePass::RecordCallback recordDisabled;
+			GetSubpassContentsCallback getSubpassContents;
+			// Passed to RunnablePass
+			RunnablePass::GetPassIndexCallback getPassIndex;
+			RunnablePass::IsEnabledCallback isEnabled;
+		};
+
 	public:
 		CRG_API RenderPass( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
+			, Callbacks callbacks
 			, VkExtent2D const & size = {}
 			, uint32_t maxPassCount = 1u
 			, bool optional = false );
@@ -104,22 +141,6 @@ namespace crg
 		}
 
 	protected:
-		CRG_API void doInitialise()override final;
-		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
-			, uint32_t index )override;
-		CRG_API void doRecordDisabledInto( VkCommandBuffer commandBuffer
-			, uint32_t index )override;
-		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override final;
-		CRG_API virtual void doSubInitialise() = 0;
-		CRG_API virtual void doSubRecordInto( VkCommandBuffer commandBuffer
-			, uint32_t index ) = 0;
-		CRG_API virtual void doSubRecordDisabledInto( VkCommandBuffer commandBuffer
-			, uint32_t index );
-		CRG_API virtual VkSubpassContents doGetSubpassContents()const
-		{
-			return VK_SUBPASS_CONTENTS_INLINE;
-		}
-
 		VkPipelineColorBlendStateCreateInfo doCreateBlendState()
 		{
 			return m_holder.createBlendState();
@@ -131,6 +152,24 @@ namespace crg
 		}
 
 	private:
+		void doInitialise();
+		void doRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+		void doRecordDisabledInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+
+	private:
+		Callbacks m_rpCallbacks;
 		RenderPassHolder m_holder;
+	};
+
+	template<>
+	struct DefaultValueGetterT< RenderPass::GetSubpassContentsCallback >
+	{
+		static RenderPass::GetSubpassContentsCallback get()
+		{
+			RenderPass::GetSubpassContentsCallback const result{ [](){ return VK_SUBPASS_CONTENTS_INLINE; } };
+			return result;
+		}
 	};
 }

@@ -20,13 +20,13 @@ namespace crg
 			, uint32_t const * passIndex = nullptr
 			, bool const * enabled = nullptr );
 
-	protected:
-		CRG_API void doInitialise()override;
-		CRG_API void doRecordInto( VkCommandBuffer commandBuffer
-			, uint32_t index )override;
-		CRG_API VkPipelineStageFlags doGetSemaphoreWaitFlags()const override;
-		CRG_API uint32_t doGetPassIndex()const override;
-		CRG_API bool doIsEnabled()const override;
+	private:
+		void doInitialise();
+		void doRecordInto( VkCommandBuffer commandBuffer
+			, uint32_t index );
+		VkPipelineStageFlags doGetSemaphoreWaitFlags()const;
+		uint32_t doGetPassIndex()const;
+		bool doIsEnabled()const;
 
 	private:
 		LayoutState m_outputLayout;
