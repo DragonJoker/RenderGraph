@@ -3,44 +3,10 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RunnablePass.hpp"
-#include "RenderGraph/WriteDescriptorSet.hpp"
-
-#include <optional>
+#include "RenderGraph/RunnablePasses/PipelineConfig.hpp"
 
 namespace crg
 {
-	template<>
-	struct DefaultValueGetterT< std::vector< VkPipelineShaderStageCreateInfoArray > >
-	{
-		static std::vector< VkPipelineShaderStageCreateInfoArray > get()
-		{
-			return std::vector< VkPipelineShaderStageCreateInfoArray >{};
-		}
-	};
-	
-	template<>
-	struct DefaultValueGetterT< std::vector< VkDescriptorSetLayout > >
-	{
-		static std::vector< VkDescriptorSetLayout > get()
-		{
-			return std::vector< VkDescriptorSetLayout >{};
-		}
-	};
-
-	namespace pp
-	{
-		template< template< typename ValueT > typename WrapperT >
-		struct ConfigT
-		{
-			WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs;
-			WrapperT< std::vector< VkDescriptorSetLayout > > layouts;
-		};
-
-		using Config = ConfigT< std::optional >;
-		using ConfigData = ConfigT< RawTypeT >;
-	}
-
 	class PipelineHolder
 	{
 	public:
@@ -121,7 +87,7 @@ namespace crg
 		*/
 		BuilderT & program( VkPipelineShaderStageCreateInfoArray config )
 		{
-			m_baseConfig.programs = { std::move( config ) };
+			m_baseConfig.programs( { std::move( config ) } );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -130,7 +96,7 @@ namespace crg
 		*/
 		BuilderT & programs( std::vector< VkPipelineShaderStageCreateInfoArray > config )
 		{
-			m_baseConfig.programs = std::move( config );
+			m_baseConfig.programs( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
 		}
 

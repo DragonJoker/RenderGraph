@@ -4,123 +4,11 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/RunnableGraph.hpp"
-#include "RenderGraph/RunnablePasses/PipelineHolder.hpp"
+#include "RenderGraph/RunnablePasses/RenderQuadHolder.hpp"
 #include "RenderGraph/RunnablePasses/RenderPass.hpp"
 
 namespace crg
 {
-	namespace rq
-	{
-		using RecordDisabledIntoFunc = std::function< void( RunnablePass const &, VkCommandBuffer, uint32_t ) >;
-
-		template< template< typename ValueT > typename WrapperT >
-		struct ConfigT
-		{
-			pp::ConfigT< WrapperT > baseConfig;
-			WrapperT< Texcoord > texcoordConfig;
-			WrapperT< VkExtent2D > renderSize;
-			WrapperT< VkOffset2D > renderPosition;
-			WrapperT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
-			WrapperT< uint32_t const * > passIndex;
-			WrapperT< bool const * > enabled;
-			WrapperT< RunnablePass::RecordCallback > recordInto;
-			WrapperT< RecordDisabledIntoFunc > recordDisabledInto;
-			WrapperT< bool > recordDisabledRenderPass{ true };
-		};
-
-		template<>
-		struct ConfigT< RawTypeT >
-		{
-			RawTypeT< Texcoord > texcoordConfig;
-			RawTypeT< VkExtent2D > renderSize;
-			RawTypeT< VkOffset2D > renderPosition;
-			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
-			RawTypeT< uint32_t const * > passIndex;
-			RawTypeT< bool const * > enabled;
-			RawTypeT< RunnablePass::RecordCallback > recordInto;
-			RawTypeT< RecordDisabledIntoFunc > recordDisabledInto;
-			RawTypeT< bool > recordDisabledRenderPass{ true };
-		};
-
-		using Config = ConfigT< std::optional >;
-		using ConfigData = ConfigT< RawTypeT >;
-	}
-
-	template<>
-	struct DefaultValueGetterT< Texcoord >
-	{
-		static Texcoord get()
-		{
-			static Texcoord const result{ false, false };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< VkExtent2D >
-	{
-		static VkExtent2D get()
-		{
-			static VkExtent2D const result{};
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< VkOffset2D >
-	{
-		static VkOffset2D get()
-		{
-			static VkOffset2D const result{};
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< VkPipelineDepthStencilStateCreateInfo >
-	{
-		static VkPipelineDepthStencilStateCreateInfo get()
-		{
-			static VkPipelineDepthStencilStateCreateInfo const result{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
-				, nullptr
-				, 0u
-				, VK_FALSE
-				, VK_FALSE };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< uint32_t const * >
-	{
-		static uint32_t const * get()
-		{
-			static uint32_t const * const result{};
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< bool const * >
-	{
-		static bool const * get()
-		{
-			static bool const * const result{};
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< rq::RecordDisabledIntoFunc >
-	{
-		static rq::RecordDisabledIntoFunc get()
-		{
-			static rq::RecordDisabledIntoFunc const result{ []( crg::RunnablePass const &, VkCommandBuffer, uint32_t ){} };
-			return result;
-		}
-	};
-
 	class RenderQuad
 		: public RunnablePass
 	{
@@ -138,11 +26,6 @@ namespace crg
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 
-	protected:
-		CRG_API void doCreatePipeline();
-		CRG_API VkPipelineViewportStateCreateInfo doCreateViewportState( VkViewportArray & viewports
-			, VkScissorArray & scissors );
-
 	private:
 		void doInitialise();
 		void doRecordInto( VkCommandBuffer commandBuffer
@@ -153,13 +36,9 @@ namespace crg
 		uint32_t doGetPassIndex()const;
 		bool doIsEnabled()const;
 
-	protected:
-		rq::ConfigData m_config;
-
 	private:
-		bool m_useTexCoord{ true };
-		VertexBuffer const * m_vertexBuffer{};
-		PipelineHolder m_pipeline;
+		bool m_recordDisabledRenderPass{ true };
+		RenderQuadHolder m_renderQuad;
 		RenderPassHolder m_renderPass;
 	};
 
@@ -179,7 +58,7 @@ namespace crg
 		*/
 		auto & texcoordConfig( Texcoord config )
 		{
-			m_config.texcoordConfig = std::move( config );
+			m_config.texcoordConfig( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -188,7 +67,7 @@ namespace crg
 		*/
 		auto & renderSize( VkExtent2D config )
 		{
-			m_config.renderSize = std::move( config );
+			m_config.renderSize( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -197,7 +76,7 @@ namespace crg
 		*/
 		auto & renderPosition( VkOffset2D config )
 		{
-			m_config.renderPosition = std::move( config );
+			m_config.renderPosition( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -206,7 +85,7 @@ namespace crg
 		*/
 		auto & depthStencilState( VkPipelineDepthStencilStateCreateInfo config )
 		{
-			m_config.depthStencilState = std::move( config );
+			m_config.depthStencilState( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -215,7 +94,7 @@ namespace crg
 		*/
 		auto & passIndex( uint32_t const * config )
 		{
-			m_config.passIndex = config;
+			m_config.passIndex( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -224,7 +103,7 @@ namespace crg
 		*/
 		auto & enabled( bool const * config )
 		{
-			m_config.enabled = config;
+			m_config.enabled( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -233,7 +112,7 @@ namespace crg
 		*/
 		auto & recordInto( RunnablePass::RecordCallback config )
 		{
-			m_config.recordInto = config;
+			m_config.recordInto( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -242,7 +121,7 @@ namespace crg
 		*/
 		auto & recordDisabledInto( rq::RecordDisabledIntoFunc config )
 		{
-			m_config.recordDisabledInto = config;
+			m_config.recordDisabledInto( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -251,7 +130,7 @@ namespace crg
 		*/
 		auto & recordDisabledRenderPass( bool config )
 		{
-			m_config.recordDisabledRenderPass = config;
+			m_config.recordDisabledRenderPass( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
@@ -267,7 +146,7 @@ namespace crg
 			, RunnableGraph & graph
 			, uint32_t maxPassCount = 1u )
 		{
-			m_config.baseConfig = std::move( PipelinePassBuilderT< BuilderT >::m_baseConfig );
+			m_config.baseConfig( std::move( this->m_baseConfig ) );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph

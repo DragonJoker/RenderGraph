@@ -114,16 +114,22 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	set( ${PROJECT_NAME}_FOLDER_HDR_FILES
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/GenerateMipmaps.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/ImageCopy.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelineConfig.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelineHolder.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderPass.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderPassHolder.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuad.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuadConfig.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuadHolder.hpp
 	)
 	set( ${PROJECT_NAME}_FOLDER_SRC_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/GenerateMipmaps.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/ImageCopy.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/PipelineHolder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPass.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPassHolder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderQuad.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderQuadHolder.cpp
 	)
 	set( ${PROJECT_NAME}_SRC_FILES
 		${${PROJECT_NAME}_SRC_FILES}

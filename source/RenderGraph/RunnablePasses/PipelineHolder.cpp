@@ -36,11 +36,11 @@ namespace crg
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
-		, m_baseConfig{ std::move( config.programs ? *config.programs : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > > )
-			, std::move( config.layouts ? *config.layouts : defaultV< std::vector< VkDescriptorSetLayout > > ) }
+		, m_baseConfig{ std::move( config.m_programs ? *config.m_programs : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > > )
+			, std::move( config.m_layouts ? *config.m_layouts : defaultV< std::vector< VkDescriptorSetLayout > > ) }
 		, m_bindingPoint{ bindingPoint }
 	{
-		m_pipelines.resize( m_baseConfig.programs.size() );
+		m_pipelines.resize( m_baseConfig.m_programs.size() );
 		m_descriptorSets.resize( maxPassCount );
 	}
 
@@ -91,18 +91,18 @@ namespace crg
 
 	VkPipelineShaderStageCreateInfoArray const & PipelineHolder::getProgram( uint32_t index )const
 	{
-		if ( m_baseConfig.programs.size() == 1u )
+		if ( m_baseConfig.m_programs.size() == 1u )
 		{
-			return m_baseConfig.programs[0];
+			return m_baseConfig.m_programs[0];
 		}
 
-		assert( m_baseConfig.programs.size() > index );
-		return m_baseConfig.programs[index];
+		assert( m_baseConfig.m_programs.size() > index );
+		return m_baseConfig.m_programs[index];
 	}
 
 	VkPipeline & PipelineHolder::getPipeline( uint32_t index )
 	{
-		if ( m_baseConfig.programs.size() == 1u )
+		if ( m_baseConfig.m_programs.size() == 1u )
 		{
 			assert( m_pipelines.size() == 1u );
 			return m_pipelines[0];
@@ -133,8 +133,12 @@ namespace crg
 					, m_context.allocator );
 			}
 
-			assert( m_baseConfig.programs.size() > index );
-			m_baseConfig.programs[index] = std::move( config );
+			assert( m_baseConfig.m_programs.size() > index );
+
+			if ( !config.empty() )
+			{
+				m_baseConfig.m_programs[index] = std::move( config );
+			}
 		}
 	}
 
@@ -297,8 +301,8 @@ namespace crg
 		std::vector< VkDescriptorSetLayout > layouts;
 		layouts.push_back( m_descriptorSetLayout );
 		layouts.insert( layouts.end()
-			, m_baseConfig.layouts.begin()
-			, m_baseConfig.layouts.end() );
+			, m_baseConfig.m_layouts.begin()
+			, m_baseConfig.m_layouts.end() );
 		VkPipelineLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
 			, nullptr
 			, 0u
