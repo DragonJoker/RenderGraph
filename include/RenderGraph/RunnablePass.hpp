@@ -12,6 +12,41 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	template< typename StrongT, typename ValueT >
+	struct GetValueCallbackT
+	{
+		using CallbackT = std::function< ValueT() >;
+
+		GetValueCallbackT() = default;
+		GetValueCallbackT( GetValueCallbackT const & ) = default;
+		GetValueCallbackT( GetValueCallbackT && ) = default;
+		GetValueCallbackT & operator=( GetValueCallbackT const & ) = default;
+		GetValueCallbackT & operator=( GetValueCallbackT && ) = default;
+
+		/**
+		*\notes
+		*	Intentionnally non explicit
+		*/
+		GetValueCallbackT( CallbackT callback )
+			: m_callback{ std::move( callback ) }
+		{
+		}
+
+		ValueT operator()()
+		{
+			return m_callback();
+		}
+
+	private:
+		CallbackT m_callback;
+	};
+
+	template< typename StrongT, typename ValueT >
+	GetValueCallbackT< StrongT, ValueT > makeValueCallback( std::function< ValueT() > callback )
+	{
+		return GetValueCallbackT< StrongT, ValueT >{ callback };
+	}
+
 	class RunnablePass
 	{
 	public:
@@ -39,35 +74,6 @@ namespace crg
 		struct SemaphoreWaitFlagsT{};
 		struct EnabledT{};
 		struct ComputePassT{};
-
-		template< typename StrongT, typename ValueT >
-		struct GetValueCallbackT
-		{
-			using CallbackT = std::function< ValueT() >;
-
-			GetValueCallbackT() = default;
-			GetValueCallbackT( GetValueCallbackT const & ) = default;
-			GetValueCallbackT( GetValueCallbackT && ) = default;
-			GetValueCallbackT & operator=( GetValueCallbackT const & ) = default;
-			GetValueCallbackT & operator=( GetValueCallbackT && ) = default;
-
-			/**
-			*\notes
-			*	Intentionnally non explicit
-			*/
-			GetValueCallbackT( CallbackT callback )
-				: m_callback{ std::move( callback ) }
-			{
-			}
-
-			ValueT operator()()
-			{
-				return m_callback();
-			}
-
-		private:
-			CallbackT m_callback;
-		};
 
 		using InitialiseCallback = std::function< void () >;
 		using RecordCallback = std::function< void ( VkCommandBuffer, uint32_t ) >;
