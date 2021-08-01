@@ -51,6 +51,14 @@ namespace crg
 		doCreatePipeline( renderSize, renderPass, std::move( blendState ) );
 	}
 
+	void RenderQuadHolder::resetRenderPass( VkExtent2D const & renderSize
+		, VkRenderPass renderPass
+		, VkPipelineColorBlendStateCreateInfo blendState )
+	{
+		m_pipeline.resetPipeline( {} );
+		doCreatePipeline( renderSize, renderPass, std::move( blendState ) );
+	}
+
 	void RenderQuadHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
 	{
 		m_pipeline.resetPipeline( std::move( config ) );

@@ -23,6 +23,9 @@ namespace crg
 			, VkExtent2D const & renderSize
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState );
+		CRG_API void resetRenderPass( VkExtent2D const & renderSize
+			, VkRenderPass renderPass
+			, VkPipelineColorBlendStateCreateInfo blendState );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 		CRG_API void record( VkCommandBuffer commandBuffer
 			, uint32_t index );
@@ -37,6 +40,11 @@ namespace crg
 		VkPipelineVertexInputStateCreateInfo const & getInputState()const
 		{
 			return m_vertexBuffer->inputState;
+		}
+
+		bool isInitialised()const
+		{
+			return m_vertexBuffer != nullptr;
 		}
 
 	private:

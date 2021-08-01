@@ -133,10 +133,9 @@ namespace crg
 					, m_context.allocator );
 			}
 
-			assert( m_baseConfig.m_programs.size() > index );
-
 			if ( !config.empty() )
 			{
+				assert( m_baseConfig.m_programs.size() > index );
 				m_baseConfig.m_programs[index] = std::move( config );
 			}
 		}
