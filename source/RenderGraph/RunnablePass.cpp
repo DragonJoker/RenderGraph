@@ -261,6 +261,12 @@ namespace crg
 		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
 		{
 			auto & cb = m_commandBuffers[index];
+
+			if ( !cb.commandBuffer )
+			{
+				continue;
+			}
+
 			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 				, nullptr
 				, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
@@ -499,17 +505,23 @@ namespace crg
 
 	void RunnablePass::resetCommandBuffer()
 {
-		m_context.vkWaitForFences( m_context.device
-			, 1u
-			, &m_fence
-			, VK_TRUE
-			, 0xFFFFFFFFFFFFFFFFull );
+		if ( m_fence )
+		{
+			m_context.vkWaitForFences( m_context.device
+				, 1u
+				, &m_fence
+				, VK_TRUE
+				, 0xFFFFFFFFFFFFFFFFull );
+		}
 
 		for ( auto & cb : m_commandBuffers )
 		{
-			cb.recorded = false;
-			m_context.vkResetCommandBuffer( cb.commandBuffer
-				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+			if ( cb.commandBuffer )
+			{
+				cb.recorded = false;
+				m_context.vkResetCommandBuffer( cb.commandBuffer
+					, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+			}
 		}
 	}
 
