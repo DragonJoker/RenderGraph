@@ -7,6 +7,8 @@ See LICENSE file in root folder.
 #include "FrameGraphPrerequisites.hpp"
 
 #include <array>
+#include <functional>
+#include <mutex>
 #include <string>
 #include <unordered_map>
 
@@ -590,9 +592,17 @@ namespace crg
 			std::string callstack;
 		};
 
+		using CallstackCallback = std::function< std::string() >;
+		CallstackCallback m_callstackCallback;
+		std::mutex m_mutex;
 		std::unordered_map< size_t, ObjectAllocation > m_allocated;
 
 	public:
+		void setCallstackCallback( CallstackCallback callback )
+		{
+			m_callstackCallback = callback;
+		}
+
 		template< typename ObjectT >
 		static void stRegisterObject( GraphContext & context
 			, std::string const & name
