@@ -3,7 +3,6 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/CallStack.hpp"
 
 #include <cassert>
 #include <iomanip>
@@ -329,7 +328,13 @@ namespace crg
 			<< " - " << objectName;
 		std::clog << stream.str() << std::endl;
 		std::stringstream callStack;
-		callStack << callstack::Backtrace{ 20, 4 };
+
+		if ( m_callstackCallback )
+		{
+			callStack << m_callstackCallback();
+		}
+
+		std::unique_lock< std::mutex > lock{ m_mutex };
 		m_allocated.emplace( object
 			, ObjectAllocation{
 				typeName,
@@ -371,6 +376,7 @@ namespace crg
 	{
 		if ( object )
 		{
+			std::unique_lock< std::mutex > lock{ m_mutex };
 			auto it = m_allocated.find( object );
 			assert( it != m_allocated.end() );
 			m_allocated.erase( it );
@@ -379,6 +385,8 @@ namespace crg
 
 	void GraphContext::doReportRegisteredObjects()
 	{
+		std::unique_lock< std::mutex > lock{ m_mutex };
+
 		for ( auto & alloc : m_allocated )
 		{
 			std::stringstream stream;
