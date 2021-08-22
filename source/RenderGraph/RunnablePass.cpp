@@ -491,6 +491,17 @@ namespace crg
 			, &cb.commandBuffer
 			, 1u
 			, &m_semaphore };
+
+		if ( !m_fenceWaited )
+		{
+			m_context.vkWaitForFences( m_context.device
+				, 1u
+				, &m_fence
+				, VK_TRUE
+				, 0xFFFFFFFFFFFFFFFFull );
+		}
+
+		m_fenceWaited = false;
 		m_context.vkResetFences( m_context.device
 			, 1u
 			, &m_fence );
@@ -512,6 +523,7 @@ namespace crg
 				, &m_fence
 				, VK_TRUE
 				, 0xFFFFFFFFFFFFFFFFull );
+			m_fenceWaited = true;
 		}
 
 		for ( auto & cb : m_commandBuffers )

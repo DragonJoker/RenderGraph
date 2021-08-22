@@ -70,13 +70,21 @@ namespace crg
 			AccessState to;
 		};
 
-		struct PassIndexT{};
-		struct SemaphoreWaitFlagsT{};
-		struct EnabledT{};
-		struct ComputePassT{};
+		struct PassIndexT
+		{
+		};
+		struct SemaphoreWaitFlagsT
+		{
+		};
+		struct EnabledT
+		{
+		};
+		struct ComputePassT
+		{
+		};
 
-		using InitialiseCallback = std::function< void () >;
-		using RecordCallback = std::function< void ( VkCommandBuffer, uint32_t ) >;
+		using InitialiseCallback = std::function< void() >;
+		using RecordCallback = std::function< void( VkCommandBuffer, uint32_t ) >;
 		using GetSemaphoreWaitFlagsCallback = GetValueCallbackT< SemaphoreWaitFlagsT, VkPipelineStageFlags >;
 		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
 		using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
@@ -245,6 +253,7 @@ namespace crg
 		std::vector< CommandBuffer > m_disabledCommandBuffers;
 		VkSemaphore m_semaphore{ VK_NULL_HANDLE };
 		VkFence m_fence{ VK_NULL_HANDLE };
+		bool m_fenceWaited{};
 		FramePassTimer m_timer;
 		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
 		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
