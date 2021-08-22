@@ -467,48 +467,51 @@ namespace crg
 	SemaphoreWait RunnablePass::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
-		std::vector< VkSemaphore > semaphores;
-		std::vector< VkPipelineStageFlags > dstStageMasks;
-
-		for ( auto & wait : toWait )
+		if ( m_context.device )
 		{
-			semaphores.push_back( wait.semaphore );
-			dstStageMasks.push_back( wait.dstStageMask );
-		}
+			std::vector< VkSemaphore > semaphores;
+			std::vector< VkPipelineStageFlags > dstStageMasks;
 
-		auto index = m_callbacks.getPassIndex();
-		auto & cb = m_callbacks.isEnabled()
-			? m_commandBuffers[index]
-			: m_disabledCommandBuffers[index];
-		assert( cb.recorded );
-		m_timer.notifyPassRender();
-		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
-			, nullptr
-			, uint32_t( toWait.size() )
-			, semaphores.data()
-			, dstStageMasks.data()
-			, 1u
-			, &cb.commandBuffer
-			, 1u
-			, &m_semaphore };
+			for ( auto & wait : toWait )
+			{
+				semaphores.push_back( wait.semaphore );
+				dstStageMasks.push_back( wait.dstStageMask );
+			}
 
-		if ( !m_fenceWaited )
-		{
-			m_context.vkWaitForFences( m_context.device
+			auto index = m_callbacks.getPassIndex();
+			auto & cb = m_callbacks.isEnabled()
+				? m_commandBuffers[index]
+				: m_disabledCommandBuffers[index];
+			assert( cb.recorded );
+			m_timer.notifyPassRender();
+			VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
+				, nullptr
+				, uint32_t( toWait.size() )
+				, semaphores.data()
+				, dstStageMasks.data()
 				, 1u
-				, &m_fence
-				, VK_TRUE
-				, 0xFFFFFFFFFFFFFFFFull );
-		}
+				, &cb.commandBuffer
+				, 1u
+				, &m_semaphore };
 
-		m_fenceWaited = false;
-		m_context.vkResetFences( m_context.device
-			, 1u
-			, &m_fence );
-		m_context.vkQueueSubmit( queue
-			, 1u
-			, &submitInfo
-			, m_fence );
+			if ( !m_fenceWaited )
+			{
+				m_context.vkWaitForFences( m_context.device
+					, 1u
+					, &m_fence
+					, VK_TRUE
+					, 0xFFFFFFFFFFFFFFFFull );
+			}
+
+			m_fenceWaited = false;
+			m_context.vkResetFences( m_context.device
+				, 1u
+				, &m_fence );
+			m_context.vkQueueSubmit( queue
+				, 1u
+				, &submitInfo
+				, m_fence );
+		}
 
 		return { m_semaphore
 			, m_callbacks.getSemaphoreWaitFlags() };
@@ -516,6 +519,11 @@ namespace crg
 
 	void RunnablePass::resetCommandBuffer()
 {
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		if ( m_fence )
 		{
 			m_context.vkWaitForFences( m_context.device
@@ -559,6 +567,11 @@ namespace crg
 
 	void RunnablePass::doCreateCommandPool()
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
 			, nullptr
 			, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
@@ -573,6 +586,11 @@ namespace crg
 
 	void RunnablePass::doCreateCommandBuffer()
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		for ( auto & cb : m_commandBuffers )
 		{
 			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
@@ -590,6 +608,11 @@ namespace crg
 
 	void RunnablePass::doCreateDisabledCommandBuffer()
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		for ( auto & cb : m_disabledCommandBuffers )
 		{
 			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
@@ -607,6 +630,11 @@ namespace crg
 
 	void RunnablePass::doCreateSemaphore()
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 			, nullptr
 			, 0u };
@@ -620,6 +648,11 @@ namespace crg
 
 	void RunnablePass::doCreateFence()
 	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
 		VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
 			, nullptr
 			, VK_FENCE_CREATE_SIGNALED_BIT };
