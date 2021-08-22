@@ -320,7 +320,7 @@ namespace crg
 	void PipelineHolder::doCreateDescriptorPool()
 	{
 		assert( m_descriptorSetLayout );
-		auto sizes = getBindingsSizes( m_descriptorBindings, m_descriptorSets.size() );
+		auto sizes = getBindingsSizes( m_descriptorBindings, uint32_t( m_descriptorSets.size() ) );
 		VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
 			, nullptr
 			, 0u

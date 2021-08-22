@@ -424,6 +424,11 @@ namespace crg
 
 		if ( ires.second )
 		{
+			if ( !m_context.device )
+			{
+				return *ires.first->second;
+			}
+
 			auto & vertexBuffer = ires.first->second;
 			VkBufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
 				, nullptr
@@ -525,6 +530,11 @@ namespace crg
 
 		if ( ires.second )
 		{
+			if ( !m_context.device )
+			{
+				return ires.first->second;
+			}
+
 			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
 				, nullptr
 				, 0u
