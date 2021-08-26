@@ -3,9 +3,11 @@ See LICENSE file in root folder.
 */
 #include "RenderGraph/ResourceHandler.hpp"
 
+#include "RenderGraph/Attachment.hpp"
 #include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/ImageViewData.hpp"
+#include "RenderGraph/RunnableGraph.hpp"
 
 #include <cassert>
 #include <iostream>
@@ -15,6 +17,18 @@ namespace crg
 {
 	namespace
 	{
+		struct Quad
+		{
+			using Data = std::array< float, 2u >;
+			struct Vertex
+			{
+				Data position;
+				Data texture;
+			};
+
+			Vertex vertex[6];
+		};
+
 		VkImageCreateInfo convert( ImageData const & data )
 		{
 			return data.info;
@@ -25,6 +39,29 @@ namespace crg
 		{
 			auto result = data.info;
 			result.image = image;
+			return result;
+		}
+
+		size_t makeHash( SamplerDesc const & samplerDesc )
+		{
+			auto result = std::hash< uint32_t >{}( samplerDesc.magFilter );
+			result = hashCombine( result, samplerDesc.minFilter );
+			result = hashCombine( result, samplerDesc.mipmapMode );
+			result = hashCombine( result, samplerDesc.addressModeU );
+			result = hashCombine( result, samplerDesc.addressModeV );
+			result = hashCombine( result, samplerDesc.addressModeW );
+			result = hashCombine( result, samplerDesc.mipLodBias );
+			result = hashCombine( result, samplerDesc.minLod );
+			result = hashCombine( result, samplerDesc.maxLod );
+			return result;
+		}
+
+		size_t makeHash( bool texCoords
+			, Texcoord const & config )
+		{
+			size_t result{ ( ( texCoords ? 0x01u : 0x00u ) << 0u )
+				| ( ( config.invertU ? 0x01u : 0x00u ) << 1u )
+				| ( ( config.invertV ? 0x01u : 0x00u ) << 2u ) };
 			return result;
 		}
 	}
@@ -48,6 +85,43 @@ namespace crg
 
 	void ResourceHandler::clear( GraphContext & context )
 	{
+		if ( context.device )
+		{
+			for ( auto & vertexBuffer : m_vertexBuffers )
+			{
+				if ( vertexBuffer.second->memory )
+				{
+					crgUnregisterObject( context, vertexBuffer.second->memory );
+					context.vkFreeMemory( context.device
+						, vertexBuffer.second->memory
+						, context.allocator );
+				}
+
+				if ( vertexBuffer.second->buffer.buffer )
+				{
+					crgUnregisterObject( context, vertexBuffer.second->buffer.buffer );
+					context.vkDestroyBuffer( context.device
+						, vertexBuffer.second->buffer.buffer
+						, context.allocator );
+				}
+			}
+		}
+
+		m_vertexBuffers.clear();
+
+		if ( context.device )
+		{
+			for ( auto & sampler : m_samplers )
+			{
+				crgUnregisterObject( context, sampler.second );
+				context.vkDestroySampler( context.device
+					, sampler.second
+					, context.allocator );
+			}
+		}
+
+		m_samplers.clear();
+
 		for ( auto & imageView : m_imageViewIds )
 		{
 			destroyImageView( context, imageView.first );
@@ -172,6 +246,156 @@ namespace crg
 		}
 
 		return ires.first->second;
+	}
+
+	VkSampler ResourceHandler::createSampler( GraphContext & context
+		, SamplerDesc const & samplerDesc )
+	{
+		if ( !context.device )
+		{
+			return VK_NULL_HANDLE;
+		}
+
+		auto ires = m_samplers.emplace( makeHash( samplerDesc ), VkSampler{} );
+
+		if ( ires.second )
+		{
+			if ( !context.device )
+			{
+				return ires.first->second;
+			}
+
+			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
+				, nullptr
+				, 0u
+				, samplerDesc.magFilter
+				, samplerDesc.minFilter
+				, samplerDesc.mipmapMode
+				, samplerDesc.addressModeU
+				, samplerDesc.addressModeV
+				, samplerDesc.addressModeW
+				, samplerDesc.mipLodBias // mipLodBias
+				, VK_FALSE // anisotropyEnable
+				, 0.0f // maxAnisotropy
+				, VK_FALSE // compareEnable
+				, VK_COMPARE_OP_ALWAYS // compareOp
+				, samplerDesc.minLod
+				, samplerDesc.maxLod
+				, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
+				, VK_FALSE };
+			auto res = context.vkCreateSampler( context.device
+				, &createInfo
+				, context.allocator
+				, &ires.first->second );
+			checkVkResult( res, "Sampler creation" );
+			crgRegisterObject( context, "Sampler" + std::to_string( makeHash( samplerDesc ) ), ires.first->second );
+		}
+
+		return ires.first->second;
+	}
+
+	VertexBuffer const & ResourceHandler::createQuadTriVertexBuffer( GraphContext & context
+		, bool texCoords
+		, Texcoord const & config )
+	{
+		auto hash = makeHash( texCoords, config );
+		auto ires = m_vertexBuffers.emplace( hash, std::make_unique< VertexBuffer >() );
+
+		if ( ires.second && context.device )
+		{
+			auto & vertexBuffer = ires.first->second;
+			VkBufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
+				, nullptr
+				, 0u
+				, 3u * sizeof( Quad::Vertex )
+				, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+				, VK_SHARING_MODE_EXCLUSIVE
+				, 0u
+				, nullptr };
+			auto res = context.vkCreateBuffer( context.device
+				, &createInfo
+				, context.allocator
+				, &vertexBuffer->buffer.buffer );
+			checkVkResult( res, "Vertex buffer creation" );
+			crgRegisterObject( context, "QuadVertexBuffer", vertexBuffer->buffer.buffer );
+
+			VkMemoryRequirements requirements{};
+			context.vkGetBufferMemoryRequirements( context.device
+				, vertexBuffer->buffer.buffer
+				, &requirements );
+			uint32_t deduced = context.deduceMemoryType( requirements.memoryTypeBits
+				, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT );
+			VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
+				, nullptr
+				, requirements.size
+				, deduced };
+			res = context.vkAllocateMemory( context.device
+				, &allocateInfo
+				, context.allocator
+				, &vertexBuffer->memory );
+			checkVkResult( res, "Buffer memory allocation" );
+			crgRegisterObject( context, "QuadVertexMemory", vertexBuffer->memory );
+
+			res = context.vkBindBufferMemory( context.device
+				, vertexBuffer->buffer.buffer
+				, vertexBuffer->memory
+				, 0u );
+			checkVkResult( res, "Buffer memory binding" );
+
+			Quad::Vertex * buffer{};
+			res = context.vkMapMemory( context.device
+				, vertexBuffer->memory
+				, 0u
+				, VK_WHOLE_SIZE
+				, 0u
+				, reinterpret_cast< void ** >( &buffer ) );
+			checkVkResult( res, "Buffer memory mapping" );
+
+			if ( buffer )
+			{
+				auto rangeU = 1.0;
+				auto minU = 0.0;
+				auto maxU = minU + 2.0 * rangeU;
+				auto rangeV = 1.0;
+				auto minV = -rangeV;
+				auto maxV = minV + 2.0 * rangeV;
+				auto realMinU = float( config.invertU ? maxU : minU );
+				auto realMaxU = float( config.invertU ? minU : maxU );
+				auto realMinV = float( config.invertV ? maxV : minV );
+				auto realMaxV = float( config.invertV ? minV : maxV );
+				std::array< Quad::Vertex, 3u > vertexData
+					{ Quad::Vertex{ Quad::Data{ -1.0f, -3.0f }, Quad::Data{ realMinU, realMinV } }
+					, Quad::Vertex{ Quad::Data{ -1.0f, +1.0f }, Quad::Data{ realMinU, realMaxV } }
+					, Quad::Vertex{ Quad::Data{ +3.0f, +1.0f }, Quad::Data{ realMaxU, realMaxV } } };
+				std::copy( vertexData.begin(), vertexData.end(), buffer );
+
+				VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
+					, 0u
+					, vertexBuffer->memory
+					, 0u
+					, VK_WHOLE_SIZE };
+				context.vkFlushMappedMemoryRanges( context.device, 1u, &memoryRange );
+				context.vkUnmapMemory( context.device, vertexBuffer->memory );
+			}
+
+			vertexBuffer->vertexAttribs.push_back( { 0u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( Quad::Vertex, position ) } );
+
+			if ( texCoords )
+			{
+				vertexBuffer->vertexAttribs.push_back( { 1u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( Quad::Vertex, texture ) } );
+			}
+
+			vertexBuffer->vertexBindings.push_back( { 0u, sizeof( Quad::Vertex ), VK_VERTEX_INPUT_RATE_VERTEX } );
+			vertexBuffer->inputState = VkPipelineVertexInputStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+				, nullptr
+				, 0u
+				, uint32_t( vertexBuffer->vertexBindings.size() )
+				, vertexBuffer->vertexBindings.data()
+				, uint32_t( vertexBuffer->vertexAttribs.size() )
+				, vertexBuffer->vertexAttribs.data() };
+		}
+
+		return *ires.first->second;
 	}
 
 	void ResourceHandler::destroyImage( GraphContext & context

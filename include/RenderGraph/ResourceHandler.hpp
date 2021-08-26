@@ -5,6 +5,8 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/FrameGraphPrerequisites.hpp"
 
+#include <unordered_map>
+
 namespace crg
 {
 	class ResourceHandler
@@ -26,6 +28,11 @@ namespace crg
 			, ImageId imageId );
 		CRG_API VkImageView createImageView( GraphContext & context
 			, ImageViewId viewId );
+		CRG_API VkSampler createSampler( GraphContext & context
+			, SamplerDesc const & samplerDesc );
+		CRG_API VertexBuffer const & createQuadTriVertexBuffer( GraphContext & context
+			, bool texCoords
+			, Texcoord const & config );
 		CRG_API void destroyImage( GraphContext & context
 			, ImageId imageId );
 		CRG_API void destroyImageView( GraphContext & context
@@ -39,5 +46,7 @@ namespace crg
 		ImageViewIdDataOwnerCont m_imageViewIds;
 		ImageMemoryMap m_images;
 		ImageViewMap m_imageViews;
+		std::unordered_map< size_t, VkSampler > m_samplers;
+		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 	};
 }

@@ -8,8 +8,6 @@ See LICENSE file in root folder.
 #include "FrameGraph.hpp"
 #include "RunnablePass.hpp"
 
-#include <unordered_map>
-
 namespace crg
 {
 	/**
@@ -202,8 +200,6 @@ namespace crg
 		std::vector< RunnablePassPtr > m_passes;
 		std::map< ImageId, VkImage > m_images;
 		std::map< ImageViewId, VkImageView > m_imageViews;
-		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
-		std::unordered_map< size_t, VkSampler > m_samplers;
 		std::vector< LayoutStateMap > m_viewsLayouts;
 		std::vector< AccessStateMap > m_buffersLayouts;
 		std::map< FramePass const *, RemainingPasses > m_passesLayouts;

@@ -38,6 +38,8 @@ namespace crg
 	struct GraphNode;
 	struct FramePass;
 	struct RootNode;
+	struct SamplerDesc;
+	struct Texcoord;
 	struct WriteDescriptorSet;
 
 	class Exception;
@@ -201,4 +203,22 @@ namespace crg
 	CRG_API uint32_t getMipLevels( ImageViewId const & image );
 	CRG_API uint32_t getArrayLayers( ImageId const & image );
 	CRG_API uint32_t getArrayLayers( ImageViewId const & image );
+
+	template< typename T >
+	static size_t hashCombine( size_t hash
+		, T const & rhs )
+	{
+		const uint64_t kMul = 0x9ddfea08eb382d69ULL;
+		auto seed = hash;
+
+		std::hash< T > hasher;
+		uint64_t a = ( hasher( rhs ) ^ seed ) * kMul;
+		a ^= ( a >> 47 );
+
+		uint64_t b = ( seed ^ a ) * kMul;
+		b ^= ( b >> 47 );
+
+		hash = static_cast< std::size_t >( b * kMul );
+		return hash;
+	}
 }
