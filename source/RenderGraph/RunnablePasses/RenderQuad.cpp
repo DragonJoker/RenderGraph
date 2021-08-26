@@ -44,7 +44,7 @@ namespace crg
 	{
 		resetCommandBuffer();
 		m_renderQuad.resetPipeline( std::move( config ) );
-		record();
+		recordCurrent();
 	}
 
 	void RenderQuad::doInitialise()

@@ -247,47 +247,73 @@ namespace crg
 			}
 		}
 
-		doCreateCommandPool();
-		doCreateCommandBuffer();
-		doCreateDisabledCommandBuffer();
 		doCreateSemaphore();
 		doCreateFence();
 		m_callbacks.initialise();
 		return uint32_t( m_commandBuffers.size() );
 	}
 
-	void RunnablePass::record()
+	void RunnablePass::recordCurrent()
+	{
+		auto index = m_callbacks.getPassIndex();
+		recordOne( m_commandBuffers[index]
+			, m_disabledCommandBuffers[index]
+			, index );
+	}
+
+	void RunnablePass::recordAll()
 	{
 		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
 		{
-			auto & cb = m_commandBuffers[index];
+			recordOne( m_commandBuffers[index]
+				, m_disabledCommandBuffers[index]
+				, index );
+		}
+	}
 
-			if ( !cb.commandBuffer )
+	void RunnablePass::recordOne( CommandBuffer & enabled
+		, CommandBuffer & disabled
+		, uint32_t index )
+	{
+		if ( enabled.recorded )
+		{
+			return;
+		}
+
+		if ( !m_commandPool )
+		{
+			doCreateCommandPool();
+		}
+
+		if ( !enabled.commandBuffer )
+		{
+			enabled.commandBuffer = doCreateCommandBuffer( std::string{} );
+		}
+
+		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+			, nullptr
+			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
+			, nullptr };
+		m_context.vkBeginCommandBuffer( enabled.commandBuffer, &beginInfo );
+		recordInto( enabled.commandBuffer, index );
+		m_context.vkEndCommandBuffer( enabled.commandBuffer );
+		enabled.recorded = true;
+
+		if ( isOptional() )
+		{
+			if ( !disabled.commandBuffer )
 			{
-				continue;
+				disabled.commandBuffer = doCreateCommandBuffer( "Disabled" );
 			}
 
 			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 				, nullptr
 				, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 				, nullptr };
-			m_context.vkBeginCommandBuffer( cb.commandBuffer, &beginInfo );
-			recordInto( cb.commandBuffer, index );
-			m_context.vkEndCommandBuffer( cb.commandBuffer );
-			cb.recorded = true;
-
-			if ( isOptional() )
-			{
-				auto & cb = m_disabledCommandBuffers[index];
-				VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-					, nullptr
-					, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
-					, nullptr };
-				m_context.vkBeginCommandBuffer( cb.commandBuffer, &beginInfo );
-				recordDisabledInto( cb.commandBuffer, index );
-				m_context.vkEndCommandBuffer( cb.commandBuffer );
-				cb.recorded = true;
-			}
+			m_context.vkBeginCommandBuffer( disabled.commandBuffer, &beginInfo );
+			recordDisabledInto( disabled.commandBuffer, index );
+			m_context.vkEndCommandBuffer( disabled.commandBuffer );
+			disabled.recorded = true;
 		}
 	}
 
@@ -584,29 +610,37 @@ namespace crg
 		crgRegisterObject( m_context, m_pass.name, m_commandPool );
 	}
 
-	void RunnablePass::doCreateCommandBuffer()
+	VkCommandBuffer RunnablePass::doCreateCommandBuffer( std::string const & suffix )
 	{
+		VkCommandBuffer result{};
+
 		if ( !m_context.device )
 		{
-			return;
+			return result;
 		}
 
+		VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
+			, nullptr
+			, m_commandPool
+			, VK_COMMAND_BUFFER_LEVEL_PRIMARY
+			, 1u };
+		auto res = m_context.vkAllocateCommandBuffers( m_context.device
+			, &allocateInfo
+			, &result );
+		checkVkResult( res, m_pass.name + suffix + " - CommandBuffer allocation" );
+		crgRegisterObject( m_context, m_pass.name, result );
+		return result;
+	}
+
+	void RunnablePass::doCreateCommandBuffers()
+	{
 		for ( auto & cb : m_commandBuffers )
 		{
-			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
-				, nullptr
-				, m_commandPool
-				, VK_COMMAND_BUFFER_LEVEL_PRIMARY
-				, 1u };
-			auto res = m_context.vkAllocateCommandBuffers( m_context.device
-				, &allocateInfo
-				, &cb.commandBuffer );
-			checkVkResult( res, m_pass.name + " - CommandBuffer allocation" );
-			crgRegisterObject( m_context, m_pass.name, cb.commandBuffer );
+			cb.commandBuffer = doCreateCommandBuffer( std::string{} );
 		}
 	}
 
-	void RunnablePass::doCreateDisabledCommandBuffer()
+	void RunnablePass::doCreateDisabledCommandBuffers()
 	{
 		if ( !m_context.device )
 		{
@@ -615,16 +649,7 @@ namespace crg
 
 		for ( auto & cb : m_disabledCommandBuffers )
 		{
-			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
-				, nullptr
-				, m_commandPool
-				, VK_COMMAND_BUFFER_LEVEL_PRIMARY
-				, 1u };
-			auto res = m_context.vkAllocateCommandBuffers( m_context.device
-				, &allocateInfo
-				, &cb.commandBuffer );
-			checkVkResult( res, m_pass.name + "Disabled - CommandBuffer allocation" );
-			crgRegisterObject( m_context, m_pass.name + "Disabled", cb.commandBuffer );
+			cb.commandBuffer = doCreateCommandBuffer( "Disabled" );
 		}
 	}
 
