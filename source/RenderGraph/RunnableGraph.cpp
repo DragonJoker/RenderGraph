@@ -284,7 +284,7 @@ namespace crg
 	{
 		for ( auto & pass : m_passes )
 		{
-			pass->record();
+			pass->recordCurrent();
 		}
 	}
 
@@ -324,6 +324,7 @@ namespace crg
 
 		for ( auto & pass : m_passes )
 		{
+			pass->recordCurrent();
 			result = { 1u, pass->run( result, queue ) };
 		}
 

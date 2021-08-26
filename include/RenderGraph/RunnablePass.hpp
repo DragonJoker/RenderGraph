@@ -148,7 +148,14 @@ namespace crg
 		*\param[in] index
 		*	The pass index.
 		*/
-		CRG_API void record();
+		CRG_API void recordAll();
+		/**
+		*\brief
+		*	Records the pass commands into its command buffer.
+		*\param[in] index
+		*	The pass index.
+		*/
+		CRG_API void recordCurrent();
 		/**
 		*\brief
 		*	Submits this pass' command buffer to the given queue.
@@ -208,15 +215,26 @@ namespace crg
 			return uint32_t( m_commandBuffers.size() );
 		}
 
+	protected:
+		struct CommandBuffer
+		{
+			VkCommandBuffer commandBuffer{};
+			bool recorded{};
+		};
+
 	private:
+		void recordOne( CommandBuffer & enabled
+			, CommandBuffer & disabled
+			, uint32_t index );
 		void recordInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
 		void recordDisabledInto( VkCommandBuffer commandBuffer
 			, uint32_t index );
 
 		void doCreateCommandPool();
-		void doCreateCommandBuffer();
-		void doCreateDisabledCommandBuffer();
+		VkCommandBuffer doCreateCommandBuffer( std::string const & suffix );
+		void doCreateCommandBuffers();
+		void doCreateDisabledCommandBuffers();
 		void doCreateSemaphore();
 		void doCreateFence();
 		void doRegisterTransition( uint32_t passIndex
@@ -238,11 +256,6 @@ namespace crg
 			, VkPipelineStageFlags pipelineStage );
 
 	protected:
-		struct CommandBuffer
-		{
-			VkCommandBuffer commandBuffer{};
-			bool recorded{};
-		};
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
