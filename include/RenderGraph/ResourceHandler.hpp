@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/FrameGraphPrerequisites.hpp"
 
+#include <mutex>
 #include <unordered_map>
 
 namespace crg
@@ -42,11 +43,15 @@ namespace crg
 		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
 
 	private:
+		std::mutex m_imagesMutex;
 		ImageIdDataOwnerCont m_imageIds;
+		std::mutex m_viewsMutex;
 		ImageViewIdDataOwnerCont m_imageViewIds;
 		ImageMemoryMap m_images;
 		ImageViewMap m_imageViews;
+		std::mutex m_samplersMutex;
 		std::unordered_map< size_t, VkSampler > m_samplers;
+		std::mutex m_buffersMutex;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
 	};
 }

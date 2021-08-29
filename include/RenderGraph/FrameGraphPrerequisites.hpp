@@ -221,4 +221,10 @@ namespace crg
 		hash = static_cast< std::size_t >( b * kMul );
 		return hash;
 	}
+
+	CRG_API void convert( SemaphoreWaitArray const & toWait
+		, std::vector< VkSemaphore > & semaphores
+		, std::vector< VkPipelineStageFlags > & dstStageMasks );
+	CRG_API void convert( SemaphoreWaitArray const & toWait
+		, std::vector< VkSemaphore > & semaphores );
 }

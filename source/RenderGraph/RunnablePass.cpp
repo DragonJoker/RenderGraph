@@ -14,6 +14,40 @@ namespace crg
 {
 	//*********************************************************************************************
 
+	void convert( SemaphoreWaitArray const & toWait
+		, std::vector< VkSemaphore > & semaphores
+		, std::vector< VkPipelineStageFlags > & dstStageMasks )
+	{
+		for ( auto & wait : toWait )
+		{
+			if ( wait.semaphore
+				&& semaphores.end() == std::find( semaphores.begin()
+					, semaphores.end()
+					, wait.semaphore ) )
+			{
+				semaphores.push_back( wait.semaphore );
+				dstStageMasks.push_back( wait.dstStageMask );
+			}
+		}
+	}
+
+	void convert( SemaphoreWaitArray const & toWait
+		, std::vector< VkSemaphore > & semaphores )
+	{
+		for ( auto & wait : toWait )
+		{
+			if ( wait.semaphore
+				&& semaphores.end() == std::find( semaphores.begin()
+					, semaphores.end()
+					, wait.semaphore ) )
+			{
+				semaphores.push_back( wait.semaphore );
+			}
+		}
+	}
+
+	//*********************************************************************************************
+
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
 		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags )
 		: Callbacks{ std::move( initialise )
@@ -497,13 +531,7 @@ namespace crg
 		{
 			std::vector< VkSemaphore > semaphores;
 			std::vector< VkPipelineStageFlags > dstStageMasks;
-
-			for ( auto & wait : toWait )
-			{
-				semaphores.push_back( wait.semaphore );
-				dstStageMasks.push_back( wait.dstStageMask );
-			}
-
+			convert( toWait, semaphores, dstStageMasks );
 			auto index = m_callbacks.getPassIndex();
 			auto & cb = m_callbacks.isEnabled()
 				? m_commandBuffers[index]
@@ -512,7 +540,7 @@ namespace crg
 			m_timer.notifyPassRender();
 			VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 				, nullptr
-				, uint32_t( toWait.size() )
+				, uint32_t( semaphores.size() )
 				, semaphores.data()
 				, dstStageMasks.data()
 				, 1u
