@@ -8,6 +8,7 @@ See LICENSE file in root folder.
 
 #include <array>
 #include <fstream>
+#include <iostream>
 #include <string>
 #include <type_traits>
 #include <unordered_set>
@@ -217,6 +218,7 @@ namespace crg
 		, m_rootNode{ std::move( rootNode ) }
 	{
 		display( *this );
+		std::clog << graph.getName() << " - Initialising resources" << std::endl;
 		LayoutStateMap images;
 		AccessStateMap buffers;
 
@@ -228,6 +230,7 @@ namespace crg
 
 		doCreateImages();
 		doCreateImageViews();
+		std::clog << graph.getName() << " - Creating runnable passes" << std::endl;
 
 		for ( auto & node : m_nodes )
 		{
@@ -244,12 +247,15 @@ namespace crg
 			}
 		}
 
+		std::clog << graph.getName() << " - Creating layouts" << std::endl;
+
 		for ( uint32_t index = 0; index < m_maxPassCount; ++index )
 		{
 			m_viewsLayouts.push_back( images );
 			m_buffersLayouts.push_back( buffers );
 		}
 
+		std::clog << graph.getName() << " - Initialising nodes layouts" << std::endl;
 		auto remainingCount = m_maxPassCount;
 		uint32_t index = 0u;
 
@@ -269,6 +275,8 @@ namespace crg
 
 			++index;
 		}
+
+		std::clog << graph.getName() << " - Initialising passes" << std::endl;
 
 		for ( auto & pass : m_passes )
 		{

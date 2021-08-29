@@ -87,60 +87,70 @@ namespace crg
 	{
 		if ( context.device )
 		{
-			for ( auto & vertexBuffer : m_vertexBuffers )
 			{
-				if ( vertexBuffer.second->memory )
+				std::unique_lock< std::mutex > lock( m_buffersMutex );
+
+				for ( auto & vertexBuffer : m_vertexBuffers )
 				{
-					crgUnregisterObject( context, vertexBuffer.second->memory );
-					context.vkFreeMemory( context.device
-						, vertexBuffer.second->memory
+					if ( vertexBuffer.second->memory )
+					{
+						context.vkFreeMemory( context.device
+							, vertexBuffer.second->memory
+							, context.allocator );
+					}
+
+					if ( vertexBuffer.second->buffer.buffer )
+					{
+						context.vkDestroyBuffer( context.device
+							, vertexBuffer.second->buffer.buffer
+							, context.allocator );
+					}
+				}
+
+				m_vertexBuffers.clear();
+			}
+			{
+				std::unique_lock< std::mutex > lock( m_samplersMutex );
+
+				for ( auto & sampler : m_samplers )
+				{
+					context.vkDestroySampler( context.device
+						, sampler.second
 						, context.allocator );
 				}
 
-				if ( vertexBuffer.second->buffer.buffer )
-				{
-					crgUnregisterObject( context, vertexBuffer.second->buffer.buffer );
-					context.vkDestroyBuffer( context.device
-						, vertexBuffer.second->buffer.buffer
-						, context.allocator );
-				}
+				m_samplers.clear();
 			}
 		}
 
-		m_vertexBuffers.clear();
-
-		if ( context.device )
 		{
-			for ( auto & sampler : m_samplers )
+			std::unique_lock< std::mutex > lock( m_viewsMutex );
+
+			for ( auto & imageView : m_imageViewIds )
 			{
-				crgUnregisterObject( context, sampler.second );
-				context.vkDestroySampler( context.device
-					, sampler.second
-					, context.allocator );
+				destroyImageView( context, imageView.first );
 			}
+
+			m_imageViews.clear();
+			m_imageViewIds.clear();
 		}
 
-		m_samplers.clear();
-
-		for ( auto & imageView : m_imageViewIds )
 		{
-			destroyImageView( context, imageView.first );
+			std::unique_lock< std::mutex > lock( m_imagesMutex );
+
+			for ( auto & image : m_imageIds )
+			{
+				destroyImage( context, image.first );
+			}
+
+			m_images.clear();
+			m_imageIds.clear();
 		}
-
-		m_imageViews.clear();
-		m_imageViewIds.clear();
-
-		for ( auto & image : m_imageIds )
-		{
-			destroyImage( context, image.first );
-		}
-
-		m_images.clear();
-		m_imageIds.clear();
 	}
 
 	ImageId ResourceHandler::createImageId( ImageData const & img )
 	{
+		std::unique_lock< std::mutex > lock( m_imagesMutex );
 		auto data = std::make_unique< ImageData >( img );
 		ImageId result{ uint32_t( m_imageIds.size() + 1u ), data.get() };
 		m_imageIds.insert( { result, std::move( data ) } );
@@ -149,6 +159,7 @@ namespace crg
 
 	ImageViewId ResourceHandler::createViewId( ImageViewData const & view )
 	{
+		std::unique_lock< std::mutex > lock( m_viewsMutex );
 		auto it = std::find_if( m_imageViewIds.begin()
 			, m_imageViewIds.end()
 			, [&view]( ImageViewIdDataOwnerCont::value_type const & lookup )
@@ -179,6 +190,7 @@ namespace crg
 			return VK_NULL_HANDLE;
 		}
 
+		std::unique_lock< std::mutex > lock( m_imagesMutex );
 		auto ires = m_images.emplace( imageId, std::pair< VkImage, VkDeviceMemory >{} );
 
 		if ( ires.second )
@@ -231,6 +243,7 @@ namespace crg
 			return VK_NULL_HANDLE;
 		}
 
+		std::unique_lock< std::mutex > lock( m_viewsMutex );
 		auto ires = m_imageViews.emplace( view, VkImageView{} );
 
 		if ( ires.second )
@@ -256,6 +269,7 @@ namespace crg
 			return VK_NULL_HANDLE;
 		}
 
+		std::unique_lock< std::mutex > lock( m_samplersMutex );
 		auto ires = m_samplers.emplace( makeHash( samplerDesc ), VkSampler{} );
 
 		if ( ires.second )
@@ -299,6 +313,8 @@ namespace crg
 		, Texcoord const & config )
 	{
 		auto hash = makeHash( texCoords, config );
+
+		std::unique_lock< std::mutex > lock( m_buffersMutex );
 		auto ires = m_vertexBuffers.emplace( hash, std::make_unique< VertexBuffer >() );
 
 		if ( ires.second && context.device )

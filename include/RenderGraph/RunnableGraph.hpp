@@ -144,6 +144,11 @@ namespace crg
 		{
 			return &m_rootNode;
 		}
+		
+		std::string const & getName()const
+		{
+			return m_graph.getName();
+		}
 
 		AttachmentTransitions const & getTransitions()const
 		{
