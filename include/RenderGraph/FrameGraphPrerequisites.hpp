@@ -146,8 +146,8 @@ namespace crg
 
 	struct VertexBuffer
 	{
-		Buffer buffer{ VK_NULL_HANDLE, std::string{} };
-		VkDeviceMemory memory{ VK_NULL_HANDLE };
+		Buffer buffer{ nullptr, std::string{} };
+		VkDeviceMemory memory{ nullptr };
 		VkVertexInputAttributeDescriptionArray vertexAttribs{};
 		VkVertexInputBindingDescriptionArray vertexBindings{};
 		VkPipelineVertexInputStateCreateInfo inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} };
@@ -218,7 +218,16 @@ namespace crg
 		uint64_t b = ( seed ^ a ) * kMul;
 		b ^= ( b >> 47 );
 
+#pragma warning( push )
+#pragma warning( disable: 4068 )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
 		hash = static_cast< std::size_t >( b * kMul );
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
+#pragma warning( pop )
 		return hash;
 	}
 

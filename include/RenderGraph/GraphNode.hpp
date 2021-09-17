@@ -121,32 +121,32 @@ namespace crg
 
 	CRG_API FramePass const * getFramePass( GraphNode const & node );
 
-	static bool isFramePassNode( GraphNode const & node )
+	inline bool isFramePassNode( GraphNode const & node )
 	{
 		return node.getKind() == FramePassNode::MyKind;
 	}
 
-	static bool isRootNode( GraphNode const & node )
+	inline bool isRootNode( GraphNode const & node )
 	{
 		return node.getKind() == RootNode::MyKind;
 	}
 
-	static bool isFramePassNode( ConstGraphAdjacentNode node )
+	inline bool isFramePassNode( ConstGraphAdjacentNode node )
 	{
 		return node && isFramePassNode( *node );
 	}
 
-	static bool isRootNode( ConstGraphAdjacentNode node )
+	inline bool isRootNode( ConstGraphAdjacentNode node )
 	{
 		return node && isRootNode( *node );
 	}
 
-	static bool isFramePassNode( GraphNodePtr const & node )
+	inline bool isFramePassNode( GraphNodePtr const & node )
 	{
 		return node && isFramePassNode( *node );
 	}
 
-	static bool isRootNode( GraphNodePtr const & node )
+	inline bool isRootNode( GraphNodePtr const & node )
 	{
 		return node && isRootNode( *node );
 	}

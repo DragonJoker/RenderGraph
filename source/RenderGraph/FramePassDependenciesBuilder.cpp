@@ -188,21 +188,11 @@ namespace crg
 				return AttachDataTraitsT< DataT >::getInput( inputAttach, outputAttach );
 			}
 
-			std::string const & getAttachDataName( ImageViewId const & data )
-			{
-				return data.data->name;
-			}
-
-			std::string const & getAttachDataName( Buffer const & data )
-			{
-				return data.name;
-			}
-
 			template< typename DataT >
 			struct AttachesT
 			{
 				DataT data;
-				std::vector< Attachment > attaches;
+				std::vector< Attachment > attaches{};
 			};
 
 			template< typename DataT >
@@ -213,6 +203,17 @@ namespace crg
 
 			using ViewAttachesArray = AttachesArrayT< ImageViewId >;
 			using BufferAttachesArray = AttachesArrayT< Buffer >;
+
+#if CRG_DebugPassAttaches
+			std::string const & getAttachDataName( ImageViewId const & data )
+			{
+				return data.data->name;
+			}
+
+			std::string const & getAttachDataName( Buffer const & data )
+			{
+				return data.name;
+			}
 
 			template< typename DataT >
 			std::ostream & operator<<( std::ostream & stream, AttachesT< DataT > const & attach )
@@ -251,7 +252,8 @@ namespace crg
 				stream << "]";
 				return stream;
 			}
-
+#endif
+#if CRG_DebugPassDependencies
 			std::ostream & operator<<( std::ostream & stream, FramePassDependencies const & dependencies )
 			{
 				for ( auto & depsIt : dependencies )
@@ -271,6 +273,7 @@ namespace crg
 
 				return stream;
 			}
+#endif
 
 			void printDebug( ViewAttachesArray const & inputs
 				, ViewAttachesArray const & outputs )

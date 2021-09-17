@@ -26,11 +26,8 @@ namespace crg
 			return text.c_str();
 		}
 
-
 	private:
 		std::string text;
-		std::string file;
-		int line;
 	};
 
 #define CRG_Exception( text )\

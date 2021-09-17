@@ -261,11 +261,11 @@ namespace crg
 		RunnableGraph & m_graph;
 		Callbacks m_callbacks;
 		bool m_optional;
-		VkCommandPool m_commandPool{ VK_NULL_HANDLE };
+		VkCommandPool m_commandPool{ nullptr };
 		std::vector< CommandBuffer > m_commandBuffers;
 		std::vector< CommandBuffer > m_disabledCommandBuffers;
-		VkSemaphore m_semaphore{ VK_NULL_HANDLE };
-		VkFence m_fence{ VK_NULL_HANDLE };
+		VkSemaphore m_semaphore{ nullptr };
+		VkFence m_fence{ nullptr };
 		bool m_fenceWaited{};
 		FramePassTimer m_timer;
 		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;

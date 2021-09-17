@@ -205,7 +205,8 @@ namespace crg
 			, VK_FALSE
 			, VK_LOGIC_OP_COPY
 			, uint32_t( m_blendAttachs.size() )
-			, m_blendAttachs.data() };
+			, m_blendAttachs.data()
+			, {} };
 	}
 
 	void RenderPassHolder::doCreateFramebuffer()

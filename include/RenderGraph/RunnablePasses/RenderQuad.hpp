@@ -22,7 +22,7 @@ namespace crg
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
 			, rq::Config config );
-		CRG_API ~RenderQuad();
+		CRG_API ~RenderQuad()override;
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 

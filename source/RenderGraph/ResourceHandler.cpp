@@ -187,7 +187,7 @@ namespace crg
 	{
 		if ( !context.device )
 		{
-			return VK_NULL_HANDLE;
+			return nullptr;
 		}
 
 		std::unique_lock< std::mutex > lock( m_imagesMutex );
@@ -240,7 +240,7 @@ namespace crg
 	{
 		if ( !context.device )
 		{
-			return VK_NULL_HANDLE;
+			return nullptr;
 		}
 
 		std::unique_lock< std::mutex > lock( m_viewsMutex );
@@ -266,7 +266,7 @@ namespace crg
 	{
 		if ( !context.device )
 		{
-			return VK_NULL_HANDLE;
+			return nullptr;
 		}
 
 		std::unique_lock< std::mutex > lock( m_samplersMutex );
@@ -386,7 +386,7 @@ namespace crg
 				std::copy( vertexData.begin(), vertexData.end(), buffer );
 
 				VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
-					, 0u
+					, nullptr
 					, vertexBuffer->memory
 					, 0u
 					, VK_WHOLE_SIZE };
@@ -453,7 +453,7 @@ namespace crg
 
 		if ( it == m_images.end() )
 		{
-			return VK_NULL_HANDLE;
+			return nullptr;
 		}
 
 		return it->second.first;
@@ -465,7 +465,7 @@ namespace crg
 
 		if ( it == m_imageViews.end() )
 		{
-			return VK_NULL_HANDLE;
+			return nullptr;
 		}
 
 		return it->second;

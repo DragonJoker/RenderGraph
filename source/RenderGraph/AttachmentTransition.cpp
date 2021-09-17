@@ -43,14 +43,14 @@ namespace crg
 					if ( transition.inputAttach.isSampledView() )
 					{
 						auto inputPass = *transition.inputAttach.pass;
-						auto it = std::find_if( inputPass.images.begin()
+						auto pit = std::find_if( inputPass.images.begin()
 							, inputPass.images.end()
 							, [&transition]( Attachment const & lookup )
 							{
 								return lookup.isSampledView()
 									&& lookup == transition.inputAttach;
 							} );
-						result = it == inputPass.images.end();
+						result = pit == inputPass.images.end();
 					}
 
 					return result;
@@ -72,14 +72,14 @@ namespace crg
 					if ( transition.inputAttach.isStorageBuffer() )
 					{
 						auto inputPass = *transition.inputAttach.pass;
-						auto it = std::find_if( inputPass.buffers.begin()
+						auto pit = std::find_if( inputPass.buffers.begin()
 							, inputPass.buffers.end()
 							, [&transition]( Attachment const & lookup )
 							{
 								return lookup.isStorageBuffer()
 									&& lookup == transition.inputAttach;
 							} );
-						result = it == inputPass.buffers.end();
+						result = pit == inputPass.buffers.end();
 					}
 
 					return result;

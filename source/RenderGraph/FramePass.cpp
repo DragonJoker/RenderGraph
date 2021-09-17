@@ -42,9 +42,9 @@ namespace crg
 			}
 			else
 			{
-				for ( auto & view : view.data->source )
+				for ( auto & subview : view.data->source )
 				{
-					result.push_back( view );
+					result.push_back( subview );
 				}
 			}
 
@@ -562,7 +562,7 @@ namespace crg
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addColourView( std::string const & name
+	void FramePass::addColourView( std::string const & pname
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -571,7 +571,7 @@ namespace crg
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
-		auto attachName = this->name + view.data->name + name;
+		auto attachName = name + view.data->name + pname;
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
 			, uint32_t{}
@@ -590,7 +590,7 @@ namespace crg
 			, std::move( blendState ) } );
 	}
 
-	void FramePass::addDepthView( std::string const & name
+	void FramePass::addDepthView( std::string const & pname
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -600,7 +600,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = this->name + view.data->name + name;
+		auto attachName = name + view.data->name + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -620,7 +620,7 @@ namespace crg
 				, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addStencilView( std::string const & name
+	void FramePass::addStencilView( std::string const & pname
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
@@ -631,7 +631,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = this->name + view.data->name + name;
+		auto attachName = name + view.data->name + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -652,7 +652,7 @@ namespace crg
 				, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addDepthStencilView( std::string const & name
+	void FramePass::addDepthStencilView( std::string const & pname
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewId view
 		, VkAttachmentLoadOp loadOp
@@ -663,7 +663,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = this->name + view.data->name + name;
+		auto attachName = name + view.data->name + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -940,7 +940,7 @@ namespace crg
 			, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addColourView( std::string const & name
+	void FramePass::addColourView( std::string const & pname
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -949,7 +949,7 @@ namespace crg
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
-		auto attachName = this->name + views.front().data->name + name;
+		auto attachName = name + views.front().data->name + pname;
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
 			, uint32_t{}
@@ -968,7 +968,7 @@ namespace crg
 			, std::move( blendState ) } );
 	}
 
-	void FramePass::addDepthView( std::string const & name
+	void FramePass::addDepthView( std::string const & pname
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -978,7 +978,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = this->name + views.front().data->name + name;
+		auto attachName = name + views.front().data->name + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -998,7 +998,7 @@ namespace crg
 				, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addStencilView( std::string const & name
+	void FramePass::addStencilView( std::string const & pname
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
@@ -1009,7 +1009,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = this->name + views.front().data->name + name;
+		auto attachName = name + views.front().data->name + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -1030,7 +1030,7 @@ namespace crg
 				, VkPipelineColorBlendAttachmentState{} } );
 	}
 
-	void FramePass::addDepthStencilView( std::string const & name
+	void FramePass::addDepthStencilView( std::string const & pname
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
@@ -1041,7 +1041,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = this->name + views.front().data->name + name;
+		auto attachName = name + views.front().data->name + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -1064,8 +1064,8 @@ namespace crg
 	}
 
 	RunnablePassPtr FramePass::createRunnable( GraphContext & context
-		, RunnableGraph & graph )const
+		, RunnableGraph & pgraph )const
 	{
-		return runnableCreator( *this, context, graph );
+		return runnableCreator( *this, context, pgraph );
 	}
 }

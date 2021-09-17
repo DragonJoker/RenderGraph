@@ -37,21 +37,6 @@ namespace crg
 			return result;
 		}
 
-		std::string getName( VkFilter filter )
-		{
-			switch ( filter )
-			{
-			case VK_FILTER_NEAREST:
-				return "Nearest";
-			case VK_FILTER_LINEAR:
-				return "Linear";
-			case VK_FILTER_CUBIC_IMG:
-				return "Cubic";
-			default:
-				return "Unknown";
-			}
-		}
-
 		VkImageSubresourceRange adaptRange( GraphContext & context
 			, VkFormat format
 			, VkImageSubresourceRange const & subresourceRange )
@@ -70,33 +55,11 @@ namespace crg
 
 			return result;
 		}
-
-		bool isInRange( uint32_t lhsLeft
-			, uint32_t lhsRight
-			, uint32_t rhsLeft
-			, uint32_t rhsRight )
-		{
-			return lhsLeft >= rhsLeft
-				&& lhsRight <= rhsRight;
-		}
-
-		bool isInRange( VkImageSubresourceRange const & lhs
-			, VkImageSubresourceRange const & rhs )
-		{
-			return isInRange( lhs.baseMipLevel
-				, lhs.baseMipLevel + lhs.levelCount
-				, rhs.baseMipLevel
-				, rhs.baseMipLevel + rhs.levelCount )
-				&& isInRange( lhs.baseArrayLayer
-					, lhs.baseArrayLayer + lhs.layerCount
-					, rhs.baseArrayLayer
-					, rhs.baseArrayLayer + lhs.layerCount );
-		}
 	}
 
 	VkImageAspectFlags getAspectMask( VkFormat format )noexcept
 	{
-		return ( isDepthStencilFormat( format )
+		return VkImageAspectFlags( isDepthStencilFormat( format )
 			? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
 			: ( isDepthFormat( format )
 				? VK_IMAGE_ASPECT_DEPTH_BIT
@@ -454,7 +417,7 @@ namespace crg
 						return lookup.pass == &pass;
 					} );
 				assert( passIt != m_inputTransitions.end() );
-				auto it = std::find_if( passIt->transitions.viewTransitions.begin()
+				it = std::find_if( passIt->transitions.viewTransitions.begin()
 					, passIt->transitions.viewTransitions.end()
 					, [&view]( ViewTransition const & lookup )
 					{
@@ -533,7 +496,7 @@ namespace crg
 		auto & buffers = it->second.buffers[passIndex];
 		std::for_each( buffers.begin
 			, buffers.end
-			, [this, &newState, &buffer]( AccessStateMap & buffersLayouts )
+			, [&newState, &buffer]( AccessStateMap & buffersLayouts )
 			{
 				buffersLayouts[buffer.buffer] = newState;
 			} );
@@ -577,7 +540,7 @@ namespace crg
 						return lookup.pass == &pass;
 					} );
 				assert( passIt != m_inputTransitions.end() );
-				auto it = std::find_if( passIt->transitions.bufferTransitions.begin()
+				it = std::find_if( passIt->transitions.bufferTransitions.begin()
 					, passIt->transitions.bufferTransitions.end()
 					, [&buffer]( BufferTransition const & lookup )
 					{
@@ -784,10 +747,6 @@ namespace crg
 			&& from.buffer.buffer == to.buffer.buffer
 			&& from.buffer.offset == to.buffer.offset
 			&& from.buffer.range == to.buffer.range );
-		auto previousMask = from.getAccessMask();
-		auto nextMask = to.getAccessMask();
-		auto previousStage = from.getPipelineStageFlags( isCompute );
-		auto nextStage = to.getPipelineStageFlags( isCompute );
 		memoryBarrier( commandBuffer
 			, from.buffer.buffer
 			, from.buffer.offset

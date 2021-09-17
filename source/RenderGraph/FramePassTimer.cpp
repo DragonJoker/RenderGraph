@@ -15,7 +15,7 @@ namespace crg
 			, std::string const & name
 			, uint32_t passesCount )
 		{
-			VkQueryPool result{ VK_NULL_HANDLE };
+			VkQueryPool result{ nullptr };
 
 			if ( context.device )
 			{
@@ -77,11 +77,11 @@ namespace crg
 		: m_context{ context }
 		, m_passesCount{ passesCount }
 		, m_name{ name }
+		, m_cpuTime{ 0ns }
+		, m_gpuTime{ 0ns }
 		, m_timerQuery{ createQueryPool( context
 			, name
 			, passesCount ) }
-		, m_cpuTime{ 0ns }
-		, m_gpuTime{ 0ns }
 		, m_startedPasses( size_t( m_passesCount ), { false, false } )
 	{
 	}
@@ -152,7 +152,7 @@ namespace crg
 
 	void FramePassTimer::retrieveGpuTime()
 	{
-		static float const period = float( m_context.properties.limits.timestampPeriod );
+		static float const period = m_context.properties.limits.timestampPeriod;
 		m_gpuTime = 0ns;
 		m_subtracteGpuTime = 0ns;
 
@@ -172,7 +172,7 @@ namespace crg
 					, sizeof( uint64_t )
 					, VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT );
 
-				auto gpuTime = Nanoseconds{ uint64_t( ( values[1] - values[0] ) / period ) };
+				auto gpuTime = Nanoseconds{ uint64_t( float( values[1] - values[0] ) / period ) };
 				m_gpuTime += gpuTime;
 
 				if ( started.second )

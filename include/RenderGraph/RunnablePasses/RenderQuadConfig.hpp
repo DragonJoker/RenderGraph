@@ -210,7 +210,14 @@ namespace crg
 				, nullptr
 				, 0u
 				, VK_FALSE
-				, VK_FALSE };
+				, VK_FALSE
+				, {}
+				, {}
+				, {}
+				, {}
+				, {}
+				, {}
+				, {} };
 			return result;
 		}
 	};

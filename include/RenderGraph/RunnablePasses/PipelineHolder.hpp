@@ -62,9 +62,9 @@ namespace crg
 		pp::ConfigData m_baseConfig;
 		VkPipelineBindPoint m_bindingPoint;
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
-		VkDescriptorSetLayout m_descriptorSetLayout{ VK_NULL_HANDLE };
-		VkPipelineLayout m_pipelineLayout{ VK_NULL_HANDLE };
-		VkDescriptorPool m_descriptorSetPool{ VK_NULL_HANDLE };
+		VkDescriptorSetLayout m_descriptorSetLayout{ nullptr };
+		VkPipelineLayout m_pipelineLayout{ nullptr };
+		VkDescriptorPool m_descriptorSetPool{ nullptr };
 		struct DescriptorSet
 		{
 			WriteDescriptorSetArray writes;

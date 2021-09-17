@@ -15,7 +15,7 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [[ubuntu-latest,x64-linux], [windows-latest,x64-windows]]
+        os: [[ubuntu-latest,x64-linux,gcc], [ubuntu-latest,x64-linux,clang], [windows-latest,x64-windows,msvc], [macos-latest,x64-osx,clang]]
         buildType: [Release]
 
     runs-on: ${{ matrix.os[0] }}
@@ -26,7 +26,7 @@ jobs:
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v4
       with:
-        vcpkgGitCommitId: 'b275dd0cc08687f936fe84ea2325ca794f51bb2a'
+        vcpkgGitCommitId: '30a3d841d88dbf1e668d875bcfc050aacdedc63b'
         setupOnly: true
 
     - name: Install dependencies from vcpkg
@@ -44,6 +44,30 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_USE_PRECOMPILED_HEADERS=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+
+    - name: Configure GCC version (Linux)
+      if: runner.os == 'Linux' && matrix.os[2] == 'gcc'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: echo "CC=gcc-10" >> $GITHUB_ENV
+
+    - name: Configure G++ version (Linux)
+      if: runner.os == 'Linux' && matrix.os[2] == 'gcc'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: echo "CXX=g++-10" >> $GITHUB_ENV
+
+    - name: Configure Clang version (Linux)
+      if: runner.os == 'Linux' && matrix.os[2] == 'clang'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: echo "CC=clang-12" >> $GITHUB_ENV
+
+    - name: Configure Clang++ version (Linux)
+      if: runner.os == 'Linux' && matrix.os[2] == 'clang'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: echo "CXX=clang++-12" >> $GITHUB_ENV
 
     - name: Configure CMake (Non Windows)
       if: runner.os != 'Windows'
@@ -65,9 +89,13 @@ jobs:
       if: github.event_name == 'push'
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
-      run: |
-        cmake --install . --config ${{ matrix.buildType }}
-        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+      run: cmake --install . --config ${{ matrix.buildType }}
+
+    - name: Zip package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: 7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
 
     - name: Upload package
       if: github.event_name == 'push'

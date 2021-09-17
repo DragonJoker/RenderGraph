@@ -55,6 +55,25 @@ namespace crg
 					, lhsInfo.viewType, rhsInfo.viewType
 					, lhsInfo.subresourceRange, rhsInfo.subresourceRange );
 		}
+
+		bool operator==( VkClearValue const & lhs
+			, VkClearValue const & rhs )
+		{
+			return std::memcmp( &lhs, &rhs, sizeof( VkClearValue ) ) == 0;
+		}
+
+		bool operator==( VkPipelineColorBlendAttachmentState const & lhs
+			, VkPipelineColorBlendAttachmentState const & rhs )
+		{
+			return lhs.blendEnable == rhs.blendEnable
+				&& lhs.srcColorBlendFactor == rhs.srcColorBlendFactor
+				&& lhs.dstColorBlendFactor == rhs.dstColorBlendFactor
+				&& lhs.colorBlendOp == rhs.colorBlendOp
+				&& lhs.srcAlphaBlendFactor == rhs.srcAlphaBlendFactor
+				&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
+				&& lhs.alphaBlendOp == rhs.alphaBlendOp
+				&& lhs.colorWriteMask == rhs.colorWriteMask;
+		}
 	}
 
 	bool isDepthFormat( VkFormat fmt )
@@ -113,8 +132,8 @@ namespace crg
 	//*********************************************************************************************
 
 	BufferAttachment::BufferAttachment()
-		: buffer{ VK_NULL_HANDLE, std::string{} }
-		, view{ VK_NULL_HANDLE }
+		: buffer{ nullptr, std::string{} }
+		, view{ nullptr }
 		, offset{}
 		, range{}
 		, flags{}
@@ -123,7 +142,7 @@ namespace crg
 
 	BufferAttachment::BufferAttachment( Buffer buffer )
 		: buffer{ std::move( buffer ) }
-		, view{ VK_NULL_HANDLE }
+		, view{ nullptr }
 		, offset{}
 		, range{}
 		, flags{}
@@ -135,7 +154,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: buffer{ std::move( buffer ) }
-		, view{ VK_NULL_HANDLE }
+		, view{ nullptr }
 		, offset{ offset }
 		, range{ range }
 		, flags{ flags }
@@ -549,17 +568,17 @@ namespace crg
 	}
 
 	Attachment::Attachment( ImageViewId view )
-		: image{ view }
-		, binding{}
+		: binding{}
 		, name{}
+		, image{ view }
 		, flags{}
 	{
 	}
 
 	Attachment::Attachment( Buffer buffer )
-		: buffer{ buffer }
-		, binding{}
+		: binding{}
 		, name{}
+		, buffer{ buffer }
 		, flags{}
 	{
 	}
@@ -683,8 +702,6 @@ namespace crg
 
 	VkAccessFlags Attachment::getAccessMask()const
 	{
-		VkAccessFlags result{ 0u };
-
 		if ( isImage() )
 		{
 			return image.getAccessMask( isInput()
@@ -697,8 +714,6 @@ namespace crg
 
 	VkPipelineStageFlags Attachment::getPipelineStageFlags( bool isCompute )const
 	{
-		VkPipelineStageFlags result{ 0u };
-
 		if ( isImage() )
 		{
 			return image.getPipelineStageFlags( isCompute );
@@ -708,25 +723,6 @@ namespace crg
 	}
 
 	//*********************************************************************************************
-
-	bool operator==( VkClearValue const & lhs
-		, VkClearValue const & rhs )
-	{
-		return std::memcmp( &lhs, &rhs, sizeof( VkClearValue ) ) == 0;
-	}
-
-	bool operator==( VkPipelineColorBlendAttachmentState const & lhs
-		, VkPipelineColorBlendAttachmentState const & rhs )
-	{
-		return lhs.blendEnable == rhs.blendEnable
-			&& lhs.srcColorBlendFactor == rhs.srcColorBlendFactor
-			&& lhs.dstColorBlendFactor == rhs.dstColorBlendFactor
-			&& lhs.colorBlendOp == rhs.colorBlendOp
-			&& lhs.srcAlphaBlendFactor == rhs.srcAlphaBlendFactor
-			&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
-			&& lhs.alphaBlendOp == rhs.alphaBlendOp
-			&& lhs.colorWriteMask == rhs.colorWriteMask;
-	}
 
 	bool operator==( SamplerDesc const & lhs
 		, SamplerDesc const & rhs )
