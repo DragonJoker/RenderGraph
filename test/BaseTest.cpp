@@ -2,6 +2,11 @@
 
 #if defined( _WIN32 )
 #	include <Windows.h>
+#elif defined( __APPLE__ )
+#	include <unistd.h>
+#	include <dirent.h>
+#	include <pwd.h>
+#	include <mach-o/dyld.h>
 #elif defined( __linux__ )
 #	include <unistd.h>
 #	include <dirent.h>
@@ -141,7 +146,7 @@ namespace test
 
 #if defined( _WIN32 )
 		static char constexpr PathSeparator = '\\';
-#elif defined( __linux__ )
+#else
 		static char constexpr PathSeparator = '/';
 #endif
 
@@ -172,7 +177,26 @@ namespace test
 		return result;
 	}
 
-#elif defined( __linux__ )
+#elif defined( __APPLE__ )
+
+	std::string getExecutableDirectory()
+	{
+		std::string result;
+		char path[FILENAME_MAX]{};
+		uint32_t size = FILENAME_MAX;
+
+		if ( _NSGetExecutablePath( &path[0], &size ) == 0 )
+		{
+			char realPath[FILENAME_MAX]{};
+			realpath( path, realPath );
+			result = std::string{ realPath };
+		}
+
+		result = getPath( result ) + PathSeparator;
+		return result;
+	}
+	
+#else
 
 	std::string getExecutableDirectory()
 	{
