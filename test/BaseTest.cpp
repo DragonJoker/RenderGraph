@@ -3,9 +3,8 @@
 #if defined( _WIN32 )
 #	include <Windows.h>
 #elif defined( __APPLE__ )
-#	include <unistd.h>
-#	include <dirent.h>
-#	include <pwd.h>
+#	include <string>
+#	include <vector>
 #	include <mach-o/dyld.h>
 #elif defined( __linux__ )
 #	include <unistd.h>
@@ -44,7 +43,7 @@ namespace test
 				m_old = m_stream.rdbuf( this );
 			}
 
-			inline ~LogStreambuf()
+			inline ~LogStreambuf()override
 			{
 				m_stream.rdbuf( m_old );
 			}
