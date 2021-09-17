@@ -57,20 +57,20 @@ namespace crg
 		}
 	}
 
-	void GraphNode::attachNode( GraphAdjacentNode next
-		, AttachmentTransitions inputAttaches )
+	void GraphNode::attachNode( GraphAdjacentNode nextNode
+		, AttachmentTransitions nextInputAttaches )
 	{
-		auto it = std::find( this->next.begin()
-			, this->next.end()
-			, next );
+		auto it = std::find( next.begin()
+			, next.end()
+			, nextNode );
 
-		if ( it == this->next.end() )
+		if ( it == next.end() )
 		{
-			this->next.push_back( next );
+			this->next.push_back( nextNode );
 		}
 
-		next->addAttaches( this
-			, std::move( inputAttaches ) );
+		nextNode->addAttaches( this
+			, std::move( nextInputAttaches ) );
 	}
 
 	GraphAdjacentNode GraphNode::findInNext( FramePass const & pass )const

@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/GraphContext.hpp"
 
 #include <cassert>
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
@@ -26,6 +27,8 @@ namespace crg
 		, properties{ std::move( properties ) }
 		, separateDepthStencilLayouts{ separateDepthStencilLayouts }
 	{
+#pragma warning( push )
+#pragma warning( disable: 4191 )
 #define DECL_vkFunction( name )\
 		if ( vkGetDeviceProcAddr && device )\
 			vk##name = reinterpret_cast< PFN_vk##name >( vkGetDeviceProcAddr( device, "vk"#name ) )
@@ -121,6 +124,7 @@ namespace crg
 #endif
 
 #undef DECL_vkFunction
+#pragma warning( pop )
 	}
 
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
@@ -200,7 +204,7 @@ namespace crg
 		float brightness = 1.0f;
 		float saturation = 1.0f;
 		float h = currentColourHue == 1.0f ? 0 : currentColourHue * 6.0f;
-		float f = h - ( int )h;
+		float f = h - std::floor( h );
 		float p = brightness * ( 1.0f - saturation );
 		float q = brightness * ( 1.0f - saturation * f );
 		float t = brightness * ( 1.0f - ( saturation * ( 1.0f - f ) ) );

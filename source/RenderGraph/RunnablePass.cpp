@@ -340,7 +340,7 @@ namespace crg
 				disabled.commandBuffer = doCreateCommandBuffer( "Disabled" );
 			}
 
-			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+			beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 				, nullptr
 				, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 				, nullptr };
@@ -629,7 +629,7 @@ namespace crg
 		VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
 			, nullptr
 			, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-			, };
+			, VK_QUEUE_FAMILY_IGNORED };
 		auto res = m_context.vkCreateCommandPool( m_context.device
 			, &createInfo
 			, m_context.allocator

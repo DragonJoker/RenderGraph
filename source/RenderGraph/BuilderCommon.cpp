@@ -68,15 +68,15 @@ namespace crg
 						return lookup.pass != depsIt.pass
 							&& ( lookup.transitions.viewTransitions.end() != std::find_if( lookup.transitions.viewTransitions.begin()
 								, lookup.transitions.viewTransitions.end()
-								, [&depsIt]( ViewTransition const & lookup )
+								, [&depsIt]( ViewTransition const & ilookup )
 								{
-									return lookup.outputAttach.pass == depsIt.pass;
+									return ilookup.outputAttach.pass == depsIt.pass;
 								} )
 							|| lookup.transitions.bufferTransitions.end() != std::find_if( lookup.transitions.bufferTransitions.begin()
 								, lookup.transitions.bufferTransitions.end()
-								, [&depsIt]( BufferTransition const & lookup )
+								, [&depsIt]( BufferTransition const & ilookup )
 								{
-									return lookup.outputAttach.pass == depsIt.pass;
+									return ilookup.outputAttach.pass == depsIt.pass;
 								} ) );
 					} );
 

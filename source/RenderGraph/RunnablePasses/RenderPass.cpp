@@ -121,19 +121,19 @@ namespace crg
 			, context
 			, graph
 			, { [this](){ doInitialise(); }
-				, GetSemaphoreWaitFlagsCallback( [this](){ return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; } )
+				, GetSemaphoreWaitFlagsCallback( [](){ return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; } )
 				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordInto( cb, i ); }
 				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( cb, i ); }
 				, std::move( callbacks.getPassIndex )
 				, std::move( callbacks.isEnabled ) }
 			, maxPassCount
 			, optional }
+		, m_rpCallbacks{ std::move( callbacks ) }
 		, m_holder{ pass
 			, context
 			, graph
 			, maxPassCount
 			, size }
-		, m_rpCallbacks{ std::move( callbacks ) }
 	{
 	}
 

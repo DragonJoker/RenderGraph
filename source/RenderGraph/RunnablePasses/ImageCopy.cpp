@@ -60,8 +60,6 @@ namespace crg
 		auto dstAttach{ m_pass.images.back().view() };
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
-		auto srcTransition = getTransition( index, srcAttach );
-		auto dstTransition = getTransition( index, dstAttach );
 		// Copy source to target.
 		VkImageCopy copyRegion{ convert( srcAttach.data->info.subresourceRange )
 			, {}

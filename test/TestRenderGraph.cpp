@@ -78,8 +78,8 @@ namespace
 
 	crg::GraphContext & getContext()
 	{
-		static crg::GraphContext context{ VK_NULL_HANDLE
-			, VK_NULL_HANDLE
+		static crg::GraphContext context{ nullptr
+			, nullptr
 			, nullptr
 			, VkPhysicalDeviceMemoryProperties{}
 			, VkPhysicalDeviceProperties{}

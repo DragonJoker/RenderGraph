@@ -156,8 +156,8 @@ namespace crg::dot
 				, std::set< ConstGraphAdjacentNode > & visited )
 				: m_stream{ stream }
 				, m_nodes{ nodes }
-				, m_visited{ visited }
 				, m_withColours{ withColours }
+				, m_visited{ visited }
 			{
 			}
 
@@ -168,15 +168,15 @@ namespace crg::dot
 				auto transitions = rhs->getInputAttaches( lhs );
 				std::sort( transitions.viewTransitions.begin()
 					, transitions.viewTransitions.end()
-					, []( ViewTransition const & lhs, ViewTransition const & rhs )
+					, []( ViewTransition const & ilhs, ViewTransition const & irhs )
 					{
-						return lhs.outputAttach.name < rhs.outputAttach.name;
+						return ilhs.outputAttach.name < irhs.outputAttach.name;
 					} );
 				std::sort( transitions.bufferTransitions.begin()
 					, transitions.bufferTransitions.end()
-					, []( BufferTransition const & lhs, BufferTransition const & rhs )
+					, []( BufferTransition const & ilhs, BufferTransition const & irhs )
 					{
-						return lhs.outputAttach.name < rhs.outputAttach.name;
+						return ilhs.outputAttach.name < irhs.outputAttach.name;
 					} );
 
 				for ( auto & transition : transitions.viewTransitions )

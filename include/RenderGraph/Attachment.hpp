@@ -194,7 +194,7 @@ namespace crg
 			}
 			else
 			{
-				flags &= ~FlagKind( flag );
+				flags &= FlagKind( ~FlagKind( flag ) );
 			}
 		}
 
@@ -291,7 +291,7 @@ namespace crg
 			}
 			else
 			{
-				flags &= ~FlagKind( flag );
+				flags &= FlagKind( ~FlagKind( flag ) );
 			}
 		}
 
@@ -595,7 +595,7 @@ namespace crg
 			}
 			else
 			{
-				flags &= ~FlagKind( flag );
+				flags &= FlagKind( ~FlagKind( flag ) );
 			}
 		}
 

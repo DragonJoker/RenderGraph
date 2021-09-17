@@ -15,13 +15,13 @@ namespace crg
 		, RunnableGraph & graph
 		, rq::Config config
 		, uint32_t maxPassCount )
-		: m_config{ std::move( config.m_texcoordConfig ? *config.m_texcoordConfig : defaultV< Texcoord > )
-			, std::move( config.m_renderPosition ? *config.m_renderPosition : defaultV< VkOffset2D > )
-			, std::move( config.m_depthStencilState ? *config.m_depthStencilState : defaultV< VkPipelineDepthStencilStateCreateInfo > )
-			, std::move( config.m_passIndex ? *config.m_passIndex : defaultV< uint32_t const * > )
-			, std::move( config.m_enabled ? *config.m_enabled : defaultV< bool const * > )
-			, std::move( config.m_recordInto ? *config.m_recordInto : getDefaultV< RunnablePass::RecordCallback >() )
-			, std::move( config.m_recordDisabledInto ? *config.m_recordDisabledInto : getDefaultV< rq::RecordDisabledIntoFunc >() ) }
+		: m_config{ config.m_texcoordConfig ? std::move( *config.m_texcoordConfig ) : defaultV< Texcoord >
+			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : defaultV< VkOffset2D >
+			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
+			, config.m_passIndex ? std::move( *config.m_passIndex ) : defaultV< uint32_t const * >
+			, config.m_enabled ? std::move( *config.m_enabled ) : defaultV< bool const * >
+			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
+			, config.m_recordDisabledInto ? std::move( *config.m_recordDisabledInto ) : getDefaultV< rq::RecordDisabledIntoFunc >() }
 		, m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
@@ -161,7 +161,7 @@ namespace crg
 				, m_pipeline.getPipelineLayout()
 				, renderPass
 				, 0u
-				, VK_NULL_HANDLE
+				, nullptr
 				, 0u };
 			auto res = m_context.vkCreateGraphicsPipelines( m_context.device
 				, m_context.cache
@@ -181,7 +181,9 @@ namespace crg
 		viewports.push_back( { float( m_config.renderPosition.x )
 			, float( m_config.renderPosition.y )
 			, float( renderSize.width )
-			, float( renderSize.height ) } );
+			, float( renderSize.height )
+			, 0.0f
+			, 1.0f } );
 		scissors.push_back( { m_config.renderPosition.x
 			, m_config.renderPosition.y
 			, renderSize.width

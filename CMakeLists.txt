@@ -56,7 +56,7 @@ endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	if ( NOT DEFINED VULKAN_HEADERS_INCLUDE_DIRS )
-		find_path( VULKAN_HEADERS_INCLUDE_DIRS "vulkan/vk_icd.h" )
+		find_path( VULKAN_HEADERS_INCLUDE_DIRS REQUIRED "vulkan/vk_icd.h" )
 	endif ()
 	# RenderGraph library
 	project( RenderGraph )
@@ -171,9 +171,9 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		ALIAS
 			${PROJECT_NAME}
 	)
+	target_add_compilation_flags( ${PROJECT_NAME} )
 	target_compile_options( ${PROJECT_NAME}
 		PUBLIC
-			$<$<CXX_COMPILER_ID:MSVC>:/MP>
 			$<$<CXX_COMPILER_ID:MSVC>:/Zm300>
 	)
 	target_compile_definitions( ${PROJECT_NAME}
@@ -181,12 +181,11 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			CRG_VERSION_MAJOR=${VERSION_MAJOR}
 			CRG_VERSION_MINOR=${VERSION_MINOR}
 			CRG_VERSION_BUILD=${VERSION_BUILD}
-			$<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>
 	)
 	target_include_directories( ${PROJECT_NAME}
 		PUBLIC
 			$<BUILD_INTERFACE:${CRG_SOURCE_DIR}/include>
-			$<BUILD_INTERFACE:${CRG_BINARY_DIR}/include>
+			$<BUILD_INTERFACE:${CRG_BINARY_DIR}>
 			$<BUILD_INTERFACE:${Vulkan_INCLUDE_DIR}>
 			$<INSTALL_INTERFACE:include>
 		PRIVATE

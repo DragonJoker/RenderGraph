@@ -17,7 +17,7 @@ namespace crg
 		std::string name;
 		ImageId image;
 		VkImageViewCreateInfo info;
-		ImageViewIdArray source;
+		ImageViewIdArray source{};
 
 		ImageViewData( std::string name = {}
 			, ImageId image = {}
@@ -30,7 +30,7 @@ namespace crg
 			, info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO
 				, nullptr
 				, flags
-				, VK_NULL_HANDLE
+				, nullptr
 				, viewType
 				, format
 				, { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A }

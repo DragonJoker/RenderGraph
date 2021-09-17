@@ -64,7 +64,7 @@ namespace crg
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		VkExtent2D m_size;
-		VkRenderPass m_renderPass{ VK_NULL_HANDLE };
+		VkRenderPass m_renderPass{ nullptr };
 		std::vector< VkFramebuffer > m_frameBuffers;
 		VkRect2D m_renderArea{};
 		std::vector< VkClearValue > m_clearValues;

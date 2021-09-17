@@ -11,22 +11,6 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
-	{
-		VkDescriptorPoolSizeArray convert( VkDescriptorSetLayoutBindingArray const & bindings
-			, uint32_t maxSets )
-		{
-			VkDescriptorPoolSizeArray result;
-
-			for ( auto & binding : bindings )
-			{
-				result.push_back( { binding.descriptorType, binding.descriptorCount * maxSets } );
-			}
-
-			return result;
-		}
-	}
-
 	PipelineHolder::PipelineHolder( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
@@ -36,8 +20,8 @@ namespace crg
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
-		, m_baseConfig{ std::move( config.m_programs ? *config.m_programs : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > > )
-			, std::move( config.m_layouts ? *config.m_layouts : defaultV< std::vector< VkDescriptorSetLayout > > ) }
+		, m_baseConfig{ config.m_programs ? std::move( *config.m_programs ) : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > >
+			, config.m_layouts ? std::move( *config.m_layouts ) : defaultV< std::vector< VkDescriptorSetLayout > > }
 		, m_bindingPoint{ bindingPoint }
 	{
 		m_pipelines.resize( m_baseConfig.m_programs.size() );
@@ -145,7 +129,7 @@ namespace crg
 	{
 		auto & descriptorSet = m_descriptorSets[index];
 
-		if ( descriptorSet.set != VK_NULL_HANDLE )
+		if ( descriptorSet.set != nullptr )
 		{
 			return;
 		}
@@ -168,7 +152,7 @@ namespace crg
 					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 						, 0u
 						, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-						, VkDescriptorImageInfo{ VK_NULL_HANDLE
+						, VkDescriptorImageInfo{ nullptr
 							, m_graph.createImageView( attach.view( index ) )
 							, VK_IMAGE_LAYOUT_GENERAL } } );
 				}
@@ -197,7 +181,7 @@ namespace crg
 
 					for ( uint32_t i = 0u; i < attach.count; ++i )
 					{
-						imageInfos.push_back( { VK_NULL_HANDLE
+						imageInfos.push_back( { nullptr
 							, m_graph.createImageView( attach.view( i ) )
 							, VK_IMAGE_LAYOUT_GENERAL } );
 					}
@@ -241,13 +225,13 @@ namespace crg
 
 	void PipelineHolder::doFillDescriptorBindings()
 	{
-		VkShaderStageFlags shaderStage = ( VK_PIPELINE_BIND_POINT_COMPUTE == m_bindingPoint )
+		auto shaderStage = VkShaderStageFlags( ( VK_PIPELINE_BIND_POINT_COMPUTE == m_bindingPoint )
 			? VK_SHADER_STAGE_COMPUTE_BIT
 			: ( VK_SHADER_STAGE_VERTEX_BIT
 				| VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT
 				| VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
 				| VK_SHADER_STAGE_GEOMETRY_BIT
-				| VK_SHADER_STAGE_FRAGMENT_BIT );
+				| VK_SHADER_STAGE_FRAGMENT_BIT ) );
 		auto imageDescriptor = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 		for ( auto & attach : m_pass.images )

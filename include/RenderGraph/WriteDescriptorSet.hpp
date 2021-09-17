@@ -14,7 +14,7 @@ namespace crg
 			, uint32_t dstArrayElement
 			, uint32_t descriptorCount
 			, VkDescriptorType descriptorType )
-			: vk{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, VK_NULL_HANDLE, dstBinding, dstArrayElement, descriptorCount, descriptorType }
+			: vk{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, nullptr, dstBinding, dstArrayElement, descriptorCount, descriptorType, nullptr, nullptr, nullptr }
 			, needsUpdate{ true }
 		{
 		}
@@ -24,7 +24,7 @@ namespace crg
 			, VkDescriptorType descriptorType
 			, VkDescriptorImageInfo imageInfos )
 			: imageInfo{ 1u, imageInfos }
-			, vk{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, VK_NULL_HANDLE, dstBinding, dstArrayElement, uint32_t( this->imageInfo.size() ), descriptorType }
+			, vk{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, nullptr, dstBinding, dstArrayElement, uint32_t( this->imageInfo.size() ), descriptorType, nullptr, nullptr, nullptr }
 			, needsUpdate{ true }
 		{
 		}
@@ -34,7 +34,7 @@ namespace crg
 			, VkDescriptorType descriptorType
 			, VkDescriptorImageInfoArray imageInfos )
 			: imageInfo{ std::move( imageInfos ) }
-			, vk{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, VK_NULL_HANDLE, dstBinding, dstArrayElement, uint32_t( this->imageInfo.size() ), descriptorType }
+			, vk{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, nullptr, nullptr, dstBinding, dstArrayElement, uint32_t( this->imageInfo.size() ), descriptorType, nullptr, nullptr, nullptr }
 			, needsUpdate{ true }
 		{
 		}

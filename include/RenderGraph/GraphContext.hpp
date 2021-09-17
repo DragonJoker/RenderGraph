@@ -454,8 +454,8 @@ namespace crg
 			, bool separateDepthStencilLayouts
 			, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr );
 
-		VkDevice device{ VK_NULL_HANDLE };
-		VkPipelineCache cache{ VK_NULL_HANDLE };
+		VkDevice device{ nullptr };
+		VkPipelineCache cache{ nullptr };
 		VkAllocationCallbacks const * allocator{ nullptr };
 		VkPhysicalDeviceMemoryProperties memoryProperties{};
 		VkPhysicalDeviceProperties properties{};
