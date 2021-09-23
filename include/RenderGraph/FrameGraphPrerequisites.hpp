@@ -6,12 +6,15 @@ See LICENSE file in root folder.
 
 #include <vulkan/vulkan.h>
 
+#pragma warning( push )
+#pragma warning( disable: 4365 )
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <set>
 #include <vector>
+#pragma warning( pop )
 
 #if !defined( _WIN32 ) || defined( CRG_BUILD_STATIC )
 #	define CRG_API
