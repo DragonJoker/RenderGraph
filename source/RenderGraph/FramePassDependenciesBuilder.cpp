@@ -9,10 +9,14 @@ See LICENSE file in root folder.
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/GraphNode.hpp"
 
+#pragma warning( push )
+#pragma warning( disable: 4365 )
+#include <iostream>
+#pragma warning( pop )
+
 #include <algorithm>
 #include <cassert>
 #include <functional>
-#include <iostream>
 #include <stdexcept>
 
 #define CRG_DebugPassAttaches 0

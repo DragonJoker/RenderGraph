@@ -211,6 +211,8 @@ namespace crg
 		}
 
 		std::clog << graph.getName() << " - Creating layouts" << std::endl;
+		m_viewsLayouts.reserve( m_maxPassCount );
+		m_buffersLayouts.reserve( m_maxPassCount );
 
 		for ( uint32_t index = 0; index < m_maxPassCount; ++index )
 		{

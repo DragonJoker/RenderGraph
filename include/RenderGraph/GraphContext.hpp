@@ -8,9 +8,12 @@ See LICENSE file in root folder.
 
 #include <array>
 #include <functional>
-#include <mutex>
 #include <string>
 #include <unordered_map>
+#pragma warning( push )
+#pragma warning( disable: 4365 )
+#include <mutex>
+#pragma warning( pop )
 
 namespace crg
 {

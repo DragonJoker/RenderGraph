@@ -5,7 +5,10 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/FrameGraphPrerequisites.hpp"
 
+#pragma warning( push )
+#pragma warning( disable: 4365 )
 #include <ostream>
+#pragma warning( pop )
 
 namespace crg::dot
 {
