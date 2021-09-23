@@ -39,11 +39,17 @@ jobs:
     - name: Create Build Environment
       run: cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
 
-    - name: Configure CMake (Windows)
-      if: runner.os == 'Windows'
+    - name: Configure Warnings as errors (OFF)
+      if: github.event_name == 'push'
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_USE_PRECOMPILED_HEADERS=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+      run: echo "PROJ_WAE=OFF" >> $GITHUB_ENV
+
+    - name: Configure Warnings as errors (ON)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: echo "PROJ_WAE=ON" >> $GITHUB_ENV
 
     - name: Configure GCC version (Linux)
       if: runner.os == 'Linux' && matrix.os[2] == 'gcc'
@@ -69,11 +75,17 @@ jobs:
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: echo "CXX=clang++-12" >> $GITHUB_ENV
 
+    - name: Configure CMake (Windows)
+      if: runner.os == 'Windows'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+
     - name: Configure CMake (Non Windows)
       if: runner.os != 'Windows'
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_USE_PRECOMPILED_HEADERS=OFF -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
 
     - name: Build
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}

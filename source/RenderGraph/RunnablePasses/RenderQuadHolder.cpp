@@ -184,10 +184,8 @@ namespace crg
 			, float( renderSize.height )
 			, 0.0f
 			, 1.0f } );
-		scissors.push_back( { m_config.renderPosition.x
-			, m_config.renderPosition.y
-			, renderSize.width
-			, renderSize.height } );
+		scissors.push_back( { { m_config.renderPosition.x, m_config.renderPosition.y }
+			, { renderSize.width, renderSize.height } } );
 		return { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO
 			, nullptr
 			, 0u
