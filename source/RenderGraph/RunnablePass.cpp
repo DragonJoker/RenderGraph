@@ -137,6 +137,88 @@ namespace crg
 
 	//*********************************************************************************************
 
+	Fence::Fence( GraphContext & context
+		, std::string const & name
+		, VkFenceCreateInfo createInfo )
+		: m_context{ &context }
+	{
+		if ( m_context->device )
+		{
+			auto res = m_context->vkCreateFence( m_context->device
+				, &createInfo
+				, m_context->allocator
+				, &m_fence );
+			checkVkResult( res, name + " - Fence creation" );
+			crgRegisterObject( *m_context, name, m_fence );
+		}
+	}
+
+	Fence::Fence( Fence && rhs )
+		: m_context{ rhs.m_context }
+		, m_fence{ rhs.m_fence }
+		, m_fenceWaited{ rhs.m_fenceWaited }
+	{
+		rhs.m_context = nullptr;
+		rhs.m_fence = nullptr;
+	}
+
+	Fence & Fence::operator=( Fence && rhs )
+	{
+		m_context = rhs.m_context;
+		m_fence = rhs.m_fence;
+		m_fenceWaited = rhs.m_fenceWaited;
+		rhs.m_context = nullptr;
+		rhs.m_fence = nullptr;
+		return *this;
+	}
+
+	Fence::~Fence()
+	{
+		if ( m_fence && m_context && m_context->device )
+		{
+			crgUnregisterObject( *m_context, m_fence );
+			m_context->vkDestroyFence( m_context->device
+				, m_fence
+				, m_context->allocator );
+		}
+	}
+
+	void Fence::reset()
+	{
+		if ( m_fence )
+		{
+			if ( !m_fenceWaited )
+			{
+				wait( 0xFFFFFFFFFFFFFFFFull );
+			}
+
+			m_context->vkResetFences( m_context->device
+				, 1u
+				, &m_fence );
+		}
+
+		m_fenceWaited = false;
+	}
+
+	VkResult Fence::wait( uint64_t timeout )
+	{
+		VkResult res = VK_SUCCESS;
+
+		if ( m_fence )
+		{
+			res = m_context->vkWaitForFences( m_context->device
+				, 1u
+				, &m_fence
+				, VK_TRUE
+				, timeout );
+		}
+
+		m_fenceWaited = true;
+		return res;
+	}
+
+	//*********************************************************************************************
+
 	RunnablePass::RunnablePass( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
@@ -148,6 +230,7 @@ namespace crg
 		, m_graph{ graph }
 		, m_callbacks{ std::move( callbacks ) }
 		, m_optional{ optional }
+		, m_fence{ context, m_pass.name, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
 		, m_timer{ context, m_pass.name, 1u }
 	{
 		m_commandBuffers.resize( maxPassCount );
@@ -156,14 +239,6 @@ namespace crg
 
 	RunnablePass::~RunnablePass()
 	{
-		if ( m_fence )
-		{
-			crgUnregisterObject( m_context, m_fence );
-			m_context.vkDestroyFence( m_context.device
-				, m_fence
-				, m_context.allocator );
-		}
-
 		if ( m_semaphore )
 		{
 			crgUnregisterObject( m_context, m_semaphore );
@@ -282,7 +357,6 @@ namespace crg
 		}
 
 		doCreateSemaphore();
-		doCreateFence();
 		m_callbacks.initialise();
 		return uint32_t( m_commandBuffers.size() );
 	}
@@ -547,20 +621,7 @@ namespace crg
 				, &cb.commandBuffer
 				, 1u
 				, &m_semaphore };
-
-			if ( !m_fenceWaited )
-			{
-				m_context.vkWaitForFences( m_context.device
-					, 1u
-					, &m_fence
-					, VK_TRUE
-					, 0xFFFFFFFFFFFFFFFFull );
-			}
-
-			m_fenceWaited = false;
-			m_context.vkResetFences( m_context.device
-				, 1u
-				, &m_fence );
+			m_fence.reset();
 			m_context.vkQueueSubmit( queue
 				, 1u
 				, &submitInfo
@@ -578,15 +639,7 @@ namespace crg
 			return;
 		}
 
-		if ( m_fence )
-		{
-			m_context.vkWaitForFences( m_context.device
-				, 1u
-				, &m_fence
-				, VK_TRUE
-				, 0xFFFFFFFFFFFFFFFFull );
-			m_fenceWaited = true;
-		}
+		m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
 
 		for ( auto & cb : m_commandBuffers )
 		{
@@ -697,24 +750,6 @@ namespace crg
 			, &m_semaphore );
 		checkVkResult( res, m_pass.name + " - Semaphore creation" );
 		crgRegisterObject( m_context, m_pass.name, m_semaphore );
-	}
-
-	void RunnablePass::doCreateFence()
-	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		VkFenceCreateInfo createInfo{ VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
-			, nullptr
-			, VK_FENCE_CREATE_SIGNALED_BIT };
-		auto res = m_context.vkCreateFence( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_fence );
-		checkVkResult( res, m_pass.name + " - Fence creation" );
-		crgRegisterObject( m_context, m_pass.name, m_fence );
 	}
 
 	void RunnablePass::doRegisterTransition( uint32_t passIndex

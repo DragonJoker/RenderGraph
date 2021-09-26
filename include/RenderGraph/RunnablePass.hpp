@@ -47,6 +47,33 @@ namespace crg
 		return GetValueCallbackT< StrongT, ValueT >{ callback };
 	}
 
+	class Fence
+	{
+	public:
+		CRG_API Fence( GraphContext & context
+			, std::string const & name
+			, VkFenceCreateInfo create );
+
+		Fence( Fence const & ) = delete;
+		Fence & operator=( Fence const & ) = delete;
+		CRG_API Fence( Fence && rhs );
+		CRG_API Fence & operator=( Fence && rhs );
+		CRG_API ~Fence();
+
+		CRG_API void reset();
+		CRG_API VkResult wait( uint64_t timeout );
+
+		operator VkFence()const
+		{
+			return m_fence;
+		}
+
+	private:
+		GraphContext * m_context;
+		VkFence m_fence{};
+		bool m_fenceWaited{};
+	};
+
 	class RunnablePass
 	{
 	public:
@@ -236,7 +263,6 @@ namespace crg
 		void doCreateCommandBuffers();
 		void doCreateDisabledCommandBuffers();
 		void doCreateSemaphore();
-		void doCreateFence();
 		void doRegisterTransition( uint32_t passIndex
 			, ImageViewId view
 			, LayoutTransition transition );
@@ -265,8 +291,7 @@ namespace crg
 		std::vector< CommandBuffer > m_commandBuffers;
 		std::vector< CommandBuffer > m_disabledCommandBuffers;
 		VkSemaphore m_semaphore{ nullptr };
-		VkFence m_fence{ nullptr };
-		bool m_fenceWaited{};
+		Fence m_fence;
 		FramePassTimer m_timer;
 		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
 		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;

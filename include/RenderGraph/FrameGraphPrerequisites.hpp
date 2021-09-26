@@ -46,6 +46,7 @@ namespace crg
 	struct WriteDescriptorSet;
 
 	class Exception;
+	class Fence;
 	class FrameGraph;
 	class FramePassTimer;
 	class GraphVisitor;
