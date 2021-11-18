@@ -62,6 +62,11 @@ namespace crg
 	void RenderQuadHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
 	{
 		m_pipeline.resetPipeline( std::move( config ) );
+
+		if ( m_renderPass )
+		{
+			doCreatePipeline( m_renderSize, m_renderPass, std::move( m_blendState ) );
+		}
 	}
 
 	void RenderQuadHolder::record( VkCommandBuffer commandBuffer
@@ -172,6 +177,12 @@ namespace crg
 			checkVkResult( res, m_pass.name + " - Pipeline creation" );
 			crgRegisterObject( m_context, m_pass.name, pipeline );
 		}
+
+		m_renderSize = renderSize;
+		m_renderPass = renderPass;
+		m_blendAttachs = { blendState.pAttachments, blendState.pAttachments + blendState.attachmentCount };
+		m_blendState = blendState;
+		m_blendState.pAttachments = m_blendAttachs.data();
 	}
 
 	VkPipelineViewportStateCreateInfo RenderQuadHolder::doCreateViewportState( VkExtent2D const & renderSize

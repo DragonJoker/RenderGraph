@@ -115,6 +115,7 @@ namespace crg
 				m_context.vkDestroyPipeline( m_context.device
 					, m_pipelines[index]
 					, m_context.allocator );
+				m_pipelines[index] = nullptr;
 			}
 
 			if ( !config.empty() )

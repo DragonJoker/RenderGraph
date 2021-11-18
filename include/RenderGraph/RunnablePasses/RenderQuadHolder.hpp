@@ -64,5 +64,9 @@ namespace crg
 		uint32_t m_maxPassCount;
 		bool m_useTexCoord{ true };
 		VertexBuffer const * m_vertexBuffer{};
+		VkRenderPass m_renderPass{};
+		VkExtent2D m_renderSize{};
+		VkPipelineColorBlendStateCreateInfo m_blendState{};
+		std::vector< VkPipelineColorBlendAttachmentState > m_blendAttachs{};
 	};
 }
