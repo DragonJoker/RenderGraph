@@ -46,9 +46,15 @@ namespace crg
 		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
 
 	private:
-		std::mutex m_imagesMutex;
+		CRG_API void doDestroyImage( GraphContext & context
+			, ImageId imageId );
+		CRG_API void doDestroyImageView( GraphContext & context
+			, ImageViewId viewId );
+
+	private:
+		mutable std::mutex m_imagesMutex;
 		ImageIdDataOwnerCont m_imageIds;
-		std::mutex m_viewsMutex;
+		mutable std::mutex m_viewsMutex;
 		ImageViewIdDataOwnerCont m_imageViewIds;
 		ImageMemoryMap m_images;
 		ImageViewMap m_imageViews;

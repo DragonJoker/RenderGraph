@@ -126,25 +126,27 @@ namespace crg
 		{
 			std::unique_lock< std::mutex > lock( m_viewsMutex );
 
-			for ( auto & imageView : m_imageViewIds )
+			while ( !m_imageViewIds.empty() )
 			{
-				destroyImageView( context, imageView.first );
+				auto it = m_imageViewIds.begin();
+				doDestroyImageView( context, it->first );
+				m_imageViewIds.erase( it );
 			}
 
 			m_imageViews.clear();
-			m_imageViewIds.clear();
 		}
 
 		{
 			std::unique_lock< std::mutex > lock( m_imagesMutex );
 
-			for ( auto & image : m_imageIds )
+			while ( !m_imageIds.empty() )
 			{
-				destroyImage( context, image.first );
+				auto it = m_imageIds.begin();
+				doDestroyImage( context, it->first );
+				m_imageIds.erase( it );
 			}
 
 			m_images.clear();
-			m_imageIds.clear();
 		}
 	}
 
@@ -417,6 +419,46 @@ namespace crg
 	void ResourceHandler::destroyImage( GraphContext & context
 		, ImageId imageId )
 	{
+		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		doDestroyImage( context, imageId );
+	}
+
+	void ResourceHandler::destroyImageView( GraphContext & context
+		, ImageViewId viewId )
+	{
+		std::unique_lock< std::mutex > lock( m_viewsMutex );
+		doDestroyImageView( context, viewId );
+	}
+
+	VkImage ResourceHandler::getImage( ImageId const & image )const
+	{
+		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		auto it = m_images.find( image );
+
+		if ( it == m_images.end() )
+		{
+			return nullptr;
+		}
+
+		return it->second.first;
+	}
+
+	VkImageView ResourceHandler::getImageView( ImageViewId const & view )const
+	{
+		std::unique_lock< std::mutex > lock( m_viewsMutex );
+		auto it = m_imageViews.find( view );
+
+		if ( it == m_imageViews.end() )
+		{
+			return nullptr;
+		}
+
+		return it->second;
+	}
+
+	void ResourceHandler::doDestroyImage( GraphContext & context
+		, ImageId imageId )
+	{
 		auto it = m_images.find( imageId );
 
 		if ( it != m_images.end() )
@@ -431,7 +473,7 @@ namespace crg
 		}
 	}
 
-	void ResourceHandler::destroyImageView( GraphContext & context
+	void ResourceHandler::doDestroyImageView( GraphContext & context
 		, ImageViewId viewId )
 	{
 		auto it = m_imageViews.find( viewId );
@@ -445,29 +487,5 @@ namespace crg
 
 			m_imageViews.erase( it );
 		}
-	}
-
-	VkImage ResourceHandler::getImage( ImageId const & image )const
-	{
-		auto it = m_images.find( image );
-
-		if ( it == m_images.end() )
-		{
-			return nullptr;
-		}
-
-		return it->second.first;
-	}
-
-	VkImageView ResourceHandler::getImageView( ImageViewId const & view )const
-	{
-		auto it = m_imageViews.find( view );
-
-		if ( it == m_imageViews.end() )
-		{
-			return nullptr;
-		}
-
-		return it->second;
 	}
 }
