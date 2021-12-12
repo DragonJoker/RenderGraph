@@ -72,6 +72,7 @@ namespace crg
 			StencilClearing = 0x01 << 6,
 			StencilInput = 0x01 << 7,
 			StencilOutput = 0x01 << 8,
+			Transition = 0x01 << 9,
 		};
 		CRG_API ImageAttachment( ImageViewId view
 			, ImageAttachment const & origin );
@@ -114,14 +115,19 @@ namespace crg
 			return hasFlag( Flag::Transfer );
 		}
 
+		bool isTransitionView()const
+		{
+			return hasFlag( Flag::Transition );
+		}
+
 		bool isDepthAttach()const
 		{
-			return hasFlag( Flag::Depth );
+			return hasFlag( Flag::Depth ) && !isTransitionView();
 		}
 
 		bool isStencilAttach()const
 		{
-			return hasFlag( Flag::Stencil );
+			return hasFlag( Flag::Stencil ) && !isTransitionView();
 		}
 
 		bool isDepthStencilAttach()const
@@ -137,6 +143,7 @@ namespace crg
 		bool isColourAttach()const
 		{
 			return !isSampledView()
+				&& !isTransitionView()
 				&& !isStorageView()
 				&& !isTransferView()
 				&& !isDepthAttach()
@@ -170,6 +177,7 @@ namespace crg
 		SamplerDesc samplerDesc{};
 		VkClearValue clearValue{};
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
+		VkImageLayout transitionLayout{};
 
 	private:
 		CRG_API ImageAttachment();
@@ -184,7 +192,8 @@ namespace crg
 			, VkImageLayout finalLayout
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
-			, VkPipelineColorBlendAttachmentState blendState );
+			, VkPipelineColorBlendAttachmentState blendState
+			, VkImageLayout transitionLayout );
 
 		void setFlag( Flag flag, bool set )
 		{
@@ -401,6 +410,11 @@ namespace crg
 			return isImage() && image.isTransferView();
 		}
 
+		bool isTransitionView()const
+		{
+			return isImage() && image.isTransitionView();
+		}
+
 		bool isDepthAttach()const
 		{
 			return isImage() && image.isDepthAttach();
@@ -419,6 +433,7 @@ namespace crg
 		bool isColourAttach()const
 		{
 			return !isSampledView()
+				&& !isTransitionView()
 				&& !isStorageView()
 				&& !isTransferView()
 				&& !isDepthAttach()
@@ -566,7 +581,8 @@ namespace crg
 			, VkImageLayout finalLayout
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
-			, VkPipelineColorBlendAttachmentState blendState );
+			, VkPipelineColorBlendAttachmentState blendState
+			, VkImageLayout transitionLayout );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding

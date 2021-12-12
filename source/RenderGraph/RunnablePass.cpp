@@ -435,7 +435,7 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			if ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() )
+			if ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() )
 			{
 				if ( attach.count <= 1u )
 				{
@@ -495,7 +495,7 @@ namespace crg
 						, transition.needed
 						, transition.to );
 				}
-				else
+				else if ( !attach.isTransitionView() )
 				{
 					for ( uint32_t i = 0u; i < attach.count; ++i )
 					{

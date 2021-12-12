@@ -159,6 +159,33 @@ namespace crg
 			, SamplerDesc samplerDesc = SamplerDesc{} );
 		/**
 		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitColourView( ImageViewId view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitDepthView( ImageViewId view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitDepthStencilView( ImageViewId view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addInputStorageView( ImageViewId view
@@ -270,6 +297,60 @@ namespace crg
 			, uint32_t binding
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 			, SamplerDesc samplerDesc = SamplerDesc{} );
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitColourView( ImageViewIdArray view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates implicit image array attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitColourViews( ImageViewIdArray view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitDepthView( ImageViewIdArray view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates implicit image array attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitDepthViews( ImageViewIdArray view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitDepthStencilView( ImageViewIdArray view
+			, VkImageLayout wantedLayout );
+		/**
+		*\brief
+		*	Creates implicit image array attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitDepthStencilViews( ImageViewIdArray view
+			, VkImageLayout wantedLayout );
 		/**
 		*\brief
 		*	Creates a storage image attachment.

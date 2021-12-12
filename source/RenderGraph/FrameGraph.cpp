@@ -56,6 +56,7 @@ namespace crg
 			{
 				std::vector< FramePass const * > currentPasses;
 				std::swap( currentPasses, unsortedPasses );
+				bool added = false;
 
 				for ( auto & pass : currentPasses )
 				{
@@ -69,6 +70,7 @@ namespace crg
 					if ( it != sortedPasses.end() )
 					{
 						sortedPasses.insert( it, pass );
+						added = true;
 					}
 					else
 					{
@@ -82,12 +84,18 @@ namespace crg
 						if ( rit != sortedPasses.rend() )
 						{
 							sortedPasses.insert( rit.base(), pass );
+							added = true;
 						}
 						else
 						{
 							unsortedPasses.push_back( pass );
 						}
 					}
+				}
+
+				if ( !added )
+				{
+					throw std::runtime_error{ "Couldn't sort passes:" };
 				}
 			}
 
