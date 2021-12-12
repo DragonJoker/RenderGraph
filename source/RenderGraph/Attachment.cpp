@@ -74,6 +74,103 @@ namespace crg
 				&& lhs.alphaBlendOp == rhs.alphaBlendOp
 				&& lhs.colorWriteMask == rhs.colorWriteMask;
 		}
+
+		VkAccessFlags getAccessMask( VkImageLayout layout )
+		{
+			VkAccessFlags result{ 0u };
+
+			switch ( layout )
+			{
+			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+			case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+				result |= VK_ACCESS_MEMORY_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+				result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+				result |= VK_ACCESS_SHADER_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+				result |= VK_ACCESS_TRANSFER_READ_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				break;
+#ifdef VK_NV_shading_rate_image
+			case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+				result |= VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
+				break;
+#endif
+#ifdef VK_EXT_fragment_density_map
+			case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+				result |= VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
+				break;
+#endif
+			default:
+				break;
+			}
+
+			return result;
+		}
+
+		VkPipelineStageFlags getStageMask( VkImageLayout layout )
+		{
+			VkPipelineStageFlags result{ 0u };
+
+			switch ( layout )
+			{
+			case VK_IMAGE_LAYOUT_UNDEFINED:
+				result |= VK_PIPELINE_STAGE_HOST_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_GENERAL:
+				result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
+			case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
+				result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
+			case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+				break;
+#ifdef VK_EXT_fragment_density_map
+			case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
+#endif
+			case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				break;
+			case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
+			case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+				result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+				break;
+#ifdef VK_NV_shading_rate_image
+			case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
+				result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
+				break;
+#endif
+			default:
+				break;
+			}
+
+			return result;
+		}
 	}
 
 	bool isDepthFormat( VkFormat fmt )
@@ -269,6 +366,7 @@ namespace crg
 		, samplerDesc{ origin.samplerDesc }
 		, clearValue{ origin.clearValue }
 		, blendState{ origin.blendState }
+		, transitionLayout{ origin.transitionLayout }
 		, flags{ origin.flags }
 	{
 	}
@@ -283,6 +381,7 @@ namespace crg
 		, samplerDesc{}
 		, clearValue{}
 		, blendState{}
+		, transitionLayout{}
 		, flags{}
 	{
 	}
@@ -297,6 +396,7 @@ namespace crg
 		, samplerDesc{}
 		, clearValue{}
 		, blendState{}
+		, transitionLayout{}
 		, flags{}
 	{
 	}
@@ -311,7 +411,8 @@ namespace crg
 		, VkImageLayout finalLayout
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState )
+		, VkPipelineColorBlendAttachmentState blendState
+		, VkImageLayout transitionLayout )
 		: views{ std::move( views ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
@@ -322,6 +423,7 @@ namespace crg
 		, samplerDesc{ std::move( samplerDesc ) }
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
+		, transitionLayout{ transitionLayout }
 		, flags{ FlagKind( flags
 			| ( loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
 				? FlagKind( Flag::Clearing )
@@ -338,7 +440,7 @@ namespace crg
 				&& isDepthFormat( view().data->info.format ) )
 			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
 				&& isStencilFormat( view().data->info.format ) ) );
-		assert( !isSampledView()
+		assert( ( !isSampledView() && !isTransitionView() && !isTransferView() )
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
@@ -369,6 +471,11 @@ namespace crg
 		if ( isSampledView() )
 		{
 			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		}
+
+		if ( isTransitionView() )
+		{
+			return transitionLayout;
 		}
 
 		if ( isStorageView() )
@@ -467,6 +574,10 @@ namespace crg
 		{
 			result |= VK_ACCESS_SHADER_READ_BIT;
 		}
+		else if ( isTransitionView() )
+		{
+			result |= crg::getAccessMask( transitionLayout );
+		}
 		else if ( isStorageView() )
 		{
 			if ( isInput )
@@ -527,6 +638,10 @@ namespace crg
 		{
 			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		}
+		else if ( isTransitionView() )
+		{
+			result |= crg::getStageMask( transitionLayout );
+		}
 		else if ( isStorageView() )
 		{
 			if ( isCompute )
@@ -546,7 +661,7 @@ namespace crg
 		{
 			result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		}
-		else
+		else if ( !isTransitionView() )
 		{
 			result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
@@ -598,7 +713,8 @@ namespace crg
 		, VkImageLayout finalLayout
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState )
+		, VkPipelineColorBlendAttachmentState blendState
+		, VkImageLayout transitionLayout )
 		: pass{ &pass }
 		, binding{ binding }
 		, count{ count }
@@ -613,7 +729,8 @@ namespace crg
 			, finalLayout
 			, std::move( samplerDesc )
 			, std::move( clearValue )
-			, std::move( blendState ) }
+			, std::move( blendState )
+			, transitionLayout }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Image )
 			| ( loadOp == VK_ATTACHMENT_LOAD_OP_LOAD
