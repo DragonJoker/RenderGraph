@@ -27,11 +27,14 @@ namespace crg
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
-		CRG_API void record( VkCommandBuffer commandBuffer
+		CRG_API void record( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		CRG_API void end( VkCommandBuffer commandBuffer
+		CRG_API void end( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 		CRG_API void recordDisabled( RunnablePass const & runnable
+			, RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 		CRG_API uint32_t getPassIndex()const;

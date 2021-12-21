@@ -231,7 +231,6 @@ namespace crg
 	BufferAttachment::BufferAttachment()
 		: buffer{ nullptr, std::string{} }
 		, view{ nullptr }
-		, offset{}
 		, range{}
 		, flags{}
 	{
@@ -240,7 +239,6 @@ namespace crg
 	BufferAttachment::BufferAttachment( Buffer buffer )
 		: buffer{ std::move( buffer ) }
 		, view{ nullptr }
-		, offset{}
 		, range{}
 		, flags{}
 	{
@@ -252,8 +250,7 @@ namespace crg
 		, VkDeviceSize range )
 		: buffer{ std::move( buffer ) }
 		, view{ nullptr }
-		, offset{ offset }
-		, range{ range }
+		, range{ offset, range }
 		, flags{ flags }
 	{
 	}
@@ -265,8 +262,7 @@ namespace crg
 		, VkDeviceSize range )
 		: buffer{ std::move( buffer ) }
 		, view{ view }
-		, offset{ offset }
-		, range{ range }
+		, range{ offset, range }
 		, flags{ flags }
 	{
 	}
@@ -281,12 +277,12 @@ namespace crg
 
 		if ( isView() )
 		{
-			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, offset, range } );
+			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, range.offset, range.size } );
 			result.texelBufferView.push_back( view );
 		}
 		else
 		{
-			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, offset, range } );
+			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, range.offset, range.size } );
 		}
 
 		return result;

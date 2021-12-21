@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/GraphNode.hpp"
 
 #include "RenderGraph/GraphVisitor.hpp"
+#include "RenderGraph/FrameGraph.hpp"
 #include "RenderGraph/FramePass.hpp"
 
 namespace crg
@@ -12,8 +13,10 @@ namespace crg
 	//*********************************************************************************************
 
 	GraphNode::GraphNode( Kind kind
+		, uint32_t id
 		, std::string name )
 		: kind{ kind }
+		, id{ id }
 		, name{ std::move( name ) }
 		, next{}
 	{
@@ -107,7 +110,7 @@ namespace crg
 	//*********************************************************************************************
 
 	FramePassNode::FramePassNode( FramePass const & pass )
-		: GraphNode{ MyKind, pass.name }
+		: GraphNode{ MyKind, pass.id, pass.name }
 		, pass{ &pass }
 	{
 	}
@@ -119,8 +122,9 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RootNode::RootNode( std::string name )
-		: GraphNode{ MyKind, std::move( name ) }
+	RootNode::RootNode( FrameGraph const & pgraph )
+		: GraphNode{ MyKind, 0u, pgraph.getName() }
+		, graph{ &pgraph }
 	{
 	}
 

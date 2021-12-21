@@ -11,7 +11,7 @@ namespace crg
 {
 	namespace rq
 	{
-		using RecordDisabledIntoFunc = std::function< void( RunnablePass const &, VkCommandBuffer, uint32_t ) >;
+		using RecordDisabledIntoFunc = std::function< void( RunnablePass const &, RecordContext &, VkCommandBuffer, uint32_t ) >;
 
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
@@ -247,7 +247,7 @@ namespace crg
 	{
 		static rq::RecordDisabledIntoFunc get()
 		{
-			static rq::RecordDisabledIntoFunc const result{ []( crg::RunnablePass const &, VkCommandBuffer, uint32_t ){} };
+			static rq::RecordDisabledIntoFunc const result{ []( crg::RunnablePass const &, RecordContext &, VkCommandBuffer, uint32_t ){} };
 			return result;
 		}
 	};

@@ -142,20 +142,22 @@ namespace crg
 		}
 	}
 
-	FramePass::FramePass( FrameGraph & graph
-		, std::string const & name
-		, RunnablePassCreator runnableCreator )
-		: graph{ graph }
-		, name{ name }
-		, runnableCreator{ runnableCreator }
+	FramePass::FramePass( FrameGraph & pgraph
+		, uint32_t pid
+		, std::string const & pname
+		, RunnablePassCreator prunnableCreator )
+		: graph{ pgraph }
+		, id{ pid }
+		, name{ pname }
+		, runnableCreator{ prunnableCreator }
 	{
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass
 		, ImageViewId const & view )const
 	{
-		auto it = std::find_if( depends.begin()
-			, depends.end()
+		auto it = std::find_if( passDepends.begin()
+			, passDepends.end()
 			, [&pass, &view]( FramePass const * lookup )
 			{
 				bool result = false;
@@ -171,14 +173,14 @@ namespace crg
 
 				return result;
 			} );
-		return it != depends.end();
+		return it != passDepends.end();
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass
 		, Buffer const & buffer )const
 	{
-		auto it = std::find_if( depends.begin()
-			, depends.end()
+		auto it = std::find_if( passDepends.begin()
+			, passDepends.end()
 			, [&pass, &buffer]( FramePass const * lookup )
 			{
 				bool result = false;
@@ -194,18 +196,18 @@ namespace crg
 
 				return result;
 			} );
-		return it != depends.end();
+		return it != passDepends.end();
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass )const
 	{
-		auto it = std::find_if( depends.begin()
-			, depends.end()
+		auto it = std::find_if( passDepends.begin()
+			, passDepends.end()
 			, [&pass]( FramePass const * lookup )
 			{
 				return pass.name == lookup->name;
 			} );
-		return it != depends.end();
+		return it != passDepends.end();
 	}
 
 	void FramePass::addUniformBuffer( Buffer buffer
@@ -619,10 +621,11 @@ namespace crg
 			, VkImageLayout{} } );
 	}
 
-	void FramePass::addTransferInOutView( ImageViewId view )
+	void FramePass::addTransferInOutView( ImageViewId view
+		, crg::Attachment::Flag flag )
 	{
 		auto attachName = name + view.data->name + "IOt";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( flag ) )
 			, *this
 			, uint32_t{}
 			, uint32_t{}
@@ -1159,10 +1162,11 @@ namespace crg
 			, VkImageLayout{} } );
 	}
 
-	void FramePass::addTransferInOutView( ImageViewIdArray views )
+	void FramePass::addTransferInOutView( ImageViewIdArray views
+		, crg::Attachment::Flag flag )
 	{
 		auto attachName = name + views.front().data->name + "IOt";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( flag ) )
 			, *this
 			, uint32_t{}
 			, uint32_t{}

@@ -66,6 +66,28 @@ namespace crg::dot
 				}
 			}
 
+			static void displayPassNode( std::ostream & stream
+				, uint32_t id
+				, std::string const & name
+				, std::string_view const & colour
+				, std::set< std::string > & nodes
+				, bool withColours )
+			{
+				auto ires = nodes.insert( name );
+
+				if ( ires.second )
+				{
+					stream << "    \"" << name << "\" [ shape=ellipse id=" << id << " ";
+
+					if ( withColours )
+					{
+						stream << " color=\"" << colour << "\"";
+					}
+
+					stream << " ];\n";
+				}
+			}
+
 			static void displayEdge( std::ostream & stream
 				, std::string const & from
 				, std::string const & to
@@ -94,27 +116,31 @@ namespace crg::dot
 				{
 					std::string name{ transition.outputAttach.name + "\\ntransition to\\n" + transition.inputAttach.name };
 					displayNode( stream, name, "box", imgColour, nodes, withColours );
+					uint32_t srcNodeId = 0;
 					std::string srcNode = "ExternalSource";
 					std::string_view srcColour = extColour;
+					uint32_t dstNodeId = 0;
 					std::string dstNode = "ExternalDestination";
 					std::string_view dstColour = extColour;
 
 					if ( transition.outputAttach.pass )
 					{
+						srcNodeId = transition.outputAttach.pass->id;
 						srcNode = transition.outputAttach.pass->name;
 						srcColour = passColour;
 					}
 
-					displayNode( stream, srcNode, "ellipse", srcColour, nodes, withColours );
+					displayPassNode( stream, srcNodeId, srcNode, srcColour, nodes, withColours );
 					displayEdge( stream, srcNode, name, transition.data.data->name, imgColour, withColours );
 
 					if ( transition.inputAttach.pass )
 					{
+						dstNodeId = transition.inputAttach.pass->id;
 						dstNode = transition.inputAttach.pass->name;
 						dstColour = passColour;
 					}
 
-					displayNode( stream, dstNode, "ellipse", dstColour, nodes, withColours );
+					displayPassNode( stream, dstNodeId, dstNode, dstColour, nodes, withColours );
 					displayEdge( stream, name, dstNode, transition.data.data->name, imgColour, withColours );
 				}
 
@@ -122,27 +148,31 @@ namespace crg::dot
 				{
 					std::string name{ transition.outputAttach.name + "\\ntransition to\\n" + transition.inputAttach.name };
 					displayNode( stream, name, "box", bufColour, nodes, withColours );
+					uint32_t srcNodeId = 0;
 					std::string srcNode = "ExternalSource";
 					std::string_view srcColour = extColour;
+					uint32_t dstNodeId = 0;
 					std::string dstNode = "ExternalDestination";
 					std::string_view dstColour = extColour;
 
 					if ( transition.outputAttach.pass )
 					{
+						srcNodeId = transition.outputAttach.pass->id;
 						srcNode = transition.outputAttach.pass->name;
 						srcColour = passColour;
 					}
 
-					displayNode( stream, srcNode, "ellipse", srcColour, nodes, withColours );
+					displayPassNode( stream, srcNodeId, srcNode, srcColour, nodes, withColours );
 					displayEdge( stream, srcNode, name, transition.data.name, bufColour, withColours );
 
 					if ( transition.inputAttach.pass )
 					{
+						dstNodeId = transition.inputAttach.pass->id;
 						dstNode = transition.inputAttach.pass->name;
 						dstColour = passColour;
 					}
 
-					displayNode( stream, dstNode, "ellipse", dstColour, nodes, withColours );
+					displayPassNode( stream, srcNodeId, dstNode, dstColour, nodes, withColours );
 					displayEdge( stream, name, dstNode, transition.data.name, bufColour, withColours );
 				}
 
@@ -183,8 +213,8 @@ namespace crg::dot
 				{
 					std::string name{ "Transition to\\n" + transition.inputAttach.name };
 					displayNode( m_stream, name, "box", imgColour, m_nodes, m_withColours );
-					displayNode( m_stream, lhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
-					displayNode( m_stream, rhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
+					displayPassNode( m_stream, lhs->getId(), lhs->getName(), passColour, m_nodes, m_withColours );
+					displayPassNode( m_stream, rhs->getId(), rhs->getName(), passColour, m_nodes, m_withColours );
 					displayEdge( m_stream, lhs->getName(), name, transition.data.data->name, imgColour, m_withColours );
 					displayEdge( m_stream, name, rhs->getName(), transition.data.data->name, imgColour, m_withColours );
 				}
@@ -193,8 +223,8 @@ namespace crg::dot
 				{
 					std::string name{ "Transition to\\n" + transition.inputAttach.name };
 					displayNode( m_stream, name, "box", bufColour, m_nodes, m_withColours );
-					displayNode( m_stream, lhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
-					displayNode( m_stream, rhs->getName(), "ellipse", passColour, m_nodes, m_withColours );
+					displayPassNode( m_stream, lhs->getId(), lhs->getName(), passColour, m_nodes, m_withColours );
+					displayPassNode( m_stream, rhs->getId(), rhs->getName(), passColour, m_nodes, m_withColours );
 					displayEdge( m_stream, lhs->getName(), name, transition.data.name, bufColour, m_withColours );
 					displayEdge( m_stream, name, rhs->getName(), transition.data.name, bufColour, m_withColours );
 				}
@@ -225,6 +255,13 @@ namespace crg::dot
 			{
 				m_visited.insert( node );
 				auto nexts = node->getNext();
+
+				for ( auto & graph : node->getFramePass().graphDepends )
+				{
+					displayNode( m_stream, graph->getName(), "diamond", extColour, m_nodes, m_withColours );
+					displayPassNode( m_stream, node->getId(), node->getName(), passColour, m_nodes, m_withColours );
+					displayEdge( m_stream, graph->getName(), node->getName(), std::string{}, extColour, m_withColours );
+				}
 
 				for ( auto & next : nexts )
 				{

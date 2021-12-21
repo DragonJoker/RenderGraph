@@ -20,17 +20,19 @@ namespace crg
 		CRG_API RenderQuad( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, uint32_t maxPassCount
-			, rq::Config config );
+			, ru::Config ruConfig
+			, rq::Config rqConfig );
 		CRG_API ~RenderQuad()override;
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 
 	private:
 		void doInitialise();
-		void doRecordInto( VkCommandBuffer commandBuffer
+		void doRecordInto( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		void doRecordDisabledInto( VkCommandBuffer commandBuffer
+		void doRecordDisabledInto( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 		VkPipelineStageFlags doGetSemaphoreWaitFlags()const;
 		uint32_t doGetPassIndex()const;
@@ -144,13 +146,13 @@ namespace crg
 		std::unique_ptr< RenderQuad > build( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, uint32_t maxPassCount = 1u )
+			, ru::Config ruConfig = {} )
 		{
 			m_config.baseConfig( std::move( this->m_baseConfig ) );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph
-				, maxPassCount
+				, std::move( ruConfig )
 				, m_config );
 		}
 

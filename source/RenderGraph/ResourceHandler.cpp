@@ -184,6 +184,20 @@ namespace crg
 		return result;
 	}
 
+	ImageId ResourceHandler::findImageId( uint32_t id )const
+	{
+		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		auto it = std::find_if( m_imageIds.begin()
+			, m_imageIds.end()
+			, [&id]( ImageIdDataOwnerCont::value_type const & lookup )
+			{
+				return lookup.first.id == id;
+			} );
+		return it != m_imageIds.end()
+			? it->first
+			: ImageId{};
+	}
+
 	VkImage ResourceHandler::createImage( GraphContext & context
 		, ImageId imageId )
 	{

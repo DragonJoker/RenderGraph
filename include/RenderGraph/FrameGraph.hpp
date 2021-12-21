@@ -15,28 +15,95 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	class RecordContext
+	{
+	public:
+		/**
+		*\name	Images
+		*/
+		//@{
+		CRG_API void setLayoutState( crg::ImageViewId view
+			, LayoutState layoutState );
+		CRG_API void setWantedState( ImageViewId view
+			, LayoutState layoutState
+			, bool needsClear = false );
+		CRG_API LayoutState getLayoutState( ImageViewId view )const;
+
+		CRG_API void setLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange
+			, LayoutState layoutState );
+		CRG_API void setWantedState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange
+			, LayoutState layoutState
+			, bool needsClear = false );
+		CRG_API LayoutState getLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange )const;
+		//@}
+		/**
+		*\name	Buffers
+		*/
+		//@{
+		CRG_API void setAccessState( VkBuffer buffer
+			, BufferSubresourceRange const & subresourceRange
+			, AccessState layoutState );
+		CRG_API void setWantedState( VkBuffer buffer
+			, BufferSubresourceRange const & subresourceRange
+			, AccessState layoutState
+			, bool needsClear = false );
+		CRG_API AccessState getAccessState( VkBuffer buffer
+			, BufferSubresourceRange const & subresourceRange )const;
+		//@}
+
+	private:
+		std::map< uint32_t, LayerLayoutStates > m_images;
+		std::map< uint32_t, LayerLayoutStates > m_imagesWanted;
+		AccessStateMap m_buffers;
+		AccessStateMap m_buffersWanted;
+	};
+
 	class FrameGraph
 	{
 		friend class RunnableGraph;
 
 	public:
+		/**
+		*\name
+		*	Construction/Destruction.
+		*/
+		/**@{*/
 		CRG_API FrameGraph( FrameGraph const & ) = delete;
 		CRG_API FrameGraph & operator=( FrameGraph const & ) = delete;
 		CRG_API FrameGraph( FrameGraph && ) = default;
 		CRG_API FrameGraph & operator=( FrameGraph && ) = delete;
-
 		CRG_API FrameGraph( ResourceHandler & handler
 			, std::string name = "FrameGraph" );
-		CRG_API FramePass & createPass( std::string const & name
-			, RunnablePassCreator runnableCreator );
-		CRG_API RunnableGraphPtr compile( GraphContext & context );
+		/**@}*/
+		/**
+		*\name
+		*	Resource creation.
+		*/
+		/**@{*/
 		CRG_API ImageId createImage( ImageData const & img );
 		CRG_API ImageViewId createView( ImageViewData const & view );
-		CRG_API void setFinalLayout( ImageViewId view
-			, LayoutState layout );
-		CRG_API LayoutState getFinalLayout( ImageViewId view )const;
-		CRG_API void setFinalAccessState( Buffer const & buffer
-			, AccessState layout );
+		CRG_API FramePass & createPass( std::string const & name
+			, RunnablePassCreator runnableCreator );
+		/**@}*/
+		/**
+		*\name
+		*	Compilation.
+		*/
+		/**@{*/
+		CRG_API RunnableGraphPtr compile( GraphContext & context );
+		/**@}*/
+		/**
+		*\name
+		*	Getters.
+		*/
+		/**@{*/
+		CRG_API LayoutState getFinalLayoutState( ImageViewId view )const;
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 
 		ResourceHandler & getHandler()
@@ -48,6 +115,10 @@ namespace crg
 		{
 			return m_name;
 		}
+		/**@}*/
+
+	private:
+		void registerFinalState( RecordContext const & context );
 
 	private:
 		ResourceHandler & m_handler;
@@ -58,7 +129,6 @@ namespace crg
 		std::set< ImageId > m_images;
 		std::set< ImageViewId > m_imageViews;
 		std::map< std::string, ImageViewId > m_attachViews;
-		std::map< ImageViewId, LayoutState > m_finalLayouts;
-		std::map< VkBuffer, AccessState > m_finalAccesses;
+		RecordContext m_finalState;
 	};
 }

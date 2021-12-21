@@ -7,14 +7,15 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	class GenerateMipmaps
+	class BufferToImageCopy
 		: public RunnablePass
 	{
 	public:
-		CRG_API GenerateMipmaps( FramePass const & pass
+		CRG_API BufferToImageCopy( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkImageLayout outputLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkOffset3D copyOffset
+			, VkExtent3D copySize
 			, ru::Config ruConfig = {}
 			, uint32_t const * passIndex = nullptr
 			, bool const * enabled = nullptr );
@@ -29,7 +30,8 @@ namespace crg
 		bool doIsEnabled()const;
 
 	private:
-		LayoutState m_outputLayout;
+		VkOffset3D m_copyOffset;
+		VkExtent3D m_copySize;
 		uint32_t const * m_passIndex;
 		bool const * m_enabled;
 	};

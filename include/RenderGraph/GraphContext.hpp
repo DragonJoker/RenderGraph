@@ -536,10 +536,12 @@ namespace crg
 		DECL_vkFunction( CmdDrawIndexed );
 		DECL_vkFunction( CmdBeginRenderPass );
 		DECL_vkFunction( CmdEndRenderPass );
+		DECL_vkFunction( CmdPushConstants );
 		DECL_vkFunction( CmdResetQueryPool );
 		DECL_vkFunction( CmdWriteTimestamp );
 		DECL_vkFunction( CmdPipelineBarrier );
 		DECL_vkFunction( CmdBlitImage );
+		DECL_vkFunction( CmdCopyBufferToImage );
 		DECL_vkFunction( CmdCopyImage );
 		DECL_vkFunction( CmdExecuteCommands );
 		DECL_vkFunction( CmdResetEvent );

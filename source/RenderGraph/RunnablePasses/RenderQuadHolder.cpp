@@ -69,28 +69,31 @@ namespace crg
 		}
 	}
 
-	void RenderQuadHolder::record( VkCommandBuffer commandBuffer
+	void RenderQuadHolder::record( RecordContext & context
+			, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		m_pipeline.recordInto( commandBuffer, index );
+		m_pipeline.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 3u, 1u, 0u, 0u );
 	}
 
-	void RenderQuadHolder::end( VkCommandBuffer commandBuffer
+	void RenderQuadHolder::end( RecordContext & context
+			, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		m_config.recordInto( commandBuffer, index );
+		m_config.recordInto( context, commandBuffer, index );
 	}
 
 	void RenderQuadHolder::recordDisabled( RunnablePass const & runnable
-		, VkCommandBuffer commandBuffer
+		, RecordContext & context
+			, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		if ( m_config.recordDisabledInto )
 		{
-			m_config.recordDisabledInto( runnable, commandBuffer, index );
+			m_config.recordDisabledInto( runnable, context, commandBuffer, index );
 		}
 	}
 
