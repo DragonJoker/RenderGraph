@@ -25,8 +25,7 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, VkImageLayout outputLayout
-		, uint32_t maxPassCount
-		, bool optional
+		, ru::Config ruConfig
 		, uint32_t const * passIndex
 		, bool const * enabled )
 		: RunnablePass{ pass
@@ -34,12 +33,11 @@ namespace crg
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
-				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordInto( cb, i ); }
+				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordInto( context, cb, i ); }
 				, defaultV< RunnablePass::RecordCallback >
 				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
 				, IsEnabledCallback( [this](){ return doIsEnabled(); } ) }
-			, maxPassCount
-			, optional }
+			, std::move( ruConfig ) }
 		, m_outputLayout{ outputLayout
 			, getAccessMask( outputLayout )
 			, getStageMask( outputLayout ) }
@@ -66,7 +64,8 @@ namespace crg
 		}
 	}
 
-	void GenerateMipmaps::doRecordInto( VkCommandBuffer commandBuffer
+	void GenerateMipmaps::doRecordInto( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		auto viewId{ m_pass.images.front().view( index ) };
@@ -109,10 +108,11 @@ namespace crg
 			imageBlit.dstOffsets[1].z = getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 			// Transition first mip level to transfer source for read in next iteration
-			m_graph.memoryBarrier( commandBuffer
+			m_graph.memoryBarrier( context
+				, commandBuffer
 				, imageId
 				, mipSubRange
-				, srcImageLayout
+				, srcImageLayout.layout
 				, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 					, VK_ACCESS_TRANSFER_READ_BIT
 					, VK_PIPELINE_STAGE_TRANSFER_BIT } );
@@ -133,12 +133,11 @@ namespace crg
 				imageBlit.dstOffsets[1].z = getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 				// Transition current mip level to transfer dest
-				m_graph.memoryBarrier( commandBuffer
+				m_graph.memoryBarrier( context
+					, commandBuffer
 					, imageId
 					, mipSubRange
-					, { VK_IMAGE_LAYOUT_UNDEFINED
-						, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
-						, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) }
+					, VK_IMAGE_LAYOUT_UNDEFINED
 					, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 						, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
 						, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) } );
@@ -153,42 +152,36 @@ namespace crg
 					, &imageBlit
 					, VK_FILTER_LINEAR );
 
-				if ( mipSubRange.baseMipLevel > 1u )
-				{
-					// Transition previous mip level to wanted output layout
-					m_graph.memoryBarrier( commandBuffer
-						, imageId
-						, { mipSubRange.aspectMask
-							, mipSubRange.baseMipLevel - 1u
-							, 1u
-							, mipSubRange.baseArrayLayer
-							, 1u }
-						, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
-							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) }
-						, dstMipImageLayout );
-				}
+				// Transition previous mip level to wanted output layout
+				m_graph.memoryBarrier( context
+					, commandBuffer
+					, imageId
+					, { mipSubRange.aspectMask
+						, mipSubRange.baseMipLevel - 1u
+						, 1u
+						, mipSubRange.baseArrayLayer
+						, 1u }
+					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					, dstMipImageLayout );
 
 				if ( mipSubRange.baseMipLevel == ( mipLevels - 1u ) )
 				{
 					// Transition final mip level to wanted output layout
-					m_graph.memoryBarrier( commandBuffer
+					m_graph.memoryBarrier( context
+						, commandBuffer
 						, imageId
 						, mipSubRange
-						, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
-							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) }
+						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 						, dstMipImageLayout );
 				}
 				else
 				{
 					// Transition current mip level to transfer source for read in next iteration
-					m_graph.memoryBarrier( commandBuffer
+					m_graph.memoryBarrier( context
+						,commandBuffer
 						, imageId
 						, mipSubRange
-						, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
-							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) }
+						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 						, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
 							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) } );

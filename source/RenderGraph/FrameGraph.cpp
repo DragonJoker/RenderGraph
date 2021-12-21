@@ -21,8 +21,8 @@ namespace crg
 		bool dependsOn( FramePass const & pass
 			, FramePass const * lookup )
 		{
-			return pass.depends.end() != std::find_if( pass.depends.begin()
-				, pass.depends.end()
+			return pass.passDepends.end() != std::find_if( pass.passDepends.begin()
+				, pass.passDepends.end()
 				, [lookup]( FramePass const * depLookup )
 				{
 					return depLookup == lookup;
@@ -36,7 +36,7 @@ namespace crg
 
 			for ( auto & pass : passes )
 			{
-				if ( pass->depends.empty() )
+				if ( pass->passDepends.empty() )
 				{
 					sortedPasses.push_back( pass.get() );
 				}
@@ -114,6 +114,7 @@ namespace crg
 		, RunnablePassCreator runnableCreator )
 	{
 		FramePassPtr pass{ new FramePass{ *this
+			, uint32_t( m_passes.size() + 1u )
 			, name
 			, runnableCreator } };
 
@@ -130,6 +131,20 @@ namespace crg
 		auto result = pass.get();
 		m_passes.emplace_back( std::move( pass ) );
 		return *result;
+	}
+
+	ImageId FrameGraph::createImage( ImageData const & img )
+	{
+		auto result = m_handler.createImageId( img );
+		m_images.insert( result );
+		return result;
+	}
+
+	ImageViewId FrameGraph::createView( ImageViewData const & view )
+	{
+		auto result = m_handler.createViewId( view );
+		m_imageViews.insert( result );
+		return result;
 	}
 
 	RunnableGraphPtr FrameGraph::compile( GraphContext & context )
@@ -155,7 +170,7 @@ namespace crg
 			, inputTransitions
 			, outputTransitions
 			, transitions );
-		RootNode root{ m_name };
+		RootNode root{ *this };
 		builder::buildGraph( root
 			, nodes
 			, transitions );
@@ -170,54 +185,19 @@ namespace crg
 			, context );
 	}
 
-	ImageId FrameGraph::createImage( ImageData const & img )
+	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view )const
 	{
-		auto result = m_handler.createImageId( img );
-		m_images.insert( result );
-		return result;
-	}
-
-	ImageViewId FrameGraph::createView( ImageViewData const & view )
-	{
-		auto result = m_handler.createViewId( view );
-		m_imageViews.insert( result );
-		return result;
-	}
-
-	void FrameGraph::setFinalLayout( ImageViewId view
-		, LayoutState layout )
-	{
-		m_finalLayouts[view] = layout;
-	}
-
-	LayoutState FrameGraph::getFinalLayout( ImageViewId view )const
-	{
-		auto it = m_finalLayouts.find( view );
-
-		if ( it == m_finalLayouts.end() )
-		{
-			return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		}
-
-		return it->second;
-	}
-
-	void FrameGraph::setFinalAccessState( Buffer const & buffer
-		, AccessState state )
-	{
-		m_finalAccesses[buffer.buffer] = state;
+		return m_finalState.getLayoutState( view );
 	}
 
 	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer )const
 	{
-		auto it = m_finalAccesses.find( buffer.buffer );
+		return m_finalState.getAccessState( buffer.buffer, { 0u, VK_WHOLE_SIZE } );
+	}
 
-		if ( it == m_finalAccesses.end() )
-		{
-			return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		}
-
-		return it->second;
+	void FrameGraph::registerFinalState( RecordContext const & context )
+	{
+		m_finalState = context;
 	}
 
 	VkExtent3D getExtent( ImageId const & image )

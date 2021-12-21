@@ -27,6 +27,7 @@ namespace crg
 
 		CRG_API ImageId createImageId( ImageData const & img );
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
+		CRG_API ImageId findImageId( uint32_t id )const;
 
 		CRG_API VkImage createImage( GraphContext & context
 			, ImageId imageId );

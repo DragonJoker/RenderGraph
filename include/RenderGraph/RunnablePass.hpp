@@ -74,6 +74,29 @@ namespace crg
 		bool m_fenceWaited{};
 	};
 
+	namespace ru
+	{
+		struct Config
+		{
+			uint32_t maxPassCount{ 1u };
+			bool optional{ false };
+			bool resettable{ false };
+		};
+	}
+
+	template<>
+	struct DefaultValueGetterT< ru::Config >
+	{
+		static ru::Config get()
+		{
+			ru::Config const result{ []()
+				{
+						return ru::Config{};
+				}() };
+			return result;
+		}
+	};
+
 	class RunnablePass
 	{
 	public:
@@ -111,7 +134,7 @@ namespace crg
 		};
 
 		using InitialiseCallback = std::function< void() >;
-		using RecordCallback = std::function< void( VkCommandBuffer, uint32_t ) >;
+		using RecordCallback = std::function< void( RecordContext & context, VkCommandBuffer, uint32_t ) >;
 		using GetSemaphoreWaitFlagsCallback = GetValueCallbackT< SemaphoreWaitFlagsT, VkPipelineStageFlags >;
 		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
 		using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
@@ -161,8 +184,7 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, Callbacks callbacks
-			, uint32_t maxPassCount = 1u
-			, bool optional = false );
+			, ru::Config config = {} );
 		CRG_API virtual ~RunnablePass();
 		/**
 		*\brief
@@ -175,14 +197,19 @@ namespace crg
 		*\param[in] index
 		*	The pass index.
 		*/
-		CRG_API void recordAll();
+		CRG_API void recordAll( RecordContext & context );
 		/**
 		*\brief
 		*	Records the pass commands into its command buffer.
 		*\param[in] index
 		*	The pass index.
 		*/
-		CRG_API void recordCurrent();
+		CRG_API void recordCurrent( RecordContext & context );
+		/**
+		*\brief
+		*	Re-records the pass commands into its command buffer.
+		*/
+		CRG_API void reRecordCurrent();
 		/**
 		*\brief
 		*	Submits this pass' command buffer to the given queue.
@@ -219,7 +246,7 @@ namespace crg
 
 		bool isOptional()const
 		{
-			return m_optional;
+			return m_ruConfig.optional;
 		}
 
 		FramePass const & getPass()const
@@ -252,11 +279,14 @@ namespace crg
 	private:
 		void recordOne( CommandBuffer & enabled
 			, CommandBuffer & disabled
-			, uint32_t index );
+			, uint32_t index
+			, RecordContext & context );
 		void recordInto( VkCommandBuffer commandBuffer
-			, uint32_t index );
+			, uint32_t index
+			, RecordContext & context );
 		void recordDisabledInto( VkCommandBuffer commandBuffer
-			, uint32_t index );
+			, uint32_t index
+			, RecordContext & context );
 
 		void doCreateCommandPool();
 		VkCommandBuffer doCreateCommandBuffer( std::string const & suffix );
@@ -286,7 +316,7 @@ namespace crg
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		Callbacks m_callbacks;
-		bool m_optional;
+		ru::Config m_ruConfig;
 		VkCommandPool m_commandPool{ nullptr };
 		std::vector< CommandBuffer > m_commandBuffers;
 		std::vector< CommandBuffer > m_disabledCommandBuffers;
@@ -297,6 +327,7 @@ namespace crg
 		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
 		std::vector< LayoutTransitionMap > m_layoutTransitions;
 		std::vector< AccessTransitionMap > m_accessTransitions;
+		std::map< uint32_t, RecordContext > m_passContexts;
 	};
 
 	template<>
@@ -324,7 +355,7 @@ namespace crg
 	{
 		static RunnablePass::RecordCallback get()
 		{
-			RunnablePass::RecordCallback const result{ []( VkCommandBuffer, uint32_t ){} };
+			RunnablePass::RecordCallback const result{ []( RecordContext &, VkCommandBuffer, uint32_t ){} };
 			return result;
 		}
 	};

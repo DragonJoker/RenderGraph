@@ -62,6 +62,11 @@ namespace crg
 			return name;
 		}
 
+		uint32_t getId()const
+		{
+			return id;
+		}
+
 		auto & getNext()const
 		{
 			return next;
@@ -74,10 +79,12 @@ namespace crg
 
 	protected:
 		CRG_API GraphNode( Kind kind
+			, uint32_t id
 			, std::string name );
 
 	protected:
 		Kind kind;
+		uint32_t id;
 		std::string name;
 		GraphAdjacentNodeArray next;
 		AttachmentsNodeMap inputAttaches;
@@ -115,8 +122,16 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::Root;
 
-		CRG_API RootNode( std::string name );
+		CRG_API RootNode( FrameGraph const & graph );
 		CRG_API void accept( GraphVisitor * vis )const override;
+
+		FrameGraph const & getFrameGraph()const
+		{
+			return *graph;
+		}
+
+	private:
+		FrameGraph const * graph;
 	};
 
 	CRG_API FramePass const * getFramePass( GraphNode const & node );

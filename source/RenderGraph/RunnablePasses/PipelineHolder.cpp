@@ -96,7 +96,8 @@ namespace crg
 		return m_pipelines[index];
 	}
 
-	void PipelineHolder::recordInto( VkCommandBuffer commandBuffer
+	void PipelineHolder::recordInto( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		createDescriptorSet( index );

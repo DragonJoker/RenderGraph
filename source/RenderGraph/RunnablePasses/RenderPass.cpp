@@ -115,52 +115,67 @@ namespace crg
 		, RunnableGraph & graph
 		, Callbacks callbacks
 		, VkExtent2D const & size
-		, uint32_t maxPassCount
-		, bool optional )
+		, ru::Config ruConfig )
 		: RunnablePass{ pass
 			, context
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [](){ return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; } )
-				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordInto( cb, i ); }
-				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( cb, i ); }
+				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordInto( context, cb, i ); }
+				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( context, cb, i ); }
 				, std::move( callbacks.getPassIndex )
 				, std::move( callbacks.isEnabled ) }
-			, maxPassCount
-			, optional }
+			, ruConfig }
 		, m_rpCallbacks{ std::move( callbacks ) }
 		, m_holder{ pass
 			, context
 			, graph
-			, maxPassCount
+			, ruConfig.maxPassCount
 			, size }
 	{
 	}
 
 	void RenderPass::doInitialise()
 	{
-		m_holder.initialise( *this );
-		m_rpCallbacks.initialise();
 	}
 
-	void RenderPass::doRecordInto( VkCommandBuffer commandBuffer
+	void RenderPass::doRecordInto( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		m_holder.begin( commandBuffer
+		if ( m_holder.initialise( context, *this ) )
+		{
+			m_rpCallbacks.initialise();
+		}
+
+		m_holder.begin( context
+			, commandBuffer
 			, m_rpCallbacks.getSubpassContents()
 			, index );
-		m_rpCallbacks.record( commandBuffer, index );
-		m_holder.end( commandBuffer );
+		m_rpCallbacks.record( context
+			, commandBuffer
+			, index );
+		m_holder.end( context
+			, commandBuffer );
 	}
 
-	void RenderPass::doRecordDisabledInto( VkCommandBuffer commandBuffer
+	void RenderPass::doRecordDisabledInto( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		m_holder.begin( commandBuffer
+		if ( m_holder.initialise( context, *this ) )
+		{
+			m_rpCallbacks.initialise();
+		}
+
+		m_holder.begin( context
+			, commandBuffer
 			, m_rpCallbacks.getSubpassContents()
 			, index );
-		m_holder.end( commandBuffer );
-		m_rpCallbacks.recordDisabled( commandBuffer, index );
+		m_holder.end( context
+			, commandBuffer );
+		m_rpCallbacks.recordDisabled( context
+			, commandBuffer, index );
 	}
 
 	//*********************************************************************************************

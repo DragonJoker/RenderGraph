@@ -9,30 +9,31 @@ namespace crg
 	RenderQuad::RenderQuad( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, uint32_t maxPassCount
-		, rq::Config config )
+		, ru::Config ruConfig
+		, rq::Config rqConfig )
 		: RunnablePass{ pass
 			, context
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
-				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordInto( cb, i ); }
-				, [this]( VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( cb, i ); }
+				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordInto( context, cb, i ); }
+				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( context, cb, i ); }
 				, GetPassIndexCallback( [this](){ return m_renderQuad.getPassIndex(); } )
 				, IsEnabledCallback( [this](){ return m_renderQuad.isEnabled(); } ) }
-			, maxPassCount
-			, ( config.m_enabled ? true : false ) }
-		, m_recordDisabledRenderPass{ config.m_recordDisabledRenderPass }
+			, { ruConfig.maxPassCount
+				, ( rqConfig.m_enabled ? true : false )
+				, true /*resettable*/ } }
+		, m_recordDisabledRenderPass{ rqConfig.m_recordDisabledRenderPass }
 		, m_renderQuad{ pass
 			, context
 			, graph
-			, config
-			, maxPassCount }
+			, rqConfig
+			, ruConfig.maxPassCount }
 		, m_renderPass{ pass
 			, context
 			, graph
-			, maxPassCount
-			, std::move( config.m_renderSize ? *config.m_renderSize : defaultV< VkExtent2D > ) }
+			, ruConfig.maxPassCount
+			, std::move( rqConfig.m_renderSize ? *rqConfig.m_renderSize : defaultV< VkExtent2D > ) }
 	{
 	}
 
@@ -44,37 +45,42 @@ namespace crg
 	{
 		resetCommandBuffer();
 		m_renderQuad.resetPipeline( std::move( config ) );
-		recordCurrent();
+		reRecordCurrent();
 	}
 
 	void RenderQuad::doInitialise()
 	{
-		m_renderPass.initialise( *this );
-		m_renderQuad.initialise( *this
-			, m_renderPass.getRenderSize()
-			, m_renderPass.getRenderPass()
-			, m_renderPass.createBlendState() );
 	}
 
-	void RenderQuad::doRecordInto( VkCommandBuffer commandBuffer
+	void RenderQuad::doRecordInto( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		m_renderPass.begin( commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
-		m_renderQuad.record( commandBuffer, index );
-		m_renderPass.end( commandBuffer );
-		m_renderQuad.end( commandBuffer, index );
+		if ( m_renderPass.initialise( context, *this ) )
+		{
+			m_renderQuad.initialise( *this
+				, m_renderPass.getRenderSize()
+				, m_renderPass.getRenderPass()
+				, m_renderPass.createBlendState() );
+		}
+
+		m_renderPass.begin( context, commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
+		m_renderQuad.record( context, commandBuffer, index );
+		m_renderPass.end( context, commandBuffer );
+		m_renderQuad.end( context, commandBuffer, index );
 	}
 
-	void RenderQuad::doRecordDisabledInto( VkCommandBuffer commandBuffer
+	void RenderQuad::doRecordDisabledInto( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		if ( m_recordDisabledRenderPass )
 		{
-			m_renderPass.begin( commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
-			m_renderPass.end( commandBuffer );
+			m_renderPass.begin( context, commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
+			m_renderPass.end( context, commandBuffer );
 		}
 
-		m_renderQuad.recordDisabled( *this, commandBuffer, index );
+		m_renderQuad.recordDisabled( *this, context, commandBuffer, index );
 	}
 
 	VkPipelineStageFlags RenderQuad::doGetSemaphoreWaitFlags()const

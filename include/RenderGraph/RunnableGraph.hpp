@@ -89,56 +89,33 @@ namespace crg
 			, bool isCompute )const;
 		CRG_API RunnablePass::LayoutTransition getTransition( FramePass const & pass
 			, ImageViewId const & view )const;
-		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+
+		CRG_API void memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, ImageViewId const & view
+			, VkImageLayout initialLayout
+			, LayoutState const & wantedState );
+		CRG_API void memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout currentLayout
-			, VkImageLayout wantedLayout
-			, VkAccessFlags currentMask
-			, VkAccessFlags wantedMask
-			, VkPipelineStageFlags previousStage
-			, VkPipelineStageFlags nextStage );
-		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, VkImageLayout initialLayout
+			, LayoutState const & wantedState );
+		CRG_API void memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, ImageId const & image
+			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState const & currentState
+			, VkImageLayout initialLayout
 			, LayoutState const & wantedState );
-		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageViewId const & view
-			, VkImageLayout currentLayout
-			, VkImageLayout wantedLayout
-			, VkAccessFlags currentMask
-			, VkAccessFlags wantedMask
-			, VkPipelineStageFlags previousStage
-			, VkPipelineStageFlags nextStage );
-		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageViewId const & view
-			, LayoutState const & currentState
-			, LayoutState const & wantedState );
-		CRG_API void imageMemoryBarrier( VkCommandBuffer commandBuffer
-			, Attachment const & from
-			, uint32_t fromIndex
-			, Attachment const & to
-			, uint32_t toIndex
-			, bool isCompute );
-		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, Buffer const & buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range
-			, VkAccessFlags currentMask
-			, VkAccessFlags wantedMask
-			, VkPipelineStageFlags previousStage
-			, VkPipelineStageFlags nextStage );
-		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, Buffer const & buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range
-			, AccessState const & currentState
+
+		CRG_API void memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, VkBuffer buffer
+			, BufferSubresourceRange const & subresourceRange
+			, VkAccessFlags initialMask
+			, VkPipelineStageFlags initialStage
 			, AccessState const & wantedState );
-		CRG_API void bufferMemoryBarrier( VkCommandBuffer commandBuffer
-			, Attachment const & from
-			, Attachment const & to
-			, bool isCompute );
 
 		ConstGraphAdjacentNode getGraph()const
 		{
@@ -156,25 +133,6 @@ namespace crg
 		}
 
 	private:
-		using MipLayoutStates = std::map< uint32_t, LayoutState >;
-		using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
-		using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
-		using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
-
-		struct ViewLayoutRange
-		{
-			std::vector< LayoutStateMap >::iterator begin;
-			std::vector< LayoutStateMap >::iterator end;
-		};
-		using ViewLayoutRanges = std::vector< ViewLayoutRange >;
-
-		struct BufferLayoutRange
-		{
-			std::vector< AccessStateMap >::iterator begin;
-			std::vector< AccessStateMap >::iterator end;
-		};
-		using BufferLayoutRanges = std::vector< BufferLayoutRange >;
-
 		struct RemainingPasses
 		{
 			uint32_t count;
@@ -188,11 +146,6 @@ namespace crg
 			, AccessStateMap & buffers );
 		void doCreateImages();
 		void doCreateImageViews();
-		LayoutState doGetSubresourceRangeLayout( LayerLayoutStates const & layers
-			, VkImageSubresourceRange const & range )const;
-		LayoutState doAddSubresourceRangeLayout( LayerLayoutStates & layers
-			, VkImageSubresourceRange const & range
-			, LayoutState const & newLayout );
 
 	private:
 		FrameGraph & m_graph;

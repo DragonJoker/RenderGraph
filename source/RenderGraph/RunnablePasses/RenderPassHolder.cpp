@@ -16,8 +16,10 @@ namespace crg
 
 	namespace
 	{
-		VkAttachmentReference addAttach( Attachment const & attach
+		VkAttachmentReference addAttach( RecordContext & context
+			, Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
+			, std::vector< RenderPassHolder::Entry > & viewAttaches
 			, std::vector< VkClearValue > & clearValues
 			, LayoutState initialLayout
 			, LayoutState finalLayout
@@ -26,6 +28,13 @@ namespace crg
 			auto view = attach.view();
 			VkAttachmentReference result{ uint32_t( attaches.size() )
 				, attach.getImageLayout( separateDepthStencilLayouts ) };
+			auto from = context.getLayoutState( view );
+
+			if ( from.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				from = initialLayout;
+			}
+
 			attaches.push_back( { 0u
 				, view.data->info.format
 				, view.data->image.data->info.samples
@@ -33,14 +42,17 @@ namespace crg
 				, attach.image.storeOp
 				, attach.image.stencilLoadOp
 				, attach.image.stencilStoreOp
-				, initialLayout.layout
+				, from.layout
 				, finalLayout.layout } );
+			viewAttaches.push_back( { view, from, finalLayout } );
 			clearValues.push_back( attach.image.clearValue );
 			return result;
 		}
 
-		VkAttachmentReference addAttach( Attachment const & attach
+		VkAttachmentReference addAttach( RecordContext & context
+			, Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
+			, std::vector< RenderPassHolder::Entry > & viewAttaches
 			, std::vector< VkClearValue > & clearValues
 			, VkPipelineColorBlendAttachmentStateArray & blendAttachs
 			, LayoutState initialLayout
@@ -48,8 +60,10 @@ namespace crg
 			, bool separateDepthStencilLayouts )
 		{
 			blendAttachs.push_back( attach.image.blendState );
-			return addAttach( attach
+			return addAttach( context
+				, attach
 				, attaches
+				, viewAttaches
 				, clearValues
 				, initialLayout
 				, finalLayout
@@ -91,10 +105,17 @@ namespace crg
 		}
 	}
 
-	void RenderPassHolder::initialise( crg::RunnablePass const & runnable )
+	bool RenderPassHolder::initialise( RecordContext & context
+			, crg::RunnablePass const & runnable )
 	{
-		doCreateRenderPass( runnable );
+		if ( m_renderPass)
+		{
+			return false;
+		}
+
+		doCreateRenderPass( context, runnable );
 		doCreateFramebuffer();
+		return true;
 	}
 
 	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )
@@ -108,23 +129,39 @@ namespace crg
 			, getClearValues().data() };
 	}
 
-	void RenderPassHolder::begin( VkCommandBuffer commandBuffer
+	void RenderPassHolder::begin( RecordContext & context
+		, VkCommandBuffer commandBuffer
 		, VkSubpassContents subpassContents
 		, uint32_t index )
 	{
+		for ( auto & attach : m_attaches )
+		{
+			context.setLayoutState( attach.view
+				, attach.input );
+		}
+
 		auto beginInfo = getBeginInfo( index );
 		m_context.vkCmdBeginRenderPass( commandBuffer
 			, &beginInfo
 			, subpassContents );
 	}
 
-	void RenderPassHolder::end( VkCommandBuffer commandBuffer )
+	void RenderPassHolder::end( RecordContext & context
+			, VkCommandBuffer commandBuffer )
 	{
 		m_context.vkCmdEndRenderPass( commandBuffer );
+
+		for ( auto & attach : m_attaches )
+		{
+			context.setLayoutState( attach.view
+				, attach.output );
+		}
 	}
 
-	void RenderPassHolder::doCreateRenderPass( crg::RunnablePass const & runnable )
+	void RenderPassHolder::doCreateRenderPass( RecordContext & context
+			, crg::RunnablePass const & runnable )
 	{
+		m_attaches.clear();
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
 		VkAttachmentReference depthReference{};
@@ -136,8 +173,10 @@ namespace crg
 
 			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
-				depthReference = addAttach( attach
+				depthReference = addAttach( context
+					, attach
 					, attaches
+					, m_attaches
 					, m_clearValues
 					, transition.from
 					, transition.to
@@ -145,8 +184,10 @@ namespace crg
 			}
 			else if ( attach.isColourAttach() )
 			{
-				colorReferences.push_back( addAttach( attach
+				colorReferences.push_back( addAttach( context
+					, attach
 					, attaches
+					, m_attaches
 					, m_clearValues
 					, m_blendAttachs
 					, transition.from

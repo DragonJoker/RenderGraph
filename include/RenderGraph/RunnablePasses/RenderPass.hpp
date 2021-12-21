@@ -73,8 +73,7 @@ namespace crg
 			, RunnableGraph & graph
 			, Callbacks callbacks
 			, VkExtent2D const & size = {}
-			, uint32_t maxPassCount = 1u
-			, bool optional = false );
+			, ru::Config ruConfig = {} );
 
 		VkRenderPass getRenderPass()const
 		{
@@ -99,9 +98,11 @@ namespace crg
 
 	private:
 		void doInitialise();
-		void doRecordInto( VkCommandBuffer commandBuffer
+		void doRecordInto( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		void doRecordDisabledInto( VkCommandBuffer commandBuffer
+		void doRecordDisabledInto( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 
 	private:

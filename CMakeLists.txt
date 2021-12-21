@@ -110,6 +110,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	source_group( "Source Files" FILES ${${PROJECT_NAME}_SRC_FILES} )
 	source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_NVS_FILES} )
 	set( ${PROJECT_NAME}_FOLDER_HDR_FILES
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/BufferToImageCopy.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/GenerateMipmaps.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/ImageCopy.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelineConfig.hpp
@@ -121,6 +122,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuadHolder.hpp
 	)
 	set( ${PROJECT_NAME}_FOLDER_SRC_FILES
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/BufferToImageCopy.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/GenerateMipmaps.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/ImageCopy.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/PipelineHolder.cpp

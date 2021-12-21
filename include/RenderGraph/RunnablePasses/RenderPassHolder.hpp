@@ -10,6 +10,14 @@ namespace crg
 	class RenderPassHolder
 	{
 	public:
+		struct Entry
+		{
+			crg::ImageViewId view;
+			LayoutState input;
+			LayoutState output;
+		};
+
+	public:
 		CRG_API RenderPassHolder( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
@@ -17,12 +25,15 @@ namespace crg
 			, VkExtent2D const & size = {} );
 		CRG_API ~RenderPassHolder();
 
-		CRG_API void initialise( crg::RunnablePass const & runnable );
+		CRG_API bool initialise( RecordContext & context
+			, crg::RunnablePass const & runnable );
 		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index );
-		CRG_API void begin( VkCommandBuffer commandBuffer
+		CRG_API void begin( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, VkSubpassContents subpassContents
 			, uint32_t index );
-		CRG_API void end( VkCommandBuffer commandBuffer );
+		CRG_API void end( RecordContext & context
+			, VkCommandBuffer commandBuffer );
 		CRG_API VkPipelineColorBlendStateCreateInfo createBlendState();
 
 		VkRenderPass getRenderPass()const
@@ -56,7 +67,8 @@ namespace crg
 		}
 
 	protected:
-		CRG_API void doCreateRenderPass( crg::RunnablePass const & runnable );
+		CRG_API void doCreateRenderPass( RecordContext & context
+			, crg::RunnablePass const & runnable );
 		CRG_API void doCreateFramebuffer();
 
 	protected:
@@ -68,6 +80,7 @@ namespace crg
 		std::vector< VkFramebuffer > m_frameBuffers;
 		VkRect2D m_renderArea{};
 		std::vector< VkClearValue > m_clearValues;
+		std::vector< Entry > m_attaches;
 		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
 	};
 }

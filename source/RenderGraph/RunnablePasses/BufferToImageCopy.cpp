@@ -2,7 +2,7 @@
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
-#include "RenderGraph/RunnablePasses/ImageCopy.hpp"
+#include "RenderGraph/RunnablePasses/BufferToImageCopy.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/ImageData.hpp"
@@ -23,9 +23,10 @@ namespace crg
 		}
 	}
 
-	ImageCopy::ImageCopy( FramePass const & pass
+	BufferToImageCopy::BufferToImageCopy( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
+		, VkOffset3D copyOffset
 		, VkExtent3D copySize
 		, ru::Config ruConfig
 		, uint32_t const * passIndex
@@ -40,53 +41,53 @@ namespace crg
 				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
 				, IsEnabledCallback( [this](){ return doIsEnabled(); } ) }
 			, std::move( ruConfig ) }
-		, m_copySize{std::move( copySize ) }
+		, m_copyOffset{ std::move( copyOffset ) }
+		, m_copySize{ std::move( copySize ) }
 		, m_passIndex{ passIndex }
 		, m_enabled{ enabled }
 	{
-		assert( pass.images.size() == 2u );
 	}
 
-	void ImageCopy::doInitialise()
+	void BufferToImageCopy::doInitialise()
 	{
 	}
 
-	void ImageCopy::doRecordInto( RecordContext & context
+	void BufferToImageCopy::doRecordInto( RecordContext & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcAttach{ m_pass.images.front().view() };
 		auto dstAttach{ m_pass.images.back().view() };
-		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
+		auto srcBuffer{ m_pass.buffers.front().buffer.buffer.buffer };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
 		// Copy source to target.
-		VkImageCopy copyRegion{ convert( srcAttach.data->info.subresourceRange )
-			, {}
+		auto range = convert( dstAttach.data->info.subresourceRange );
+		VkBufferImageCopy copyRegion{ 0ull
+			, 0u
+			, 0u
 			, convert( dstAttach.data->info.subresourceRange )
-			, {}
+			, m_copyOffset
 			, m_copySize };
-		m_context.vkCmdCopyImage( commandBuffer
-			, srcImage
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+		m_context.vkCmdCopyBufferToImage( commandBuffer
+			, srcBuffer
 			, dstImage
 			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, 1u
 			, &copyRegion );
 	}
 
-	VkPipelineStageFlags ImageCopy::doGetSemaphoreWaitFlags()const
+	VkPipelineStageFlags BufferToImageCopy::doGetSemaphoreWaitFlags()const
 	{
 		return VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 
-	uint32_t ImageCopy::doGetPassIndex()const
+	uint32_t BufferToImageCopy::doGetPassIndex()const
 	{
 		return m_passIndex
 			? *m_passIndex
 			: 0u;
 	}
 
-	bool ImageCopy::doIsEnabled()const
+	bool BufferToImageCopy::doIsEnabled()const
 	{
 		return m_enabled
 			? *m_enabled

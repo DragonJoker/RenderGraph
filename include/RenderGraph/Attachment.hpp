@@ -211,6 +211,11 @@ namespace crg
 
 		friend CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	};
+	struct BufferSubresourceRange
+	{
+		VkDeviceSize offset;
+		VkDeviceSize size;
+	};
 	/**
 	*\brief
 	*	A buffer (uniform or storage) attachment.
@@ -276,8 +281,7 @@ namespace crg
 
 		Buffer buffer;
 		VkBufferView view;
-		VkDeviceSize offset;
-		VkDeviceSize range;
+		BufferSubresourceRange range;
 
 	private:
 		CRG_API BufferAttachment();
@@ -327,6 +331,7 @@ namespace crg
 			Output = 0x01 << 1,
 			Image = 0x01 << 2,
 			Buffer = 0x01 << 3,
+			NoTransition = 0x01 << 4,
 		};
 		/**
 		*\name
@@ -348,6 +353,11 @@ namespace crg
 		bool hasFlag( Flag flag )const
 		{
 			return Flag( flags & FlagKind( flag ) ) == flag;
+		}
+
+		bool isNoTransition()const
+		{
+			return hasFlag( Flag::NoTransition );
 		}
 
 		bool isInput()const

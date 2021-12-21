@@ -13,6 +13,7 @@ See LICENSE file in root folder.
 #include <memory>
 #include <string>
 #include <set>
+#include <unordered_map>
 #include <vector>
 #pragma warning( pop )
 
@@ -50,6 +51,7 @@ namespace crg
 	class FrameGraph;
 	class FramePassTimer;
 	class GraphVisitor;
+	class RecordContext;
 	class ResourceHandler;
 	class RunnableGraph;
 	class RunnablePass;
@@ -88,6 +90,7 @@ namespace crg
 
 	using AttachmentArray = std::vector< Attachment >;
 	using FramePassPtrArray = std::vector< FramePassPtr >;
+	using FrameGraphArray = std::vector< FrameGraph const * >;
 	using FramePassArray = std::vector< FramePass const * >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using ConstGraphAdjacentNodeArray = std::vector< ConstGraphAdjacentNode >;
@@ -140,6 +143,27 @@ namespace crg
 		VkAccessFlags access;
 		VkPipelineStageFlags pipelineStage;
 	};
+
+	using MipLayoutStates = std::map< uint32_t, LayoutState >;
+	using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
+	using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
+	using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
+
+	struct ViewLayoutRange
+	{
+		std::vector< LayoutStateMap >::iterator begin;
+		std::vector< LayoutStateMap >::iterator end;
+	};
+	using ViewLayoutRanges = std::vector< ViewLayoutRange >;
+
+	struct BufferLayoutRange
+	{
+		std::vector< AccessStateMap >::iterator begin;
+		std::vector< AccessStateMap >::iterator end;
+	};
+	using BufferLayoutRanges = std::vector< BufferLayoutRange >;
+
+	class RecordContext;
 
 	struct Buffer
 	{

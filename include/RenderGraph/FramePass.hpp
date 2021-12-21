@@ -26,6 +26,7 @@ namespace crg
 		*/
 		/**@[*/
 		CRG_API FramePass( FrameGraph & graph
+			, uint32_t id
 			, std::string const & name
 			, RunnablePassCreator runnableCreator );
 
@@ -36,14 +37,19 @@ namespace crg
 		*	Dependencies.
 		*/
 		/**@[*/
+		void addDependency( FrameGraph const & pgraph )
+		{
+			graphDepends.push_back( &pgraph );
+		}
+
 		void addDependency( FramePass const & pass )
 		{
-			depends.push_back( &pass );
+			passDepends.push_back( &pass );
 		}
 
 		void addDependencies( FramePassArray const & passes )
 		{
-			depends.insert( depends.end()
+			passDepends.insert( passDepends.end()
 				, passes.begin()
 				, passes.end() );
 		}
@@ -155,7 +161,7 @@ namespace crg
 		*/
 		CRG_API void addSampledView( ImageViewId view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, SamplerDesc samplerDesc = SamplerDesc{} );
 		/**
 		*\brief
@@ -190,38 +196,39 @@ namespace crg
 		*/
 		CRG_API void addInputStorageView( ImageViewId view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addOutputStorageView( ImageViewId view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addInOutStorageView( ImageViewId view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates an transfer input attachment.
 		*/
 		CRG_API void addTransferInputView( ImageViewId view
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates an transfer output attachment.
 		*/
 		CRG_API void addTransferOutputView( ImageViewId view
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates an transfer input/output attachment.
 		*/
-		CRG_API void addTransferInOutView( ImageViewId view );
+		CRG_API void addTransferInOutView( ImageViewId view
+			, crg::Attachment::Flag flag = {} );
 		/**
 		*\brief
 		*	Creates a colour attachment.
@@ -287,7 +294,7 @@ namespace crg
 		*/
 		CRG_API void addSampledView( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, SamplerDesc samplerDesc = SamplerDesc{} );
 		/**
 		*\brief
@@ -295,7 +302,7 @@ namespace crg
 		*/
 		CRG_API void addSampledViews( ImageViewIdArray views
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, SamplerDesc samplerDesc = SamplerDesc{} );
 		/**
 		*\brief
@@ -357,59 +364,60 @@ namespace crg
 		*/
 		CRG_API void addInputStorageView( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image array attachment.
 		*/
 		CRG_API void addInputStorageViews( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addOutputStorageView( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image array attachment.
 		*/
 		CRG_API void addOutputStorageViews( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
 		*/
 		CRG_API void addInOutStorageView( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates a storage image array attachment.
 		*/
 		CRG_API void addInOutStorageViews( ImageViewIdArray view
 			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_GENERAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates an transfer input attachment.
 		*/
 		CRG_API void addTransferInputView( ImageViewIdArray view
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates an transfer output attachment.
 		*/
 		CRG_API void addTransferOutputView( ImageViewIdArray view
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL );
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		/**
 		*\brief
 		*	Creates an transfer input/output attachment.
 		*/
-		CRG_API void addTransferInOutView( ImageViewIdArray view );
+		CRG_API void addTransferInOutView( ImageViewIdArray view
+			, crg::Attachment::Flag flag = {} );
 		/**
 		*\brief
 		*	Creates a colour attachment.
@@ -702,10 +710,12 @@ namespace crg
 		/**@}*/
 
 		FrameGraph & graph;
+		uint32_t id;
 		std::string name;
 		AttachmentArray images;
 		AttachmentArray buffers;
 		RunnablePassCreator runnableCreator;
-		FramePassArray depends;
+		FramePassArray passDepends;
+		FrameGraphArray graphDepends;
 	};
 }

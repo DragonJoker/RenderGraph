@@ -29,14 +29,6 @@ namespace crg
 			}
 		}
 
-		size_t makeHash( LayoutState const & state )
-		{
-			auto result = std::hash< uint32_t >{}( state.layout );
-			result = hashCombine( result, state.access );
-			result = hashCombine( result, state.pipelineStage );
-			return result;
-		}
-
 		VkImageSubresourceRange adaptRange( GraphContext & context
 			, VkFormat format
 			, VkImageSubresourceRange const & subresourceRange )
@@ -54,6 +46,73 @@ namespace crg
 			}
 
 			return result;
+		}
+
+		LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
+			, VkImageSubresourceRange const & range
+			, LayoutState const & newLayout )
+		{
+			for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
+			{
+				auto & layers = ranges.emplace( range.baseArrayLayer + layerIdx, MipLayoutStates{} ).first->second;
+
+				for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+				{
+					auto & level = layers.emplace( range.baseMipLevel + levelIdx, LayoutState{} ).first->second;
+					level.layout = newLayout.layout;
+					level.access = newLayout.access;
+					level.pipelineStage = newLayout.pipelineStage;
+				}
+			}
+
+			return newLayout;
+		}
+
+
+		LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
+			, VkImageSubresourceRange const & range )
+		{
+			std::map< VkImageLayout, LayoutState > states;
+
+			for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
+			{
+				auto layerIt = ranges.find( range.baseArrayLayer + layerIdx );
+				
+				if ( layerIt != ranges.end() )
+				{
+					auto & layers = layerIt->second;
+
+					for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+					{
+						auto it = layers.find( range.baseMipLevel + levelIdx );
+
+						if ( it != layers.end() )
+						{
+							auto state = it->second;
+							auto ires = states.emplace( state.layout, state );
+
+							if ( !ires.second )
+							{
+								ires.first->second.access |= state.access;
+							}
+						}
+					}
+				}
+			}
+
+			if ( states.empty() )
+			{
+				return { VK_IMAGE_LAYOUT_UNDEFINED
+					, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+					, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+			}
+
+			if ( states.size() == 1u )
+			{
+				return states.begin()->second;
+			}
+
+			return states.begin()->second;
 		}
 	}
 
@@ -165,6 +224,114 @@ namespace crg
 		return result;
 	}
 
+	//************************************************************************************************
+
+	void RecordContext::setLayoutState( crg::ImageViewId view
+		, LayoutState layoutState )
+	{
+		setLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, layoutState );
+	}
+
+	void RecordContext::setWantedState( crg::ImageViewId view
+		, LayoutState layoutState
+		, bool needsClear )
+	{
+		setWantedState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, layoutState
+			, needsClear );
+	}
+
+	LayoutState RecordContext::getLayoutState( ImageViewId view )const
+	{
+		return getLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
+	}
+
+	void RecordContext::setLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange
+		, LayoutState layoutState )
+	{
+		auto range = getVirtualRange( image
+			, viewType
+			, subresourceRange );
+		auto ires = m_images.emplace( image.id, LayerLayoutStates{} );
+		addSubresourceRangeLayout( ires.first->second
+			, range
+			, layoutState );
+	}
+
+	void RecordContext::setWantedState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange
+		, LayoutState layoutState
+		, bool needsClear )
+	{
+		auto range = getVirtualRange( image
+			, viewType
+			, subresourceRange );
+		auto ires = m_imagesWanted.emplace( image.id, LayerLayoutStates{} );
+		addSubresourceRangeLayout( ires.first->second
+			, range
+			, layoutState );
+	}
+
+	LayoutState RecordContext::getLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange )const
+	{
+		auto imageIt = m_images.find( image.id );
+
+		if ( imageIt != m_images.end() )
+		{
+			auto range = getVirtualRange( image
+				, viewType
+				, subresourceRange );
+			return getSubresourceRangeLayout( imageIt->second
+				, range );
+		}
+
+		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+	}
+
+	void RecordContext::setAccessState( VkBuffer buffer
+		, BufferSubresourceRange const & subresourceRange
+		, AccessState layoutState )
+	{
+		auto ires = m_buffers.emplace( buffer, AccessState{} );
+		ires.first->second = layoutState;
+	}
+
+	void RecordContext::setWantedState( VkBuffer buffer
+		, BufferSubresourceRange const & subresourceRange
+		, AccessState layoutState
+		, bool needsClear )
+	{
+		auto ires = m_buffersWanted.emplace( buffer, AccessState{} );
+		ires.first->second = layoutState;
+	}
+
+	AccessState RecordContext::getAccessState( VkBuffer buffer
+		, BufferSubresourceRange const & subresourceRange )const
+	{
+		auto bufferIt = m_buffers.find( buffer );
+
+		if ( bufferIt != m_buffers.end() )
+		{
+			return bufferIt->second;
+		}
+
+		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+	}
+
+	//************************************************************************************************
+
 	RunnableGraph::RunnableGraph( FrameGraph & graph
 		, FramePassDependencies inputTransitions
 		, FramePassDependencies outputTransitions
@@ -255,10 +422,14 @@ namespace crg
 
 	void RunnableGraph::record()
 	{
+		RecordContext recordContext;
+
 		for ( auto & pass : m_passes )
 		{
-			pass->recordCurrent();
+			pass->recordCurrent( recordContext );
 		}
+
+		m_graph.registerFinalState( recordContext );
 	}
 
 	VkImage RunnableGraph::createImage( ImageId const & image )
@@ -294,10 +465,11 @@ namespace crg
 		, VkQueue queue )
 	{
 		auto result = toWait;
+		RecordContext recordContext;
 
 		for ( auto & pass : m_passes )
 		{
-			pass->recordCurrent();
+			pass->recordCurrent( recordContext );
 			result = { 1u, pass->run( result, queue ) };
 		}
 
@@ -336,7 +508,7 @@ namespace crg
 
 		if ( imageIt != viewsLayouts.end() )
 		{
-			return doGetSubresourceRangeLayout( imageIt->second
+			return getSubresourceRangeLayout( imageIt->second
 				, getVirtualRange( view.data->image
 					, view.data->info.viewType
 					, view.data->info.subresourceRange ) );
@@ -362,7 +534,7 @@ namespace crg
 			, [this, &subresourceRange, &newLayout, &view]( LayoutStateMap & viewsLayouts )
 			{
 				auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
-				doAddSubresourceRangeLayout( ires.first->second
+				addSubresourceRangeLayout( ires.first->second
 					, subresourceRange
 					, newLayout );
 			} );
@@ -408,61 +580,56 @@ namespace crg
 		}
 		else
 		{
-			result = m_graph.getFinalLayout( view );
+			passIt = std::find_if( m_inputTransitions.begin()
+				, m_inputTransitions.end()
+				, [&pass]( FramePassTransitions const & lookup )
+				{
+					return lookup.pass == &pass;
+				} );
+			assert( passIt != m_inputTransitions.end() );
+			it = std::find_if( passIt->transitions.viewTransitions.begin()
+				, passIt->transitions.viewTransitions.end()
+				, [&view]( ViewTransition const & lookup )
+				{
+					return match( *view.data, *lookup.data.data )
+						|| view.data->source.end() != std::find_if( view.data->source.begin()
+							, view.data->source.end()
+							, [&lookup]( ImageViewId const & lookupView )
+							{
+								return match( *lookup.data.data, *lookupView.data );
+							} )
+						|| lookup.data.data->source.end() != std::find_if( lookup.data.data->source.begin()
+							, lookup.data.data->source.end()
+							, [&view]( ImageViewId const & lookupView )
+							{
+								return match( *view.data, *lookupView.data );
+							} );
+				} );
 
-			if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( it == passIt->transitions.viewTransitions.end() )
 			{
-				passIt = std::find_if( m_inputTransitions.begin()
-					, m_inputTransitions.end()
-					, [&pass]( FramePassTransitions const & lookup )
-					{
-						return lookup.pass == &pass;
-					} );
-				assert( passIt != m_inputTransitions.end() );
-				it = std::find_if( passIt->transitions.viewTransitions.begin()
-					, passIt->transitions.viewTransitions.end()
-					, [&view]( ViewTransition const & lookup )
-					{
-						return match( *view.data, *lookup.data.data )
-							|| view.data->source.end() != std::find_if( view.data->source.begin()
-								, view.data->source.end()
-								, [&lookup]( ImageViewId const & lookupView )
-								{
-									return match( *lookup.data.data, *lookupView.data );
-								} )
-							|| lookup.data.data->source.end() != std::find_if( lookup.data.data->source.begin()
-								, lookup.data.data->source.end()
-								, [&view]( ImageViewId const & lookupView )
-								{
-									return match( *view.data, *lookupView.data );
-								} );
-					} );
-
-				if ( it == passIt->transitions.viewTransitions.end() )
-				{
-					result.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-					result.access = 0u;
-					result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-				}
-				else if ( it->inputAttach.getFlags() != 0u )
-				{
-					result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-					result.access = it->inputAttach.getAccessMask();
-					result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
-				}
-				else if ( it->outputAttach.isColourClearingAttach()
-					|| it->outputAttach.isDepthClearingAttach() )
-				{
-					result.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-					result.access = VK_ACCESS_SHADER_READ_BIT;
-					result.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-				}
-				else
-				{
-					result.layout = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-					result.access = it->outputAttach.getAccessMask();
-					result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
-				}
+				result.layout = VK_IMAGE_LAYOUT_UNDEFINED;
+				result.access = 0u;
+				result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+			}
+			else if ( it->inputAttach.getFlags() != 0u )
+			{
+				result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+				result.access = it->inputAttach.getAccessMask();
+				result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
+			}
+			else if ( it->outputAttach.isColourClearingAttach()
+				|| it->outputAttach.isDepthClearingAttach() )
+			{
+				result.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				result.access = VK_ACCESS_SHADER_READ_BIT;
+				result.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			}
+			else
+			{
+				result.layout = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
+				result.access = it->outputAttach.getAccessMask();
+				result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
 			}
 		}
 
@@ -531,77 +698,114 @@ namespace crg
 		}
 		else
 		{
-			result = m_graph.getFinalAccessState( buffer );
+			passIt = std::find_if( m_inputTransitions.begin()
+				, m_inputTransitions.end()
+				, [&pass]( FramePassTransitions const & lookup )
+				{
+					return lookup.pass == &pass;
+				} );
+			assert( passIt != m_inputTransitions.end() );
+			it = std::find_if( passIt->transitions.bufferTransitions.begin()
+				, passIt->transitions.bufferTransitions.end()
+				, [&buffer]( BufferTransition const & lookup )
+				{
+					return buffer == lookup.data;
+				} );
 
-			if ( result.access == 0u )
+			if ( it == passIt->transitions.bufferTransitions.end() )
 			{
-				passIt = std::find_if( m_inputTransitions.begin()
-					, m_inputTransitions.end()
-					, [&pass]( FramePassTransitions const & lookup )
-					{
-						return lookup.pass == &pass;
-					} );
-				assert( passIt != m_inputTransitions.end() );
-				it = std::find_if( passIt->transitions.bufferTransitions.begin()
-					, passIt->transitions.bufferTransitions.end()
-					, [&buffer]( BufferTransition const & lookup )
-					{
-						return buffer == lookup.data;
-					} );
-
-				if ( it == passIt->transitions.bufferTransitions.end() )
-				{
-					result.access = 0u;
-					result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-				}
-				else if ( it->inputAttach.getFlags() != 0u )
-				{
-					result.access = it->inputAttach.getAccessMask();
-					result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
-				}
-				else
-				{
-					result.access = it->outputAttach.getAccessMask();
-					result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
-				}
+				result.access = 0u;
+				result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+			}
+			else if ( it->inputAttach.getFlags() != 0u )
+			{
+				result.access = it->inputAttach.getAccessMask();
+				result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
+			}
+			else
+			{
+				result.access = it->outputAttach.getAccessMask();
+				result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
 			}
 		}
 
 		return result;
 	}
 
-	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, ImageId const & image
-		, VkImageSubresourceRange const & subresourceRange
-		, VkImageLayout currentLayout
-		, VkImageLayout wantedLayout
-		, VkAccessFlags currentMask
-		, VkAccessFlags wantedMask
-		, VkPipelineStageFlags previousStage
-		, VkPipelineStageFlags nextStage )
+	void RunnableGraph::memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, ImageViewId const & view
+			, VkImageLayout initialLayout
+			, LayoutState const & wantedState )
+	{
+		memoryBarrier( context
+			, commandBuffer
+			, view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, initialLayout
+			, wantedState );
+	}
+
+	void RunnableGraph::memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, ImageId const & image
+			, VkImageSubresourceRange const & subresourceRange
+			, VkImageLayout initialLayout
+			, LayoutState const & wantedState )
+	{
+		memoryBarrier( context
+			, commandBuffer
+			, image
+			, VkImageViewType( image.data->info.imageType )
+			, subresourceRange
+			, initialLayout
+			, wantedState );
+	}
+
+	void RunnableGraph::memoryBarrier( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, ImageId const & image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange
+			, VkImageLayout initialLayout
+			, LayoutState const & wantedState )
 	{
 		if ( !m_context.device )
 		{
 			return;
 		}
 
-		if ( currentLayout != wantedLayout )
+		auto range = adaptRange( m_context
+				, image.data->info.format
+				, subresourceRange );
+		auto from = context.getLayoutState( image
+			, viewType
+			, range );
+
+		if ( from.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			from = { initialLayout
+				, getAccessMask( initialLayout )
+				, getStageMask( initialLayout ) };
+		}
+
+		if ( from.layout != wantedState.layout
+			&& wantedState.layout != VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
 				, nullptr
-				, currentMask
-				, wantedMask
-				, currentLayout
-				, wantedLayout
+				, from.access
+				, wantedState.access
+				, from.layout
+				, wantedState.layout
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
 				, createImage( image )
-				, adaptRange( m_context
-					, image.data->info.format
-					, subresourceRange ) };
+				, range };
 			m_context.vkCmdPipelineBarrier( commandBuffer
-				, previousStage
-				, nextStage
+				, from.pipelineStage
+				, wantedState.pipelineStage
 				, VK_DEPENDENCY_BY_REGION_BIT
 				, 0u
 				, nullptr
@@ -609,109 +813,49 @@ namespace crg
 				, nullptr
 				, 1u
 				, &barrier );
+			context.setLayoutState( image
+				, viewType
+				, range
+				, wantedState );
 		}
 	}
 
-	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, ImageId const & image
-		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState const & currentState
-		, LayoutState const & wantedState )
-	{
-		memoryBarrier( commandBuffer
-			, image
-			, subresourceRange
-			, currentState.layout
-			, wantedState.layout
-			, currentState.access
-			, wantedState.access
-			, currentState.pipelineStage
-			, wantedState.pipelineStage );
-	}
-
-	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, ImageViewId const & view
-		, VkImageLayout currentLayout
-		, VkImageLayout wantedLayout
-		, VkAccessFlags currentMask
-		, VkAccessFlags wantedMask
-		, VkPipelineStageFlags previousStage
-		, VkPipelineStageFlags nextStage )
-	{
-		memoryBarrier( commandBuffer
-			, view.data->image
-			, view.data->info.subresourceRange
-			, currentLayout
-			, wantedLayout
-			, currentMask
-			, wantedMask
-			, previousStage
-			, nextStage );
-	}
-
-	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, ImageViewId const & view
-		, LayoutState const & currentState
-		, LayoutState const & wantedState )
-	{
-		memoryBarrier( commandBuffer
-			, view
-			, currentState.layout
-			, wantedState.layout
-			, currentState.access
-			, wantedState.access
-			, currentState.pipelineStage
-			, wantedState.pipelineStage );
-	}
-
-	void RunnableGraph::imageMemoryBarrier( VkCommandBuffer commandBuffer
-		, Attachment const & from
-		, uint32_t fromIndex
-		, Attachment const & to
-		, uint32_t toIndex
-		, bool isCompute )
-	{
-		assert( from.isImage()
-			&& to.isImage()
-			&& from.view( fromIndex ) == to.view( toIndex ) );
-		memoryBarrier( commandBuffer
-			, from.view( fromIndex )
-			, from.getImageLayout( m_context.separateDepthStencilLayouts )
-			, to.getImageLayout( m_context.separateDepthStencilLayouts )
-			, from.getAccessMask()
-			, to.getAccessMask()
-			, from.getPipelineStageFlags( isCompute )
-			, to.getPipelineStageFlags( isCompute ) );
-	}
-
-	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, Buffer const & buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range
-		, VkAccessFlags currentMask
-		, VkAccessFlags wantedMask
-		, VkPipelineStageFlags previousStage
-		, VkPipelineStageFlags nextStage )
+	void RunnableGraph::memoryBarrier( RecordContext & context
+		, VkCommandBuffer commandBuffer
+		, VkBuffer buffer
+		, BufferSubresourceRange const & subresourceRange
+		, VkAccessFlags initialMask
+		, VkPipelineStageFlags initialStage
+		, AccessState const & wantedState )
 	{
 		if ( !m_context.device )
 		{
 			return;
 		}
 
-		if ( currentMask != wantedMask )
+		auto from = context.getAccessState( buffer
+			, subresourceRange );
+
+		if ( from.pipelineStage == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT )
+		{
+			from = { initialMask, initialStage };
+		}
+
+		if ( from.access != wantedState.access
+			|| from.pipelineStage != wantedState.pipelineStage )
 		{
 			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
 				, nullptr
-				, currentMask
-				, wantedMask
+				, from.access
+				, wantedState.access
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
-				, buffer.buffer
-				, offset
-				, range };
+				, buffer
+				, subresourceRange.offset
+				, subresourceRange.size };
 			m_context.vkCmdPipelineBarrier( commandBuffer
-				, previousStage
-				, nextStage
+				, from.pipelineStage
+				, wantedState.pipelineStage
 				, VK_DEPENDENCY_BY_REGION_BIT
 				, 0u
 				, nullptr
@@ -719,44 +863,10 @@ namespace crg
 				, &barrier
 				, 0u
 				, nullptr );
+			context.setAccessState( buffer
+				, subresourceRange
+				, wantedState );
 		}
-	}
-
-	void RunnableGraph::memoryBarrier( VkCommandBuffer commandBuffer
-		, Buffer const & buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range
-		, AccessState const & currentState
-		, AccessState const & wantedState )
-	{
-		memoryBarrier( commandBuffer
-			, buffer
-			, offset
-			, range
-			, currentState.access
-			, wantedState.access
-			, currentState.pipelineStage
-			, wantedState.pipelineStage );
-	}
-
-	void RunnableGraph::bufferMemoryBarrier( VkCommandBuffer commandBuffer
-		, Attachment const & from
-		, Attachment const & to
-		, bool isCompute )
-	{
-		assert( from.isBuffer()
-			&& to.isBuffer()
-			&& from.buffer.buffer == to.buffer.buffer
-			&& from.buffer.offset == to.buffer.offset
-			&& from.buffer.range == to.buffer.range );
-		memoryBarrier( commandBuffer
-			, from.buffer.buffer
-			, from.buffer.offset
-			, from.buffer.range
-			, from.getAccessMask()
-			, to.getAccessMask()
-			, from.getPipelineStageFlags( isCompute )
-			, to.getPipelineStageFlags( isCompute ) );
 	}
 
 	void RunnableGraph::doRegisterImages( FramePass const & pass
@@ -859,51 +969,5 @@ namespace crg
 			createImageView( view );
 			m_imageViews[view] = m_graph.m_handler.createImageView( m_context, view );
 		}
-	}
-
-	LayoutState RunnableGraph::doGetSubresourceRangeLayout( LayerLayoutStates const & ranges
-		, VkImageSubresourceRange const & range )const
-	{
-		std::unordered_map< size_t, LayoutState > states;
-
-		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
-		{
-			auto & layers = ranges.find( range.baseArrayLayer + layerIdx )->second;
-
-			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
-			{
-				auto state = layers.find( range.baseMipLevel + levelIdx )->second;
-				states.emplace( makeHash( state ), state );
-			}
-		}
-
-		if ( states.size() == 1u )
-		{
-			return states.begin()->second;
-		}
-
-		return { VK_IMAGE_LAYOUT_UNDEFINED
-			, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
-			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
-	}
-
-	LayoutState RunnableGraph::doAddSubresourceRangeLayout( LayerLayoutStates & ranges
-		, VkImageSubresourceRange const & range
-		, LayoutState const & newLayout )
-	{
-		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
-		{
-			auto & layers = ranges.find( range.baseArrayLayer + layerIdx )->second;
-
-			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
-			{
-				auto & level = layers.find( range.baseMipLevel + levelIdx )->second;
-				level.layout = newLayout.layout;
-				level.access = newLayout.access;
-				level.pipelineStage = newLayout.pipelineStage;
-			}
-		}
-
-		return newLayout;
 	}
 }

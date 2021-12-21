@@ -15,14 +15,14 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, VkExtent3D copySize
-			, uint32_t maxPassCount = 1u
-			, bool optional = false
+			, ru::Config ruConfig = {}
 			, uint32_t const * passIndex = nullptr
 			, bool const * enabled = nullptr );
 
 	private:
 		void doInitialise();
-		void doRecordInto( VkCommandBuffer commandBuffer
+		void doRecordInto( RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 		VkPipelineStageFlags doGetSemaphoreWaitFlags()const;
 		uint32_t doGetPassIndex()const;
