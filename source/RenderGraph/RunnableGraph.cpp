@@ -21,11 +21,11 @@ namespace crg
 		{
 			{
 				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
-				dot::displayTransitions( file, value, true );
+				dot::displayTransitions( file, value, { true, true } );
 			}
 			{
 				std::ofstream file{ value.getGraph()->getName() + "_passes.dot" };
-				dot::displayPasses( file, value, true );
+				dot::displayPasses( file, value, { true, true } );
 			}
 		}
 

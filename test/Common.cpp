@@ -39,18 +39,18 @@ namespace test
 			, std::ostream & stream
 			, crg::RunnableGraph & value )
 		{
-			crg::dot::displayPasses( stream, value, false );
+			crg::dot::displayPasses( stream, value, { false, false } );
 			std::ofstream file{ testCounts.testName + ".dot" };
-			crg::dot::displayPasses( file, value, true );
+			crg::dot::displayPasses( file, value, { true, true } );
 		}
 
 		void displayTransitions( TestCounts & testCounts
 			, std::ostream & stream
 			, crg::RunnableGraph & value )
 		{
-			crg::dot::displayTransitions( stream, value, false );
+			crg::dot::displayTransitions( stream, value, { false, false } );
 			std::ofstream file{ testCounts.testName + "_transitions.dot" };
-			crg::dot::displayTransitions( file, value, true );
+			crg::dot::displayTransitions( file, value, { true, true } );
 		}
 
 		bool isDepthFormat( VkFormat fmt )
