@@ -36,7 +36,7 @@ namespace crg
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
-				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordInto( context, cb, i ); }
+				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, defaultV< RunnablePass::RecordCallback >
 				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
 				, IsEnabledCallback( [this](){ return doIsEnabled(); } ) }
@@ -64,7 +64,7 @@ namespace crg
 		VkBufferImageCopy copyRegion{ 0ull
 			, 0u
 			, 0u
-			, convert( dstAttach.data->info.subresourceRange )
+			, range
 			, m_copyOffset
 			, m_copySize };
 		m_context.vkCmdCopyBufferToImage( commandBuffer

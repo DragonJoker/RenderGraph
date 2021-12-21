@@ -16,8 +16,8 @@ namespace crg
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
-				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordInto( context, cb, i ); }
-				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( context, cb, i ); }
+				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
+				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( recContext, cb, i ); }
 				, GetPassIndexCallback( [this](){ return m_renderQuad.getPassIndex(); } )
 				, IsEnabledCallback( [this](){ return m_renderQuad.isEnabled(); } ) }
 			, { ruConfig.maxPassCount

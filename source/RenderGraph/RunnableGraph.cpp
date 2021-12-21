@@ -13,6 +13,8 @@ See LICENSE file in root folder.
 #include <type_traits>
 #include <unordered_set>
 
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+
 namespace crg
 {
 	namespace
@@ -531,7 +533,7 @@ namespace crg
 		auto & views = it->second.views[passIndex];
 		std::for_each( views.begin
 			, views.end
-			, [this, &subresourceRange, &newLayout, &view]( LayoutStateMap & viewsLayouts )
+			, [&subresourceRange, &newLayout, &view]( LayoutStateMap & viewsLayouts )
 			{
 				auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
 				addSubresourceRangeLayout( ires.first->second
