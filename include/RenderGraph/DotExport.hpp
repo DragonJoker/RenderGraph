@@ -12,10 +12,16 @@ See LICENSE file in root folder.
 
 namespace crg::dot
 {
+	struct Config
+	{
+		bool withColours;
+		bool withIds;
+	};
+
 	CRG_API void displayPasses( std::ostream & stream
 		, RunnableGraph const & value
-		, bool withColours );
+		, Config const & config );
 	CRG_API void displayTransitions( std::ostream & stream
 		, RunnableGraph const & value
-		, bool withColours );
+		, Config const & config );
 }

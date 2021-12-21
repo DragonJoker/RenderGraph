@@ -2341,11 +2341,6 @@ namespace
 		mipsGen.addTransferInputView( mipsGen.mergeViews( colourViews ) );
 		mipsGen.addTransferOutputView( colourv );
 
-		graph.setFinalLayout( colourv
-			, { VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-				, crg::getAccessMask( VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
-				, crg::getStageMask( VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ) } );
-
 		auto runnable = graph.compile( getContext() );
 		testEnd();
 	}
