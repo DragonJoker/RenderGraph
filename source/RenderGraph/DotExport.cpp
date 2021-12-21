@@ -177,7 +177,7 @@ namespace crg::dot
 						dstColour = passColour;
 					}
 
-					displayPassNode( stream, srcNodeId, dstNode, dstColour, nodes, config );
+					displayPassNode( stream, dstNodeId, dstNode, dstColour, nodes, config );
 					displayEdge( stream, name, dstNode, transition.data.name, bufColour, config );
 				}
 

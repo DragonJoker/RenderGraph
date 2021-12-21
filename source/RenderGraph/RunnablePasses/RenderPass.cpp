@@ -121,8 +121,8 @@ namespace crg
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [](){ return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; } )
-				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordInto( context, cb, i ); }
-				, [this]( RecordContext & context, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( context, cb, i ); }
+				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
+				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( recContext, cb, i ); }
 				, std::move( callbacks.getPassIndex )
 				, std::move( callbacks.isEnabled ) }
 			, ruConfig }
