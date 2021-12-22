@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/FramePassTimer.hpp"
+#include "RenderGraph/RecordContext.hpp"
 #include "RenderGraph/WriteDescriptorSet.hpp"
 
 #include <optional>
@@ -32,7 +33,7 @@ namespace crg
 		{
 		}
 
-		ValueT operator()()
+		ValueT operator()()const
 		{
 			return m_callback();
 		}
@@ -78,9 +79,20 @@ namespace crg
 	{
 		struct Config
 		{
+			/**
+			*\param[in] config
+			*	The callback to recording the pass.
+			*/
+			auto & implicitAction( ImageViewId view
+				, RecordContext::ImplicitAction action )
+			{
+				actions.emplace( view, action );
+				return *this;
+			}
+
 			uint32_t maxPassCount{ 1u };
-			bool optional{ false };
 			bool resettable{ false };
+			std::map< ImageViewId, RecordContext::ImplicitAction > actions;
 		};
 	}
 
@@ -134,7 +146,7 @@ namespace crg
 		};
 
 		using InitialiseCallback = std::function< void() >;
-		using RecordCallback = std::function< void( RecordContext & context, VkCommandBuffer, uint32_t ) >;
+		using RecordCallback = std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) >;
 		using GetSemaphoreWaitFlagsCallback = GetValueCallbackT< SemaphoreWaitFlagsT, VkPipelineStageFlags >;
 		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
 		using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
@@ -150,22 +162,15 @@ namespace crg
 			CRG_API Callbacks( InitialiseCallback initialise
 				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
 				, RecordCallback record
-				, RecordCallback recordDisabled );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
-				, RecordCallback record
-				, RecordCallback recordDisabled
 				, GetPassIndexCallback getPassIndex );
 			CRG_API Callbacks( InitialiseCallback initialise
 				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
 				, RecordCallback record
-				, RecordCallback recordDisabled
 				, GetPassIndexCallback getPassIndex
 				, IsEnabledCallback isEnabled );
 			CRG_API Callbacks( InitialiseCallback initialise
 				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
 				, RecordCallback record
-				, RecordCallback recordDisabled
 				, GetPassIndexCallback getPassIndex
 				, IsEnabledCallback isEnabled
 				, IsComputePassCallback isComputePass );
@@ -173,7 +178,6 @@ namespace crg
 			InitialiseCallback initialise;
 			GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags;
 			RecordCallback record;
-			RecordCallback recordDisabled;
 			GetPassIndexCallback getPassIndex;
 			IsEnabledCallback isEnabled;
 			IsComputePassCallback isComputePass;
@@ -220,7 +224,7 @@ namespace crg
 		*\return
 		*	This pass' semaphore.
 		*/
-		CRG_API SemaphoreWait run( SemaphoreWait toWait
+		CRG_API SemaphoreWaitArray run( SemaphoreWait toWait
 			, VkQueue queue );
 		/**
 		*\brief
@@ -232,7 +236,7 @@ namespace crg
 		*\return
 		*	This pass' semaphore.
 		*/
-		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait
+		CRG_API SemaphoreWaitArray run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
 		/**
 		*\brief
@@ -244,9 +248,14 @@ namespace crg
 		CRG_API AccessTransition const & getTransition( uint32_t passIndex
 			, Buffer const & buffer )const;
 
-		bool isOptional()const
+		bool isEnabled()const
 		{
-			return m_ruConfig.optional;
+			return m_callbacks.isEnabled();
+		}
+
+		uint32_t getIndex()const
+		{
+			return isEnabled() ? m_callbacks.getPassIndex() : ~( 0u );
 		}
 
 		FramePass const & getPass()const
@@ -278,20 +287,15 @@ namespace crg
 
 	private:
 		void recordOne( CommandBuffer & enabled
-			, CommandBuffer & disabled
 			, uint32_t index
 			, RecordContext & context );
 		void recordInto( VkCommandBuffer commandBuffer
-			, uint32_t index
-			, RecordContext & context );
-		void recordDisabledInto( VkCommandBuffer commandBuffer
 			, uint32_t index
 			, RecordContext & context );
 
 		void doCreateCommandPool();
 		VkCommandBuffer doCreateCommandBuffer( std::string const & suffix );
 		void doCreateCommandBuffers();
-		void doCreateDisabledCommandBuffers();
 		void doCreateSemaphore();
 		void doRegisterTransition( uint32_t passIndex
 			, ImageViewId view
@@ -319,7 +323,6 @@ namespace crg
 		ru::Config m_ruConfig;
 		VkCommandPool m_commandPool{ nullptr };
 		std::vector< CommandBuffer > m_commandBuffers;
-		std::vector< CommandBuffer > m_disabledCommandBuffers;
 		VkSemaphore m_semaphore{ nullptr };
 		Fence m_fence;
 		FramePassTimer m_timer;

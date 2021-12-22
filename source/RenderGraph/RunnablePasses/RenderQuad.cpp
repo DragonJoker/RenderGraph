@@ -17,13 +17,11 @@ namespace crg
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( recContext, cb, i ); }
 				, GetPassIndexCallback( [this](){ return m_renderQuad.getPassIndex(); } )
 				, IsEnabledCallback( [this](){ return m_renderQuad.isEnabled(); } ) }
 			, { ruConfig.maxPassCount
-				, ( rqConfig.m_enabled ? true : false )
-				, true /*resettable*/ } }
-		, m_recordDisabledRenderPass{ rqConfig.m_recordDisabledRenderPass }
+				, true /*resettable*/
+				, ruConfig.actions } }
 		, m_renderQuad{ pass
 			, context
 			, graph
@@ -68,19 +66,6 @@ namespace crg
 		m_renderQuad.record( context, commandBuffer, index );
 		m_renderPass.end( context, commandBuffer );
 		m_renderQuad.end( context, commandBuffer, index );
-	}
-
-	void RenderQuad::doRecordDisabledInto( RecordContext & context
-		, VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-		if ( m_recordDisabledRenderPass )
-		{
-			m_renderPass.begin( context, commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
-			m_renderPass.end( context, commandBuffer );
-		}
-
-		m_renderQuad.recordDisabled( *this, context, commandBuffer, index );
 	}
 
 	VkPipelineStageFlags RenderQuad::doGetSemaphoreWaitFlags()const

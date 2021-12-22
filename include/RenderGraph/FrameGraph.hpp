@@ -5,65 +5,17 @@ See LICENSE file in root folder.
 #pragma once
 
 #include "Attachment.hpp"
+#include "FramePass.hpp"
+#include "GraphNode.hpp"
 #include "ImageData.hpp"
 #include "ImageViewData.hpp"
-#include "GraphNode.hpp"
-#include "FramePass.hpp"
+#include "RecordContext.hpp"
 
 #include <map>
 #include <vector>
 
 namespace crg
 {
-	class RecordContext
-	{
-	public:
-		/**
-		*\name	Images
-		*/
-		//@{
-		CRG_API void setLayoutState( crg::ImageViewId view
-			, LayoutState layoutState );
-		CRG_API void setWantedState( ImageViewId view
-			, LayoutState layoutState
-			, bool needsClear = false );
-		CRG_API LayoutState getLayoutState( ImageViewId view )const;
-
-		CRG_API void setLayoutState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState layoutState );
-		CRG_API void setWantedState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState layoutState
-			, bool needsClear = false );
-		CRG_API LayoutState getLayoutState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange )const;
-		//@}
-		/**
-		*\name	Buffers
-		*/
-		//@{
-		CRG_API void setAccessState( VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange
-			, AccessState layoutState );
-		CRG_API void setWantedState( VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange
-			, AccessState layoutState
-			, bool needsClear = false );
-		CRG_API AccessState getAccessState( VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange )const;
-		//@}
-
-	private:
-		std::map< uint32_t, LayerLayoutStates > m_images;
-		std::map< uint32_t, LayerLayoutStates > m_imagesWanted;
-		AccessStateMap m_buffers;
-		AccessStateMap m_buffersWanted;
-	};
-
 	class FrameGraph
 	{
 		friend class RunnableGraph;
@@ -129,6 +81,6 @@ namespace crg
 		std::set< ImageId > m_images;
 		std::set< ImageViewId > m_imageViews;
 		std::map< std::string, ImageViewId > m_attachViews;
-		RecordContext m_finalState;
+		RecordData m_finalState;
 	};
 }

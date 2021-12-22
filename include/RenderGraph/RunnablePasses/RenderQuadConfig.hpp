@@ -11,8 +11,6 @@ namespace crg
 {
 	namespace rq
 	{
-		using RecordDisabledIntoFunc = std::function< void( RunnablePass const &, RecordContext &, VkCommandBuffer, uint32_t ) >;
-
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
@@ -124,24 +122,6 @@ namespace crg
 				m_recordInto = config;
 				return *this;
 			}
-			/**
-			*\param[in] config
-			*	The callback to recording the disabled pass.
-			*/
-			auto & recordDisabledInto( rq::RecordDisabledIntoFunc config )
-			{
-				m_recordDisabledInto = config;
-				return *this;
-			}
-			/**
-			*\param[in] config
-			*	Tells if disabled pass should record render pass begin/end.
-			*/
-			auto & recordDisabledRenderPass( bool config )
-			{
-				m_recordDisabledRenderPass = config;
-				return *this;
-			}
 
 			pp::ConfigT< WrapperT > m_baseConfig;
 			WrapperT< Texcoord > m_texcoordConfig;
@@ -150,9 +130,7 @@ namespace crg
 			WrapperT< uint32_t const * > m_passIndex;
 			WrapperT< bool const * > m_enabled;
 			WrapperT< RunnablePass::RecordCallback > m_recordInto;
-			WrapperT< RecordDisabledIntoFunc > m_recordDisabledInto;
 			WrapperT< VkExtent2D > m_renderSize;
-			WrapperT< bool > m_recordDisabledRenderPass{ true };
 		};
 
 		template<>
@@ -164,7 +142,6 @@ namespace crg
 			RawTypeT< uint32_t const * > passIndex;
 			RawTypeT< bool const * > enabled;
 			RawTypeT< RunnablePass::RecordCallback > recordInto;
-			RawTypeT< RecordDisabledIntoFunc > recordDisabledInto;
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -238,16 +215,6 @@ namespace crg
 		static bool const * get()
 		{
 			static bool const * const result{};
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< rq::RecordDisabledIntoFunc >
-	{
-		static rq::RecordDisabledIntoFunc get()
-		{
-			static rq::RecordDisabledIntoFunc const result{ []( crg::RunnablePass const &, RecordContext &, VkCommandBuffer, uint32_t ){} };
 			return result;
 		}
 	};

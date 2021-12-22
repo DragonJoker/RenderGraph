@@ -53,7 +53,6 @@ namespace crg
 		: Callbacks{ std::move( initialise )
 			, std::move( getSemaphoreWaitFlags )
 			, getDefaultV< RecordCallback >()
-			, getDefaultV< RecordCallback >()
 			, getDefaultV< GetPassIndexCallback >()
 			, getDefaultV< IsEnabledCallback >()
 			, getDefaultV< IsComputePassCallback >() }
@@ -66,7 +65,6 @@ namespace crg
 		: Callbacks{ std::move( initialise )
 			, std::move( getSemaphoreWaitFlags )
 			, std::move( record )
-			, getDefaultV< RecordCallback >()
 			, getDefaultV< GetPassIndexCallback >()
 			, getDefaultV< IsEnabledCallback >()
 			, getDefaultV< IsComputePassCallback >() }
@@ -76,26 +74,10 @@ namespace crg
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
 		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
 		, RecordCallback record
-		, RecordCallback recordDisabled )
-		: Callbacks{ std::move( initialise )
-			, std::move( getSemaphoreWaitFlags )
-			, std::move( record )
-			, std::move( recordDisabled )
-			, getDefaultV< GetPassIndexCallback >()
-			, getDefaultV< IsEnabledCallback >()
-			, getDefaultV< IsComputePassCallback >() }
-	{
-	}
-
-	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
-		, RecordCallback record
-		, RecordCallback recordDisabled
 		, GetPassIndexCallback getPassIndex )
 		: Callbacks{ std::move( initialise )
 			, std::move( getSemaphoreWaitFlags )
 			, std::move( record )
-			, std::move( recordDisabled )
 			, std::move( getPassIndex )
 			, getDefaultV< IsEnabledCallback >()
 			, getDefaultV< IsComputePassCallback >() }
@@ -105,13 +87,11 @@ namespace crg
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
 		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
 		, RecordCallback record
-		, RecordCallback recordDisabled
 		, GetPassIndexCallback getPassIndex
 		, IsEnabledCallback isEnabled )
 		: Callbacks{ std::move( initialise )
 			, std::move( getSemaphoreWaitFlags )
 			, std::move( record )
-			, std::move( recordDisabled )
 			, std::move( getPassIndex )
 			, std::move( isEnabled )
 			, getDefaultV< IsComputePassCallback >() }
@@ -121,14 +101,12 @@ namespace crg
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
 		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
 		, RecordCallback record
-		, RecordCallback recordDisabled
 		, GetPassIndexCallback getPassIndex
 		, IsEnabledCallback isEnabled
 		, IsComputePassCallback isComputePass )
 		: initialise{ std::move( initialise ) }
 		, getSemaphoreWaitFlags{ std::move( getSemaphoreWaitFlags ) }
 		, record{ std::move( record ) }
-		, recordDisabled{ std::move( recordDisabled ) }
 		, getPassIndex{ std::move( getPassIndex ) }
 		, isEnabled{ std::move( isEnabled ) }
 		, isComputePass{ std::move( isComputePass ) }
@@ -233,7 +211,6 @@ namespace crg
 		, m_timer{ context, m_pass.name, 1u }
 	{
 		m_commandBuffers.resize( m_ruConfig.maxPassCount );
-		m_disabledCommandBuffers.resize( m_ruConfig.maxPassCount );
 	}
 
 	RunnablePass::~RunnablePass()
@@ -364,7 +341,6 @@ namespace crg
 	{
 		auto index = m_callbacks.getPassIndex();
 		recordOne( m_commandBuffers[index]
-			, m_disabledCommandBuffers[index]
 			, index
 			, context );
 	}
@@ -377,7 +353,6 @@ namespace crg
 		assert( it != m_passContexts.end() );
 		auto context = it->second;
 		recordOne( m_commandBuffers[index]
-			, m_disabledCommandBuffers[index]
 			, index
 			, context );
 	}
@@ -387,22 +362,15 @@ namespace crg
 		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
 		{
 			recordOne( m_commandBuffers[index]
-				, m_disabledCommandBuffers[index]
 				, index
 				, context );
 		}
 	}
 
 	void RunnablePass::recordOne( CommandBuffer & enabled
-		, CommandBuffer & disabled
 		, uint32_t index
 		, RecordContext & context )
 	{
-		if ( enabled.recorded )
-		{
-			return;
-		}
-
 		if ( !m_commandPool )
 		{
 			doCreateCommandPool();
@@ -423,26 +391,6 @@ namespace crg
 			, index
 			, context );
 		m_context.vkEndCommandBuffer( enabled.commandBuffer );
-		enabled.recorded = true;
-
-		if ( isOptional() )
-		{
-			if ( !disabled.commandBuffer )
-			{
-				disabled.commandBuffer = doCreateCommandBuffer( "Disabled" );
-			}
-
-			beginInfo = { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
-				, nullptr
-				, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
-				, nullptr };
-			m_context.vkBeginCommandBuffer( disabled.commandBuffer, &beginInfo );
-			recordDisabledInto( disabled.commandBuffer
-				, index
-				, ctxSave );
-			m_context.vkEndCommandBuffer( disabled.commandBuffer );
-			disabled.recorded = true;
-		}
 	}
 
 	void RunnablePass::recordInto( VkCommandBuffer commandBuffer
@@ -451,173 +399,101 @@ namespace crg
 	{
 		if ( m_ruConfig.resettable )
 		{
-			m_passContexts.emplace( index, context );
+			auto it = m_passContexts.emplace( index, context ).first;
+			it->second = context;
 		}
 
-		auto block = m_timer.start();
-		m_context.vkCmdBeginDebugBlock( commandBuffer
-			, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.name, m_context.getNextRainbowColour() } );
-		m_timer.beginPass( commandBuffer );
-
-		for ( auto & attach : m_pass.images )
+		if ( isEnabled() )
 		{
-			if ( !attach.isNoTransition()
-				&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
+			auto block = m_timer.start();
+			m_context.vkCmdBeginDebugBlock( commandBuffer
+				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.name, m_context.getNextRainbowColour() } );
+			m_timer.beginPass( commandBuffer );
+
+			for ( auto & attach : m_pass.images )
 			{
 				if ( attach.count <= 1u )
 				{
-					auto view = attach.view( index );
-					auto layout = attach.getImageLayout( m_context.separateDepthStencilLayouts );
-					LayoutState needed = { layout
-						, getAccessMask( layout )
-						, getStageMask( layout ) };
-					m_graph.memoryBarrier( context
-						, commandBuffer
-						, view
-						, attach.image.initialLayout
-						, needed );
+					context.runImplicitTransition( commandBuffer
+						, index
+						, attach.view( index ) );
 				}
 				else
 				{
 					for ( uint32_t i = 0u; i < attach.count; ++i )
 					{
-						auto view = attach.view( i );
-						auto transition = getTransition( index
-							, view );
+						context.runImplicitTransition( commandBuffer
+							, index
+							, attach.view( i ) );
+					}
+				}
+
+				if ( !attach.isNoTransition()
+					&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
+				{
+					if ( attach.count <= 1u )
+					{
+						auto view = attach.view( index );
+						auto layout = attach.getImageLayout( m_context.separateDepthStencilLayouts );
+						LayoutState needed = { layout
+							, getAccessMask( layout )
+							, getStageMask( layout ) };
 						m_graph.memoryBarrier( context
 							, commandBuffer
 							, view
 							, attach.image.initialLayout
-							, transition.needed );
+							, needed );
 					}
-				}
-			}
-		}
-
-		for ( auto & attach : m_pass.buffers )
-		{
-			if ( !attach.isNoTransition()
-				&& attach.isStorageBuffer() )
-			{
-				auto buffer = attach.buffer;
-				auto transition = getTransition( index
-					, buffer.buffer );
-				m_graph.memoryBarrier( context
-					, commandBuffer
-					, buffer.buffer.buffer
-					, buffer.range
-					, transition.from.access
-					, transition.from.pipelineStage
-					, transition.needed );
-			}
-		}
-
-		m_callbacks.record( context, commandBuffer, index );
-
-		// Register final states, to be able to transition final images to their wanted states.
-		for ( auto & attach : m_pass.images )
-		{
-			if ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() )
-			{
-				if ( attach.count <= 1u )
-				{
-					auto view = attach.view( index );
-					auto transition = getTransition( index
-						, view );
-					context.setWantedState( view
-						, transition.to );
-				}
-				else if ( !attach.isTransitionView() )
-				{
-					for ( uint32_t i = 0u; i < attach.count; ++i )
+					else
 					{
-						auto view = attach.view( i );
-						auto transition = getTransition( index
-							, view );
-						context.setWantedState( view
-							, transition.to );
+						for ( uint32_t i = 0u; i < attach.count; ++i )
+						{
+							auto view = attach.view( i );
+							auto transition = getTransition( index
+								, view );
+							m_graph.memoryBarrier( context
+								, commandBuffer
+								, view
+								, attach.image.initialLayout
+								, transition.needed );
+						}
 					}
 				}
 			}
-		}
 
-		for ( auto & attach : m_pass.buffers )
-		{
-			if ( attach.isStorageBuffer() )
+			for ( auto & attach : m_pass.buffers )
 			{
-				auto buffer = attach.buffer;
-				auto transition = getTransition( index
-					, buffer.buffer );
-				context.setWantedState( buffer.buffer.buffer
-					, buffer.range
-					, transition.to );
-			}
-		}
-
-		m_timer.endPass( commandBuffer );
-		m_context.vkCmdEndDebugBlock( commandBuffer );
-	}
-
-	void RunnablePass::recordDisabledInto( VkCommandBuffer commandBuffer
-		, uint32_t index
-		, RecordContext & context )
-	{
-		m_context.vkCmdBeginDebugBlock( commandBuffer
-			, { "(Disabled) [" + std::to_string( m_pass.id ) + "] " + m_pass.name, { 0.5f, 0.5f, 0.5f, 1.0f } } );
-		m_timer.beginPass( commandBuffer );
-		m_callbacks.recordDisabled( context, commandBuffer, index );
-
-		for ( auto & attach : m_pass.images )
-		{
-			if ( !attach.isNoTransition()
-				&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() ) )
-			{
-				if ( attach.count <= 1u )
+				if ( !attach.isNoTransition()
+					&& attach.isStorageBuffer() )
 				{
-					auto view = attach.view( index );
+					auto buffer = attach.buffer;
 					auto transition = getTransition( index
-						, view );
+						, buffer.buffer );
 					m_graph.memoryBarrier( context
 						, commandBuffer
-						, view
-						, transition.from.layout
-						, transition.to );
-				}
-				else
-				{
-					for ( uint32_t i = 0u; i < attach.count; ++i )
-					{
-						auto view = attach.view( i );
-						auto transition = getTransition( index
-							, view );
-						m_graph.memoryBarrier( context
-							, commandBuffer
-							, view
-							, transition.from.layout
-							, transition.to );
-					}
+						, buffer.buffer.buffer
+						, buffer.range
+						, transition.from.access
+						, transition.from.pipelineStage
+						, transition.needed );
 				}
 			}
+
+			m_callbacks.record( context, commandBuffer, index );
+
+			m_timer.endPass( commandBuffer );
+			m_context.vkCmdEndDebugBlock( commandBuffer );
 		}
 
-		for ( auto & attach : m_pass.buffers )
+		for ( auto & action : m_ruConfig.actions )
 		{
-			if ( attach.isStorageBuffer() )
-			{
-				auto buffer = attach.buffer;
-				auto transition = getTransition( index
-					, buffer.buffer );
-				context.setWantedState( buffer.buffer.buffer
-					, buffer.range
-					, transition.to );
-			}
+			context.registerImplicitTransition( *this
+				, action.first
+				, action.second );
 		}
-
-		m_timer.endPass( commandBuffer );
-		m_context.vkCmdEndDebugBlock( commandBuffer );
 	}
 
-	SemaphoreWait RunnablePass::run( SemaphoreWait toWait
+	SemaphoreWaitArray RunnablePass::run( SemaphoreWait toWait
 		, VkQueue queue )
 	{
 		return run( ( toWait.semaphore
@@ -626,19 +502,21 @@ namespace crg
 			, queue );
 	}
 
-	SemaphoreWait RunnablePass::run( SemaphoreWaitArray const & toWait
+	SemaphoreWaitArray RunnablePass::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
+		if ( !m_callbacks.isEnabled() )
+		{
+			return toWait;
+		}
+
 		if ( m_context.device )
 		{
 			std::vector< VkSemaphore > semaphores;
 			std::vector< VkPipelineStageFlags > dstStageMasks;
 			convert( toWait, semaphores, dstStageMasks );
 			auto index = m_callbacks.getPassIndex();
-			auto & cb = m_callbacks.isEnabled()
-				? m_commandBuffers[index]
-				: m_disabledCommandBuffers[index];
-			assert( cb.recorded );
+			auto & cb = m_commandBuffers[index];
 			m_timer.notifyPassRender();
 			VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 				, nullptr
@@ -656,8 +534,9 @@ namespace crg
 				, m_fence );
 		}
 
-		return { m_semaphore
-			, m_callbacks.getSemaphoreWaitFlags() };
+		return { 1u
+			, { m_semaphore
+				, m_callbacks.getSemaphoreWaitFlags() } };
 	}
 
 	void RunnablePass::resetCommandBuffer()
@@ -746,19 +625,6 @@ namespace crg
 		for ( auto & cb : m_commandBuffers )
 		{
 			cb.commandBuffer = doCreateCommandBuffer( std::string{} );
-		}
-	}
-
-	void RunnablePass::doCreateDisabledCommandBuffers()
-	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		for ( auto & cb : m_disabledCommandBuffers )
-		{
-			cb.commandBuffer = doCreateCommandBuffer( "Disabled" );
 		}
 	}
 
