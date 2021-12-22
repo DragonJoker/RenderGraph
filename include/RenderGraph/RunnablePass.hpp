@@ -92,7 +92,7 @@ namespace crg
 
 			uint32_t maxPassCount{ 1u };
 			bool resettable{ false };
-			std::map< ImageViewId, RecordContext::ImplicitAction > actions;
+			std::map< ImageViewId, RecordContext::ImplicitAction > actions{};
 		};
 	}
 
