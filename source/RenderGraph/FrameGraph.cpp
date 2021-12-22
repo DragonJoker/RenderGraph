@@ -197,7 +197,7 @@ namespace crg
 
 	void FrameGraph::registerFinalState( RecordContext const & context )
 	{
-		m_finalState = context;
+		m_finalState = context.getData();
 	}
 
 	VkExtent3D getExtent( ImageId const & image )

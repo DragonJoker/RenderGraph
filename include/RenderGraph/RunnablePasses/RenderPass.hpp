@@ -40,19 +40,13 @@ namespace crg
 				, RecordCallback record );
 			CRG_API Callbacks( InitialiseCallback initialise
 				, RecordCallback record
-				, RecordCallback recordDisabled );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, RecordCallback record
-				, RecordCallback recordDisabled
 				, GetSubpassContentsCallback getSubpassContents );
 			CRG_API Callbacks( InitialiseCallback initialise
 				, RecordCallback record
-				, RecordCallback recordDisabled
 				, GetSubpassContentsCallback getSubpassContents
 				, GetPassIndexCallback getPassIndex );
 			CRG_API Callbacks( InitialiseCallback initialise
 				, RecordCallback record
-				, RecordCallback recordDisabled
 				, GetSubpassContentsCallback getSubpassContents
 				, GetPassIndexCallback getPassIndex
 				, IsEnabledCallback isEnabled );
@@ -60,7 +54,6 @@ namespace crg
 			// RenderPass specifics
 			RunnablePass::InitialiseCallback initialise;
 			RunnablePass::RecordCallback record;
-			RunnablePass::RecordCallback recordDisabled;
 			GetSubpassContentsCallback getSubpassContents;
 			// Passed to RunnablePass
 			RunnablePass::GetPassIndexCallback getPassIndex;
@@ -99,9 +92,6 @@ namespace crg
 	private:
 		void doInitialise();
 		void doRecordInto( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, uint32_t index );
-		void doRecordDisabledInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 

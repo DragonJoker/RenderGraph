@@ -47,7 +47,6 @@ namespace crg
 		, RecordCallback record )
 		: Callbacks{ std::move( initialise )
 			, std::move( record )
-			, getDefaultV< RecordCallback >()
 			, getDefaultV< GetSubpassContentsCallback >()
 			, getDefaultV< GetPassIndexCallback >()
 			, getDefaultV< IsEnabledCallback >() }
@@ -56,23 +55,9 @@ namespace crg
 
 	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
 		, RecordCallback record
-		, RecordCallback recordDisabled )
-		: Callbacks{ std::move( initialise )
-			, std::move( record )
-			, std::move( recordDisabled )
-			, getDefaultV< GetSubpassContentsCallback >()
-			, getDefaultV< GetPassIndexCallback >()
-			, getDefaultV< IsEnabledCallback >() }
-	{
-	}
-
-	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
-		, RecordCallback record
-		, RecordCallback recordDisabled
 		, GetSubpassContentsCallback getSubpassContents )
 		: Callbacks{ std::move( initialise )
 			, std::move( record )
-			, std::move( recordDisabled )
 			, std::move( getSubpassContents )
 			, getDefaultV< GetPassIndexCallback >()
 			, getDefaultV< IsEnabledCallback >() }
@@ -81,12 +66,10 @@ namespace crg
 
 	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
 		, RecordCallback record
-		, RecordCallback recordDisabled
 		, GetSubpassContentsCallback getSubpassContents
 		, GetPassIndexCallback getPassIndex )
 		: Callbacks{ std::move( initialise )
 			, std::move( record )
-			, std::move( recordDisabled )
 			, std::move( getSubpassContents )
 			, std::move( getPassIndex )
 			, getDefaultV< IsEnabledCallback >() }
@@ -95,13 +78,11 @@ namespace crg
 
 	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
 		, RecordCallback record
-		, RecordCallback recordDisabled
 		, GetSubpassContentsCallback getSubpassContents
 		, GetPassIndexCallback getPassIndex
 		, IsEnabledCallback isEnabled )
 		: initialise{ std::move( initialise ) }
 		, record{ std::move( record ) }
-		, recordDisabled{ std::move( recordDisabled ) }
 		, getSubpassContents{ std::move( getSubpassContents ) }
 		, getPassIndex{ std::move( getPassIndex ) }
 		, isEnabled{ std::move( isEnabled ) }
@@ -122,7 +103,6 @@ namespace crg
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [](){ return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordDisabledInto( recContext, cb, i ); }
 				, std::move( callbacks.getPassIndex )
 				, std::move( callbacks.isEnabled ) }
 			, ruConfig }
@@ -157,25 +137,6 @@ namespace crg
 			, index );
 		m_holder.end( context
 			, commandBuffer );
-	}
-
-	void RenderPass::doRecordDisabledInto( RecordContext & context
-		, VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-		if ( m_holder.initialise( context, *this ) )
-		{
-			m_rpCallbacks.initialise();
-		}
-
-		m_holder.begin( context
-			, commandBuffer
-			, m_rpCallbacks.getSubpassContents()
-			, index );
-		m_holder.end( context
-			, commandBuffer );
-		m_rpCallbacks.recordDisabled( context
-			, commandBuffer, index );
 	}
 
 	//*********************************************************************************************

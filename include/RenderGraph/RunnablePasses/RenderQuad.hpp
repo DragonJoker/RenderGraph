@@ -31,15 +31,11 @@ namespace crg
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		void doRecordDisabledInto( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, uint32_t index );
 		VkPipelineStageFlags doGetSemaphoreWaitFlags()const;
 		uint32_t doGetPassIndex()const;
 		bool doIsEnabled()const;
 
 	private:
-		bool m_recordDisabledRenderPass{ true };
 		RenderQuadHolder m_renderQuad;
 		RenderPassHolder m_renderPass;
 	};
@@ -115,24 +111,6 @@ namespace crg
 		auto & recordInto( RunnablePass::RecordCallback config )
 		{
 			m_config.recordInto( config );
-			return static_cast< BuilderT & >( *this );
-		}
-		/**
-		*\param[in] config
-		*	The callback to recording the disabled pass.
-		*/
-		auto & recordDisabledInto( rq::RecordDisabledIntoFunc config )
-		{
-			m_config.recordDisabledInto( config );
-			return static_cast< BuilderT & >( *this );
-		}
-		/**
-		*\param[in] config
-		*	Tells if disabled pass should record render pass begin/end.
-		*/
-		auto & recordDisabledRenderPass( bool config )
-		{
-			m_config.recordDisabledRenderPass( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**

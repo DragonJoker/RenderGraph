@@ -531,6 +531,7 @@ namespace crg
 		DECL_vkFunction( CmdBindVertexBuffers );
 		DECL_vkFunction( CmdBindIndexBuffer );
 		DECL_vkFunction( CmdClearColorImage );
+		DECL_vkFunction( CmdClearDepthStencilImage );
 		DECL_vkFunction( CmdDispatch );
 		DECL_vkFunction( CmdDraw );
 		DECL_vkFunction( CmdDrawIndexed );

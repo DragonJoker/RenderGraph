@@ -20,8 +20,7 @@ namespace crg
 			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
 			, config.m_passIndex ? std::move( *config.m_passIndex ) : defaultV< uint32_t const * >
 			, config.m_enabled ? std::move( *config.m_enabled ) : defaultV< bool const * >
-			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_recordDisabledInto ? std::move( *config.m_recordDisabledInto ) : getDefaultV< rq::RecordDisabledIntoFunc >() }
+			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >() }
 		, m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
@@ -84,17 +83,6 @@ namespace crg
 		, uint32_t index )
 	{
 		m_config.recordInto( context, commandBuffer, index );
-	}
-
-	void RenderQuadHolder::recordDisabled( RunnablePass const & runnable
-		, RecordContext & context
-			, VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-		if ( m_config.recordDisabledInto )
-		{
-			m_config.recordDisabledInto( runnable, context, commandBuffer, index );
-		}
 	}
 
 	uint32_t RenderQuadHolder::getPassIndex()const

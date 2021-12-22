@@ -28,10 +28,6 @@ namespace crg
 		bool invertV{ false };
 	};
 
-	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
-	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
-	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
-
 	class RunnableGraph
 	{
 	public:
@@ -57,10 +53,10 @@ namespace crg
 		CRG_API VkImage createImage( ImageId const & image );
 		CRG_API VkImageView createImageView( ImageViewId const & view );
 
-		CRG_API SemaphoreWait run( VkQueue queue );
-		CRG_API SemaphoreWait run( SemaphoreWait toWait
+		CRG_API SemaphoreWaitArray run( VkQueue queue );
+		CRG_API SemaphoreWaitArray run( SemaphoreWait toWait
 			, VkQueue queue );
-		CRG_API SemaphoreWait run( SemaphoreWaitArray const & toWait
+		CRG_API SemaphoreWaitArray run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
 		CRG_API ImageViewId createView( ImageViewData const & view );
 		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
@@ -162,5 +158,6 @@ namespace crg
 		std::vector< AccessStateMap > m_buffersLayouts;
 		std::map< FramePass const *, RemainingPasses > m_passesLayouts;
 		uint32_t m_maxPassCount{ 1u };
+		std::vector< uint32_t > m_state;
 	};
 }

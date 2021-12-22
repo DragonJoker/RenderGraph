@@ -29,22 +29,19 @@ namespace crg
 		, VkOffset3D copyOffset
 		, VkExtent3D copySize
 		, ru::Config ruConfig
-		, uint32_t const * passIndex
-		, bool const * enabled )
+		, GetPassIndexCallback passIndex
+		, IsEnabledCallback isEnabled )
 		: RunnablePass{ pass
 			, context
 			, graph
 			, { [this](){ doInitialise(); }
 				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, defaultV< RunnablePass::RecordCallback >
-				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
-				, IsEnabledCallback( [this](){ return doIsEnabled(); } ) }
+				, passIndex
+				, isEnabled }
 			, std::move( ruConfig ) }
 		, m_copyOffset{ std::move( copyOffset ) }
 		, m_copySize{ std::move( copySize ) }
-		, m_passIndex{ passIndex }
-		, m_enabled{ enabled }
 	{
 	}
 
@@ -78,19 +75,5 @@ namespace crg
 	VkPipelineStageFlags BufferToImageCopy::doGetSemaphoreWaitFlags()const
 	{
 		return VK_PIPELINE_STAGE_TRANSFER_BIT;
-	}
-
-	uint32_t BufferToImageCopy::doGetPassIndex()const
-	{
-		return m_passIndex
-			? *m_passIndex
-			: 0u;
-	}
-
-	bool BufferToImageCopy::doIsEnabled()const
-	{
-		return m_enabled
-			? *m_enabled
-			: true;
 	}
 }
