@@ -66,12 +66,13 @@ namespace crg
 			return m_blendAttachs;
 		}
 
-	protected:
-		CRG_API void doCreateRenderPass( RecordContext & context
+	private:
+		void doCreateRenderPass( RecordContext & context
 			, crg::RunnablePass const & runnable );
-		CRG_API void doCreateFramebuffer();
+		void doCreateFramebuffer();
+		void doCleanup();
 
-	protected:
+	private:
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;

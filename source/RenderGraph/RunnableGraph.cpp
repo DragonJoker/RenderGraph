@@ -182,6 +182,7 @@ namespace crg
 		if ( m_state != state )
 		{
 			record();
+			m_state = state;
 		}
 
 		auto result = toWait;

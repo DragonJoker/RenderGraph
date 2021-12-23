@@ -69,6 +69,19 @@ namespace crg
 				, finalLayout
 				, separateDepthStencilLayouts );
 		}
+
+		bool checkAttaches( RecordContext const & context
+			, std::vector< RenderPassHolder::Entry > const & attaches )
+		{
+			auto it = std::find_if( attaches.begin()
+				, attaches.end()
+				, [&context]( RenderPassHolder::Entry const & lookup )
+				{
+					return context.getLayoutState( lookup.view ).layout != lookup.input.layout;
+				} );
+			return ( !attaches.empty() )
+				&& it == attaches.end();
+		}
 	}
 
 	//*********************************************************************************************
@@ -88,31 +101,19 @@ namespace crg
 
 	RenderPassHolder::~RenderPassHolder()
 	{
-		for ( auto frameBuffer : m_frameBuffers )
-		{
-			crgUnregisterObject( m_context, frameBuffer );
-			m_context.vkDestroyFramebuffer( m_context.device
-				, frameBuffer
-				, m_context.allocator );
-		}
-
-		if ( m_renderPass )
-		{
-			crgUnregisterObject( m_context, m_renderPass );
-			m_context.vkDestroyRenderPass( m_context.device
-				, m_renderPass
-				, m_context.allocator );
-		}
+		doCleanup();
 	}
 
 	bool RenderPassHolder::initialise( RecordContext & context
 			, crg::RunnablePass const & runnable )
 	{
-		if ( m_renderPass)
+		if ( m_renderPass
+			&& checkAttaches( context, m_attaches ) )
 		{
 			return false;
 		}
 
+		doCleanup();
 		doCreateRenderPass( context, runnable );
 		doCreateFramebuffer();
 		return true;
@@ -161,7 +162,6 @@ namespace crg
 	void RenderPassHolder::doCreateRenderPass( RecordContext & context
 			, crg::RunnablePass const & runnable )
 	{
-		m_attaches.clear();
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
 		VkAttachmentReference depthReference{};
@@ -293,6 +293,35 @@ namespace crg
 				, frameBuffer );
 			checkVkResult( res, m_pass.name + " - Framebuffer creation" );
 			crgRegisterObject( m_context, m_pass.name, *frameBuffer );
+		}
+	}
+
+	void RenderPassHolder::doCleanup()
+	{
+		m_attaches.clear();
+		m_clearValues.clear();
+		m_blendAttachs.clear();
+
+		for ( auto & frameBuffer : m_frameBuffers )
+		{
+			// Don't clear vector, only delete its values (it is sized at creation).
+			if ( frameBuffer )
+			{
+				crgUnregisterObject( m_context, frameBuffer );
+				m_context.vkDestroyFramebuffer( m_context.device
+					, frameBuffer
+					, m_context.allocator );
+				frameBuffer = {};
+			}
+		}
+
+		if ( m_renderPass )
+		{
+			crgUnregisterObject( m_context, m_renderPass );
+			m_context.vkDestroyRenderPass( m_context.device
+				, m_renderPass
+				, m_context.allocator );
+			m_renderPass = {};
 		}
 	}
 }
