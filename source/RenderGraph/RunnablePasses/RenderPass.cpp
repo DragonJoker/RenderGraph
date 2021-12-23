@@ -100,7 +100,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this](){ doInitialise(); }
+			, { [](){}
 				, GetSemaphoreWaitFlagsCallback( [](){ return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( callbacks.getPassIndex )
@@ -112,10 +112,6 @@ namespace crg
 			, graph
 			, ruConfig.maxPassCount
 			, size }
-	{
-	}
-
-	void RenderPass::doInitialise()
 	{
 	}
 
