@@ -345,8 +345,8 @@ namespace crg
 	}
 
 	void RecordContext::runImplicitTransition( VkCommandBuffer commandBuffer
-			, uint32_t index
-			, crg::ImageViewId view )
+		, uint32_t index
+		, crg::ImageViewId view )
 	{
 		auto it = std::find_if( m_implicitTransitions.begin()
 			, m_implicitTransitions.end()
@@ -357,20 +357,14 @@ namespace crg
 
 		if ( it != m_implicitTransitions.end() )
 		{
-			if ( !it->pass->isEnabled() )
-			{
-				it->action( *this, commandBuffer, index );
-			}
-
+			auto pass = it->pass;
+			auto action = it->action;
 			m_implicitTransitions.erase( it );
-		}
-	}
 
-	void RecordContext::forwardImplicitTransitions( RecordContext & target )
-	{
-		for ( auto & transition : m_implicitTransitions )
-		{
-			target.m_implicitTransitions.push_back( transition );
+			if ( !pass->isEnabled() )
+			{
+				action( *this, commandBuffer, index );
+			}
 		}
 	}
 
@@ -391,9 +385,9 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageViewId const & view
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState )
+		, ImageViewId const & view
+		, VkImageLayout initialLayout
+		, LayoutState const & wantedState )
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
@@ -404,10 +398,10 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState )
+		, ImageId const & image
+		, VkImageSubresourceRange const & subresourceRange
+		, VkImageLayout initialLayout
+		, LayoutState const & wantedState )
 	{
 		memoryBarrier( commandBuffer
 			, image
@@ -418,11 +412,11 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState )
+		, ImageId const & image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange
+		, VkImageLayout initialLayout
+		, LayoutState const & wantedState )
 	{
 		if ( !m_context->device )
 		{
@@ -474,8 +468,8 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageViewId const & view
-			, LayoutState const & wantedState )
+		, ImageViewId const & view
+		, LayoutState const & wantedState )
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
@@ -486,9 +480,9 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState const & wantedState )
+		, ImageId const & image
+		, VkImageSubresourceRange const & subresourceRange
+		, LayoutState const & wantedState )
 	{
 		memoryBarrier( commandBuffer
 			, image
@@ -499,10 +493,10 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState const & wantedState )
+		, ImageId const & image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange
+		, LayoutState const & wantedState )
 	{
 		memoryBarrier( commandBuffer
 			, image
@@ -588,6 +582,9 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
+			recContext.runImplicitTransition( commandBuffer
+				, index
+				, srcView );
 			auto & srcSubresource = srcView.data->info.subresourceRange;
 			auto & dstSubresource = dstView.data->info.subresourceRange;
 			VkImageCopy region{ VkImageSubresourceLayers{ srcSubresource.aspectMask, srcSubresource.baseMipLevel, srcSubresource.baseArrayLayer, 1u }
@@ -641,6 +638,42 @@ namespace crg
 			else
 			{
 				auto depthStencil = attach.image.clearValue.depthStencil;
+				recContext.m_context->vkCmdClearDepthStencilImage( commandBuffer
+					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, &depthStencil
+					, 1u
+					, &dstView.data->info.subresourceRange );
+			}
+		};
+	}
+
+	RecordContext::ImplicitAction RecordContext::clearAttachment( ImageViewId dstView
+		, VkClearValue const & clearValue )
+	{
+		return [clearValue, dstView]( RecordContext & recContext
+			, VkCommandBuffer commandBuffer
+			, uint32_t index )
+		{
+			recContext.memoryBarrier( commandBuffer
+				, dstView.data->image
+				, dstView.data->info.viewType
+				, dstView.data->info.subresourceRange
+				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
+
+			if ( isColourFormat( getFormat( dstView ) ) )
+			{
+				auto colour = clearValue.color;
+				recContext.m_context->vkCmdClearColorImage( commandBuffer
+					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, &colour
+					, 1u
+					, &dstView.data->info.subresourceRange );
+			}
+			else
+			{
+				auto depthStencil = clearValue.depthStencil;
 				recContext.m_context->vkCmdClearDepthStencilImage( commandBuffer
 					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL

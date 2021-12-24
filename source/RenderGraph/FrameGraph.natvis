@@ -183,4 +183,13 @@
 		</Expand>
 	</Type>
 
+	<Type Name="crg::RecordContext::ImplicitTransition">
+		<DisplayString>{view} {*pass}</DisplayString>
+		<Expand>
+			<Item Name="pass">pass</Item>
+			<Item Name="view">view</Item>
+			<Item Name="action">action</Item>
+		</Expand>
+	</Type>
+
 </AutoVisualizer>
