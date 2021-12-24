@@ -93,7 +93,6 @@ namespace crg
 		CRG_API void runImplicitTransition( VkCommandBuffer commandBuffer
 			, uint32_t index
 			, crg::ImageViewId view );
-		CRG_API void forwardImplicitTransitions( RecordContext & target );
 		//@}
 		/**
 		*\name	Buffers
@@ -161,10 +160,22 @@ namespace crg
 			, ImageViewId dstView
 			, VkExtent2D extent );
 		CRG_API static ImplicitAction clearAttachment( Attachment attach );
+		CRG_API static ImplicitAction clearAttachment( ImageViewId view
+			, VkClearValue const & clearValue );
 
 		RecordData const & getData()const
 		{
 			return m_data;
+		}
+
+		ResourceHandler & getHandler()const
+		{
+			return *m_handler;
+		}
+
+		GraphContext & getContext()const
+		{
+			return *m_context;
 		}
 
 	private:
