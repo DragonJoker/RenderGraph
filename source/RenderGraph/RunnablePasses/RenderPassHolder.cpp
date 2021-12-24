@@ -79,8 +79,7 @@ namespace crg
 				{
 					return context.getLayoutState( lookup.view ).layout != lookup.input.layout;
 				} );
-			return ( !attaches.empty() )
-				&& it == attaches.end();
+			return it == attaches.end();
 		}
 	}
 
