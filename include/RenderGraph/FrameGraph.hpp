@@ -35,6 +35,16 @@ namespace crg
 		/**@}*/
 		/**
 		*\name
+		*	Dependencies.
+		*/
+		/**@[*/
+		void addDependency( FrameGraph const & pgraph )
+		{
+			m_depends.push_back( &pgraph );
+		}
+		/**@}*/
+		/**
+		*\name
 		*	Resource creation.
 		*/
 		/**@{*/
@@ -67,6 +77,16 @@ namespace crg
 		{
 			return m_name;
 		}
+
+		FrameGraphArray const & getDependencies()const
+		{
+			return m_depends;
+		}
+
+		RecordContext const & getFinalStates()const
+		{
+			return m_finalState;
+		}
 		/**@}*/
 
 	private:
@@ -81,6 +101,7 @@ namespace crg
 		std::set< ImageId > m_images;
 		std::set< ImageViewId > m_imageViews;
 		std::map< std::string, ImageViewId > m_attachViews;
-		RecordData m_finalState;
+		RecordContext m_finalState;
+		FrameGraphArray m_depends;
 	};
 }

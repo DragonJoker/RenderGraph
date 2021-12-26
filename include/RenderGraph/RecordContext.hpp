@@ -22,44 +22,11 @@ namespace crg
 	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range );
 
-	struct RecordData
-	{
-	public:
-		/**
-		*\name	Images
-		*/
-		//@{
-		CRG_API void setLayoutState( crg::ImageViewId view
-			, LayoutState layoutState );
-		CRG_API LayoutState getLayoutState( ImageViewId view )const;
-
-		CRG_API void setLayoutState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState layoutState );
-		CRG_API LayoutState getLayoutState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange )const;
-		//@}
-		/**
-		*\name	Buffers
-		*/
-		//@{
-		CRG_API void setAccessState( VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange
-			, AccessState layoutState );
-		CRG_API AccessState getAccessState( VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange )const;
-		//@}
-
-	private:
-		std::map< uint32_t, LayerLayoutStates > m_images;
-		AccessStateMap m_buffers;
-	};
-
 	class RecordContext
 	{
 	public:
+		using PassIndexArray = std::vector< uint32_t >;
+		using GraphIndexMap = std::map< FrameGraph const *, PassIndexArray >;
 		using ImplicitAction = std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) >;
 
 		struct ImplicitTransition
@@ -68,8 +35,16 @@ namespace crg
 			ImageViewId view;
 			ImplicitAction action;
 		};
+
+	public:
 		CRG_API RecordContext( ResourceHandler & handler
 			, GraphContext & context );
+		CRG_API RecordContext( ResourceHandler & handler );
+		/**
+		*\name	States
+		*/
+		//@{
+		CRG_API void addStates( RecordContext const & data );
 		/**
 		*\name	Images
 		*/
@@ -103,6 +78,7 @@ namespace crg
 			, AccessState layoutState );
 		CRG_API AccessState getAccessState( VkBuffer buffer
 			, BufferSubresourceRange const & subresourceRange )const;
+		//@}
 		//@}
 		/**
 		*\name	Memory barriers
@@ -163,11 +139,6 @@ namespace crg
 		CRG_API static ImplicitAction clearAttachment( ImageViewId view
 			, VkClearValue const & clearValue );
 
-		RecordData const & getData()const
-		{
-			return m_data;
-		}
-
 		ResourceHandler & getHandler()const
 		{
 			return *m_handler;
@@ -178,10 +149,17 @@ namespace crg
 			return *m_context;
 		}
 
+		PassIndexArray const & getIndexState()const
+		{
+			return m_state;
+		}
+
 	private:
 		ResourceHandler * m_handler;
 		GraphContext * m_context;
-		RecordData m_data;
+		std::map< uint32_t, LayerLayoutStates > m_images;
+		AccessStateMap m_buffers;
 		std::vector< ImplicitTransition > m_implicitTransitions;
+		PassIndexArray m_state;
 	};
 }

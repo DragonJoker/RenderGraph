@@ -218,82 +218,30 @@ namespace crg
 
 	//************************************************************************************************
 
-	void RecordData::setLayoutState( crg::ImageViewId view
-		, LayoutState layoutState )
-	{
-		setLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange
-			, layoutState );
-	}
-
-	LayoutState RecordData::getLayoutState( ImageViewId view )const
-	{
-		return getLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
-	}
-
-	void RecordData::setLayoutState( ImageId image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState layoutState )
-	{
-		auto range = getVirtualRange( image
-			, viewType
-			, subresourceRange );
-		auto ires = m_images.emplace( image.id, LayerLayoutStates{} );
-		addSubresourceRangeLayout( ires.first->second
-			, range
-			, layoutState );
-	}
-
-	LayoutState RecordData::getLayoutState( ImageId image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & subresourceRange )const
-	{
-		auto imageIt = m_images.find( image.id );
-
-		if ( imageIt != m_images.end() )
-		{
-			auto range = getVirtualRange( image
-				, viewType
-				, subresourceRange );
-			return getSubresourceRangeLayout( imageIt->second
-				, range );
-		}
-
-		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-	}
-
-	void RecordData::setAccessState( VkBuffer buffer
-		, BufferSubresourceRange const & subresourceRange
-		, AccessState layoutState )
-	{
-		auto ires = m_buffers.emplace( buffer, AccessState{} );
-		ires.first->second = layoutState;
-	}
-
-	AccessState RecordData::getAccessState( VkBuffer buffer
-		, BufferSubresourceRange const & subresourceRange )const
-	{
-		auto bufferIt = m_buffers.find( buffer );
-
-		if ( bufferIt != m_buffers.end() )
-		{
-			return bufferIt->second;
-		}
-
-		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-	}
-
-	//************************************************************************************************
-
 	RecordContext::RecordContext( ResourceHandler & handler
 		, GraphContext & context )
 		: m_handler{ &handler }
 		, m_context{ &context }
 	{
+	}
+
+	RecordContext::RecordContext( ResourceHandler & handler )
+		: m_handler{ &handler }
+		, m_context{ nullptr }
+	{
+	}
+
+	void RecordContext::addStates( RecordContext const & data )
+	{
+		for ( auto & state : data.m_images )
+		{
+			m_images.insert( state );
+		}
+
+		for ( auto & state : data.m_buffers )
+		{
+			m_buffers.insert( state );
+		}
 	}
 
 	void RecordContext::setLayoutState( crg::ImageViewId view
@@ -317,9 +265,12 @@ namespace crg
 		, VkImageSubresourceRange const & subresourceRange
 		, LayoutState layoutState )
 	{
-		m_data.setLayoutState( image
+		auto range = getVirtualRange( image
 			, viewType
-			, subresourceRange
+			, subresourceRange );
+		auto ires = m_images.emplace( image.id, LayerLayoutStates{} );
+		addSubresourceRangeLayout( ires.first->second
+			, range
 			, layoutState );
 	}
 
@@ -327,9 +278,18 @@ namespace crg
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
-		return m_data.getLayoutState( image
-			, viewType
-			, subresourceRange );
+		auto imageIt = m_images.find( image.id );
+
+		if ( imageIt != m_images.end() )
+		{
+			auto range = getVirtualRange( image
+				, viewType
+				, subresourceRange );
+			return getSubresourceRangeLayout( imageIt->second
+				, range );
+		}
+
+		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 	}
 
 	void RecordContext::registerImplicitTransition( RunnablePass const & pass
@@ -372,16 +332,21 @@ namespace crg
 		, BufferSubresourceRange const & subresourceRange
 		, AccessState layoutState )
 	{
-		m_data.setAccessState( buffer
-			, subresourceRange
-			, layoutState );
+		auto ires = m_buffers.emplace( buffer, AccessState{} );
+		ires.first->second = layoutState;
 	}
 
 	AccessState RecordContext::getAccessState( VkBuffer buffer
 		, BufferSubresourceRange const & subresourceRange )const
 	{
-		return m_data.getAccessState( buffer
-			, subresourceRange );
+		auto bufferIt = m_buffers.find( buffer );
+
+		if ( bufferIt != m_buffers.end() )
+		{
+			return bufferIt->second;
+		}
+
+		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
