@@ -107,6 +107,7 @@ namespace crg
 		, std::string name )
 		: m_handler{ handler }
 		, m_name{ std::move( name ) }
+		, m_finalState{ handler }
 	{
 	}
 
@@ -197,7 +198,7 @@ namespace crg
 
 	void FrameGraph::registerFinalState( RecordContext const & context )
 	{
-		m_finalState = context.getData();
+		m_finalState = context;
 	}
 
 	VkExtent3D getExtent( ImageId const & image )

@@ -158,6 +158,6 @@ namespace crg
 		std::vector< AccessStateMap > m_buffersLayouts;
 		std::map< FramePass const *, RemainingPasses > m_passesLayouts;
 		uint32_t m_maxPassCount{ 1u };
-		std::vector< uint32_t > m_state;
+		RecordContext::GraphIndexMap m_states;
 	};
 }

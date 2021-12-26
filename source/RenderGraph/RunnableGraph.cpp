@@ -125,9 +125,19 @@ namespace crg
 
 	void RunnableGraph::record()
 	{
-		m_state.resize( m_passes.size() );
+		m_states.clear();
 		RecordContext recordContext{ m_graph.getHandler(), m_context };
-		auto it = m_state.begin();
+
+		for ( auto & dependency : m_graph.getDependencies() )
+		{
+			recordContext.addStates( dependency->getFinalStates() );
+			m_states.emplace( dependency
+				, dependency->getFinalStates().getIndexState() );
+		}
+
+		auto itGraph = m_states.emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
+		itGraph->second.resize( m_passes.size() );
+		auto it = itGraph->second.begin();
 
 		for ( auto & pass : m_passes )
 		{
@@ -171,18 +181,24 @@ namespace crg
 	SemaphoreWaitArray RunnableGraph::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
-		std::vector< uint32_t > state;
-		state.reserve( m_passes.size() );
+		RecordContext::GraphIndexMap states;
+		auto it = states.emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
+		it->second.reserve( m_passes.size() );
 
 		for ( auto & pass : m_passes )
 		{
-			state.push_back( pass->getIndex() );
+			it->second.push_back( pass->getIndex() );
 		}
 
-		if ( m_state != state )
+		for ( auto & dependency : m_graph.getDependencies() )
+		{
+			states.emplace( dependency
+				, dependency->getFinalStates().getIndexState() );
+		}
+
+		if ( m_states != states )
 		{
 			record();
-			m_state = state;
 		}
 
 		auto result = toWait;
