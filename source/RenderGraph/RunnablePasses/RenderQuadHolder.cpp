@@ -20,6 +20,7 @@ namespace crg
 			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
 			, config.m_passIndex ? std::move( *config.m_passIndex ) : defaultV< uint32_t const * >
 			, config.m_enabled ? std::move( *config.m_enabled ) : defaultV< bool const * >
+			, config.m_isEnabled
 			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >() }
 		, m_pass{ pass }
 		, m_context{ context }
@@ -73,16 +74,10 @@ namespace crg
 		, uint32_t index )
 	{
 		m_pipeline.recordInto( context, commandBuffer, index );
+		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 3u, 1u, 0u, 0u );
-	}
-
-	void RenderQuadHolder::end( RecordContext & context
-			, VkCommandBuffer commandBuffer
-		, uint32_t index )
-	{
-		m_config.recordInto( context, commandBuffer, index );
 	}
 
 	uint32_t RenderQuadHolder::getPassIndex()const
@@ -94,9 +89,11 @@ namespace crg
 
 	bool RenderQuadHolder::isEnabled()const
 	{
-		return ( m_config.enabled
-			? *m_config.enabled
-			: true );
+		return ( m_config.isEnabled
+			? ( *m_config.isEnabled )()
+			: ( m_config.enabled
+				? *m_config.enabled
+				: true ) );
 	}
 
 	void RenderQuadHolder::doCreatePipeline( VkExtent2D const & renderSize

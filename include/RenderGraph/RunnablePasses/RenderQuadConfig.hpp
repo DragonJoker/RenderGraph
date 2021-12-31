@@ -115,6 +115,15 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The callback checking the enable status of the pass.
+			*/
+			auto & isEnabled( RunnablePass::IsEnabledCallback config )
+			{
+				m_isEnabled = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	The callback to recording the pass.
 			*/
 			auto & recordInto( RunnablePass::RecordCallback config )
@@ -129,6 +138,7 @@ namespace crg
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState;
 			WrapperT< uint32_t const * > m_passIndex;
 			WrapperT< bool const * > m_enabled;
+			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled;
 			WrapperT< RunnablePass::RecordCallback > m_recordInto;
 			WrapperT< VkExtent2D > m_renderSize;
 		};
@@ -141,6 +151,7 @@ namespace crg
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			RawTypeT< uint32_t const * > passIndex;
 			RawTypeT< bool const * > enabled;
+			std::optional< RunnablePass::IsEnabledCallback > isEnabled;
 			RawTypeT< RunnablePass::RecordCallback > recordInto;
 		};
 
