@@ -106,6 +106,15 @@ namespace crg
 		}
 		/**
 		*\param[in] config
+		*	The callback checking the enable status of the pass.
+		*/
+		auto & isEnabled( RunnablePass::IsEnabledCallback config )
+		{
+			m_config.isEnabled( config );
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
 		*	The callback to recording the pass.
 		*/
 		auto & recordInto( RunnablePass::RecordCallback config )
