@@ -21,7 +21,8 @@ namespace crg
 			, config.m_passIndex ? std::move( *config.m_passIndex ) : defaultV< uint32_t const * >
 			, config.m_enabled ? std::move( *config.m_enabled ) : defaultV< bool const * >
 			, config.m_isEnabled
-			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >() }
+			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
+			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >() }
 		, m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
@@ -84,10 +85,7 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		if ( m_config.end )
-		{
-			m_config.end( context, commandBuffer, index );
-		}
+		m_config.end( context, commandBuffer, index );
 	}
 
 	uint32_t RenderQuadHolder::getPassIndex()const
