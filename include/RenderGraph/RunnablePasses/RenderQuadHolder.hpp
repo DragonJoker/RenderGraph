@@ -30,6 +30,9 @@ namespace crg
 		CRG_API void record( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
+		CRG_API void end( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, uint32_t index );
 		CRG_API uint32_t getPassIndex()const;
 		CRG_API bool isEnabled()const;
 

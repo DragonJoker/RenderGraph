@@ -124,11 +124,20 @@ namespace crg
 			}
 			/**
 			*\param[in] config
-			*	The callback to recording the pass.
+			*	The callback recording the pass.
 			*/
 			auto & recordInto( RunnablePass::RecordCallback config )
 			{
 				m_recordInto = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The callback ending the pass.
+			*/
+			auto & end( RunnablePass::RecordCallback config )
+			{
+				m_end = config;
 				return *this;
 			}
 
@@ -140,6 +149,7 @@ namespace crg
 			WrapperT< bool const * > m_enabled;
 			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled;
 			WrapperT< RunnablePass::RecordCallback > m_recordInto;
+			WrapperT< RunnablePass::RecordCallback > m_end;
 			WrapperT< VkExtent2D > m_renderSize;
 		};
 
@@ -153,6 +163,7 @@ namespace crg
 			RawTypeT< bool const * > enabled;
 			std::optional< RunnablePass::IsEnabledCallback > isEnabled;
 			RawTypeT< RunnablePass::RecordCallback > recordInto;
+			RawTypeT< RunnablePass::RecordCallback > end;
 		};
 
 		using Config = ConfigT< std::optional >;

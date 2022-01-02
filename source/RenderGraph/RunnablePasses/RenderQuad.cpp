@@ -65,6 +65,7 @@ namespace crg
 		m_renderPass.begin( context, commandBuffer, VK_SUBPASS_CONTENTS_INLINE, index );
 		m_renderQuad.record( context, commandBuffer, index );
 		m_renderPass.end( context, commandBuffer );
+		m_renderQuad.end( context, commandBuffer, index );
 	}
 
 	VkPipelineStageFlags RenderQuad::doGetSemaphoreWaitFlags()const
