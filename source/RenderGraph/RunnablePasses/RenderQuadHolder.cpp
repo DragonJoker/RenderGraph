@@ -70,7 +70,7 @@ namespace crg
 	}
 
 	void RenderQuadHolder::record( RecordContext & context
-			, VkCommandBuffer commandBuffer
+		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
 		m_pipeline.recordInto( context, commandBuffer, index );
@@ -78,6 +78,16 @@ namespace crg
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
 		m_context.vkCmdDraw( commandBuffer, 3u, 1u, 0u, 0u );
+	}
+
+	void RenderQuadHolder::end( RecordContext & context
+		, VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		if ( m_config.end )
+		{
+			m_config.end( context, commandBuffer, index );
+		}
 	}
 
 	uint32_t RenderQuadHolder::getPassIndex()const
