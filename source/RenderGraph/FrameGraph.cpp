@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
+#include "RenderGraph/FramePassGroup.hpp"
 #include "RenderGraph/ResourceHandler.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 #include "FramePassDependenciesBuilder.hpp"
@@ -29,7 +30,7 @@ namespace crg
 				} );
 		}
 
-		std::vector< FramePass const * > sortPasses( FramePassPtrArray const & passes )
+		FramePassArray sortPasses( FramePassArray const & passes )
 		{
 			FramePassArray sortedPasses;
 			FramePassArray unsortedPasses;
@@ -38,11 +39,11 @@ namespace crg
 			{
 				if ( pass->passDepends.empty() )
 				{
-					sortedPasses.push_back( pass.get() );
+					sortedPasses.push_back( pass );
 				}
 				else
 				{
-					unsortedPasses.push_back( pass.get() );
+					unsortedPasses.push_back( pass );
 				}
 			}
 
@@ -107,6 +108,7 @@ namespace crg
 		, std::string name )
 		: m_handler{ handler }
 		, m_name{ std::move( name ) }
+		, m_defaultGroup{ new FramePassGroup{ *this, m_name } }
 		, m_finalState{ handler }
 	{
 	}
@@ -114,24 +116,12 @@ namespace crg
 	FramePass & FrameGraph::createPass( std::string const & name
 		, RunnablePassCreator runnableCreator )
 	{
-		FramePassPtr pass{ new FramePass{ *this
-			, uint32_t( m_passes.size() + 1u )
-			, name
-			, runnableCreator } };
+		return m_defaultGroup->createPass( name, runnableCreator );
+	}
 
-		if ( m_passes.end() != std::find_if( m_passes.begin()
-			, m_passes.end()
-			, [&pass]( FramePassPtr const & lookup )
-			{
-				return lookup->name == pass->name;
-			} ) )
-		{
-			CRG_Exception( "Duplicate FramePass name detected." );
-		}
-
-		auto result = pass.get();
-		m_passes.emplace_back( std::move( pass ) );
-		return *result;
+	FramePassGroup & FrameGraph::createPassGroup( std::string const & groupName )
+	{
+		return m_defaultGroup->createPassGroup( groupName );
 	}
 
 	ImageId FrameGraph::createImage( ImageData const & img )
@@ -150,15 +140,18 @@ namespace crg
 
 	RunnableGraphPtr FrameGraph::compile( GraphContext & context )
 	{
-		if ( m_passes.empty() )
+		FramePassArray passes;
+		m_defaultGroup->listPasses( passes );
+
+		if ( passes.empty() )
 		{
 			CRG_Exception( "No FramePass registered." );
 		}
 
-		auto sortedPasses = sortPasses( m_passes );
+		passes = sortPasses( passes );
 		GraphNodePtrArray nodes;
 
-		for ( auto & pass : sortedPasses )
+		for ( auto & pass : passes )
 		{
 			auto node = std::make_unique< FramePassNode >( *pass );
 			nodes.emplace_back( std::move( node ) );
@@ -178,6 +171,7 @@ namespace crg
 		ImageMemoryMap images;
 		ImageViewMap imageViews;
 		return std::make_unique< RunnableGraph >( *this
+			, std::move( passes )
 			, std::move( inputTransitions )
 			, std::move( outputTransitions )
 			, std::move( transitions )

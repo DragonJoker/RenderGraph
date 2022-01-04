@@ -62,6 +62,11 @@ namespace crg
 			return name;
 		}
 
+		FramePassGroup const & getGroup()const
+		{
+			return group;
+		}
+
 		uint32_t getId()const
 		{
 			return id;
@@ -80,12 +85,14 @@ namespace crg
 	protected:
 		CRG_API GraphNode( Kind kind
 			, uint32_t id
-			, std::string name );
+			, std::string name
+			, FramePassGroup const & group );
 
 	protected:
 		Kind kind;
 		uint32_t id;
 		std::string name;
+		FramePassGroup const & group;
 		GraphAdjacentNodeArray next;
 		AttachmentsNodeMap inputAttaches;
 	};

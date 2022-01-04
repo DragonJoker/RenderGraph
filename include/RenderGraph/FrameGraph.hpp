@@ -5,7 +5,7 @@ See LICENSE file in root folder.
 #pragma once
 
 #include "Attachment.hpp"
-#include "FramePass.hpp"
+#include "FramePassGroup.hpp"
 #include "GraphNode.hpp"
 #include "ImageData.hpp"
 #include "ImageViewData.hpp"
@@ -48,6 +48,7 @@ namespace crg
 		/**@{*/
 		CRG_API FramePass & createPass( std::string const & name
 			, RunnablePassCreator runnableCreator );
+		CRG_API FramePassGroup & createPassGroup( std::string const & name );
 		/**@}*/
 		/**
 		*\name
@@ -93,6 +94,11 @@ namespace crg
 		{
 			return m_finalState;
 		}
+
+		FramePassGroup & getDefaultGroup()const
+		{
+			return *m_defaultGroup;
+		}
 		/**@}*/
 
 	private:
@@ -101,7 +107,7 @@ namespace crg
 	private:
 		ResourceHandler & m_handler;
 		std::string m_name;
-		FramePassPtrArray m_passes;
+		FramePassGroupPtr m_defaultGroup;
 		ImageIdAliasMap m_imageAliases;
 		ImageViewIdAliasMap m_imageViewAliases;
 		std::set< ImageId > m_images;

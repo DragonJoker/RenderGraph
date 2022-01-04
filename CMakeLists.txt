@@ -69,6 +69,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphPrerequisites.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassDependencies.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassGroup.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassTimer.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphContext.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/GraphNode.hpp
@@ -95,6 +96,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassGroup.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassTimer.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphContext.cpp
