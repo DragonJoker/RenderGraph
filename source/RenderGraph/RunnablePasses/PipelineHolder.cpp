@@ -102,8 +102,8 @@ namespace crg
 	{
 		createDescriptorSet( index );
 		auto & pipeline = getPipeline( index );
-		m_context.vkCmdBindPipeline( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
-		m_context.vkCmdBindDescriptorSets( commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
+		m_context.vkCmdBindPipeline( commandBuffer, m_bindingPoint, pipeline );
+		m_context.vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
 	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
@@ -234,14 +234,13 @@ namespace crg
 				| VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
 				| VK_SHADER_STAGE_GEOMETRY_BIT
 				| VK_SHADER_STAGE_FRAGMENT_BIT ) );
-		auto imageDescriptor = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 
 		for ( auto & attach : m_pass.images )
 		{
 			if ( attach.isSampledView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
-					, imageDescriptor
+					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 					, std::max( 1u, attach.count )
 					, shaderStage
 					, nullptr } );

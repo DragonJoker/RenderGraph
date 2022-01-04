@@ -413,7 +413,7 @@ namespace crg
 				, AttachesArrayT< DataT > & all
 				, std::function< bool( DataT const &, DataT const & ) > processAttach )
 			{
-				std::vector< FramePass const * > passes;
+				FramePassArray passes;
 				auto attaches = AttachDataTraitsT< DataT >::split( attach );
 
 				for ( auto & splitAttach : attaches )

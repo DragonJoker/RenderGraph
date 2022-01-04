@@ -382,6 +382,7 @@ namespace crg
 		}
 
 		auto ctxSave = context;
+		m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
 		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 			, nullptr
 			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
