@@ -23,12 +23,38 @@ namespace crg
 		void display( RunnableGraph & value )
 		{
 			{
+				auto streams = dot::displayTransitions( value, { true, true, true, false } );
 				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
-				dot::displayTransitions( file, value, { true, true } );
+				file << streams.begin()->second.str();
 			}
 			{
+				auto streams = dot::displayTransitions( value, { true, true, true, true } );
+
+				for ( auto & it : streams )
+				{
+					if ( !it.first.empty() )
+					{
+						std::ofstream file{ value.getGraph()->getName() + "_transitions_" + it.first + ".dot" };
+						file << it.second.str();
+					}
+				}
+			}
+			{
+				auto streams = dot::displayPasses( value, { true, true, true, false } );
 				std::ofstream file{ value.getGraph()->getName() + "_passes.dot" };
-				dot::displayPasses( file, value, { true, true } );
+				file << streams.begin()->second.str();
+			}
+			{
+				auto streams = dot::displayPasses( value, { true, true, true, true } );
+
+				for ( auto & it : streams )
+				{
+					if ( !it.first.empty() )
+					{
+						std::ofstream file{ value.getGraph()->getName() + "_passes_" + it.first + ".dot" };
+						file << it.second.str();
+					}
+				}
 			}
 		}
 	}
@@ -36,6 +62,7 @@ namespace crg
 	//************************************************************************************************
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph
+		, FramePassArray passes
 		, FramePassDependencies inputTransitions
 		, FramePassDependencies outputTransitions
 		, AttachmentTransitions transitions
@@ -55,7 +82,7 @@ namespace crg
 		LayoutStateMap images;
 		AccessStateMap buffers;
 
-		for ( auto & pass : graph.m_passes )
+		for ( auto & pass : passes )
 		{
 			doRegisterImages( *pass, images );
 			doRegisterBuffers( *pass, buffers );

@@ -142,11 +142,13 @@ namespace crg
 		}
 	}
 
-	FramePass::FramePass( FrameGraph & pgraph
+	FramePass::FramePass( FramePassGroup const & pgroup
+		, FrameGraph & pgraph
 		, uint32_t pid
 		, std::string const & pname
 		, RunnablePassCreator prunnableCreator )
-		: graph{ pgraph }
+		: group{ pgroup }
+		, graph{ pgraph }
 		, id{ pid }
 		, name{ pname }
 		, runnableCreator{ prunnableCreator }

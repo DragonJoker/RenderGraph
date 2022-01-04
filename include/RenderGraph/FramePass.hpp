@@ -19,13 +19,14 @@ namespace crg
 	struct FramePass
 	{
 	protected:
-		friend class FrameGraph;
+		friend struct FramePassGroup;
 		/**
 		*\name
 		*	Construction.
 		*/
 		/**@[*/
-		CRG_API FramePass( FrameGraph & graph
+		CRG_API FramePass( FramePassGroup const & group
+			, FrameGraph & graph
 			, uint32_t id
 			, std::string const & name
 			, RunnablePassCreator runnableCreator );
@@ -704,6 +705,7 @@ namespace crg
 			, RunnableGraph & graph )const;
 		/**@}*/
 
+		FramePassGroup const & group;
 		FrameGraph & graph;
 		uint32_t id;
 		std::string name;

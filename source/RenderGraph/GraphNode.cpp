@@ -12,12 +12,14 @@ namespace crg
 {
 	//*********************************************************************************************
 
-	GraphNode::GraphNode( Kind kind
-		, uint32_t id
-		, std::string name )
-		: kind{ kind }
-		, id{ id }
-		, name{ std::move( name ) }
+	GraphNode::GraphNode( Kind pkind
+		, uint32_t pid
+		, std::string pname
+		, FramePassGroup const & pgroup )
+		: kind{ pkind }
+		, id{ pid }
+		, name{ std::move( pname ) }
+		, group{ pgroup }
 		, next{}
 	{
 	}
@@ -110,7 +112,7 @@ namespace crg
 	//*********************************************************************************************
 
 	FramePassNode::FramePassNode( FramePass const & pass )
-		: GraphNode{ MyKind, pass.id, pass.name }
+		: GraphNode{ MyKind, pass.id, pass.name, pass.group }
 		, pass{ &pass }
 	{
 	}
@@ -123,7 +125,7 @@ namespace crg
 	//*********************************************************************************************
 
 	RootNode::RootNode( FrameGraph const & pgraph )
-		: GraphNode{ MyKind, 0u, pgraph.getName() }
+		: GraphNode{ MyKind, 0u, pgraph.getName(), pgraph.getDefaultGroup() }
 		, graph{ &pgraph }
 	{
 	}

@@ -50,6 +50,7 @@ namespace crg
 		*	All transitions.
 		*/
 		CRG_API RunnableGraph( FrameGraph & graph
+			, FramePassArray passes
 			, FramePassDependencies inputTransitions
 			, FramePassDependencies outputTransitions
 			, AttachmentTransitions transitions

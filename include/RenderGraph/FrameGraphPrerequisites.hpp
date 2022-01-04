@@ -41,6 +41,7 @@ namespace crg
 	struct ImageViewData;
 	struct GraphNode;
 	struct FramePass;
+	struct FramePassGroup;
 	struct RootNode;
 	struct SamplerDesc;
 	struct Texcoord;
@@ -65,6 +66,7 @@ namespace crg
 	using ImageViewId = Id< ImageViewData >;
 
 	using FramePassPtr = std::unique_ptr< FramePass >;
+	using FramePassGroupPtr = std::unique_ptr< FramePassGroup >;
 	using GraphNodePtr = std::unique_ptr< GraphNode >;
 	using RunnableGraphPtr = std::unique_ptr< RunnableGraph >;
 	using RunnablePassPtr = std::unique_ptr< RunnablePass >;
@@ -90,6 +92,7 @@ namespace crg
 
 	using AttachmentArray = std::vector< Attachment >;
 	using FramePassPtrArray = std::vector< FramePassPtr >;
+	using FramePassGroupPtrArray = std::vector< FramePassGroupPtr >;
 	using FrameGraphArray = std::vector< FrameGraph const * >;
 	using FramePassArray = std::vector< FramePass const * >;
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
