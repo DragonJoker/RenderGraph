@@ -28,6 +28,16 @@ namespace crg
 		bool invertV{ false };
 	};
 
+	template<>
+	struct DefaultValueGetterT< Texcoord >
+	{
+		static Texcoord get()
+		{
+			static Texcoord const result{ false, false };
+			return result;
+		}
+	};
+
 	class RunnableGraph
 	{
 	public:

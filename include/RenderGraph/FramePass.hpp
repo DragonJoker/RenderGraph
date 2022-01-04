@@ -29,19 +29,14 @@ namespace crg
 			, uint32_t id
 			, std::string const & name
 			, RunnablePassCreator runnableCreator );
+		/**@}*/
 
 	public:
-		/**@}*/
 		/**
 		*\name
 		*	Dependencies.
 		*/
 		/**@[*/
-		void addDependency( FrameGraph const & pgraph )
-		{
-			graphDepends.push_back( &pgraph );
-		}
-
 		void addDependency( FramePass const & pass )
 		{
 			passDepends.push_back( &pass );
@@ -716,6 +711,5 @@ namespace crg
 		AttachmentArray buffers;
 		RunnablePassCreator runnableCreator;
 		FramePassArray passDepends;
-		FrameGraphArray graphDepends;
 	};
 }

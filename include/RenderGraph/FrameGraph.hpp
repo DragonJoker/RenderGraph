@@ -35,21 +35,17 @@ namespace crg
 		/**@}*/
 		/**
 		*\name
-		*	Dependencies.
-		*/
-		/**@[*/
-		void addDependency( FrameGraph const & pgraph )
-		{
-			m_depends.push_back( &pgraph );
-		}
-		/**@}*/
-		/**
-		*\name
 		*	Resource creation.
 		*/
 		/**@{*/
 		CRG_API ImageId createImage( ImageData const & img );
 		CRG_API ImageViewId createView( ImageViewData const & view );
+		/**@}*/
+		/**
+		*\name
+		*	Passes and groups.
+		*/
+		/**@{*/
 		CRG_API FramePass & createPass( std::string const & name
 			, RunnablePassCreator runnableCreator );
 		/**@}*/
@@ -59,6 +55,16 @@ namespace crg
 		*/
 		/**@{*/
 		CRG_API RunnableGraphPtr compile( GraphContext & context );
+		/**@}*/
+		/**
+		*\name
+		*	Dependencies.
+		*/
+		/**@[*/
+		void addDependency( FrameGraph const & pgraph )
+		{
+			m_depends.push_back( &pgraph );
+		}
 		/**@}*/
 		/**
 		*\name

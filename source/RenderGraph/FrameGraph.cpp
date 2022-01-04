@@ -31,8 +31,8 @@ namespace crg
 
 		std::vector< FramePass const * > sortPasses( FramePassPtrArray const & passes )
 		{
-			std::vector< FramePass const * > sortedPasses;
-			std::vector< FramePass const * > unsortedPasses;
+			FramePassArray sortedPasses;
+			FramePassArray unsortedPasses;
 
 			for ( auto & pass : passes )
 			{
@@ -54,7 +54,7 @@ namespace crg
 
 			while ( !unsortedPasses.empty() )
 			{
-				std::vector< FramePass const * > currentPasses;
+				FramePassArray currentPasses;
 				std::swap( currentPasses, unsortedPasses );
 				bool added = false;
 
