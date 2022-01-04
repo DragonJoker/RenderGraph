@@ -7,6 +7,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/GraphVisitor.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
+#include <atomic>
 #include <numeric>
 #include <array>
 #include <fstream>
@@ -57,7 +58,7 @@ namespace crg::dot
 			}
 
 		private:
-			virtual int_type overflow( int_type c = traits::eof() )
+			virtual int_type overflow( int_type c = traits::eof() )override
 			{
 				if ( traits::eq_int_type( c, traits::eof() ) )
 				{
@@ -225,7 +226,7 @@ namespace crg::dot
 
 					if ( std::basic_ostream< CharType > & o_s = dynamic_cast< std::basic_ostream< CharType > & >( ios ) )
 					{
-						o_s << Indent( getIndent( ios ) );
+						o_s << Indent{ int( getIndent( ios ) ) };
 					}
 
 #endif
@@ -259,9 +260,11 @@ namespace crg::dot
 			using FramePassGroupStreamsPtr = std::unique_ptr< FramePassGroupStreams >;
 
 			FramePassGroupStreams( Config const & config
+				, DisplayResult & streams
 				, FramePassGroupStreams * parent = nullptr
 				, FramePassGroup const * group = nullptr )
 				: m_config{ config }
+				, m_streams{ streams }
 				, m_parent{ parent }
 				, m_group{ group }
 			{
@@ -280,21 +283,22 @@ namespace crg::dot
 				if ( m_group )
 				{
 					auto id = uint32_t( getOutermost().size() );
+					auto & stream = streams.emplace( ( m_config.splitGroups && m_group ) ? m_group->name : std::string{}, std::stringstream{} ).first->second;
 
 					if ( m_config.splitGroups )
 					{
-						m_stream << "digraph \"" << m_group->name << "\" {\n";
+						stream << "digraph \"" << m_group->name << "\" {\n";
 					}
 					else
 					{
-						m_stream << "subgraph cluster_" << id << " {\n";
-						m_stream << "  label=\"" << m_group->name << "\";\n";
+						stream << "subgraph cluster_" << id << " {\n";
+						stream << "  label=\"" << m_group->name << "\";\n";
 
 						if ( m_config.withColours )
 						{
-							m_stream << "  style=filled;\n";
-							m_stream << "  fillcolor=\"" << colours[std::min( size_t( getLevel() ), colours.size() - 1u )] << "\";\n";
-							m_stream << "  color=black;\n";
+							stream << "  style=filled;\n";
+							stream << "  fillcolor=\"" << colours[std::min( size_t( getLevel() ), colours.size() - 1u )] << "\";\n";
+							stream << "  color=black;\n";
 						}
 					}
 				}
@@ -325,7 +329,7 @@ namespace crg::dot
 
 				if ( group->parent == m_group )
 				{
-					m_children.emplace_back( std::make_unique< FramePassGroupStreams >( m_config, this, group ) );
+					m_children.emplace_back( std::make_unique< FramePassGroupStreams >( m_config, m_streams, this, group ) );
 					streams = m_children.back().get();
 				}
 				else
@@ -380,11 +384,6 @@ namespace crg::dot
 			{
 				auto baseStreamIt = streams.emplace( ( m_config.splitGroups && m_group ) ? m_group->name : std::string{}, std::stringstream{} ).first;
 
-				if ( m_group )
-				{
-					baseStreamIt->second << m_stream.str();
-				}
-
 				if ( m_config.splitGroups )
 				{
 					if ( m_group )
@@ -416,9 +415,10 @@ namespace crg::dot
 				}
 			}
 
-			std::stringstream & stream()
+			std::string const & getName()const
 			{
-				return m_stream;
+				static std::string const dummy;
+				return m_group ? m_group->name : dummy;
 			}
 
 			FramePassGroupStreams * getParent()const
@@ -437,19 +437,11 @@ namespace crg::dot
 
 		private:
 			Config const & m_config;
+			DisplayResult & m_streams;
 			FramePassGroupStreams * m_parent;
 			std::vector< FramePassGroupStreamsPtr > m_children;
 			FramePassGroup const * m_group;
-			std::stringstream m_stream;
-			uint32_t m_count{};
 		};
-
-		template< typename ValueT >
-		FramePassGroupStreams & operator<<( FramePassGroupStreams & stream, ValueT const & value )
-		{
-			stream.stream() << value;
-			return stream;
-		}
 
 		class DotOutVisitor
 			: public GraphVisitor
@@ -504,6 +496,7 @@ namespace crg::dot
 
 			static FramePassGroupStreams & displayGroupNode( FramePassGroupStreams & stream
 				, FramePassGroup const * group
+				, DisplayResult & streams
 				, FramePassGroupStreams & groups
 				, Config const & config )
 			{
@@ -512,6 +505,7 @@ namespace crg::dot
 					auto name = group ? group->name : "External";
 					auto ires = groups.emplace( group );
 					auto & grstream = *ires.first;
+					streams.emplace( grstream.getName(), std::stringstream{} );
 					return grstream;
 				}
 
@@ -523,11 +517,14 @@ namespace crg::dot
 				, std::string const & name
 				, FramePassGroup const * group
 				, std::string_view const & colour
+				, DisplayResult & streams
 				, std::set< std::string > & nodes
 				, FramePassGroupStreams & groups
 				, Config const & config )
 			{
-				auto & stream = displayGroupNode( pstream, group, groups, config );
+				streams.emplace( pstream.getName(), std::stringstream{} );
+				auto & groupStream = displayGroupNode( pstream, group, streams, groups, config );
+				auto & stream = streams.find( groupStream.getName() )->second;
 				auto ires = nodes.insert( name );
 
 				if ( ires.second )
@@ -551,7 +548,7 @@ namespace crg::dot
 					stream << Indent{ -2 };
 				}
 
-				return stream;
+				return groupStream;
 			}
 
 			static void displayEdge( std::ostream & stream
@@ -576,6 +573,7 @@ namespace crg::dot
 			template< typename AttachT >
 			static void displayAttachPass( FramePassGroupStreams & stream
 				, AttachT const & attach
+				, DisplayResult & streams
 				, std::set< std::string > & nodes
 				, FramePassGroupStreams & groups
 				, Config const & config )
@@ -593,7 +591,7 @@ namespace crg::dot
 					colour = passColour;
 				}
 
-				displayPassNode( stream, nodeId, node, group, colour, nodes, groups, config );
+				displayPassNode( stream, nodeId, node, group, colour, streams, nodes, groups, config );
 			}
 
 			static std::string const & getAttachName( crg::Buffer const & data )
@@ -630,6 +628,7 @@ namespace crg::dot
 			static void displayTransitionEdge( std::ostream & stream
 				, std::string_view const & colour
 				, TransitionT const & transition
+				, DisplayResult & streams
 				, std::set< std::string > & nodes
 				, FramePassGroupStreams & groups
 				, Config const & config )
@@ -667,11 +666,11 @@ namespace crg::dot
 				{
 					if ( srcStream == dstStream )
 					{
-						curstream = &srcStream->stream();
+						curstream = &streams.find( srcStream->getName() )->second;
 					}
-					else if ( auto streams = getCommonGroup( srcStream, dstStream ) )
+					else if ( auto groupStreams = getCommonGroup( srcStream, dstStream ) )
 					{
-						curstream = &streams->stream();
+						curstream = &streams.find( groupStreams->getName() )->second;
 					}
 				}
 
@@ -685,30 +684,30 @@ namespace crg::dot
 				, Config const & config )
 			{
 				std::set< std::string > nodes;
-				FramePassGroupStreams groups{ config };
+				FramePassGroupStreams groups{ config, streams };
 
 				for ( auto & transition : transitions.viewTransitions )
 				{
-					displayAttachPass( groups, transition.outputAttach, nodes, groups, config );
-					displayAttachPass( groups, transition.inputAttach, nodes, groups, config );
+					displayAttachPass( groups, transition.outputAttach, streams, nodes, groups, config );
+					displayAttachPass( groups, transition.inputAttach, streams, nodes, groups, config );
 				}
 
 				for ( auto & transition : transitions.bufferTransitions )
 				{
-					displayAttachPass( groups, transition.outputAttach, nodes, groups, config );
-					displayAttachPass( groups, transition.inputAttach, nodes, groups, config );
+					displayAttachPass( groups, transition.outputAttach, streams, nodes, groups, config );
+					displayAttachPass( groups, transition.inputAttach, streams, nodes, groups, config );
 				}
 
 				std::stringstream trstream;
 
 				for ( auto & transition : transitions.viewTransitions )
 				{
-					displayTransitionEdge( trstream, imgColour, transition, nodes, groups, config );
+					displayTransitionEdge( trstream, imgColour, transition, streams, nodes, groups, config );
 				}
 
 				for ( auto & transition : transitions.bufferTransitions )
 				{
-					displayTransitionEdge( trstream, bufColour, transition, nodes, groups, config );
+					displayTransitionEdge( trstream, bufColour, transition, streams, nodes, groups, config );
 				}
 
 				if ( !config.splitGroups )
@@ -763,20 +762,20 @@ namespace crg::dot
 						return ilhs.outputAttach.name < irhs.outputAttach.name;
 					} );
 
-				auto lhsStream = &displayPassNode( m_groups, lhs->getId(), lhs->getName(), &lhs->getGroup(), passColour, m_nodes, m_groups, m_config );
-				auto rhsStream = &displayPassNode( m_groups, rhs->getId(), rhs->getName(), &rhs->getGroup(), passColour, m_nodes, m_groups, m_config );
-				auto curstream = &stream;
+				auto lhsStream = &displayPassNode( m_groups, lhs->getId(), lhs->getName(), &lhs->getGroup(), passColour, m_streams, m_nodes, m_groups, m_config );
+				auto rhsStream = &displayPassNode( m_groups, rhs->getId(), rhs->getName(), &rhs->getGroup(), passColour, m_streams, m_nodes, m_groups, m_config );
+				auto curstream = &m_streams.find( std::string{} )->second;
 
 				if ( lhsStream != &m_groups
 					&& rhsStream != &m_groups )
 				{
 					if ( lhsStream == rhsStream )
 					{
-						curstream = &lhsStream->stream();
+						curstream = &m_streams.find( lhsStream->getName() )->second;
 					}
 					else if ( auto streams = getCommonGroup( lhsStream, rhsStream ) )
 					{
-						curstream = &streams->stream();
+						curstream = &m_streams.find( streams->getName() )->second;
 					}
 				}
 
@@ -868,8 +867,8 @@ namespace crg::dot
 		, Config const & config )
 	{
 		std::set< std::string > nodes;
-		FramePassGroupStreams groups{ config };
 		DisplayResult result;
+		FramePassGroupStreams groups{ config, result };
 		DotOutVisitor::submit( result, nodes, groups, value.getGraph(), config );
 		return result;
 	}
