@@ -25,7 +25,7 @@ namespace crg
 			{
 				auto streams = dot::displayTransitions( value, { true, true, true, false } );
 				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
-				file << streams.begin()->second.str();
+				file << streams.find( std::string{} )->second.str();
 			}
 			{
 				auto streams = dot::displayTransitions( value, { true, true, true, true } );
@@ -42,7 +42,7 @@ namespace crg
 			{
 				auto streams = dot::displayPasses( value, { true, true, true, false } );
 				std::ofstream file{ value.getGraph()->getName() + "_passes.dot" };
-				file << streams.begin()->second.str();
+				file << streams.find( std::string{} )->second.str();
 			}
 			{
 				auto streams = dot::displayPasses( value, { true, true, true, true } );
