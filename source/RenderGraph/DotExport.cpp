@@ -350,7 +350,7 @@ namespace crg::dot
 			}
 
 			void write( DisplayResult & streams
-				, std::stringstream const & global = {} )
+				, std::stringstream const & global = std::stringstream{} )
 			{
 				if ( m_config.splitGroups )
 				{
