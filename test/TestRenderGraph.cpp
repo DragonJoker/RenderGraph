@@ -157,7 +157,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
 }
 )";
 		checkEqualSortedLines( stream.str(), ref );
@@ -226,7 +226,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\npass2CrtvSpl" -> "pass2C" [ label="rtv" ];
   "Transition to\npass2CrtvSpl" [ shape=box ];
   "pass1C" -> "Transition to\npass2CrtvSpl" [ label="rtv" ];
@@ -289,7 +289,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\npass1d0vSpl" [ shape=box ];
   "pass0" [ shape=ellipse ];
   "pass1" [ shape=ellipse ];
@@ -361,7 +361,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\npass1d0vSpl" [ shape=box ];
   "pass0" [ shape=ellipse ];
   "pass1" [ shape=ellipse ];
@@ -414,7 +414,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
   "ssaoMinifyPass1" [ shape=ellipse ];
   "ssaoMinifyPass2" [ shape=ellipse ];
@@ -477,7 +477,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\nssaoMinifyPass2m1vSpl" [ shape=box ];
   "ssaoMinifyPass1" [ shape=ellipse ];
   "ssaoMinifyPass2" [ shape=ellipse ];
@@ -646,7 +646,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\npass1cvSpl" [ shape=box ];
   "pass0" [ shape=ellipse ];
   "pass1" [ shape=ellipse ];
@@ -824,7 +824,7 @@ namespace
 		auto runnable = graph.compile( getContext() );
 		std::stringstream stream;
 		test::display( testCounts, stream, *runnable );
-		std::string ref = R"(digraph ")" + testCounts.testName + R"(" {
+		std::string ref = R"(digraph {
   "Transition to\nssaoLinearisePassdsvSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "ssaoLinearisePass" [ shape=ellipse ];
@@ -1351,7 +1351,7 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1447,7 +1447,7 @@ namespace
 					}
 					else
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1529,7 +1529,7 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1583,7 +1583,7 @@ namespace
 					}
 					else
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1624,7 +1624,7 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					ref = R"(digraph ")" + testCounts.testName + R"(" {
+					ref = R"(digraph {
   "Transition to\ncombinePassavSpl" [ shape=box ];
   "accumulationPass" [ shape=ellipse ];
   "combinePass" [ shape=ellipse ];
@@ -1651,7 +1651,7 @@ namespace
 				}
 				else
 				{
-					ref = R"(digraph ")" + testCounts.testName + R"(" {
+					ref = R"(digraph {
   "Transition to\nfinalCombinePassdsvSpl" [ shape=box ];
   "depthPrepass" [ shape=ellipse ];
   "finalCombinePass" [ shape=ellipse ];
@@ -1670,7 +1670,7 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1783,7 +1783,7 @@ namespace
 					}
 					else
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1878,7 +1878,7 @@ namespace
 				{
 					if constexpr ( EnableTransparent )
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1932,7 +1932,7 @@ namespace
 					}
 					else
 					{
-						ref = R"(digraph ")" + testCounts.testName + R"(" {
+						ref = R"(digraph {
   "Transition to\nlightingPassd1vSpl" [ shape=box ];
   "geometryPass" [ shape=ellipse ];
   "lightingPass" [ shape=ellipse ];
@@ -1976,7 +1976,7 @@ namespace
 			{
 				if constexpr ( EnableTransparent )
 				{
-					ref = R"(digraph ")" + testCounts.testName + R"(" {
+					ref = R"(digraph {
   "Transition to\ncombinePassavSpl" [ shape=box ];
   "accumulationPass" [ shape=ellipse ];
   "combinePass" [ shape=ellipse ];
@@ -2000,7 +2000,7 @@ namespace
 				}
 				else
 				{
-					ref = R"(digraph ")" + testCounts.testName + R"(" {
+					ref = R"(digraph {
 }
 )";
 				}
