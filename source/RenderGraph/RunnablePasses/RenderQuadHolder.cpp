@@ -170,8 +170,8 @@ namespace crg
 				, &createInfo
 				, m_context.allocator
 				, &pipeline );
-			checkVkResult( res, m_pass.name + " - Pipeline creation" );
-			crgRegisterObject( m_context, m_pass.name, pipeline );
+			checkVkResult( res, m_pass.getGroupName() + " - Pipeline creation" );
+			crgRegisterObject( m_context, m_pass.getGroupName(), pipeline );
 		}
 
 		m_renderSize = renderSize;

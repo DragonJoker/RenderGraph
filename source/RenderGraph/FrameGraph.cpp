@@ -108,7 +108,7 @@ namespace crg
 		, std::string name )
 		: m_handler{ handler }
 		, m_name{ std::move( name ) }
-		, m_defaultGroup{ new FramePassGroup{ *this, m_name } }
+		, m_defaultGroup{ new FramePassGroup{ *this, 0u, m_name } }
 		, m_finalState{ handler }
 	{
 	}

@@ -112,7 +112,7 @@ namespace crg
 	//*********************************************************************************************
 
 	FramePassNode::FramePassNode( FramePass const & pass )
-		: GraphNode{ MyKind, pass.id, pass.name, pass.group }
+		: GraphNode{ MyKind, pass.id, pass.getGroupName(), pass.group }
 		, pass{ &pass }
 	{
 	}

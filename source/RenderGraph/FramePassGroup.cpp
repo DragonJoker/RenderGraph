@@ -7,21 +7,61 @@ See LICENSE file in root folder.
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FrameGraph.hpp"
 
+#include <numeric>
 #include <array>
 
 namespace crg
 {
+	namespace
+	{
+		FramePassGroup const * getOutermost( FramePassGroup const * group )
+		{
+			while ( group && group->parent )
+			{
+				group = group->parent;
+			}
+
+			return group;
+		}
+
+		uint32_t countPasses( FramePassGroup const * group )
+		{
+			return std::accumulate( group->groups.begin()
+				, group->groups.end()
+				, uint32_t( group->passes.size() )
+				, []( uint32_t val, FramePassGroupPtr const & lookup )
+				{
+					return val + countPasses( lookup.get() );
+				} );
+		}
+
+		uint32_t countGroups( FramePassGroup const * group )
+		{
+			return std::accumulate( group->groups.begin()
+				, group->groups.end()
+				, uint32_t( group->groups.size() )
+				, []( uint32_t val, FramePassGroupPtr const & lookup )
+				{
+					return val + countGroups( lookup.get() );
+				} );
+		}
+	}
+
 	FramePassGroup::FramePassGroup( FrameGraph & graph
-		, std::string const & pname )
-		: name{ pname }
+		, uint32_t pid
+		, std::string const & name )
+		: id{ pid }
+		, m_name{ name }
 		, m_graph{ graph }
 	{
 	}
 
 	FramePassGroup::FramePassGroup( FramePassGroup & pparent
-		, std::string const & pname )
-		: name{ pname }
+		, uint32_t pid
+		, std::string const & name )
+		: id{ pid }
 		, parent{ &pparent }
+		, m_name{ name }
 		, m_graph{ parent->m_graph }
 	{
 	}
@@ -34,9 +74,10 @@ namespace crg
 			CRG_Exception( "Duplicate FramePass name detected." );
 		}
 
+		auto count = countPasses( getOutermost( this ) );
 		passes.emplace_back( new FramePass{ *this
 			, m_graph
-			, uint32_t( passes.size() + 1u )
+			, count + 1u
 			, passName
 			, runnableCreator } );
 		return *passes.back();
@@ -48,12 +89,13 @@ namespace crg
 			, groups.end()
 			, [&groupName]( FramePassGroupPtr const & lookup )
 			{
-				return lookup->name == groupName;
+				return lookup->getName() == groupName;
 			} );
 
 		if ( it == groups.end() )
 		{
-			groups.emplace_back( new FramePassGroup{ *this, groupName } );
+			auto count = countGroups( getOutermost( this ) );
+			groups.emplace_back( new FramePassGroup{ *this, count + 1u, groupName } );
 			it = std::next( groups.begin(), ptrdiff_t( groups.size() - 1u ) );
 		}
 
@@ -66,7 +108,7 @@ namespace crg
 			, passes.end()
 			, [&passName]( FramePassPtr const & lookup )
 			{
-				return lookup->name == passName;
+				return lookup->getName() == passName;
 			} );
 	}
 
@@ -88,11 +130,6 @@ namespace crg
 		return m_graph.getHandler();
 	}
 
-	std::string FramePassGroup::getName()const
-	{
-		return m_graph.getName() + "/" + name;
-	}
-
 	LayoutState FramePassGroup::getFinalLayoutState( ImageViewId view )const
 	{
 		return m_graph.getFinalLayoutState( view );
@@ -111,5 +148,10 @@ namespace crg
 	ImageViewId FramePassGroup::createView( ImageViewData const & view )const
 	{
 		return m_graph.createView( view );
+	}
+
+	std::string FramePassGroup::getFullName()const
+	{
+		return m_graph.getName() + "/" + getName();
 	}
 }

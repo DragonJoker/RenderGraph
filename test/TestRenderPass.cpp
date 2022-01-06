@@ -18,7 +18,7 @@ namespace
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		check( pass.name == "1C" );
+		check( pass.getName() == "1C" );
 		check( pass.images.size() == 1u );
 		check( pass.images[0].view() == rtv );
 		testEnd();
@@ -38,7 +38,7 @@ namespace
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		check( pass.name == "2C" );
+		check( pass.getName() == "2C" );
 		check( pass.images.size() == 2u );
 		check( pass.images[0].view() == rtv1 );
 		check( pass.images[1].view() == rtv2 );
@@ -55,7 +55,7 @@ namespace
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		check( pass.name == "0C_1I" );
+		check( pass.getName() == "0C_1I" );
 		check( pass.images.size() == 1u );
 		check( pass.images[0].view() == inv );
 		testEnd();
@@ -75,7 +75,7 @@ namespace
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		check( pass.name == "0C_2I" );
+		check( pass.getName() == "0C_2I" );
 		check( pass.images.size() == 2u );
 		check( pass.images[0].view() == inv1 );
 		check( pass.images[1].view() == inv2 );
@@ -96,7 +96,7 @@ namespace
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		check( pass.name == "1C_1I" );
+		check( pass.getName() == "1C_1I" );
 		check( pass.images.size() == 2u );
 		check( pass.images[0].view() == rtv );
 		check( pass.images[1].view() == inv );
@@ -121,7 +121,7 @@ namespace
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		check( pass.name == "1C_2I" );
+		check( pass.getName() == "1C_2I" );
 		check( pass.images.size() == 3u );
 		check( pass.images[0].view() == rtv );
 		check( pass.images[1].view() == inv1 );
@@ -147,7 +147,7 @@ namespace
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		check( pass.name == "2C_1I" );
+		check( pass.getName() == "2C_1I" );
 		check( pass.images.size() == 3u );
 		check( pass.images[0].view() == rtv1 );
 		check( pass.images[1].view() == rtv2 );
@@ -177,7 +177,7 @@ namespace
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		check( pass.name == "2C_2I" );
+		check( pass.getName() == "2C_2I" );
 		check( pass.images.size() == 4u );
 		check( pass.images[0].view() == rtv1 );
 		check( pass.images[1].view() == rtv2 );
@@ -196,7 +196,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "0C_DS" );
+		check( pass.getName() == "0C_DS" );
 		check( pass.images.size() == 1u );
 		check( pass.images[0].view() == dsv );
 		testEnd();
@@ -216,7 +216,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "1C_DS" );
+		check( pass.getName() == "1C_DS" );
 		check( pass.images.size() == 2u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == rtv );
@@ -241,7 +241,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "2C_DS" );
+		check( pass.getName() == "2C_DS" );
 		check( pass.images.size() == 3u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == rtv1 );
@@ -263,7 +263,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "0C_1I_DS" );
+		check( pass.getName() == "0C_1I_DS" );
 		check( pass.images.size() == 2u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == inv );
@@ -288,7 +288,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "0C_2I_DS" );
+		check( pass.getName() == "0C_2I_DS" );
 		check( pass.images.size() == 3u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == inv1 );
@@ -314,7 +314,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "1C_1I_DS" );
+		check( pass.getName() == "1C_1I_DS" );
 		check( pass.images.size() == 3u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == rtv );
@@ -344,7 +344,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "1C_2I_DS" );
+		check( pass.getName() == "1C_2I_DS" );
 		check( pass.images.size() == 4u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == rtv );
@@ -375,7 +375,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "2C_1I_DS" );
+		check( pass.getName() == "2C_1I_DS" );
 		check( pass.images.size() == 4u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == rtv1 );
@@ -410,7 +410,7 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.name == "2C_2I_DS" );
+		check( pass.getName() == "2C_2I_DS" );
 		check( pass.images.size() == 5u );
 		check( pass.images[0].view() == dsv );
 		check( pass.images[1].view() == rtv1 );

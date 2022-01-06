@@ -18,8 +18,10 @@ namespace crg
 		*/
 		/**@[*/
 		CRG_API FramePassGroup( FrameGraph & graph
+			, uint32_t id
 			, std::string const & name );
 		CRG_API FramePassGroup( FramePassGroup & parent
+			, uint32_t id
 			, std::string const & name );
 		/**@}*/
 
@@ -41,20 +43,27 @@ namespace crg
 		*/
 		/**@[*/
 		CRG_API ResourceHandler & getHandler()const;
-		CRG_API std::string getName()const;
 		CRG_API LayoutState getFinalLayoutState( ImageViewId view )const;
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 		CRG_API ImageId createImage( ImageData const & img )const;
 		CRG_API ImageViewId createView( ImageViewData const & view )const;
 		/**@}*/
 
+		CRG_API std::string getFullName()const;
+
+		std::string const & getName()const
+		{
+			return m_name;
+		}
+
 	public:
-		std::string name;
+		uint32_t id;
 		FramePassPtrArray passes;
 		FramePassGroupPtrArray groups;
 		FramePassGroup * parent{};
 
 	private:
+		std::string m_name;
 		FrameGraph & m_graph;
 	};
 }
