@@ -209,8 +209,8 @@ namespace crg
 		auto res = m_context.vkAllocateDescriptorSets( m_context.device
 			, &allocateInfo
 			, &descriptorSet.set );
-		checkVkResult( res, m_pass.name + " - DescriptorSet allocation" );
-		crgRegisterObject( m_context, m_pass.name, descriptorSet.set );
+		checkVkResult( res, m_pass.getGroupName() + " - DescriptorSet allocation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), descriptorSet.set );
 
 		for ( auto & write : descriptorSet.writes )
 		{
@@ -276,8 +276,8 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_descriptorSetLayout );
-		checkVkResult( res, m_pass.name + " - DescriptorSetLayout creation" );
-		crgRegisterObject( m_context, m_pass.name, m_descriptorSetLayout );
+		checkVkResult( res, m_pass.getGroupName() + " - DescriptorSetLayout creation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_descriptorSetLayout );
 	}
 
 	void PipelineHolder::doCreatePipelineLayout()
@@ -298,8 +298,8 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_pipelineLayout );
-		checkVkResult( res, m_pass.name + " - PipeliineLayout creation" );
-		crgRegisterObject( m_context, m_pass.name, m_pipelineLayout );
+		checkVkResult( res, m_pass.getGroupName() + " - PipeliineLayout creation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_pipelineLayout );
 	}
 
 	void PipelineHolder::doCreateDescriptorPool()
@@ -316,7 +316,7 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_descriptorSetPool );
-		checkVkResult( res, m_pass.name + " - DescriptorPool creation" );
-		crgRegisterObject( m_context, m_pass.name, m_descriptorSetPool );
+		checkVkResult( res, m_pass.getGroupName() + " - DescriptorPool creation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_descriptorSetPool );
 	}
 }

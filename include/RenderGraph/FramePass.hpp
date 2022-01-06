@@ -705,13 +705,23 @@ namespace crg
 			, RunnableGraph & graph )const;
 		/**@}*/
 
+		CRG_API std::string getFullName()const;
+		CRG_API std::string getGroupName()const;
+
+		std::string const & getName()const
+		{
+			return m_name;
+		}
+
 		FramePassGroup const & group;
 		FrameGraph & graph;
 		uint32_t id;
-		std::string name;
 		AttachmentArray images;
 		AttachmentArray buffers;
 		RunnablePassCreator runnableCreator;
 		FramePassArray passDepends;
+
+	private:
+		std::string m_name;
 	};
 }

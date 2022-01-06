@@ -233,8 +233,8 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_renderPass );
-		checkVkResult( res, m_pass.name + " - RenderPass creation" );
-		crgRegisterObject( m_context, m_pass.name, m_renderPass );
+		checkVkResult( res, m_pass.getGroupName() + " - RenderPass creation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_renderPass );
 	}
 
 	VkPipelineColorBlendStateCreateInfo RenderPassHolder::createBlendState()
@@ -290,8 +290,8 @@ namespace crg
 				, &createInfo
 				, m_context.allocator
 				, frameBuffer );
-			checkVkResult( res, m_pass.name + " - Framebuffer creation" );
-			crgRegisterObject( m_context, m_pass.name, *frameBuffer );
+			checkVkResult( res, m_pass.getGroupName() + " - Framebuffer creation" );
+			crgRegisterObject( m_context, m_pass.getGroupName(), *frameBuffer );
 		}
 	}
 

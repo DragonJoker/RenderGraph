@@ -31,26 +31,28 @@ namespace test
 		std::ostream & operator<<( std::ostream & stream
 			, crg::FramePass const & value )
 		{
-			stream << value.name;
+			stream << value.getName();
 			return stream;
 		}
 
 		void displayPasses( TestCounts & testCounts
 			, std::ostream & stream
-			, crg::RunnableGraph & value )
+			, crg::RunnableGraph & value
+			, crg::dot::Config const & cfg )
 		{
-			crg::dot::displayPasses( stream, value, { false, false } );
+			crg::dot::displayPasses( stream, value, cfg );
 			std::ofstream file{ testCounts.testName + ".dot" };
-			crg::dot::displayPasses( file, value, { true, true } );
+			crg::dot::displayPasses( file, value, { true, true, true, false } );
 		}
 
 		void displayTransitions( TestCounts & testCounts
 			, std::ostream & stream
-			, crg::RunnableGraph & value )
+			, crg::RunnableGraph & value
+			, crg::dot::Config const & cfg )
 		{
-			crg::dot::displayTransitions( stream, value, { false, false } );
+			crg::dot::displayTransitions( stream, value, cfg );
 			std::ofstream file{ testCounts.testName + "_transitions.dot" };
-			crg::dot::displayTransitions( file, value, { true, true } );
+			crg::dot::displayTransitions( file, value, { true, true, true, false } );
 		}
 
 		bool isDepthFormat( VkFormat fmt )
@@ -139,16 +141,22 @@ namespace test
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
-		, crg::RunnableGraph & value )
+		, crg::RunnableGraph & value
+		, bool withColours
+		, bool withIds
+		, bool withGroups )
 	{
 		std::stringstream trans;
-		displayTransitions( testCounts, trans, value );
-		displayPasses( testCounts, stream, value );
+		displayTransitions( testCounts, trans, value, { withColours, withIds, withGroups } );
+		displayPasses( testCounts, stream, value, { withColours, withIds, withGroups } );
 	}
 
 	void display( TestCounts & testCounts
-		, crg::RunnableGraph & value )
+		, crg::RunnableGraph & value
+		, bool withColours
+		, bool withIds
+		, bool withGroups )
 	{
-		display( testCounts, std::cout, value );
+		display( testCounts, std::cout, value, withColours, withIds, withGroups );
 	}
 }

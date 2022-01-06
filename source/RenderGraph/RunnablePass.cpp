@@ -207,8 +207,8 @@ namespace crg
 		, m_graph{ graph }
 		, m_callbacks{ std::move( callbacks ) }
 		, m_ruConfig{ std::move( ruConfig ) }
-		, m_fence{ context, m_pass.name, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
-		, m_timer{ context, m_pass.name, 1u }
+		, m_fence{ context, m_pass.getGroupName(), { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
+		, m_timer{ context, m_pass.getGroupName(), 1u }
 	{
 		m_commandBuffers.resize( m_ruConfig.maxPassCount );
 	}
@@ -408,7 +408,7 @@ namespace crg
 		{
 			auto block = m_timer.start();
 			m_context.vkCmdBeginDebugBlock( commandBuffer
-				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.name, m_context.getNextRainbowColour() } );
+				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName(), m_context.getNextRainbowColour() } );
 			m_timer.beginPass( commandBuffer );
 
 			for ( auto & attach : m_pass.images )
@@ -595,8 +595,8 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_commandPool );
-		checkVkResult( res, m_pass.name + " - CommandPool creation" );
-		crgRegisterObject( m_context, m_pass.name, m_commandPool );
+		checkVkResult( res, m_pass.getGroupName() + " - CommandPool creation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_commandPool );
 	}
 
 	VkCommandBuffer RunnablePass::doCreateCommandBuffer( std::string const & suffix )
@@ -616,8 +616,8 @@ namespace crg
 		auto res = m_context.vkAllocateCommandBuffers( m_context.device
 			, &allocateInfo
 			, &result );
-		checkVkResult( res, m_pass.name + suffix + " - CommandBuffer allocation" );
-		crgRegisterObject( m_context, m_pass.name + suffix, result );
+		checkVkResult( res, m_pass.getGroupName() + suffix + " - CommandBuffer allocation" );
+		crgRegisterObject( m_context, m_pass.getGroupName() + suffix, result );
 		return result;
 	}
 
@@ -643,8 +643,8 @@ namespace crg
 			, &createInfo
 			, m_context.allocator
 			, &m_semaphore );
-		checkVkResult( res, m_pass.name + " - Semaphore creation" );
-		crgRegisterObject( m_context, m_pass.name, m_semaphore );
+		checkVkResult( res, m_pass.getGroupName() + " - Semaphore creation" );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_semaphore );
 	}
 
 	void RunnablePass::doRegisterTransition( uint32_t passIndex

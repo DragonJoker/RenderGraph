@@ -246,6 +246,22 @@ namespace test
 
 	using StringArray = std::vector< std::string >;
 
+	std::string replace( std::string const & value
+		, std::string const & lookup
+		, std::string const & repl )
+	{
+		auto result = value;
+		size_t startPos = 0u;
+
+		while ( ( startPos = result.find( lookup, startPos ) ) != std::string::npos )
+		{
+			result.replace( startPos, lookup.length(), repl );
+			startPos += repl.length();
+		}
+
+		return result;
+	}
+
 	StringArray splitInLines( std::string const & value )
 	{
 		StringArray lines;
@@ -283,7 +299,7 @@ namespace test
 	std::string TestCounts::diffLines( std::string const & check
 		, std::string const & ref )
 	{
-		auto checkLines = splitInLines( check );
+		auto checkLines = splitInLines( replace( check, testName + "/", "" ) );
 		auto refLines = splitInLines( ref );
 		std::string result;
 		result += findMissing( checkLines, refLines, "+" );
