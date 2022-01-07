@@ -177,6 +177,82 @@ namespace crg
 
 	struct VertexBuffer
 	{
+		VertexBuffer( Buffer pbuffer = { nullptr, std::string{} }
+			, VkDeviceMemory pmemory = nullptr
+			, VkVertexInputAttributeDescriptionArray pvertexAttribs = {}
+			, VkVertexInputBindingDescriptionArray pvertexBindings = {} )
+			: buffer{ pbuffer }
+			, memory{ pmemory }
+			, vertexAttribs{ pvertexAttribs }
+			, vertexBindings{ pvertexBindings }
+			, inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} }
+		{
+			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
+			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
+			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
+			inputState.pVertexBindingDescriptions = vertexBindings.data();
+		}
+
+		VertexBuffer( VertexBuffer const & rhs )
+			: buffer{ rhs.buffer }
+			, memory{ rhs.memory }
+			, vertexAttribs{ rhs.vertexAttribs }
+			, vertexBindings{ rhs.vertexBindings }
+			, inputState{ rhs.inputState }
+		{
+			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
+			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
+			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
+			inputState.pVertexBindingDescriptions = vertexBindings.data();
+		}
+
+		VertexBuffer( VertexBuffer && rhs )noexcept
+			: buffer{ rhs.buffer }
+			, memory{ rhs.memory }
+			, vertexAttribs{ std::move( rhs.vertexAttribs ) }
+			, vertexBindings{ std::move( rhs.vertexBindings ) }
+			, inputState{ std::move( rhs.inputState ) }
+		{
+			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
+			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
+			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
+			inputState.pVertexBindingDescriptions = vertexBindings.data();
+		}
+
+		VertexBuffer & operator=( VertexBuffer const & rhs )
+		{
+			buffer = rhs.buffer;
+			memory = rhs.memory;
+			vertexAttribs = rhs.vertexAttribs;
+			vertexBindings = rhs.vertexBindings;
+			inputState = rhs.inputState;
+
+			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
+			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
+			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
+			inputState.pVertexBindingDescriptions = vertexBindings.data();
+
+			return *this;
+		}
+
+		VertexBuffer & operator=( VertexBuffer && rhs )noexcept
+		{
+			buffer = rhs.buffer;
+			memory = rhs.memory;
+			vertexAttribs = std::move( rhs.vertexAttribs );
+			vertexBindings = std::move( rhs.vertexBindings );
+			inputState = std::move( rhs.inputState );
+
+			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
+			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
+			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
+			inputState.pVertexBindingDescriptions = vertexBindings.data();
+
+			return *this;
+		}
+
+		~VertexBuffer() = default;
+
 		Buffer buffer{ nullptr, std::string{} };
 		VkDeviceMemory memory{ nullptr };
 		VkVertexInputAttributeDescriptionArray vertexAttribs{};
@@ -185,6 +261,21 @@ namespace crg
 	};
 
 	using VertexBufferPtr = std::unique_ptr< VertexBuffer >;
+
+	struct IndexBuffer
+	{
+		IndexBuffer( Buffer pbuffer = { nullptr, std::string{} }
+			, VkDeviceMemory pmemory = nullptr )
+			: buffer{ pbuffer }
+			, memory{ pmemory }
+		{
+		}
+
+		Buffer buffer;
+		VkDeviceMemory memory;
+	};
+
+	using IndexBufferPtr = std::unique_ptr< IndexBuffer >;
 
 	static constexpr VkPipelineColorBlendAttachmentState DefaultBlendState{ VK_FALSE
 		, VK_BLEND_FACTOR_ONE
@@ -206,6 +297,25 @@ namespace crg
 	{
 		return DefaultValueGetterT< TypeT >::get();
 	}
+
+	template<>
+	struct DefaultValueGetterT< VkPipelineVertexInputStateCreateInfo >
+	{
+		static VkPipelineVertexInputStateCreateInfo get()
+		{
+			VkPipelineVertexInputStateCreateInfo const result{ []()
+				{
+					return VkPipelineVertexInputStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+						, nullptr
+						, {}
+						, {}
+						, {}
+						, {}
+						, {} };
+				}() };
+			return result;
+		}
+	};
 
 	template< typename TypeT >
 	struct RawTyperT

@@ -122,6 +122,9 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelineHolder.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderPass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderPassHolder.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderMesh.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderMeshConfig.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderMeshHolder.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuad.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuadConfig.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderQuadHolder.hpp
@@ -134,6 +137,8 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/PipelineHolder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPassHolder.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderMesh.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderMeshHolder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderQuad.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderQuadHolder.cpp
 	)
