@@ -90,14 +90,13 @@
 	</Type>
 
 	<Type Name="crg::FramePass">
-		<DisplayString>{id} {name}</DisplayString>
+		<DisplayString>{id} {m_name}</DisplayString>
 		<Expand>
 			<Item Name="id">id</Item>
-			<Item Name="name">name</Item>
+			<Item Name="name">m_name</Item>
 			<Item Name="images">images</Item>
 			<Item Name="buffers">buffers</Item>
 			<Item Name="passDepends">passDepends</Item>
-			<Item Name="graphDepends">graphDepends</Item>
 		</Expand>
 	</Type>
 
