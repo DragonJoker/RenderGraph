@@ -118,6 +118,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/ComputePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/GenerateMipmaps.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/ImageCopy.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/ImageToBufferCopy.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelineConfig.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/PipelineHolder.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/RenderPass.hpp
@@ -134,6 +135,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/ComputePass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/GenerateMipmaps.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/ImageCopy.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/ImageToBufferCopy.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/PipelineHolder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePasses/RenderPassHolder.cpp

@@ -544,6 +544,7 @@ namespace crg
 		DECL_vkFunction( CmdBlitImage );
 		DECL_vkFunction( CmdCopyBufferToImage );
 		DECL_vkFunction( CmdCopyImage );
+		DECL_vkFunction( CmdCopyImageToBuffer );
 		DECL_vkFunction( CmdExecuteCommands );
 		DECL_vkFunction( CmdResetEvent );
 		DECL_vkFunction( CmdSetEvent );
