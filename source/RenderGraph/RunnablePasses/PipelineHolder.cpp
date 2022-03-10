@@ -227,6 +227,7 @@ namespace crg
 
 	void PipelineHolder::doFillDescriptorBindings()
 	{
+		m_descriptorBindings.clear();
 		auto shaderStage = VkShaderStageFlags( ( VK_PIPELINE_BIND_POINT_COMPUTE == m_bindingPoint )
 			? VK_SHADER_STAGE_COMPUTE_BIT
 			: ( VK_SHADER_STAGE_VERTEX_BIT
