@@ -21,10 +21,20 @@ namespace crg
 		, m_context{ context }
 		, m_graph{ graph }
 		, m_baseConfig{ config.m_programs ? std::move( *config.m_programs ) : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > >
+			, config.m_programCreator ? std::move( *config.m_programCreator ) : defaultV< ProgramCreator >
 			, config.m_layouts ? std::move( *config.m_layouts ) : defaultV< std::vector< VkDescriptorSetLayout > > }
 		, m_bindingPoint{ bindingPoint }
 	{
-		m_pipelines.resize( m_baseConfig.m_programs.size() );
+		if ( m_baseConfig.m_programCreator.create )
+		{
+			m_pipelines.resize( m_baseConfig.m_programCreator.maxCount );
+			m_baseConfig.m_programs.resize( m_baseConfig.m_programCreator.maxCount );
+		}
+		else
+		{
+			m_pipelines.resize( m_baseConfig.m_programs.size() );
+		}
+
 		m_descriptorSets.resize( maxPassCount );
 	}
 
@@ -73,8 +83,14 @@ namespace crg
 		doCreateDescriptorPool();
 	}
 
-	VkPipelineShaderStageCreateInfoArray const & PipelineHolder::getProgram( uint32_t index )const
+	VkPipelineShaderStageCreateInfoArray const & PipelineHolder::getProgram( uint32_t index )
 	{
+		if ( m_baseConfig.m_programCreator.create )
+		{
+			assert( m_baseConfig.m_programCreator.maxCount > index );
+			m_baseConfig.m_programs[index] = m_baseConfig.m_programCreator.create( index );
+		}
+
 		if ( m_baseConfig.m_programs.size() == 1u )
 		{
 			return m_baseConfig.m_programs[0];

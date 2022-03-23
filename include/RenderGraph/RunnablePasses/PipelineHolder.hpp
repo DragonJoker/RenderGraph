@@ -19,7 +19,7 @@ namespace crg
 		CRG_API virtual ~PipelineHolder();
 
 		CRG_API void initialise();
-		CRG_API VkPipelineShaderStageCreateInfoArray const & getProgram( uint32_t index )const;
+		CRG_API VkPipelineShaderStageCreateInfoArray const & getProgram( uint32_t index );
 		CRG_API VkPipeline & getPipeline( uint32_t index );
 		CRG_API void recordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
@@ -98,6 +98,15 @@ namespace crg
 		BuilderT & programs( std::vector< VkPipelineShaderStageCreateInfoArray > config )
 		{
 			m_baseConfig.programs( std::move( config ) );
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
+		*\param[in] config
+		*	The pipeline program creator.
+		*/
+		BuilderT & programCreator( ProgramCreator config )
+		{
+			m_baseConfig.programCreator( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
 		}
 

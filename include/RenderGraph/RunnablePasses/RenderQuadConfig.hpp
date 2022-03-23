@@ -34,6 +34,15 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The pipeline program creator.
+			*/
+			auto & programCreator( ProgramCreator config )
+			{
+				m_baseConfig.programCreator( std::move( config ) );
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	The descriptor set layout.
 			*/
 			auto & layout( VkDescriptorSetLayout config )

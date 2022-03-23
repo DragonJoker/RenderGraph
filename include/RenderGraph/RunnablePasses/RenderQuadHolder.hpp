@@ -47,9 +47,10 @@ namespace crg
 		}
 
 	private:
-		void doCreatePipeline( VkExtent2D const & renderSize
+		void doPreparePipelineStates( VkExtent2D const & renderSize
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState );
+		void doCreatePipeline();
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkExtent2D const & renderSize
 			, VkViewportArray & viewports
 			, VkScissorArray & scissors );
@@ -65,6 +66,12 @@ namespace crg
 		VertexBuffer const * m_vertexBuffer{};
 		VkRenderPass m_renderPass{};
 		VkExtent2D m_renderSize{};
+		VkViewportArray m_viewports{};
+		VkScissorArray m_scissors{};
+		VkPipelineViewportStateCreateInfo m_vpState{};
+		VkPipelineInputAssemblyStateCreateInfo m_iaState{};
+		VkPipelineMultisampleStateCreateInfo m_msState{};
+		VkPipelineRasterizationStateCreateInfo m_rsState{};
 		VkPipelineColorBlendStateCreateInfo m_blendState{};
 		std::vector< VkPipelineColorBlendAttachmentState > m_blendAttachs{};
 	};
