@@ -11,9 +11,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace fpass
 	{
-		AttachmentArray splitAttach( Attachment const & attach )
+		static AttachmentArray splitAttach( Attachment const & attach )
 		{
 			AttachmentArray result;
 
@@ -32,7 +32,7 @@ namespace crg
 			return result;
 		}
 
-		ImageViewIdArray splitView( ImageViewId const & view )
+		static ImageViewIdArray splitView( ImageViewId const & view )
 		{
 			ImageViewIdArray result;
 
@@ -52,7 +52,7 @@ namespace crg
 		}
 
 		template< typename PredT >
-		bool matchView( Attachment const & lhs
+		static bool matchView( Attachment const & lhs
 			, ImageViewId const & rhs
 			, PredT predicate )
 		{
@@ -73,7 +73,7 @@ namespace crg
 			return false;
 		}
 
-		bool isInOutputs( FramePass const & pass
+		static bool isInOutputs( FramePass const & pass
 			, ImageViewId const & view )
 		{
 			auto it = std::find_if( pass.images.begin()
@@ -93,7 +93,7 @@ namespace crg
 			return it != pass.images.end();
 		}
 
-		bool isInInputs( FramePass const & pass
+		static bool isInInputs( FramePass const & pass
 			, ImageViewId const & view )
 		{
 			auto it = std::find_if( pass.images.begin()
@@ -113,7 +113,7 @@ namespace crg
 			return it != pass.images.end();
 		}
 
-		bool isInOutputs( FramePass const & pass
+		static bool isInOutputs( FramePass const & pass
 			, Buffer const & buffer )
 		{
 			auto it = std::find_if( pass.buffers.begin()
@@ -127,7 +127,7 @@ namespace crg
 			return it != pass.buffers.end();
 		}
 
-		bool isInInputs( FramePass const & pass
+		static bool isInInputs( FramePass const & pass
 			, Buffer const & buffer )
 		{
 			auto it = std::find_if( pass.buffers.begin()
@@ -141,7 +141,7 @@ namespace crg
 			return it != pass.buffers.end();
 		}
 
-		std::string adjustName( FramePass const & pass
+		static std::string adjustName( FramePass const & pass
 			, std::string const & dataName )
 		{
 			auto result = pass.getGroupName() + "/" + dataName;
@@ -178,11 +178,11 @@ namespace crg
 			{
 				bool result = false;
 
-				if ( isInOutputs( *lookup, view ) )
+				if ( fpass::isInOutputs( *lookup, view ) )
 				{
 					result = ( pass.id == lookup->id );
 				}
-				else if ( !isInInputs( *lookup, view ) )
+				else if ( !fpass::isInInputs( *lookup, view ) )
 				{
 					result = lookup->dependsOn( pass, view );
 				}
@@ -201,11 +201,11 @@ namespace crg
 			{
 				bool result = false;
 
-				if ( isInOutputs( *lookup, buffer ) )
+				if ( fpass::isInOutputs( *lookup, buffer ) )
 				{
 					result = ( pass.id == lookup->id );
 				}
-				else if ( !isInInputs( *lookup, buffer ) )
+				else if ( !fpass::isInInputs( *lookup, buffer ) )
 				{
 					result = lookup->dependsOn( pass, buffer );
 				}
@@ -231,7 +231,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = adjustName( *this, buffer.name ) + "UB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "UB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -248,7 +248,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = adjustName( *this, buffer.name ) + "ISB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "ISB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -265,7 +265,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = adjustName( *this, buffer.name ) + "OSB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "OSB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -282,7 +282,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = adjustName( *this, buffer.name ) + "IOSB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "IOSB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -300,7 +300,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = adjustName( *this, buffer.name ) + "UBV";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "UBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -319,7 +319,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = adjustName( *this, buffer.name ) + "SBV";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "SBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -427,7 +427,7 @@ namespace crg
 		, VkImageLayout initialLayout
 		, SamplerDesc samplerDesc )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Spl";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Spl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -450,7 +450,7 @@ namespace crg
 	void FramePass::addImplicitColourView( ImageViewId view
 		, VkImageLayout wantedLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -473,7 +473,7 @@ namespace crg
 	void FramePass::addImplicitDepthView( ImageViewId view
 		, VkImageLayout wantedLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -497,7 +497,7 @@ namespace crg
 	void FramePass::addImplicitDepthStencilView( ImageViewId view
 		, VkImageLayout wantedLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -523,7 +523,7 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -547,7 +547,7 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -571,7 +571,7 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -594,7 +594,7 @@ namespace crg
 	void FramePass::addTransferInputView( ImageViewId view
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/It";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/It";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, uint32_t{}
@@ -617,7 +617,7 @@ namespace crg
 	void FramePass::addTransferOutputView( ImageViewId view
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/Ot";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Ot";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, uint32_t{}
@@ -640,7 +640,7 @@ namespace crg
 	void FramePass::addTransferInOutView( ImageViewId view
 		, crg::Attachment::Flag flag )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/IOt";
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/IOt";
 		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( flag ) )
 			, *this
 			, uint32_t{}
@@ -669,7 +669,7 @@ namespace crg
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
 			, uint32_t{}
@@ -699,7 +699,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -731,7 +731,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -764,7 +764,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = adjustName( *this, view.data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -792,7 +792,7 @@ namespace crg
 		, VkImageLayout initialLayout
 		, SamplerDesc samplerDesc )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Spl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Spl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -818,7 +818,7 @@ namespace crg
 		, SamplerDesc samplerDesc )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Spl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Spl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -841,7 +841,7 @@ namespace crg
 	void FramePass::addImplicitColourView( ImageViewIdArray views
 		, VkImageLayout wantedLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -865,7 +865,7 @@ namespace crg
 		, VkImageLayout wantedLayout )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -888,7 +888,7 @@ namespace crg
 	void FramePass::addImplicitDepthView( ImageViewIdArray views
 		, VkImageLayout wantedLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -913,7 +913,7 @@ namespace crg
 		, VkImageLayout wantedLayout )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -937,7 +937,7 @@ namespace crg
 	void FramePass::addImplicitDepthStencilView( ImageViewIdArray views
 		, VkImageLayout wantedLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -963,7 +963,7 @@ namespace crg
 		, VkImageLayout wantedLayout )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Impl";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, ~( 0u )
@@ -989,7 +989,7 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -1014,7 +1014,7 @@ namespace crg
 		, VkImageLayout initialLayout )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -1038,7 +1038,7 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -1063,7 +1063,7 @@ namespace crg
 		, VkImageLayout initialLayout )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -1087,7 +1087,7 @@ namespace crg
 		, uint32_t binding
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -1112,7 +1112,7 @@ namespace crg
 		, VkImageLayout initialLayout )
 	{
 		auto count = uint32_t( views.size() );
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -1135,7 +1135,7 @@ namespace crg
 	void FramePass::addTransferInputView( ImageViewIdArray views
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/It";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/It";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, uint32_t{}
@@ -1158,7 +1158,7 @@ namespace crg
 	void FramePass::addTransferOutputView( ImageViewIdArray views
 		, VkImageLayout initialLayout )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/Ot";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Ot";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, uint32_t{}
@@ -1181,7 +1181,7 @@ namespace crg
 	void FramePass::addTransferInOutView( ImageViewIdArray views
 		, crg::Attachment::Flag flag )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/IOt";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IOt";
 		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( flag ) )
 			, *this
 			, uint32_t{}
@@ -1210,7 +1210,7 @@ namespace crg
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
 			, *this
 			, uint32_t{}
@@ -1240,7 +1240,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -1272,7 +1272,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this
@@ -1305,7 +1305,7 @@ namespace crg
 		, VkImageLayout finalLayout
 		, VkClearValue clearValue )
 	{
-		auto attachName = adjustName( *this, views.front().data->name ) + "/" + pname;
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
 			, { Attachment::FlagKind( Attachment::Flag::None )
 				, *this

@@ -18,9 +18,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace rungraph
 	{
-		void display( RunnableGraph & value )
+		static void display( RunnableGraph & value )
 		{
 			{
 				auto streams = dot::displayTransitions( value, { true, true, true, false } );
@@ -77,7 +77,7 @@ namespace crg
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
 	{
-		display( *this );
+		rungraph::display( *this );
 		std::clog << graph.getName() << " - Initialising resources" << std::endl;
 		LayoutStateMap images;
 		AccessStateMap buffers;

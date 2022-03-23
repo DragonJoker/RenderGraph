@@ -12,9 +12,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace group
 	{
-		FramePassGroup const * getOutermost( FramePassGroup const * group )
+		static FramePassGroup const * getOutermost( FramePassGroup const * group )
 		{
 			while ( group && group->parent )
 			{
@@ -24,7 +24,7 @@ namespace crg
 			return group;
 		}
 
-		uint32_t countPasses( FramePassGroup const * group )
+		static uint32_t countPasses( FramePassGroup const * group )
 		{
 			return std::accumulate( group->groups.begin()
 				, group->groups.end()
@@ -35,7 +35,7 @@ namespace crg
 				} );
 		}
 
-		uint32_t countGroups( FramePassGroup const * group )
+		static uint32_t countGroups( FramePassGroup const * group )
 		{
 			return std::accumulate( group->groups.begin()
 				, group->groups.end()
@@ -74,7 +74,7 @@ namespace crg
 			CRG_Exception( "Duplicate FramePass name detected." );
 		}
 
-		auto count = countPasses( getOutermost( this ) );
+		auto count = group::countPasses( group::getOutermost( this ) );
 		passes.emplace_back( new FramePass{ *this
 			, m_graph
 			, count + 1u
@@ -94,7 +94,7 @@ namespace crg
 
 		if ( it == groups.end() )
 		{
-			auto count = countGroups( getOutermost( this ) );
+			auto count = group::countGroups( group::getOutermost( this ) );
 			groups.emplace_back( new FramePassGroup{ *this, count + 1u, groupName } );
 			it = std::next( groups.begin(), ptrdiff_t( groups.size() - 1u ) );
 		}

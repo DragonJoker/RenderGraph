@@ -14,9 +14,9 @@ namespace crg
 {
 	//*********************************************************************************************
 
-	namespace
+	namespace rpHolder
 	{
-		VkAttachmentReference addAttach( RecordContext & context
+		static VkAttachmentReference addAttach( RecordContext & context
 			, Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
@@ -49,7 +49,7 @@ namespace crg
 			return result;
 		}
 
-		VkAttachmentReference addAttach( RecordContext & context
+		static VkAttachmentReference addAttach( RecordContext & context
 			, Attachment const & attach
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
@@ -70,7 +70,7 @@ namespace crg
 				, separateDepthStencilLayouts );
 		}
 
-		bool checkAttaches( RecordContext const & context
+		static bool checkAttaches( RecordContext const & context
 			, std::vector< RenderPassHolder::Entry > const & attaches )
 		{
 			auto it = std::find_if( attaches.begin()
@@ -107,7 +107,7 @@ namespace crg
 			, crg::RunnablePass const & runnable )
 	{
 		if ( m_renderPass
-			&& checkAttaches( context, m_attaches ) )
+			&& rpHolder::checkAttaches( context, m_attaches ) )
 		{
 			return false;
 		}
@@ -172,7 +172,7 @@ namespace crg
 
 			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
-				depthReference = addAttach( context
+				depthReference = rpHolder::addAttach( context
 					, attach
 					, attaches
 					, m_attaches
@@ -183,7 +183,7 @@ namespace crg
 			}
 			else if ( attach.isColourAttach() )
 			{
-				colorReferences.push_back( addAttach( context
+				colorReferences.push_back( rpHolder::addAttach( context
 					, attach
 					, attaches
 					, m_attaches

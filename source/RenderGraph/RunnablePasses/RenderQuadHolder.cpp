@@ -149,7 +149,11 @@ namespace crg
 	void RenderQuadHolder::doCreatePipeline()
 	{
 		auto index = getPassIndex();
-		assert( index < m_maxPassCount );
+
+		if ( index >= m_maxPassCount )
+		{
+			assert( false );
+		}
 
 		if ( m_pipeline.getPipeline( index ) )
 		{

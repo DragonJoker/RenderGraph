@@ -53,6 +53,9 @@ endif ()
 if ( NOT DEFINED CRG_BUILD_TESTS )
 	option( CRG_BUILD_TESTS "Build RenderGraph test applications" OFF )
 endif ()
+if ( NOT DEFINED CRG_UNITY_BUILD )
+	option( CRG_UNITY_BUILD "Build RenderGraph using Unity (Jumbo) build method" OFF )
+endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	if ( NOT DEFINED VULKAN_HEADERS_INCLUDE_DIRS )
@@ -210,6 +213,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		PROPERTIES
 			CXX_STANDARD 17
 			FOLDER "${CRG_BASE_DIR}/Core"
+			UNITY_BUILD "${CRG_UNITY_BUILD}"
 	)
 	install(
 		TARGETS ${PROJECT_NAME}

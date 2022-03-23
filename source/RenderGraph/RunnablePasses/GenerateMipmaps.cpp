@@ -11,7 +11,7 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace genMips
 	{
 		template< typename T >
 		inline constexpr T getSubresourceDimension( T const & extent
@@ -100,9 +100,9 @@ namespace crg
 			imageBlit.dstOffsets[0].x = 0;
 			imageBlit.dstOffsets[0].y = 0;
 			imageBlit.dstOffsets[0].z = 0;
-			imageBlit.dstOffsets[1].x = getSubresourceDimension( width, mipSubRange.baseMipLevel );
-			imageBlit.dstOffsets[1].y = getSubresourceDimension( height, mipSubRange.baseMipLevel );
-			imageBlit.dstOffsets[1].z = getSubresourceDimension( depth, mipSubRange.baseMipLevel );
+			imageBlit.dstOffsets[1].x = genMips::getSubresourceDimension( width, mipSubRange.baseMipLevel );
+			imageBlit.dstOffsets[1].y = genMips::getSubresourceDimension( height, mipSubRange.baseMipLevel );
+			imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 			// Transition first mip level to transfer source for read in next iteration
 			m_graph.memoryBarrier( context
@@ -125,9 +125,9 @@ namespace crg
 
 				// Update blit destination
 				imageBlit.dstSubresource.mipLevel = mipSubRange.baseMipLevel;
-				imageBlit.dstOffsets[1].x = getSubresourceDimension( width, mipSubRange.baseMipLevel );
-				imageBlit.dstOffsets[1].y = getSubresourceDimension( height, mipSubRange.baseMipLevel );
-				imageBlit.dstOffsets[1].z = getSubresourceDimension( depth, mipSubRange.baseMipLevel );
+				imageBlit.dstOffsets[1].x = genMips::getSubresourceDimension( width, mipSubRange.baseMipLevel );
+				imageBlit.dstOffsets[1].y = genMips::getSubresourceDimension( height, mipSubRange.baseMipLevel );
+				imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 				// Transition current mip level to transfer dest
 				m_graph.memoryBarrier( context

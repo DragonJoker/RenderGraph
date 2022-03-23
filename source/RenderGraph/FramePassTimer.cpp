@@ -9,9 +9,9 @@ namespace crg
 
 	//*********************************************************************************************
 	
-	namespace
+	namespace timer
 	{
-		VkQueryPool createQueryPool( GraphContext & context
+		static VkQueryPool createQueryPool( GraphContext & context
 			, std::string const & name
 			, uint32_t passesCount )
 		{
@@ -79,7 +79,7 @@ namespace crg
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }
-		, m_timerQuery{ createQueryPool( context
+		, m_timerQuery{ timer::createQueryPool( context
 			, name
 			, passesCount ) }
 		, m_startedPasses( size_t( m_passesCount ), { false, false } )
@@ -195,7 +195,7 @@ namespace crg
 			m_context.vkDestroyQueryPool( m_context.device
 				, m_timerQuery
 				, m_context.allocator );
-			m_timerQuery = createQueryPool( m_context
+			m_timerQuery = timer::createQueryPool( m_context
 				, m_name
 				, m_passesCount );
 			m_startedPasses.resize( m_passesCount );

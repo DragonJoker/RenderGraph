@@ -16,9 +16,9 @@ namespace crg
 {
 	namespace builder
 	{
-		namespace
+		namespace resopt
 		{
-			//void markAttachment( Attachment & attachment
+			//static void markAttachment( Attachment & attachment
 			//	, Attachment::Flag toMark )
 			//{
 			//	if ( attachment.hasFlag( toMark ) )
@@ -27,7 +27,7 @@ namespace crg
 			//	}
 			//}
 			//
-			//void markAttachment( std::optional< Attachment > & attachment
+			//static void markAttachment( std::optional< Attachment > & attachment
 			//	, Attachment::Flag toMark )
 			//{
 			//	if ( attachment )
@@ -36,7 +36,7 @@ namespace crg
 			//	}
 			//}
 			//
-			//void markAttachments( AttachmentArray & attachments
+			//static void markAttachments( AttachmentArray & attachments
 			//	, Attachment::Flag toMark )
 			//{
 			//	for ( auto attachment : attachments )
@@ -45,7 +45,7 @@ namespace crg
 			//	}
 			//}
 			//
-			//void markPassAttachments( FramePass & pass
+			//static void markPassAttachments( FramePass & pass
 			//	, Attachment::Flag toMark )
 			//{
 			//	markAttachments( pass.sampled, toMark );
@@ -53,7 +53,7 @@ namespace crg
 			//	markAttachment( pass.depthStencilInOut, toMark );
 			//}
 
-			//void markPassesAttachments( FramePassSet & passes
+			//static void markPassesAttachments( FramePassSet & passes
 			//	, Attachment::Flag toMark )
 			//{
 			//	for ( auto pass : passes )
@@ -66,7 +66,7 @@ namespace crg
 			using IdDataMap = std::map< DataT *, std::vector< Id< DataT > > >;
 
 			template< typename DataT >
-			IdDataMap< DataT > sortPerData( IdDataOwnerCont< DataT > const & images )
+			static IdDataMap< DataT > sortPerData( IdDataOwnerCont< DataT > const & images )
 			{
 				IdDataMap< DataT > result;
 				return result;
@@ -81,12 +81,12 @@ namespace crg
 			// We mark root and leaf nodes images as non mergeable.
 			auto roots = retrieveRoots( dependencies );
 			auto leaves = retrieveLeafs( dependencies );
-			//markPassesAttachments( roots, Attachment::Flag::Output );
-			//markPassesAttachments( leaves, Attachment::Flag::Input );
+			//resopt::markPassesAttachments( roots, Attachment::Flag::Output );
+			//resopt::markPassesAttachments( leaves, Attachment::Flag::Input );
 
 			// We'll need to see which image we can merge, given their ImageData,
 			// and their flags.
-			sortPerData( images );
+			resopt::sortPerData( images );
 
 			return ImageIdAliasMap{};
 		}

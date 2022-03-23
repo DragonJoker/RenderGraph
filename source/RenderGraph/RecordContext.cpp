@@ -18,9 +18,9 @@ namespace crg
 {
 	//************************************************************************************************
 
-	namespace
+	namespace recctx
 	{
-		VkImageSubresourceRange adaptRange( GraphContext & context
+		static VkImageSubresourceRange adaptRange( GraphContext & context
 			, VkFormat format
 			, VkImageSubresourceRange const & subresourceRange )
 		{
@@ -388,7 +388,7 @@ namespace crg
 			return;
 		}
 
-		auto range = adaptRange( *m_context
+		auto range = recctx::adaptRange( *m_context
 				, image.data->info.format
 				, subresourceRange );
 		auto from = getLayoutState( image

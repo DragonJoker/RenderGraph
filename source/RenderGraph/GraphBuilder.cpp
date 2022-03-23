@@ -14,9 +14,9 @@ namespace crg
 {
 	namespace builder
 	{
-		namespace
+		namespace graph
 		{
-			GraphAdjacentNode findNode( FramePass const * pass
+			static GraphAdjacentNode findNode( FramePass const * pass
 				, GraphNodePtrArray const & nodes )
 			{
 				if ( !pass )
@@ -37,18 +37,18 @@ namespace crg
 				return result;
 			}
 
-			AttachmentTransitions makeTransition( ViewTransition const & transition )
+			static AttachmentTransitions makeTransition( ViewTransition const & transition )
 			{
 				return { { transition }, {} };
 			}
 
-			AttachmentTransitions makeTransition( BufferTransition const & transition )
+			static AttachmentTransitions makeTransition( BufferTransition const & transition )
 			{
 				return { {}, { transition } };
 			}
 
 			template< typename DataT >
-			void buildGraph( RootNode & rootNode
+			static void buildGraph( RootNode & rootNode
 				, DataTransitionArrayT< DataT > const & transitions
 				, GraphNodePtrArray const & nodes )
 			{
@@ -74,8 +74,8 @@ namespace crg
 			, GraphNodePtrArray const & nodes
 			, AttachmentTransitions & transitions )
 		{
-			buildGraph( rootNode, transitions.viewTransitions, nodes );
-			buildGraph( rootNode, transitions.bufferTransitions, nodes );
+			graph::buildGraph( rootNode, transitions.viewTransitions, nodes );
+			graph::buildGraph( rootNode, transitions.bufferTransitions, nodes );
 
 			for ( auto & node : nodes )
 			{

@@ -17,7 +17,7 @@ See LICENSE file in root folder.
 
 namespace crg::dot
 {
-	namespace
+	namespace dotexp
 	{
 		template < typename char_type, char_type fill_char = ' ', typename traits = std::char_traits< char_type > >
 		struct BasicIndentBuffer
@@ -820,8 +820,8 @@ namespace crg::dot
 		, Config const & config )
 	{
 		DisplayResult result;
-		FramePassGroupStreams groups{ config };
-		DotOutVisitor::submit( result, groups, value.getGraph(), config );
+		dotexp::FramePassGroupStreams groups{ config };
+		dotexp::DotOutVisitor::submit( result, groups, value.getGraph(), config );
 		return result;
 	}
 
@@ -829,7 +829,7 @@ namespace crg::dot
 		, Config const & config )
 	{
 		DisplayResult result;
-		DotOutVisitor::submit( result, value.getTransitions(), config );
+		dotexp::DotOutVisitor::submit( result, value.getTransitions(), config );
 		return result;
 	}
 

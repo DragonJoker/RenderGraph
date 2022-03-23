@@ -15,7 +15,7 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace reshdl
 	{
 		struct Quad
 		{
@@ -29,12 +29,12 @@ namespace crg
 			Vertex vertex[6];
 		};
 
-		VkImageCreateInfo convert( ImageData const & data )
+		static VkImageCreateInfo convert( ImageData const & data )
 		{
 			return data.info;
 		}
 
-		VkImageViewCreateInfo convert( ImageViewData const & data
+		static VkImageViewCreateInfo convert( ImageViewData const & data
 			, VkImage const & image )
 		{
 			auto result = data.info;
@@ -42,7 +42,7 @@ namespace crg
 			return result;
 		}
 
-		size_t makeHash( SamplerDesc const & samplerDesc )
+		static size_t makeHash( SamplerDesc const & samplerDesc )
 		{
 			auto result = std::hash< uint32_t >{}( samplerDesc.magFilter );
 			result = hashCombine( result, samplerDesc.minFilter );
@@ -56,7 +56,7 @@ namespace crg
 			return result;
 		}
 
-		size_t makeHash( bool texCoords
+		static size_t makeHash( bool texCoords
 			, Texcoord const & config )
 		{
 			size_t result{ ( ( texCoords ? 0x01u : 0x00u ) << 0u )
@@ -212,7 +212,7 @@ namespace crg
 		if ( ires.second )
 		{
 		// Create image
-			auto createInfo = convert( *imageId.data );
+			auto createInfo = reshdl::convert( *imageId.data );
 			auto res = context.vkCreateImage( context.device
 				, &createInfo
 				, context.allocator
@@ -265,7 +265,7 @@ namespace crg
 		if ( ires.second )
 		{
 			auto image = createImage( context, view.data->image );
-			auto createInfo = convert( *view.data, image );
+			auto createInfo = reshdl::convert( *view.data, image );
 			auto res = context.vkCreateImageView( context.device
 				, &createInfo
 				, context.allocator
@@ -286,7 +286,7 @@ namespace crg
 		}
 
 		std::unique_lock< std::mutex > lock( m_samplersMutex );
-		auto ires = m_samplers.emplace( makeHash( samplerDesc ), VkSampler{} );
+		auto ires = m_samplers.emplace( reshdl::makeHash( samplerDesc ), VkSampler{} );
 
 		if ( ires.second )
 		{
@@ -318,7 +318,7 @@ namespace crg
 				, context.allocator
 				, &ires.first->second );
 			checkVkResult( res, "Sampler creation" );
-			crgRegisterObject( context, "Sampler" + std::to_string( makeHash( samplerDesc ) ), ires.first->second );
+			crgRegisterObject( context, "Sampler" + std::to_string( reshdl::makeHash( samplerDesc ) ), ires.first->second );
 		}
 
 		return ires.first->second;
@@ -328,7 +328,7 @@ namespace crg
 		, bool texCoords
 		, Texcoord const & config )
 	{
-		auto hash = makeHash( texCoords, config );
+		auto hash = reshdl::makeHash( texCoords, config );
 
 		std::unique_lock< std::mutex > lock( m_buffersMutex );
 		auto ires = m_vertexBuffers.emplace( hash, std::make_unique< VertexBuffer >() );
@@ -339,7 +339,7 @@ namespace crg
 			VkBufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
 				, nullptr
 				, 0u
-				, 3u * sizeof( Quad::Vertex )
+				, 3u * sizeof( reshdl::Quad::Vertex )
 				, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
 				, VK_SHARING_MODE_EXCLUSIVE
 				, 0u
@@ -374,7 +374,7 @@ namespace crg
 				, 0u );
 			checkVkResult( res, "Buffer memory binding" );
 
-			Quad::Vertex * buffer{};
+			reshdl::Quad::Vertex * buffer{};
 			res = context.vkMapMemory( context.device
 				, vertexBuffer->memory
 				, 0u
@@ -395,10 +395,10 @@ namespace crg
 				auto realMaxU = float( config.invertU ? minU : maxU );
 				auto realMinV = float( config.invertV ? maxV : minV );
 				auto realMaxV = float( config.invertV ? minV : maxV );
-				std::array< Quad::Vertex, 3u > vertexData
-					{ Quad::Vertex{ Quad::Data{ -1.0f, -3.0f }, Quad::Data{ realMinU, realMinV } }
-					, Quad::Vertex{ Quad::Data{ -1.0f, +1.0f }, Quad::Data{ realMinU, realMaxV } }
-					, Quad::Vertex{ Quad::Data{ +3.0f, +1.0f }, Quad::Data{ realMaxU, realMaxV } } };
+				std::array<reshdl::Quad::Vertex, 3u > vertexData
+					{ reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, -3.0f }, reshdl::Quad::Data{ realMinU, realMinV } }
+					, reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, +1.0f }, reshdl::Quad::Data{ realMinU, realMaxV } }
+					, reshdl::Quad::Vertex{ reshdl::Quad::Data{ +3.0f, +1.0f }, reshdl::Quad::Data{ realMaxU, realMaxV } } };
 				std::copy( vertexData.begin(), vertexData.end(), buffer );
 
 				VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
@@ -410,14 +410,14 @@ namespace crg
 				context.vkUnmapMemory( context.device, vertexBuffer->memory );
 			}
 
-			vertexBuffer->vertexAttribs.push_back( { 0u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( Quad::Vertex, position ) } );
+			vertexBuffer->vertexAttribs.push_back( { 0u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( reshdl::Quad::Vertex, position ) } );
 
 			if ( texCoords )
 			{
-				vertexBuffer->vertexAttribs.push_back( { 1u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( Quad::Vertex, texture ) } );
+				vertexBuffer->vertexAttribs.push_back( { 1u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( reshdl::Quad::Vertex, texture ) } );
 			}
 
-			vertexBuffer->vertexBindings.push_back( { 0u, sizeof( Quad::Vertex ), VK_VERTEX_INPUT_RATE_VERTEX } );
+			vertexBuffer->vertexBindings.push_back( { 0u, sizeof( reshdl::Quad::Vertex ), VK_VERTEX_INPUT_RATE_VERTEX } );
 			vertexBuffer->inputState = VkPipelineVertexInputStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
 				, nullptr
 				, 0u

@@ -10,7 +10,7 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace attTran
 	{
 		template< typename TransitionT >
 		std::vector< TransitionT > mergeIdenticalTransitionsT( std::vector< TransitionT > transitions )
@@ -30,7 +30,7 @@ namespace crg
 			return result;
 		}
 
-		ViewTransitionArray reduceDirectPathsT( ViewTransitionArray transitions )
+		static ViewTransitionArray reduceDirectPathsT( ViewTransitionArray transitions )
 		{
 			// Currently, just removes from the transitions the sampled attachments to a pass
 			// that doesn't directly need them.
@@ -59,7 +59,7 @@ namespace crg
 			return transitions;
 		}
 
-		BufferTransitionArray reduceDirectPathsT( BufferTransitionArray transitions )
+		static BufferTransitionArray reduceDirectPathsT( BufferTransitionArray transitions )
 		{
 			// Currently, just removes from the transitions the sampled attachments to a pass
 			// that doesn't directly need them.
@@ -110,13 +110,13 @@ namespace crg
 
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions transitions )
 	{
-		return { mergeIdenticalTransitionsT( transitions.viewTransitions )
-			, mergeIdenticalTransitionsT( transitions.bufferTransitions ) };
+		return { attTran::mergeIdenticalTransitionsT( transitions.viewTransitions )
+			, attTran::mergeIdenticalTransitionsT( transitions.bufferTransitions ) };
 	}
 
 	AttachmentTransitions reduceDirectPaths( AttachmentTransitions transitions )
 	{
-		return { reduceDirectPathsT( transitions.viewTransitions )
-			, reduceDirectPathsT( transitions.bufferTransitions ) };
+		return { attTran::reduceDirectPathsT( transitions.viewTransitions )
+			, attTran::reduceDirectPathsT( transitions.bufferTransitions ) };
 	}
 }
