@@ -12,9 +12,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace imToBuf
 	{
-		VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
+		static VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
 		{
 			return VkImageSubresourceLayers{ range.aspectMask
 				, range.baseMipLevel
@@ -57,7 +57,7 @@ namespace crg
 		auto dstBuffer{ m_pass.buffers.front().buffer.buffer.buffer };
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		// Copy source to target.
-		auto range = convert( srcAttach.data->info.subresourceRange );
+		auto range = imToBuf::convert( srcAttach.data->info.subresourceRange );
 		VkBufferImageCopy copyRegion{ 0ull
 			, 0u
 			, 0u

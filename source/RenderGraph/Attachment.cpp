@@ -12,9 +12,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace attach
 	{
-		bool match( VkImageSubresourceRange const & lhsRange
+		static bool match( VkImageSubresourceRange const & lhsRange
 			, VkImageSubresourceRange const & rhsRange )
 		{
 			return ( ( lhsRange.aspectMask & rhsRange.aspectMask ) != 0 )
@@ -24,7 +24,7 @@ namespace crg
 				&& lhsRange.levelCount == rhsRange.levelCount;
 		}
 
-		bool match( ImageId const & image
+		static bool match( ImageId const & image
 			, VkImageViewType lhsType
 			, VkImageViewType rhsType
 			, VkImageSubresourceRange const & lhsRange
@@ -45,7 +45,7 @@ namespace crg
 			return result;
 		}
 
-		bool match( ImageId const & image
+		static bool match( ImageId const & image
 			, VkImageViewCreateInfo const & lhsInfo
 			, VkImageViewCreateInfo const & rhsInfo )
 		{
@@ -56,26 +56,7 @@ namespace crg
 					, lhsInfo.subresourceRange, rhsInfo.subresourceRange );
 		}
 
-		bool operator==( VkClearValue const & lhs
-			, VkClearValue const & rhs )
-		{
-			return std::memcmp( &lhs, &rhs, sizeof( VkClearValue ) ) == 0;
-		}
-
-		bool operator==( VkPipelineColorBlendAttachmentState const & lhs
-			, VkPipelineColorBlendAttachmentState const & rhs )
-		{
-			return lhs.blendEnable == rhs.blendEnable
-				&& lhs.srcColorBlendFactor == rhs.srcColorBlendFactor
-				&& lhs.dstColorBlendFactor == rhs.dstColorBlendFactor
-				&& lhs.colorBlendOp == rhs.colorBlendOp
-				&& lhs.srcAlphaBlendFactor == rhs.srcAlphaBlendFactor
-				&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
-				&& lhs.alphaBlendOp == rhs.alphaBlendOp
-				&& lhs.colorWriteMask == rhs.colorWriteMask;
-		}
-
-		VkAccessFlags getAccessMask( VkImageLayout layout )
+		static VkAccessFlags getAccessMask( VkImageLayout layout )
 		{
 			VkAccessFlags result{ 0u };
 
@@ -125,7 +106,7 @@ namespace crg
 			return result;
 		}
 
-		VkPipelineStageFlags getStageMask( VkImageLayout layout )
+		static VkPipelineStageFlags getStageMask( VkImageLayout layout )
 		{
 			VkPipelineStageFlags result{ 0u };
 
@@ -171,6 +152,25 @@ namespace crg
 
 			return result;
 		}
+	}
+
+	static bool operator==( VkClearValue const & lhs
+		, VkClearValue const & rhs )
+	{
+		return std::memcmp( &lhs, &rhs, sizeof( VkClearValue ) ) == 0;
+	}
+
+	static bool operator==( VkPipelineColorBlendAttachmentState const & lhs
+		, VkPipelineColorBlendAttachmentState const & rhs )
+	{
+		return lhs.blendEnable == rhs.blendEnable
+			&& lhs.srcColorBlendFactor == rhs.srcColorBlendFactor
+			&& lhs.dstColorBlendFactor == rhs.dstColorBlendFactor
+			&& lhs.colorBlendOp == rhs.colorBlendOp
+			&& lhs.srcAlphaBlendFactor == rhs.srcAlphaBlendFactor
+			&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
+			&& lhs.alphaBlendOp == rhs.alphaBlendOp
+			&& lhs.colorWriteMask == rhs.colorWriteMask;
 	}
 
 	bool isDepthFormat( VkFormat fmt )
@@ -221,7 +221,7 @@ namespace crg
 	bool match( ImageViewData const & lhs, ImageViewData const & rhs )
 	{
 		return lhs.image.id == rhs.image.id
-			&& match( lhs.image
+			&& attach::match( lhs.image
 				, lhs.info
 				, rhs.info );
 	}
@@ -572,7 +572,7 @@ namespace crg
 		}
 		else if ( isTransitionView() )
 		{
-			result |= crg::getAccessMask( transitionLayout );
+			result |= attach::getAccessMask( transitionLayout );
 		}
 		else if ( isStorageView() )
 		{
@@ -636,7 +636,7 @@ namespace crg
 		}
 		else if ( isTransitionView() )
 		{
-			result |= crg::getStageMask( transitionLayout );
+			result |= attach::getStageMask( transitionLayout );
 		}
 		else if ( isStorageView() )
 		{

@@ -26,16 +26,16 @@ namespace crg
 {
 	namespace builder
 	{
-		namespace
+		namespace deps
 		{
-			bool isInRange( uint32_t value
+			static bool isInRange( uint32_t value
 				, uint32_t left
 				, uint32_t count )
 			{
 				return value >= left && value < left + count;
 			}
 
-			bool isSingleMipView( ImageViewId const & sub
+			static bool isSingleMipView( ImageViewId const & sub
 				, ImageViewId const & main )
 			{
 				return main.data->image == sub.data->image
@@ -45,7 +45,7 @@ namespace crg
 					&& sub.data->info.subresourceRange.levelCount == 1u;
 			}
 
-			ImageViewId const & getInputView( ImageViewId const & lhs
+			static ImageViewId const & getInputView( ImageViewId const & lhs
 				, ImageViewId const & rhs )
 			{
 				if ( lhs == rhs )
@@ -61,7 +61,7 @@ namespace crg
 				return rhs;
 			}
 
-			ImageViewId const & getOutputView( ImageViewId const & lhs
+			static ImageViewId const & getOutputView( ImageViewId const & lhs
 				, ImageViewId const & rhs )
 			{
 				if ( lhs == rhs )
@@ -179,14 +179,14 @@ namespace crg
 			};
 
 			template< typename DataT >
-			DataT const & getAttachOutputData( Attachment const & inputAttach
+			static DataT const & getAttachOutputData( Attachment const & inputAttach
 				, Attachment const & outputAttach )
 			{
 				return AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach );
 			}
 
 			template< typename DataT >
-			DataT const & getAttachInputData( Attachment const & inputAttach
+			static DataT const & getAttachInputData( Attachment const & inputAttach
 				, Attachment const & outputAttach )
 			{
 				return AttachDataTraitsT< DataT >::getInput( inputAttach, outputAttach );
@@ -209,18 +209,18 @@ namespace crg
 			using BufferAttachesArray = AttachesArrayT< Buffer >;
 
 #if CRG_DebugPassAttaches
-			std::string const & getAttachDataName( ImageViewId const & data )
+			static std::string const & getAttachDataName( ImageViewId const & data )
 			{
 				return data.data->name;
 			}
 
-			std::string const & getAttachDataName( Buffer const & data )
+			static std::string const & getAttachDataName( Buffer const & data )
 			{
 				return data.name;
 			}
 
 			template< typename DataT >
-			std::ostream & operator<<( std::ostream & stream, AttachesT< DataT > const & attach )
+			static std::ostream & operator<<( std::ostream & stream, AttachesT< DataT > const & attach )
 			{
 				stream << getAttachDataName( attach.data );
 				std::string sep{ " -> " };
@@ -235,7 +235,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			std::ostream & operator<<( std::ostream & stream, AttachesArrayT< DataT > const & attaches )
+			static std::ostream & operator<<( std::ostream & stream, AttachesArrayT< DataT > const & attaches )
 			{
 				for ( auto & attach : attaches )
 				{
@@ -246,7 +246,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			std::ostream & operator<<( std::ostream & stream, DataTransitionT< DataT > const & transition )
+			static std::ostream & operator<<( std::ostream & stream, DataTransitionT< DataT > const & transition )
 			{
 				stream << ( transition.outputAttach.pass ? transition.outputAttach.pass->name : std::string{ "External" } )
 					<< " -> "
@@ -258,7 +258,7 @@ namespace crg
 			}
 #endif
 #if CRG_DebugPassDependencies
-			std::ostream & operator<<( std::ostream & stream, FramePassDependencies const & dependencies )
+			static std::ostream & operator<<( std::ostream & stream, FramePassDependencies const & dependencies )
 			{
 				for ( auto & depsIt : dependencies )
 				{
@@ -279,7 +279,7 @@ namespace crg
 			}
 #endif
 
-			void printDebug( ViewAttachesArray const & inputs
+			static void printDebug( ViewAttachesArray const & inputs
 				, ViewAttachesArray const & outputs )
 			{
 #if CRG_DebugPassAttaches
@@ -290,7 +290,7 @@ namespace crg
 #endif
 			}
 
-			void printDebug( BufferAttachesArray const & inputs
+			static void printDebug( BufferAttachesArray const & inputs
 				, BufferAttachesArray const & outputs )
 			{
 #if CRG_DebugPassAttaches
@@ -301,7 +301,7 @@ namespace crg
 #endif
 			}
 
-			void printDebug( FramePassDependencies const & inputTransitions
+			static void printDebug( FramePassDependencies const & inputTransitions
 				, FramePassDependencies const & outputTransitions )
 			{
 #if CRG_DebugPassDependencies
@@ -312,7 +312,7 @@ namespace crg
 #endif
 			}
 
-			bool areIntersecting( uint32_t lhsLBound
+			static bool areIntersecting( uint32_t lhsLBound
 				, uint32_t lhsCount
 				, uint32_t rhsLBound
 				, uint32_t rhsCount )
@@ -321,7 +321,7 @@ namespace crg
 					|| isInRange( rhsLBound, lhsLBound, lhsCount );
 			}
 
-			bool areIntersecting( VkImageSubresourceRange const & lhs
+			static bool areIntersecting( VkImageSubresourceRange const & lhs
 				, VkImageSubresourceRange const & rhs )
 			{
 				return areIntersecting( lhs.baseMipLevel
@@ -334,7 +334,7 @@ namespace crg
 						, lhs.layerCount );
 			}
 
-			bool areOverlapping( ImageViewData const & lhs
+			static bool areOverlapping( ImageViewData const & lhs
 				, ImageViewData const & rhs )
 			{
 				return lhs.image == rhs.image
@@ -342,20 +342,20 @@ namespace crg
 						, getVirtualRange( rhs.image, rhs.info.viewType, rhs.info.subresourceRange ) );
 			}
 
-			bool areOverlapping( ImageViewId const & lhs
+			static bool areOverlapping( ImageViewId const & lhs
 				, ImageViewId const & rhs )
 			{
 				return areOverlapping( *lhs.data, *rhs.data );
 			}
 
-			bool areOverlapping( Buffer const & lhs
+			static bool areOverlapping( Buffer const & lhs
 				, Buffer const & rhs )
 			{
 				return lhs.buffer == rhs.buffer;
 			}
 
 			template< typename DataT >
-			bool areOverlapping( Attachment const & lhs
+			static bool areOverlapping( Attachment const & lhs
 				, Attachment const & rhs )
 			{
 				return areOverlapping( AttachDataTraitsT< DataT >::get( lhs )
@@ -363,7 +363,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void insertAttach( Attachment const & attach
+			static void insertAttach( Attachment const & attach
 				, AttachesArrayT< DataT > & cont )
 			{
 				auto it = std::find_if( cont.begin()
@@ -390,7 +390,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void processAttachSource( AttachesT< DataT > & lookup
+			static void processAttachSource( AttachesT< DataT > & lookup
 				, Attachment const & attach
 				, DataT const & attachView
 				, DataT const & sourceView
@@ -408,7 +408,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void processAttach( Attachment const & attach
+			static void processAttach( Attachment const & attach
 				, AttachesArrayT< DataT > & cont
 				, AttachesArrayT< DataT > & all
 				, std::function< bool( DataT const &, DataT const & ) > processAttach )
@@ -433,7 +433,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void processInputAttachs( AttachmentArray const & attachs
+			static void processInputAttachs( AttachmentArray const & attachs
 				, AttachesArrayT< DataT > & cont
 				, AttachesArrayT< DataT > & all )
 			{
@@ -454,7 +454,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void processOutputAttachs( AttachmentArray const & attachs
+			static void processOutputAttachs( AttachmentArray const & attachs
 				, AttachesArrayT< DataT > & cont
 				, AttachesArrayT< DataT > & all )
 			{
@@ -475,7 +475,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			bool hasTransition( DataTransitionArrayT< DataT > const & transitions
+			static bool hasTransition( DataTransitionArrayT< DataT > const & transitions
 				, DataTransitionT< DataT > const & transition )
 			{
 				return transitions.end() != std::find( transitions.begin()
@@ -483,7 +483,7 @@ namespace crg
 					, transition );
 			}
 
-			FramePassTransitions & insertPass( FramePass const * pass
+			static FramePassTransitions & insertPass( FramePass const * pass
 				, FramePassDependencies & transitions )
 			{
 				auto passIt = std::find_if( transitions.begin()
@@ -503,7 +503,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			bool dependsOn( DataTransitionT< DataT > const & transition
+			static bool dependsOn( DataTransitionT< DataT > const & transition
 				, DataTransitionT< DataT > const & lookup )
 			{
 				return transition.inputAttach.pass
@@ -513,7 +513,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void insertTransition( DataTransitionT< DataT > const & transition
+			static void insertTransition( DataTransitionT< DataT > const & transition
 				, DataTransitionArrayT< DataT > & transitions )
 			{
 				if ( !hasTransition( transitions, transition ) )
@@ -550,7 +550,7 @@ namespace crg
 				}
 			}
 
-			void addRemainingDependency( Attachment const & attach
+			static void addRemainingDependency( Attachment const & attach
 				, FramePassDependencies & inputTransitions
 				, ViewTransitionArray & allTransitions )
 			{
@@ -576,7 +576,7 @@ namespace crg
 				insertTransition( transitions.viewTransitions.back(), allTransitions );
 			}
 
-			void addRemainingDependency( Attachment const & attach
+			static void addRemainingDependency( Attachment const & attach
 				, FramePassDependencies & inputTransitions
 				, BufferTransitionArray & allTransitions )
 			{
@@ -602,7 +602,7 @@ namespace crg
 				insertTransition( transitions.bufferTransitions.back(), allTransitions );
 			}
 
-			void addRemainingDependency( Attachment const & attach
+			static void addRemainingDependency( Attachment const & attach
 				, FramePassDependencies & inputTransitions
 				, AttachmentTransitions & allTransitions )
 			{
@@ -620,18 +620,18 @@ namespace crg
 				}
 			}
 
-			bool match( Buffer const & lhs, Buffer const & rhs )
+			static bool match( Buffer const & lhs, Buffer const & rhs )
 			{
 				return lhs.buffer != rhs.buffer;
 			}
 
-			bool match( ImageViewId const & lhs, ImageViewId const & rhs )
+			static bool match( ImageViewId const & lhs, ImageViewId const & rhs )
 			{
 				return match( *lhs.data, *rhs.data );
 			}
 
 			template< typename DataT >
-			void addDependency( Attachment const & outputAttach
+			static void addDependency( Attachment const & outputAttach
 				, Attachment const & inputAttach
 				, FramePassDependencies & inputTransitions
 				, FramePassDependencies & outputTransitions
@@ -661,7 +661,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			void buildPassDependencies( AttachesArrayT< DataT > const & inputs
+			static void buildPassDependencies( AttachesArrayT< DataT > const & inputs
 				, AttachesArrayT< DataT > const & outputs
 				, AttachesArrayT< DataT > & all
 				, FramePassDependencies & inputTransitions
@@ -725,38 +725,38 @@ namespace crg
 			, FramePassDependencies & outputTransitions
 			, AttachmentTransitions & allTransitions )
 		{
-			ViewAttachesArray imgInputs;
-			ViewAttachesArray imgOutputs;
-			ViewAttachesArray imgAll;
-			BufferAttachesArray bufInputs;
-			BufferAttachesArray bufOutputs;
-			BufferAttachesArray bufAll;
+			deps::ViewAttachesArray imgInputs;
+			deps::ViewAttachesArray imgOutputs;
+			deps::ViewAttachesArray imgAll;
+			deps::BufferAttachesArray bufInputs;
+			deps::BufferAttachesArray bufOutputs;
+			deps::BufferAttachesArray bufAll;
 
 			for ( auto & node : nodes )
 			{
 				auto pass = getFramePass( *node );
 				assert( pass );
-				processInputAttachs( pass->images, imgInputs, imgAll );
-				processOutputAttachs( pass->images, imgOutputs, imgAll );
-				processInputAttachs( pass->buffers, bufInputs, bufAll );
-				processOutputAttachs( pass->buffers, bufOutputs, bufAll );
-				insertPass( pass, inputTransitions );
-				insertPass( pass, outputTransitions );
+				deps::processInputAttachs( pass->images, imgInputs, imgAll );
+				deps::processOutputAttachs( pass->images, imgOutputs, imgAll );
+				deps::processInputAttachs( pass->buffers, bufInputs, bufAll );
+				deps::processOutputAttachs( pass->buffers, bufOutputs, bufAll );
+				deps::insertPass( pass, inputTransitions );
+				deps::insertPass( pass, outputTransitions );
 			}
 
-			buildPassDependencies( imgInputs
+			deps::buildPassDependencies( imgInputs
 				, imgOutputs
 				, imgAll
 				, inputTransitions
 				, outputTransitions
 				, allTransitions );
-			buildPassDependencies( bufInputs
+			deps::buildPassDependencies( bufInputs
 				, bufOutputs
 				, bufAll
 				, inputTransitions
 				, outputTransitions
 				, allTransitions );
-			printDebug( inputTransitions
+			deps::printDebug( inputTransitions
 				, outputTransitions );
 		}
 	}

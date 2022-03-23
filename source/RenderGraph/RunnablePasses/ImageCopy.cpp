@@ -12,9 +12,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace imgCopy
 	{
-		VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
+		static VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
 		{
 			return VkImageSubresourceLayers{ range.aspectMask
 				, range.baseMipLevel
@@ -57,9 +57,9 @@ namespace crg
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
 		// Copy source to target.
-		VkImageCopy copyRegion{ convert( srcAttach.data->info.subresourceRange )
+		VkImageCopy copyRegion{ imgCopy::convert( srcAttach.data->info.subresourceRange )
 			, {}
-			, convert( dstAttach.data->info.subresourceRange )
+			, imgCopy::convert( dstAttach.data->info.subresourceRange )
 			, {}
 			, m_copySize };
 		m_context.vkCmdCopyImage( commandBuffer

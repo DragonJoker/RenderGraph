@@ -17,9 +17,9 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace
+	namespace fgph
 	{
-		bool dependsOn( FramePass const & pass
+		static bool dependsOn( FramePass const & pass
 			, FramePass const * lookup )
 		{
 			return pass.passDepends.end() != std::find_if( pass.passDepends.begin()
@@ -30,7 +30,7 @@ namespace crg
 				} );
 		}
 
-		FramePassArray sortPasses( FramePassArray const & passes )
+		static FramePassArray sortPasses( FramePassArray const & passes )
 		{
 			FramePassArray sortedPasses;
 			FramePassArray unsortedPasses;
@@ -148,7 +148,7 @@ namespace crg
 			CRG_Exception( "No FramePass registered." );
 		}
 
-		passes = sortPasses( passes );
+		passes = fgph::sortPasses( passes );
 		GraphNodePtrArray nodes;
 
 		for ( auto & pass : passes )

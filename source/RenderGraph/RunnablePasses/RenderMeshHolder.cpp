@@ -148,7 +148,7 @@ namespace crg
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState )
 	{
-		auto vpState = doCreateViewportState( renderSize, m_viewports, m_scissors );
+		m_vpState = doCreateViewportState( renderSize, m_viewports, m_scissors );
 		m_renderSize = renderSize;
 		m_renderPass = renderPass;
 		m_blendAttachs = { blendState.pAttachments, blendState.pAttachments + blendState.attachmentCount };
@@ -159,7 +159,11 @@ namespace crg
 	void RenderMeshHolder::doCreatePipeline()
 	{
 		auto index = getPassIndex();
-		assert( index < m_maxPassCount );
+
+		if ( index >= m_maxPassCount )
+		{
+			assert( false );
+		}
 
 		if ( m_pipeline.getPipeline( index ) )
 		{
