@@ -10,6 +10,12 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	struct ProgramCreator
+	{
+		uint32_t maxCount{};
+		std::function< VkPipelineShaderStageCreateInfoArray( uint32_t ) > create;
+	};
+
 	template<>
 	struct DefaultValueGetterT< std::vector< VkPipelineShaderStageCreateInfoArray > >
 	{
@@ -44,6 +50,16 @@ namespace crg
 		static VkOffset2D get()
 		{
 			static VkOffset2D const result{};
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< ProgramCreator >
+	{
+		static ProgramCreator get()
+		{
+			static ProgramCreator const result{};
 			return result;
 		}
 	};
@@ -114,6 +130,15 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The pipeline program creator.
+			*/
+			auto & programCreator( ProgramCreator config )
+			{
+				m_programCreator = std::move( config );
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	The descriptor set layout.
 			*/
 			auto & layout( VkDescriptorSetLayout config )
@@ -132,6 +157,7 @@ namespace crg
 			}
 
 			WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > m_programs;
+			WrapperT< ProgramCreator > m_programCreator;
 			WrapperT< std::vector< VkDescriptorSetLayout > > m_layouts;
 		};
 
