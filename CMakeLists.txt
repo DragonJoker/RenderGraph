@@ -223,9 +223,8 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		ARCHIVE DESTINATION lib
 		LIBRARY DESTINATION lib
 	)
-	target_install_dir_headers( ${PROJECT_NAME}
+	target_install_headers( ${PROJECT_NAME}
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}
-		${PROJECT_NAME}
 	)
 	install( EXPORT ${PROJECT_NAME}
 		COMPONENT ${PROJECT_NAME}

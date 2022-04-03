@@ -13,13 +13,11 @@ It allows the user to register its render passes, along with their attachments (
 
 - The user can register its passes and their attachments.  
 - The runnable graph is generated, and image layout transitions are handled.  
-- The runnable graph commands can be recorded and submitted to a queue.
-
-## Todo
-
-- Handling of "variants" (optional passes, or paths of a single pass that are triggered by specific conditions) if needed.  
+- The runnable graph commands can be recorded and submitted to a queue.  
+- Handling of "variants" (optional passes, or paths of a single pass that are triggered by specific conditions).  
 
 ## Building
 
-RenderGraph uses CMake.  
+RenderGraph uses CMake.
+
 The only dependency is Vulkan-Headers, and the CMake variable holding its folder is VULKAN_HEADERS_INCLUDE_DIRS, which you need to set on command line, or by editing the CMakeCache.txt.  
