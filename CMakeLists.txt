@@ -59,7 +59,7 @@ endif ()
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	if ( NOT DEFINED VULKAN_HEADERS_INCLUDE_DIRS )
-		find_path( VULKAN_HEADERS_INCLUDE_DIRS REQUIRED "vulkan/vk_icd.h" )
+		find_path( VULKAN_HEADERS_INCLUDE_DIRS "vulkan/vk_icd.h" )
 	endif ()
 	# RenderGraph library
 	project( RenderGraph )
