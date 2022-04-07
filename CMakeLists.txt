@@ -14,12 +14,14 @@ set( VERSION_BUILD 0 )
 set( VERSION_YEAR 2019 )
 
 # Used to look for external modules
-set( CMAKE_MODULE_PATH
-	${CMAKE_SOURCE_DIR}/CMake
-	${CMAKE_SOURCE_DIR}/CMake/Modules
-	${CMAKE_SOURCE_DIR}/CMake/Toolchains
-)
-set( CMAKE_TEMPLATES_DIR ${CMAKE_SOURCE_DIR}/CMake/Templates )
+if ( NOT CMAKE_MODULE_PATH )
+	set( CMAKE_MODULE_PATH
+		${CMAKE_SOURCE_DIR}/CMake
+		${CMAKE_SOURCE_DIR}/CMake/Modules
+		${CMAKE_SOURCE_DIR}/CMake/Toolchains
+	)
+	set( CMAKE_TEMPLATES_DIR ${CMAKE_SOURCE_DIR}/CMake/Templates )
+endif ()
 
 set( CMAKE_POSITION_INDEPENDENT_CODE ON )
 set( CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "The configuration types" FORCE )
