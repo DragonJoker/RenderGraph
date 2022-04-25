@@ -577,6 +577,50 @@ namespace crg
 		};
 	}
 
+	RecordContext::ImplicitAction RecordContext::blitImage( ImageViewId srcView
+		, ImageViewId dstView
+		, VkOffset2D srcOffset
+		, VkExtent2D srcExtent
+		, VkOffset2D dstOffset
+		, VkExtent2D dstExtent
+		, VkFilter filter )
+	{
+		return [srcView, dstView, srcOffset, srcExtent, dstOffset, dstExtent, filter]( RecordContext & recContext
+			, VkCommandBuffer commandBuffer
+			, uint32_t index )
+		{
+			recContext.runImplicitTransition( commandBuffer
+				, index
+				, srcView );
+			auto & srcSubresource = srcView.data->info.subresourceRange;
+			auto & dstSubresource = dstView.data->info.subresourceRange;
+			VkImageBlit region{ VkImageSubresourceLayers{ srcSubresource.aspectMask, srcSubresource.baseMipLevel, srcSubresource.baseArrayLayer, 1u }
+				, { VkOffset3D{ srcOffset.x, srcOffset.y, 0u }
+					, VkOffset3D{ int32_t( srcExtent.width ), int32_t( srcExtent.height ), 1 } }
+				, VkImageSubresourceLayers{ dstSubresource.aspectMask, dstSubresource.baseMipLevel, dstSubresource.baseArrayLayer, 1u }
+				, { VkOffset3D{ dstOffset.x, dstOffset.y, 0u }
+					, VkOffset3D{ int32_t( dstExtent.width ), int32_t( dstExtent.height ), 1 } } };
+			recContext.memoryBarrier( commandBuffer
+				, srcView.data->image
+				, srcView.data->info.viewType
+				, srcView.data->info.subresourceRange
+				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) );
+			recContext.memoryBarrier( commandBuffer
+				, dstView.data->image
+				, dstView.data->info.viewType
+				, dstView.data->info.subresourceRange
+				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
+			recContext.m_context->vkCmdBlitImage( commandBuffer
+				, recContext.m_handler->createImage( *recContext.m_context, srcView.data->image )
+				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+				, 1u
+				, &region
+				, filter );
+		};
+	}
+
 	RecordContext::ImplicitAction RecordContext::clearAttachment( Attachment attach )
 	{
 		return [attach]( RecordContext & recContext

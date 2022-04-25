@@ -135,6 +135,13 @@ namespace crg
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView
 			, VkExtent2D extent );
+		CRG_API static ImplicitAction blitImage( ImageViewId srcView
+			, ImageViewId dstView
+			, VkOffset2D srcOffset
+			, VkExtent2D srcExtent
+			, VkOffset2D dstOffset
+			, VkExtent2D dstExtent
+			, VkFilter filter);
 		CRG_API static ImplicitAction clearAttachment( Attachment attach );
 		CRG_API static ImplicitAction clearAttachment( ImageViewId view
 			, VkClearValue const & clearValue );
