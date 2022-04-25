@@ -350,11 +350,14 @@ namespace crg
 		assert( m_ruConfig.resettable );
 		auto index = m_callbacks.getPassIndex();
 		auto it = m_passContexts.find( index );
-		assert( it != m_passContexts.end() );
-		auto context = it->second;
-		recordOne( m_commandBuffers[index]
-			, index
-			, context );
+
+		if ( it != m_passContexts.end() )
+		{
+			auto context = it->second;
+			recordOne( m_commandBuffers[index]
+				, index
+				, context );
+		}
 	}
 
 	void RunnablePass::recordAll( RecordContext & context )
