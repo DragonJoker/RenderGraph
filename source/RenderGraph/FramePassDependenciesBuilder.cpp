@@ -690,12 +690,16 @@ namespace crg
 								}
 							}
 
+// Disabled because GitHub Actions weirdly cries on this
+#pragma warning( push )
+#pragma warning( disable:5233 )
 							auto it = std::find_if( all.begin()
 								, all.end()
 								, [&input]( AttachesT< DataT > const & lookup )
 								{
 									return lookup.data == input.data;
 								} );
+#pragma warning( pop )
 
 							if ( all.end() != it )
 							{
