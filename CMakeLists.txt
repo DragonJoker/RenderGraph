@@ -8,10 +8,10 @@ cmake_policy( VERSION 3.1 )
 set( MAIN_PROJECT_NAME "RenderGraph" )
 
 # Set project version numbers
-set( VERSION_MAJOR 0 )
+set( VERSION_MAJOR 1 )
 set( VERSION_MINOR 1 )
 set( VERSION_BUILD 0 )
-set( VERSION_YEAR 2019 )
+set( VERSION_YEAR 2022 )
 
 # Used to look for external modules
 if ( NOT CMAKE_MODULE_PATH )
