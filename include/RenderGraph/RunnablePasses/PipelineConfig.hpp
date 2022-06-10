@@ -86,6 +86,16 @@ namespace crg
 	};
 
 	template<>
+	struct DefaultValueGetterT< VkPushConstantRangeArray >
+	{
+		static VkPushConstantRangeArray get()
+		{
+			static VkPushConstantRangeArray const result{};
+			return result;
+		}
+	};
+
+	template<>
 	struct DefaultValueGetterT< uint32_t const * >
 	{
 		static uint32_t const * get()
@@ -155,10 +165,29 @@ namespace crg
 				m_layouts = std::move( config );
 				return *this;
 			}
+			/**
+			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRange config )
+			{
+				pushConstants( VkPushConstantRangeArray{ std::move( config ) } );
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRangeArray config )
+			{
+				m_pushConstants = std::move( config );
+				return *this;
+			}
 
 			WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > m_programs;
 			WrapperT< ProgramCreator > m_programCreator;
 			WrapperT< std::vector< VkDescriptorSetLayout > > m_layouts;
+			WrapperT< VkPushConstantRangeArray > m_pushConstants;
 		};
 
 		using Config = ConfigT< std::optional >;
