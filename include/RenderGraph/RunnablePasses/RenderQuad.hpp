@@ -26,6 +26,11 @@ namespace crg
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 
+		VkPipelineLayout getPipelineLayout()const
+		{
+			return m_renderQuad.getPipelineLayout();
+		}
+
 	private:
 		void doInitialise();
 		void doRecordInto( RecordContext & context

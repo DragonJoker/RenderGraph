@@ -22,7 +22,8 @@ namespace crg
 		, m_graph{ graph }
 		, m_baseConfig{ config.m_programs ? std::move( *config.m_programs ) : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > >
 			, config.m_programCreator ? std::move( *config.m_programCreator ) : defaultV< ProgramCreator >
-			, config.m_layouts ? std::move( *config.m_layouts ) : defaultV< std::vector< VkDescriptorSetLayout > > }
+			, config.m_layouts ? std::move( *config.m_layouts ) : defaultV< std::vector< VkDescriptorSetLayout > >
+			, config.m_pushConstants ? std::move( *config.m_pushConstants ) : defaultV< std::vector< VkPushConstantRange > > }
 		, m_bindingPoint{ bindingPoint }
 	{
 		if ( m_baseConfig.m_programCreator.create )
@@ -309,8 +310,8 @@ namespace crg
 			, 0u
 			, uint32_t( layouts.size() )
 			, layouts.data()
-			, 0u                       // pushConstantRangeCount
-			, nullptr };               // pPushConstantRanges
+			, uint32_t( m_baseConfig.m_pushConstants.size() )
+			, m_baseConfig.m_pushConstants.data() };
 		auto res = m_context.vkCreatePipelineLayout( m_context.device
 			, &createInfo
 			, m_context.allocator

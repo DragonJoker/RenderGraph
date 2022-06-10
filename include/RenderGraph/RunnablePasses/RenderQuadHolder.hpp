@@ -41,6 +41,11 @@ namespace crg
 			return m_vertexBuffer->inputState;
 		}
 
+		VkPipelineLayout getPipelineLayout()const
+		{
+			return m_pipeline.getPipelineLayout();
+		}
+
 		bool isInitialised()const
 		{
 			return m_vertexBuffer != nullptr;
