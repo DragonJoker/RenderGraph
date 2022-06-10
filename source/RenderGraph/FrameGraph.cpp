@@ -205,6 +205,15 @@ namespace crg
 		return getExtent( image.data->image );
 	}
 
+	VkExtent3D getMipExtent( ImageViewId const & image )
+	{
+		auto result = getExtent( image.data->image );
+		result.width >>= image.data->info.subresourceRange.baseMipLevel;
+		result.height >>= image.data->info.subresourceRange.baseMipLevel;
+		result.depth >>= image.data->info.subresourceRange.baseMipLevel;
+		return result;
+	}
+
 	VkFormat getFormat( ImageId const & image )
 	{
 		return image.data->info.format;
