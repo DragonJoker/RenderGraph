@@ -336,6 +336,7 @@ namespace crg
 
 	CRG_API VkExtent3D getExtent( ImageId const & image );
 	CRG_API VkExtent3D getExtent( ImageViewId const & image );
+	CRG_API VkExtent3D getMipExtent( ImageViewId const & image );
 	CRG_API VkFormat getFormat( ImageId const & image );
 	CRG_API VkFormat getFormat( ImageViewId const & image );
 	CRG_API VkImageType getImageType( ImageId const & image );
