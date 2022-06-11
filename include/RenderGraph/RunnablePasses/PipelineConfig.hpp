@@ -120,6 +120,16 @@ namespace crg
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
+			ConfigT( WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs = {}
+				, WrapperT< ProgramCreator > programCreator = {}
+				, WrapperT< std::vector< VkDescriptorSetLayout > > layouts = {}
+				, WrapperT< VkPushConstantRangeArray > pushConstants = {} )
+				: m_programs{ std::move( programs ) }
+				, m_programCreator{ std::move( programCreator ) }
+				, m_layouts{ std::move( layouts ) }
+				, m_pushConstants{ std::move( pushConstants ) }
+			{
+			}
 			/**
 			*\param[in] config
 			*	The pipeline program.
