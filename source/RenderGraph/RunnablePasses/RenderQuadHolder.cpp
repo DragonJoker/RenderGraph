@@ -22,7 +22,8 @@ namespace crg
 			, config.m_enabled ? std::move( *config.m_enabled ) : defaultV< bool const * >
 			, config.m_isEnabled
 			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >() }
+			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
+			, config.m_instances ? std::move( *config.m_instances ) : 1u }
 		, m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
@@ -108,7 +109,7 @@ namespace crg
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
-		m_context.vkCmdDraw( commandBuffer, 3u, 1u, 0u, 0u );
+		m_context.vkCmdDraw( commandBuffer, 3u, m_config.m_instances, 0u, 0u );
 	}
 
 	void RenderQuadHolder::end( RecordContext & context

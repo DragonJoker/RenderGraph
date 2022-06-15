@@ -128,6 +128,15 @@ namespace crg
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
+		*\param[in] config
+		*	The instances count.
+		*/
+		auto & instances( uint32_t config )
+		{
+			m_config.instances( config );
+			return static_cast< BuilderT & >( *this );
+		}
+		/**
 		*\brief
 		*	Creates the RenderQuad.
 		*\param[in] device
