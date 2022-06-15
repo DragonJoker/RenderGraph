@@ -149,6 +149,15 @@ namespace crg
 				m_end = config;
 				return *this;
 			}
+			/**
+			*\param[in] config
+			*	The instances count.
+			*/
+			auto & instances( uint32_t config )
+			{
+				m_instances = config;
+				return *this;
+			}
 
 			pp::ConfigT< WrapperT > m_baseConfig;
 			WrapperT< Texcoord > m_texcoordConfig;
@@ -159,6 +168,7 @@ namespace crg
 			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled;
 			WrapperT< RunnablePass::RecordCallback > m_recordInto;
 			WrapperT< RunnablePass::RecordCallback > m_end;
+			WrapperT< uint32_t > m_instances;
 			WrapperT< VkExtent2D > m_renderSize;
 		};
 
@@ -173,6 +183,7 @@ namespace crg
 			std::optional< RunnablePass::IsEnabledCallback > isEnabled;
 			RawTypeT< RunnablePass::RecordCallback > recordInto;
 			RawTypeT< RunnablePass::RecordCallback > end;
+			RawTypeT< uint32_t > m_instances;
 		};
 
 		using Config = ConfigT< std::optional >;
