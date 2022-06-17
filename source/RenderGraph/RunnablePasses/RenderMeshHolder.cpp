@@ -22,6 +22,7 @@ namespace crg
 			, config.m_getPrimitiveCount ? std::move( *config.m_getPrimitiveCount ) : getDefaultV< GetPrimitiveCountCallback >()
 			, config.m_getVertexCount ? std::move( *config.m_getVertexCount ) : getDefaultV< GetVertexCountCallback >()
 			, config.m_getIndexType ? std::move( *config.m_getIndexType ) : getDefaultV< GetIndexTypeCallback >()
+			, config.m_getCullMode ? std::move( *config.m_getCullMode ) : getDefaultV< GetCullModeCallback >()
 			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : getDefaultV< VertexBuffer >()
 			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : getDefaultV< IndexBuffer >() }
 		, m_pass{ pass }
@@ -55,7 +56,7 @@ namespace crg
 			, VK_FALSE
 			, VK_FALSE
 			, VK_POLYGON_MODE_FILL
-			, VK_CULL_MODE_NONE
+			, m_config.getCullMode()
 			, VK_FRONT_FACE_COUNTER_CLOCKWISE
 			, VK_FALSE
 			, 0.0f
@@ -213,7 +214,7 @@ namespace crg
 			, 0.0f
 			, 1.0f } );
 		scissors.push_back( { { m_config.renderPosition.x, m_config.renderPosition.y }
-		, { renderSize.width, renderSize.height } } );
+			, { renderSize.width, renderSize.height } } );
 		return { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO
 			, nullptr
 			, 0u

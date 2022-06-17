@@ -18,10 +18,14 @@ namespace crg
 	struct IndexTypeT
 	{
 	};
+	struct CullModeT
+	{
+	};
 
 	using GetPrimitiveCountCallback = GetValueCallbackT< PrimitiveCountT, uint32_t >;
 	using GetVertexCountCallback = GetValueCallbackT< VertexCountT, uint32_t >;
 	using GetIndexTypeCallback = GetValueCallbackT< IndexTypeT, VkIndexType >;
+	using GetCullModeCallback = GetValueCallbackT< CullModeT, VkCullModeFlags >;
 
 	namespace rm
 	{
@@ -190,6 +194,15 @@ namespace crg
 				m_getIndexType = config;
 				return *this;
 			}
+			/**
+			*\param[in] config
+			*	The rasterizer cull mode.
+			*/
+			auto & getCullMode( GetCullModeCallback config )
+			{
+				m_getCullMode = config;
+				return *this;
+			}
 
 			pp::ConfigT< WrapperT > m_baseConfig;
 			WrapperT< VkOffset2D > m_renderPosition;
@@ -201,6 +214,7 @@ namespace crg
 			WrapperT< GetPrimitiveCountCallback > m_getPrimitiveCount;
 			WrapperT< GetVertexCountCallback > m_getVertexCount;
 			WrapperT< GetIndexTypeCallback > m_getIndexType;
+			WrapperT< GetCullModeCallback > m_getCullMode;
 			WrapperT< VkExtent2D > m_renderSize;
 			WrapperT< VertexBuffer > m_vertexBuffer;
 			WrapperT< IndexBuffer > m_indexBuffer;
@@ -218,6 +232,7 @@ namespace crg
 			RawTypeT< GetPrimitiveCountCallback > getPrimitiveCount;
 			RawTypeT< GetVertexCountCallback > getVertexCount;
 			RawTypeT< GetIndexTypeCallback > getIndexType;
+			RawTypeT< GetCullModeCallback > getCullMode;
 			RawTypeT< VertexBuffer > vertexBuffer;
 			RawTypeT< IndexBuffer > indexBuffer;
 		};
@@ -252,6 +267,16 @@ namespace crg
 		static GetIndexTypeCallback get()
 		{
 			GetIndexTypeCallback const result{ [](){ return VK_INDEX_TYPE_UINT32; } };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< GetCullModeCallback >
+	{
+		static GetCullModeCallback get()
+		{
+			GetCullModeCallback const result{ [](){ return VK_CULL_MODE_NONE; } };
 			return result;
 		}
 	};
