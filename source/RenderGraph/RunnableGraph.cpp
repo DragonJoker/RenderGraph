@@ -2,7 +2,6 @@
 See LICENSE file in root folder.
 */
 #include "RenderGraph/RunnableGraph.hpp"
-#include "RenderGraph/DotExport.hpp"
 #include "RenderGraph/GraphVisitor.hpp"
 #include "RenderGraph/ResourceHandler.hpp"
 
@@ -18,47 +17,6 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace rungraph
-	{
-		static void display( RunnableGraph & value )
-		{
-			{
-				auto streams = dot::displayTransitions( value, { true, true, true, false } );
-				std::ofstream file{ value.getGraph()->getName() + "_transitions.dot" };
-				file << streams.find( std::string{} )->second.str();
-			}
-			{
-				auto streams = dot::displayTransitions( value, { true, true, true, true } );
-
-				for ( auto & it : streams )
-				{
-					if ( !it.first.empty() )
-					{
-						std::ofstream file{ value.getGraph()->getName() + "_transitions_" + it.first + ".dot" };
-						file << it.second.str();
-					}
-				}
-			}
-			{
-				auto streams = dot::displayPasses( value, { true, true, true, false } );
-				std::ofstream file{ value.getGraph()->getName() + "_passes.dot" };
-				file << streams.find( std::string{} )->second.str();
-			}
-			{
-				auto streams = dot::displayPasses( value, { true, true, true, true } );
-
-				for ( auto & it : streams )
-				{
-					if ( !it.first.empty() )
-					{
-						std::ofstream file{ value.getGraph()->getName() + "_passes_" + it.first + ".dot" };
-						file << it.second.str();
-					}
-				}
-			}
-		}
-	}
-
 	//************************************************************************************************
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph
@@ -77,7 +35,6 @@ namespace crg
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
 	{
-		rungraph::display( *this );
 		std::clog << graph.getName() << " - Initialising resources" << std::endl;
 		LayoutStateMap images;
 		AccessStateMap buffers;
