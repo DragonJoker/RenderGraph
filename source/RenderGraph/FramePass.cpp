@@ -154,6 +154,20 @@ namespace crg
 
 			return result.substr( index );
 		}
+
+		static size_t makeHash( FramePass const & pass
+			, ImageViewId const & view )
+		{
+			return size_t( pass.id ) << 32u
+				| view.id;
+		}
+
+		static size_t makeHash( FramePass const & pass
+			, Buffer const & buffer )
+		{
+			return size_t( pass.id ) << 32u
+				| ( ptrdiff_t( buffer.buffer ) & 0xFFFFFFFF );
+		}
 	}
 
 	FramePass::FramePass( FramePassGroup const & pgroup
@@ -170,49 +184,67 @@ namespace crg
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass
-		, ImageViewId const & view )const
+		, ImageViewId const & view
+		, PassDependencyCache & cache )const
 	{
-		auto it = std::find_if( passDepends.begin()
-			, passDepends.end()
-			, [&pass, &view]( FramePass const * lookup )
-			{
-				bool result = false;
+		auto & passCache = cache.emplace( this, DependencyCache{} ).first->second;
+		auto ires = passCache.emplace( fpass::makeHash( pass, view ), false );
 
-				if ( fpass::isInOutputs( *lookup, view ) )
+		if ( ires.second )
+		{
+			auto it = std::find_if( passDepends.begin()
+				, passDepends.end()
+				, [&pass, &view, &cache]( FramePass const * lookup )
 				{
-					result = ( pass.id == lookup->id );
-				}
-				else if ( !fpass::isInInputs( *lookup, view ) )
-				{
-					result = lookup->dependsOn( pass, view );
-				}
+					bool result = false;
 
-				return result;
-			} );
-		return it != passDepends.end();
+					if ( fpass::isInOutputs( *lookup, view ) )
+					{
+						result = ( pass.id == lookup->id );
+					}
+					else if ( !fpass::isInInputs( *lookup, view ) )
+					{
+						result = lookup->dependsOn( pass, view, cache );
+					}
+
+					return result;
+				} );
+			ires.first->second = it != passDepends.end();
+		}
+
+		return ires.first->second;
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass
-		, Buffer const & buffer )const
+		, Buffer const & buffer
+		, PassDependencyCache & cache )const
 	{
-		auto it = std::find_if( passDepends.begin()
-			, passDepends.end()
-			, [&pass, &buffer]( FramePass const * lookup )
-			{
-				bool result = false;
+		auto & passCache = cache.emplace( this, DependencyCache{} ).first->second;
+		auto ires = passCache.emplace( fpass::makeHash( pass, buffer ), false );
 
-				if ( fpass::isInOutputs( *lookup, buffer ) )
+		if ( ires.second )
+		{
+			auto it = std::find_if( passDepends.begin()
+				, passDepends.end()
+				, [&pass, &buffer, &cache]( FramePass const * lookup )
 				{
-					result = ( pass.id == lookup->id );
-				}
-				else if ( !fpass::isInInputs( *lookup, buffer ) )
-				{
-					result = lookup->dependsOn( pass, buffer );
-				}
+					bool result = false;
 
-				return result;
-			} );
-		return it != passDepends.end();
+					if ( fpass::isInOutputs( *lookup, buffer ) )
+					{
+						result = ( pass.id == lookup->id );
+					}
+					else if ( !fpass::isInInputs( *lookup, buffer ) )
+					{
+						result = lookup->dependsOn( pass, buffer, cache );
+					}
+
+					return result;
+				} );
+			ires.first->second = it != passDepends.end();
+		}
+
+		return ires.first->second;
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass )const

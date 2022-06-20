@@ -64,6 +64,8 @@ namespace crg
 
 	using ImageId = Id< ImageData >;
 	using ImageViewId = Id< ImageViewData >;
+	using DependencyCache = std::unordered_map< size_t, bool >;
+	using PassDependencyCache = std::unordered_map< FramePass const *, DependencyCache >;
 
 	using FramePassPtr = std::unique_ptr< FramePass >;
 	using FramePassGroupPtr = std::unique_ptr< FramePassGroup >;

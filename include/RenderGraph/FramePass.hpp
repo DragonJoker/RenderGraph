@@ -58,7 +58,8 @@ namespace crg
 		*	The view.
 		*/
 		CRG_API bool dependsOn( FramePass const & pass
-			, ImageViewId const & view )const;
+			, ImageViewId const & view
+			, PassDependencyCache & cache )const;
 		/**
 		*\brief
 		*	Tells if, for given buffer, this pass directly depends on given pass.
@@ -68,7 +69,8 @@ namespace crg
 		*	The view.
 		*/
 		CRG_API bool dependsOn( FramePass const & pass
-			, Buffer const & buffer )const;
+			, Buffer const & buffer
+			, PassDependencyCache & cache )const;
 		/**
 		*\brief
 		*	Tells if this pass directly depends on given pass.

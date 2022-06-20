@@ -160,13 +160,19 @@ namespace crg
 		FramePassDependencies inputTransitions;
 		FramePassDependencies outputTransitions;
 		AttachmentTransitions transitions;
+		PassDependencyCache imgDepsCache;
+		PassDependencyCache bufDepsCache;
 		builder::buildPassAttachDependencies( nodes
+			, imgDepsCache
+			, bufDepsCache
 			, inputTransitions
 			, outputTransitions
 			, transitions );
 		RootNode root{ *this };
 		builder::buildGraph( root
 			, nodes
+			, imgDepsCache
+			, bufDepsCache
 			, transitions );
 		ImageMemoryMap images;
 		ImageViewMap imageViews;

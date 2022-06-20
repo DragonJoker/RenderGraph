@@ -504,25 +504,28 @@ namespace crg
 
 			template< typename DataT >
 			static bool dependsOn( DataTransitionT< DataT > const & transition
-				, DataTransitionT< DataT > const & lookup )
+				, DataTransitionT< DataT > const & lookup
+				, PassDependencyCache & cache )
 			{
 				return transition.inputAttach.pass
 					&& transition.outputAttach.pass
 					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass
-					, transition.data );
+						, transition.data
+						, cache );
 			}
 
 			template< typename DataT >
 			static void insertTransition( DataTransitionT< DataT > const & transition
+				, PassDependencyCache & cache
 				, DataTransitionArrayT< DataT > & transitions )
 			{
 				if ( !hasTransition( transitions, transition ) )
 				{
 					auto it = std::find_if( transitions.begin()
 						, transitions.end()
-						, [&transition]( DataTransitionT< DataT > const & lookup )
+						, [&transition, &cache]( DataTransitionT< DataT > const & lookup )
 						{
-							return dependsOn( lookup, transition );
+							return dependsOn( lookup, transition, cache );
 						} );
 
 					if ( it != transitions.end() )
@@ -533,9 +536,9 @@ namespace crg
 					{
 						auto rit = std::find_if( transitions.rbegin()
 							, transitions.rend()
-							, [&transition]( DataTransitionT< DataT > const & lookup )
+							, [&transition, &cache]( DataTransitionT< DataT > const & lookup )
 							{
-								return dependsOn( transition, lookup );
+								return dependsOn( transition, lookup, cache );
 							} );
 
 						if ( rit != transitions.rend() )
@@ -551,6 +554,7 @@ namespace crg
 			}
 
 			static void addRemainingDependency( Attachment const & attach
+				, PassDependencyCache & cache
 				, FramePassDependencies & inputTransitions
 				, ViewTransitionArray & allTransitions )
 			{
@@ -559,24 +563,25 @@ namespace crg
 				if ( attach.isColourInOutAttach() )
 				{
 					ViewTransition transition{ attach.view(), attach, attach };
-					insertTransition( transition, transitions.viewTransitions );
+					insertTransition( transition, cache, transitions.viewTransitions );
 				}
 				else if ( attach.isColourInputAttach()
 					|| attach.isSampledView() )
 				{
 					ViewTransition transition{ attach.view(), Attachment::createDefault( attach.view() ), attach };
-					insertTransition( transition, transitions.viewTransitions );
+					insertTransition( transition, cache, transitions.viewTransitions );
 				}
 				else
 				{
 					ViewTransition transition{ attach.view(), attach, Attachment::createDefault( attach.view() ) };
-					insertTransition( transition, transitions.viewTransitions );
+					insertTransition( transition, cache, transitions.viewTransitions );
 				}
 
-				insertTransition( transitions.viewTransitions.back(), allTransitions );
+				insertTransition( transitions.viewTransitions.back(), cache, allTransitions );
 			}
 
 			static void addRemainingDependency( Attachment const & attach
+				, PassDependencyCache & cache
 				, FramePassDependencies & inputTransitions
 				, BufferTransitionArray & allTransitions )
 			{
@@ -585,36 +590,39 @@ namespace crg
 				if ( attach.isColourInOutAttach() )
 				{
 					BufferTransition transition{ attach.buffer.buffer, attach, attach };
-					insertTransition( transition, transitions.bufferTransitions );
+					insertTransition( transition, cache, transitions.bufferTransitions );
 				}
 				else if ( attach.isColourInputAttach()
 					|| attach.isSampledView() )
 				{
 					BufferTransition transition{ attach.buffer.buffer, Attachment::createDefault( attach.buffer.buffer ), attach };
-					insertTransition( transition, transitions.bufferTransitions );
+					insertTransition( transition, cache, transitions.bufferTransitions );
 				}
 				else
 				{
 					BufferTransition transition{ attach.buffer.buffer, attach, Attachment::createDefault( attach.buffer.buffer ) };
-					insertTransition( transition, transitions.bufferTransitions );
+					insertTransition( transition, cache, transitions.bufferTransitions );
 				}
 
-				insertTransition( transitions.bufferTransitions.back(), allTransitions );
+				insertTransition( transitions.bufferTransitions.back(), cache, allTransitions );
 			}
 
 			static void addRemainingDependency( Attachment const & attach
+				, PassDependencyCache & cache
 				, FramePassDependencies & inputTransitions
 				, AttachmentTransitions & allTransitions )
 			{
 				if ( attach.isImage() )
 				{
 					addRemainingDependency( attach
+						, cache
 						, inputTransitions
 						, allTransitions.viewTransitions );
 				}
 				else
 				{
 					addRemainingDependency( attach
+						, cache
 						, inputTransitions
 						, allTransitions.bufferTransitions );
 				}
@@ -633,6 +641,7 @@ namespace crg
 			template< typename DataT >
 			static void addDependency( Attachment const & outputAttach
 				, Attachment const & inputAttach
+				, PassDependencyCache & cache
 				, FramePassDependencies & inputTransitions
 				, FramePassDependencies & outputTransitions
 				, AttachmentTransitions & allTransitions )
@@ -643,20 +652,20 @@ namespace crg
 				DataTransitionT< DataT > outputTransition{ AttachDataTraitsT< DataT >::getOutput( outputAttach, inputAttach )
 					, outputAttach
 					, inputAttach };
-				insertTransition( inputTransition, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
+				insertTransition( inputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
 
 				if ( !match( AttachDataTraitsT< DataT >::get( outputAttach )
 					, AttachDataTraitsT< DataT >::get( inputAttach ) ) )
 				{
-					insertTransition( outputTransition, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
+					insertTransition( outputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
 				}
 				{
 					auto & transitions = insertPass( inputAttach.pass, inputTransitions ).transitions;
-					insertTransition( inputTransition, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
+					insertTransition( inputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
 				}
 				{
 					auto & transitions = insertPass( outputAttach.pass, outputTransitions ).transitions;
-					insertTransition( outputTransition, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
+					insertTransition( outputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
 				}
 			}
 
@@ -664,6 +673,7 @@ namespace crg
 			static void buildPassDependencies( AttachesArrayT< DataT > const & inputs
 				, AttachesArrayT< DataT > const & outputs
 				, AttachesArrayT< DataT > & all
+				, PassDependencyCache & cache
 				, FramePassDependencies & inputTransitions
 				, FramePassDependencies & outputTransitions
 				, AttachmentTransitions & allTransitions )
@@ -679,10 +689,12 @@ namespace crg
 								for ( Attachment const & inputAttach : input.attaches )
 								{
 									if ( inputAttach.pass->dependsOn( *outputAttach.pass
-										, AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach ) ) )
+										, AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach )
+										, cache ) )
 									{
 										addDependency< DataT >( outputAttach
 											, inputAttach
+											, cache
 											, inputTransitions
 											, outputTransitions
 											, allTransitions );
@@ -715,6 +727,7 @@ namespace crg
 					for ( auto & attach : remaining.attaches )
 					{
 						addRemainingDependency( attach
+							, cache
 							, inputTransitions
 							, allTransitions );
 					}
@@ -725,6 +738,8 @@ namespace crg
 		}
 
 		void buildPassAttachDependencies( GraphNodePtrArray const & nodes
+			, PassDependencyCache & imgDepsCache
+			, PassDependencyCache & bufDepsCache
 			, FramePassDependencies & inputTransitions
 			, FramePassDependencies & outputTransitions
 			, AttachmentTransitions & allTransitions )
@@ -751,12 +766,14 @@ namespace crg
 			deps::buildPassDependencies( imgInputs
 				, imgOutputs
 				, imgAll
+				, imgDepsCache
 				, inputTransitions
 				, outputTransitions
 				, allTransitions );
 			deps::buildPassDependencies( bufInputs
 				, bufOutputs
 				, bufAll
+				, bufDepsCache
 				, inputTransitions
 				, outputTransitions
 				, allTransitions );
