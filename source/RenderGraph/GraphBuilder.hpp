@@ -10,6 +10,8 @@ namespace crg
 	{
 		void buildGraph( RootNode & rootNode
 			, GraphNodePtrArray const & passes
+			, PassDependencyCache & imgDepsCache
+			, PassDependencyCache & bufDepsCache
 			, AttachmentTransitions & transitions );
 	}
 }

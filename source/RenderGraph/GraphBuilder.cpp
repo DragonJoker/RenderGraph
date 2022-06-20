@@ -50,7 +50,8 @@ namespace crg
 			template< typename DataT >
 			static void buildGraph( RootNode & rootNode
 				, DataTransitionArrayT< DataT > const & transitions
-				, GraphNodePtrArray const & nodes )
+				, GraphNodePtrArray const & nodes
+				, PassDependencyCache & depsCache )
 			{
 				for ( DataTransitionT< DataT > const & transition : transitions )
 				{
@@ -61,7 +62,7 @@ namespace crg
 
 					if ( inputAdjNode
 						&& outputAdjNode
-						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.data ) )
+						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.data, depsCache ) )
 					{
 						outputAdjNode->attachNode( inputAdjNode
 							, makeTransition( transition ) );
@@ -72,10 +73,12 @@ namespace crg
 
 		void buildGraph( RootNode & rootNode
 			, GraphNodePtrArray const & nodes
+			, PassDependencyCache & imgDepsCache
+			, PassDependencyCache & bufDepsCache
 			, AttachmentTransitions & transitions )
 		{
-			graph::buildGraph( rootNode, transitions.viewTransitions, nodes );
-			graph::buildGraph( rootNode, transitions.bufferTransitions, nodes );
+			graph::buildGraph( rootNode, transitions.viewTransitions, nodes, imgDepsCache );
+			graph::buildGraph( rootNode, transitions.bufferTransitions, nodes, bufDepsCache );
 
 			for ( auto & node : nodes )
 			{
