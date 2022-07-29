@@ -57,7 +57,6 @@ namespace crg
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
 			, GraphContext & context );
-		CRG_API ~RunnableGraph();
 
 		CRG_API void record();
 

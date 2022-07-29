@@ -22,7 +22,6 @@ namespace crg
 			, RunnableGraph & graph
 			, ru::Config ruConfig
 			, rq::Config rqConfig );
-		CRG_API ~RenderQuad()override;
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
 

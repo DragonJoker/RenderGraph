@@ -19,6 +19,7 @@ namespace crg
 		CRG_API virtual ~PipelineHolder();
 
 		CRG_API void initialise();
+		CRG_API void cleanup();
 		CRG_API VkPipelineShaderStageCreateInfoArray const & getProgram( uint32_t index );
 		CRG_API VkPipeline & getPipeline( uint32_t index );
 		CRG_API void recordInto( RecordContext & context

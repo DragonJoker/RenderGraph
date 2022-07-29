@@ -35,10 +35,6 @@ namespace crg
 	{
 	}
 
-	RenderQuad::~RenderQuad()
-	{
-	}
-
 	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
 	{
 		resetCommandBuffer();
