@@ -17,7 +17,6 @@ namespace crg
 			, RunnableGraph & graph
 			, rq::Config config
 			, uint32_t maxPassCount );
-		CRG_API ~RenderQuadHolder();
 
 		CRG_API void initialise( RunnablePass const & runnable
 			, VkExtent2D const & renderSize

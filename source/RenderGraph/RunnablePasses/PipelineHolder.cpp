@@ -41,39 +41,7 @@ namespace crg
 
 	PipelineHolder::~PipelineHolder()
 	{
-		m_descriptorBindings.clear();
-
-		if ( m_descriptorSetPool )
-		{
-			crgUnregisterObject( m_context, m_descriptorSetPool );
-			m_context.vkDestroyDescriptorPool( m_context.device
-				, m_descriptorSetPool
-				, m_context.allocator );
-		}
-
-		for ( auto & pipeline : m_pipelines )
-		{
-			crgUnregisterObject( m_context, pipeline );
-			m_context.vkDestroyPipeline( m_context.device
-				, pipeline
-				, m_context.allocator );
-		}
-
-		if ( m_pipelineLayout )
-		{
-			crgUnregisterObject( m_context, m_pipelineLayout );
-			m_context.vkDestroyPipelineLayout( m_context.device
-				, m_pipelineLayout
-				, m_context.allocator );
-		}
-
-		if ( m_descriptorSetLayout )
-		{
-			crgUnregisterObject( m_context, m_descriptorSetLayout );
-			m_context.vkDestroyDescriptorSetLayout( m_context.device
-				, m_descriptorSetLayout
-				, m_context.allocator );
-		}
+		cleanup();
 	}
 
 	void PipelineHolder::initialise()
@@ -82,6 +50,56 @@ namespace crg
 		doCreateDescriptorSetLayout();
 		doCreatePipelineLayout();
 		doCreateDescriptorPool();
+	}
+
+	void PipelineHolder::cleanup()
+	{
+		m_descriptorBindings.clear();
+
+		for ( auto & descriptorSet : m_descriptorSets )
+		{
+			if ( descriptorSet.set )
+			{
+				crgUnregisterObject( m_context, descriptorSet.set );
+				descriptorSet.set = nullptr;
+			}
+		}
+
+		if ( m_descriptorSetPool )
+		{
+			crgUnregisterObject( m_context, m_descriptorSetPool );
+			m_context.vkDestroyDescriptorPool( m_context.device
+				, m_descriptorSetPool
+				, m_context.allocator );
+			m_descriptorSetPool = nullptr;
+		}
+
+		for ( auto & pipeline : m_pipelines )
+		{
+			crgUnregisterObject( m_context, pipeline );
+			m_context.vkDestroyPipeline( m_context.device
+				, pipeline
+				, m_context.allocator );
+			pipeline = nullptr;
+		}
+
+		if ( m_pipelineLayout )
+		{
+			crgUnregisterObject( m_context, m_pipelineLayout );
+			m_context.vkDestroyPipelineLayout( m_context.device
+				, m_pipelineLayout
+				, m_context.allocator );
+			m_pipelineLayout = nullptr;
+		}
+
+		if ( m_descriptorSetLayout )
+		{
+			crgUnregisterObject( m_context, m_descriptorSetLayout );
+			m_context.vkDestroyDescriptorSetLayout( m_context.device
+				, m_descriptorSetLayout
+				, m_context.allocator );
+			m_descriptorSetLayout = nullptr;
+		}
 	}
 
 	VkPipelineShaderStageCreateInfoArray const & PipelineHolder::getProgram( uint32_t index )

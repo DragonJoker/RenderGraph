@@ -103,10 +103,6 @@ namespace crg
 		}
 	}
 
-	RunnableGraph::~RunnableGraph()
-	{
-	}
-
 	void RunnableGraph::record()
 	{
 		m_states.clear();

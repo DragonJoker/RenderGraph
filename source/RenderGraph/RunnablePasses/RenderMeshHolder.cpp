@@ -65,10 +65,6 @@ namespace crg
 			, 0.0f };
 	}
 
-	RenderMeshHolder::~RenderMeshHolder()
-	{
-	}
-
 	void RenderMeshHolder::initialise( RunnablePass const & runnable
 		, VkExtent2D const & renderSize
 		, VkRenderPass renderPass
@@ -77,6 +73,11 @@ namespace crg
 		m_pipeline.initialise();
 		doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
 		doCreatePipeline();
+	}
+
+	void RenderMeshHolder::cleanup()
+	{
+		m_pipeline.cleanup();
 	}
 
 	void RenderMeshHolder::resetRenderPass( VkExtent2D const & renderSize

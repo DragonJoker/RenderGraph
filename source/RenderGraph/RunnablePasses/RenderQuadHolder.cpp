@@ -65,10 +65,6 @@ namespace crg
 			, 0.0f };
 	}
 
-	RenderQuadHolder::~RenderQuadHolder()
-	{
-	}
-
 	void RenderQuadHolder::initialise( RunnablePass const & runnable
 		, VkExtent2D const & renderSize
 		, VkRenderPass renderPass

@@ -17,12 +17,12 @@ namespace crg
 			, RunnableGraph & graph
 			, rm::Config config
 			, uint32_t maxPassCount );
-		CRG_API ~RenderMeshHolder();
 
 		CRG_API void initialise( RunnablePass const & runnable
 			, VkExtent2D const & renderSize
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState );
+		CRG_API void cleanup();
 		CRG_API void resetRenderPass( VkExtent2D const & renderSize
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState );

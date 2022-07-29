@@ -52,6 +52,7 @@ namespace crg
 	{
 		if ( m_renderPass.initialise( context, *this ) )
 		{
+			m_renderMesh.cleanup();
 			m_renderMesh.initialise( *this
 				, m_renderPass.getRenderSize()
 				, m_renderPass.getRenderPass()
