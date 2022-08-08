@@ -549,6 +549,7 @@ namespace crg
 		DECL_vkFunction( CmdResetEvent );
 		DECL_vkFunction( CmdSetEvent );
 		DECL_vkFunction( CmdWaitEvents );
+		DECL_vkFunction( CmdFillBuffer );
 
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
 #	if VK_EXT_debug_utils
