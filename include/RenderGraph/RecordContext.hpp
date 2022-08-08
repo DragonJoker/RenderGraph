@@ -39,7 +39,7 @@ namespace crg
 	public:
 		CRG_API RecordContext( ResourceHandler & handler
 			, GraphContext & context );
-		CRG_API RecordContext( ResourceHandler & handler );
+		CRG_API explicit RecordContext( ResourceHandler & handler );
 		/**
 		*\name	States
 		*/

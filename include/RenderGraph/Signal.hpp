@@ -22,13 +22,11 @@ namespace crg
 	class SignalConnection
 	{
 	private:
-		using my_signal = SignalT;
-		using my_signal_ptr = my_signal *;
-		SignalConnection( SignalConnection< my_signal > const & ) = delete;
-		SignalConnection & operator=( SignalConnection< my_signal > const & ) = delete;
+		SignalConnection( SignalConnection< SignalT > const & ) = delete;
+		SignalConnection & operator=( SignalConnection< SignalT > const & ) = delete;
 
 		SignalConnection( uint32_t connection
-			, my_signal_ptr signal )
+			, SignalT * signal )
 			: m_connection{ connection }
 			, m_signal{ signal }
 		{
@@ -45,19 +43,19 @@ namespace crg
 		{
 		}
 
-		SignalConnection( SignalConnection< my_signal > && rhs )
+		SignalConnection( SignalConnection< SignalT > && rhs )
 			: SignalConnection{ 0u, nullptr }
 		{
 			swap( *this, rhs );
 		}
 
-		SignalConnection( uint32_t connection, my_signal & signal )
+		SignalConnection( uint32_t connection, SignalT & signal )
 			: SignalConnection{ connection, &signal }
 		{
 			signal.addConnection( *this );
 		}
 
-		SignalConnection & operator=( SignalConnection< my_signal > && rhs )
+		SignalConnection & operator=( SignalConnection< SignalT > && rhs )
 		{
 			SignalConnection tmp{ std::move( rhs ) };
 			swap( *this, tmp );
@@ -118,7 +116,7 @@ namespace crg
 
 	private:
 		uint32_t m_connection;
-		my_signal_ptr m_signal;
+		SignalT * m_signal;
 	};
 	/**
 	*\brief

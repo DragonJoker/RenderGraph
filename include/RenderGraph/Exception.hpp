@@ -14,8 +14,8 @@ namespace crg
 		: public std::exception
 	{
 	public:
-		Exception( std::string text
-			, std::string file
+		Exception( std::string const & text
+			, std::string const & file
 			, int line )
 			: text{ file + ":" + std::to_string( line ) + " - " + text }
 		{
