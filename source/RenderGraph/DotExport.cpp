@@ -260,7 +260,7 @@ namespace crg::dot
 		{
 			using FramePassGroupStreamsPtr = std::unique_ptr< FramePassGroupStreams >;
 
-			FramePassGroupStreams( Config const & config
+			explicit FramePassGroupStreams( Config const & config
 				, FramePassGroupStreams * parent = nullptr
 				, FramePassGroup const * group = nullptr )
 				: m_config{ config }
@@ -501,7 +501,6 @@ namespace crg::dot
 				, FramePassGroupStreams & groups
 				, Config const & config )
 			{
-				auto name = group ? group->getName() : "External";
 				auto ires = groups.emplace( group );
 				auto & grstream = *ires.first;
 				return grstream;

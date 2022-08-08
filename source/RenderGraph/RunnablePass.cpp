@@ -384,7 +384,6 @@ namespace crg
 			enabled.commandBuffer = doCreateCommandBuffer( std::string{} );
 		}
 
-		auto ctxSave = context;
 		m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
 		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 			, nullptr
@@ -409,7 +408,7 @@ namespace crg
 
 		if ( isEnabled() )
 		{
-			auto block = m_timer.start();
+			auto block( m_timer.start() );
 			m_context.vkCmdBeginDebugBlock( commandBuffer
 				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName(), m_context.getNextRainbowColour() } );
 			m_timer.beginPass( commandBuffer );

@@ -107,7 +107,7 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::FramePass;
 
-		CRG_API FramePassNode( FramePass const & pass );
+		CRG_API explicit FramePassNode( FramePass const & pass );
 		CRG_API void accept( GraphVisitor * vis )const override;
 
 		FramePass const & getFramePass()const
@@ -129,7 +129,7 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::Root;
 
-		CRG_API RootNode( FrameGraph const & graph );
+		CRG_API explicit RootNode( FrameGraph const & graph );
 		CRG_API void accept( GraphVisitor * vis )const override;
 
 		FrameGraph const & getFrameGraph()const

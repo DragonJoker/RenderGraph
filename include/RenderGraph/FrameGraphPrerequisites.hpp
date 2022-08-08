@@ -183,10 +183,10 @@ namespace crg
 			, VkDeviceMemory pmemory = nullptr
 			, VkVertexInputAttributeDescriptionArray pvertexAttribs = {}
 			, VkVertexInputBindingDescriptionArray pvertexBindings = {} )
-			: buffer{ pbuffer }
+			: buffer{ std::move( pbuffer ) }
 			, memory{ pmemory }
-			, vertexAttribs{ pvertexAttribs }
-			, vertexBindings{ pvertexBindings }
+			, vertexAttribs{ std::move( pvertexAttribs ) }
+			, vertexBindings{ std::move( pvertexBindings ) }
 			, inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} }
 		{
 			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
@@ -268,7 +268,7 @@ namespace crg
 	{
 		IndexBuffer( Buffer pbuffer = { nullptr, std::string{} }
 			, VkDeviceMemory pmemory = nullptr )
-			: buffer{ pbuffer }
+			: buffer{ std::move( pbuffer ) }
 			, memory{ pmemory }
 		{
 		}

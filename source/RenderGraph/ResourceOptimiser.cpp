@@ -77,10 +77,10 @@ namespace crg
 			, FramePassDependencies const & dependencies
 			, RootNode const & root )
 		{
-			ImageIdAliasMap result;
+			//ImageIdAliasMap result;
 			// We mark root and leaf nodes images as non mergeable.
-			auto roots = retrieveRoots( dependencies );
-			auto leaves = retrieveLeafs( dependencies );
+			//auto roots = retrieveRoots( dependencies );
+			//auto leaves = retrieveLeafs( dependencies );
 			//resopt::markPassesAttachments( roots, Attachment::Flag::Output );
 			//resopt::markPassesAttachments( leaves, Attachment::Flag::Input );
 

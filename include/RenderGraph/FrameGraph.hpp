@@ -30,7 +30,7 @@ namespace crg
 		CRG_API FrameGraph & operator=( FrameGraph const & ) = delete;
 		CRG_API FrameGraph( FrameGraph && ) = default;
 		CRG_API FrameGraph & operator=( FrameGraph && ) = delete;
-		CRG_API FrameGraph( ResourceHandler & handler
+		CRG_API explicit FrameGraph( ResourceHandler & handler
 			, std::string name = "FrameGraph" );
 		/**@}*/
 		/**

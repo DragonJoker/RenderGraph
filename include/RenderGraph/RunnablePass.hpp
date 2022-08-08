@@ -28,7 +28,7 @@ namespace crg
 		*\notes
 		*	Intentionnally non explicit
 		*/
-		GetValueCallbackT( CallbackT callback )
+		explicit GetValueCallbackT( CallbackT callback )
 			: m_callback{ std::move( callback ) }
 		{
 		}
