@@ -61,6 +61,20 @@ namespace crg
 
 				for ( auto & pass : currentPasses )
 				{
+					// Only process this pass if all its dependencies have been processed.
+					if ( !std::all_of( pass->passDepends.begin()
+						, pass->passDepends.end()
+						, [&sortedPasses]( FramePass const * lookup )
+						{
+							return sortedPasses.end() != std::find( sortedPasses.begin()
+								, sortedPasses.end()
+								, lookup );
+						} ) )
+					{
+						unsortedPasses.push_back( pass );
+						continue;
+					}
+
 					auto it = std::find_if( sortedPasses.begin()
 						, sortedPasses.end()
 						, [&pass]( FramePass const * lookup )
