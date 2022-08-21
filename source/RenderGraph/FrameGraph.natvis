@@ -90,13 +90,27 @@
 	</Type>
 
 	<Type Name="crg::FramePass">
-		<DisplayString>{id} {m_name}</DisplayString>
+		<DisplayString>{group}/{id} {m_name}</DisplayString>
 		<Expand>
-			<Item Name="id">id</Item>
+      <Item Name="group">group</Item>
+      <Item Name="id">id</Item>
 			<Item Name="name">m_name</Item>
 			<Item Name="images">images</Item>
 			<Item Name="buffers">buffers</Item>
 			<Item Name="passDepends">passDepends</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="crg::FramePassGroup">
+		<DisplayString Condition="parent == 0">{m_name}</DisplayString>
+		<DisplayString Condition="parent != 0">{*parent}/{m_name}</DisplayString>
+		<Expand>
+			<Item Name="id">id</Item>
+			<Item Name="name">m_name</Item>
+			<Item Name="passes">passes</Item>
+			<Item Name="groups">groups</Item>
+			<Item Name="parent">parent</Item>
+			<Item Name="graph">m_graph</Item>
 		</Expand>
 	</Type>
 
