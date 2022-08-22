@@ -152,6 +152,8 @@ namespace crg
 
 	std::string FramePassGroup::getFullName()const
 	{
-		return m_graph.getName() + "/" + getName();
+		return ( &m_graph.getDefaultGroup() == this )
+			? m_graph.getName()
+			: m_graph.getName() + "/" + getName();
 	}
 }
