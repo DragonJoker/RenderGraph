@@ -82,6 +82,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Id.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageData.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ImageViewData.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Log.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RecordContext.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ResourceHandler.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
@@ -106,6 +107,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphContext.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphNode.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/Log.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RecordContext.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceHandler.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp

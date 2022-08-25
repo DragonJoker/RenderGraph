@@ -8,11 +8,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/GraphNode.hpp"
-
-#pragma warning( push )
-#pragma warning( disable: 4365 )
-#include <iostream>
-#pragma warning( pop )
+#include "RenderGraph/Log.hpp"
 
 #include <algorithm>
 #include <cassert>
@@ -283,10 +279,10 @@ namespace crg
 				, ViewAttachesArray const & outputs )
 			{
 #if CRG_DebugPassAttaches
-				std::clog << "Inputs" << std::endl;
-				std::clog << inputs << std::endl;
-				std::clog << "Outputs" << std::endl;
-				std::clog << outputs << std::endl;
+				Logger::logDebug( "Inputs" )
+				Logger::logDebug( inputs )
+				Logger::logDebug( "Outputs" )
+				Logger::logDebug( outputs )
 #endif
 			}
 
@@ -294,10 +290,10 @@ namespace crg
 				, BufferAttachesArray const & outputs )
 			{
 #if CRG_DebugPassAttaches
-				std::clog << "Inputs" << std::endl;
-				std::clog << inputs << std::endl;
-				std::clog << "Outputs" << std::endl;
-				std::clog << outputs << std::endl;
+				Logger::logDebug( "Inputs" );
+				Logger::logDebug( inputs );
+				Logger::logDebug( "Outputs" );
+				Logger::logDebug( outputs );
 #endif
 			}
 
@@ -305,10 +301,10 @@ namespace crg
 				, FramePassDependencies const & outputTransitions )
 			{
 #if CRG_DebugPassDependencies
-				std::clog << "Input Transitions" << std::endl;
-				std::clog << inputTransitions << std::endl;
-				std::clog << "Output Transitions" << std::endl;
-				std::clog << outputTransitions << std::endl;
+				Logger::logDebug( "Input Transitions" )
+				Logger::logDebug( inputTransitions )
+				Logger::logDebug( "Output Transitions" )
+				Logger::logDebug( outputTransitions )
 #endif
 			}
 

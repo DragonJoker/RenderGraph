@@ -7,10 +7,10 @@ See LICENSE file in root folder.
 #include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/ImageViewData.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <cassert>
-#include <iostream>
 #include <sstream>
 
 namespace crg
@@ -72,14 +72,14 @@ namespace crg
 		{
 			std::stringstream stream;
 			stream << "Leaked [VkImageView](" << imageView.first.data->name << ")";
-			std::cerr << stream.str() << "\n";
+			Logger::logError( stream.str() );
 		}
 
 		for ( auto & image : m_images )
 		{
 			std::stringstream stream;
 			stream << "Leaked [VkImage](" << image.first.data->name << ")";
-			std::cerr << stream.str() << "\n";
+			Logger::logError( stream.str() );
 		}
 	}
 

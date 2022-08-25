@@ -3,11 +3,11 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Log.hpp"
 
 #include <cassert>
 #include <cmath>
 #include <iomanip>
-#include <iostream>
 #include <stdexcept>
 #include <sstream>
 
@@ -335,7 +335,7 @@ namespace crg
 		stream << "Created " << typeName
 			<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
 			<< " - " << objectName;
-		std::clog << stream.str() << std::endl;
+		Logger::logDebug( stream.str() );
 		std::stringstream callStack;
 
 		if ( m_callstackCallback )
@@ -401,7 +401,7 @@ namespace crg
 			std::stringstream stream;
 			stream << "Leaked [" << alloc.second.type << "](" << alloc.second.name << "), allocation stack:\n";
 			stream << alloc.second.callstack;
-			std::cerr << stream.str() << "\n";
+			Logger::logError( stream.str() );
 		}
 	}
 
