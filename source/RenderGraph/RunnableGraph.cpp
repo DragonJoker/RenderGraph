@@ -3,12 +3,12 @@ See LICENSE file in root folder.
 */
 #include "RenderGraph/RunnableGraph.hpp"
 #include "RenderGraph/GraphVisitor.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/ResourceHandler.hpp"
 
 #include <array>
 #include <cassert>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <type_traits>
 #include <unordered_set>
@@ -35,7 +35,7 @@ namespace crg
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
 	{
-		std::clog << graph.getName() << " - Initialising resources" << std::endl;
+		Logger::logDebug( graph.getName() + " - Initialising resources" );
 		LayoutStateMap images;
 		AccessStateMap buffers;
 
@@ -47,7 +47,7 @@ namespace crg
 
 		doCreateImages();
 		doCreateImageViews();
-		std::clog << graph.getName() << " - Creating runnable passes" << std::endl;
+		Logger::logDebug( graph.getName() + " - Creating runnable passes" );
 
 		for ( auto & node : m_nodes )
 		{
@@ -64,7 +64,7 @@ namespace crg
 			}
 		}
 
-		std::clog << graph.getName() << " - Creating layouts" << std::endl;
+		Logger::logDebug( graph.getName() + " - Creating layouts" );
 		m_viewsLayouts.reserve( m_maxPassCount );
 		m_buffersLayouts.reserve( m_maxPassCount );
 
@@ -74,7 +74,7 @@ namespace crg
 			m_buffersLayouts.push_back( buffers );
 		}
 
-		std::clog << graph.getName() << " - Initialising nodes layouts" << std::endl;
+		Logger::logDebug( graph.getName() + " - Initialising nodes layouts" );
 		auto remainingCount = m_maxPassCount;
 		uint32_t index = 0u;
 
@@ -95,7 +95,7 @@ namespace crg
 			++index;
 		}
 
-		std::clog << graph.getName() << " - Initialising passes" << std::endl;
+		Logger::logDebug( graph.getName() + " - Initialising passes" );
 
 		for ( auto & pass : m_passes )
 		{

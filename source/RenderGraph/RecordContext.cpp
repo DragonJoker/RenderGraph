@@ -7,7 +7,6 @@ See LICENSE file in root folder.
 
 #include <array>
 #include <fstream>
-#include <iostream>
 #include <string>
 #include <type_traits>
 #include <unordered_set>
