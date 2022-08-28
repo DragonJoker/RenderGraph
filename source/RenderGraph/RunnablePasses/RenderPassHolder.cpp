@@ -113,7 +113,10 @@ namespace crg
 		}
 
 		doCleanup();
-		doCreateRenderPass( context, runnable );
+		doCreateRenderPass( context
+			, runnable
+			, context.getPrevPipelineState()
+			, context.getNextPipelineState() );
 		doCreateFramebuffer();
 		return true;
 	}
@@ -159,7 +162,9 @@ namespace crg
 	}
 
 	void RenderPassHolder::doCreateRenderPass( RecordContext & context
-			, crg::RunnablePass const & runnable )
+			, crg::RunnablePass const & runnable
+			, PipelineState const & previousState
+			, PipelineState const & nextState )
 	{
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
@@ -208,17 +213,17 @@ namespace crg
 		VkSubpassDependencyArray dependencies{
 			{ VK_SUBPASS_EXTERNAL
 				, 0u
-				, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+				, previousState.pipelineStage
 				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, VK_ACCESS_MEMORY_READ_BIT
+				, previousState.access
 				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
 				, VK_DEPENDENCY_BY_REGION_BIT }
 			, { 0u
 				, VK_SUBPASS_EXTERNAL
 				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+				, nextState.pipelineStage
 				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-				, VK_ACCESS_MEMORY_READ_BIT
+				, nextState.access
 				, VK_DEPENDENCY_BY_REGION_BIT } };
 		VkRenderPassCreateInfo createInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO
 			, nullptr

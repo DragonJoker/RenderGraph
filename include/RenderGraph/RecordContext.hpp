@@ -14,8 +14,6 @@ namespace crg
 {
 	CRG_API LayoutState makeLayoutState( VkImageLayout layout );
 	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
-	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
-	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
 	CRG_API LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
 		, VkImageSubresourceRange const & range
 		, LayoutState const & newLayout );
@@ -45,6 +43,12 @@ namespace crg
 		*/
 		//@{
 		CRG_API void addStates( RecordContext const & data );
+		/**
+		*\name	Pipeline
+		*/
+		//@{
+		CRG_API void setNextPipelineState( PipelineState const & state );
+		//@}
 		/**
 		*\name	Images
 		*/
@@ -161,6 +165,21 @@ namespace crg
 			return m_state;
 		}
 
+		PipelineState const & getPrevPipelineState()const
+		{
+			return m_prevPipelineState;
+		}
+
+		PipelineState const & getCurrPipelineState()const
+		{
+			return m_currPipelineState;
+		}
+
+		PipelineState const & getNextPipelineState()const
+		{
+			return m_nextPipelineState;
+		}
+
 	private:
 		ResourceHandler * m_handler;
 		GraphContext * m_context;
@@ -168,5 +187,8 @@ namespace crg
 		AccessStateMap m_buffers;
 		std::vector< ImplicitTransition > m_implicitTransitions;
 		PassIndexArray m_state;
+		PipelineState m_prevPipelineState;
+		PipelineState m_currPipelineState;
+		PipelineState m_nextPipelineState;
 	};
 }

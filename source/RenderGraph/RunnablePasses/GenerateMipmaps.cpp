@@ -32,7 +32,7 @@ namespace crg
 			, context
 			, graph
 			, { [this](){ doInitialise(); }
-				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
+				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, passIndex
 				, isEnabled }
@@ -56,8 +56,8 @@ namespace crg
 			doUpdateFinalLayout( passIndex
 				, viewId
 				, layoutState.layout
-				, layoutState.access
-				, layoutState.pipelineStage );
+				, layoutState.state.access
+				, layoutState.state.pipelineStage );
 		}
 	}
 
@@ -185,10 +185,5 @@ namespace crg
 				}
 			}
 		}
-	}
-
-	VkPipelineStageFlags GenerateMipmaps::doGetSemaphoreWaitFlags()const
-	{
-		return VK_PIPELINE_STAGE_TRANSFER_BIT;
 	}
 }
