@@ -29,7 +29,7 @@ namespace
 				, context
 				, graph
 				, { crg::RunnablePass::InitialiseCallback( [this](){ doInitialise(); } )
-					, crg::RunnablePass::GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } ) } }
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) } }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
 			, m_checkViews{ checkViews }
@@ -42,11 +42,6 @@ namespace
 			m_checkViews( m_testCounts
 				, m_pass
 				, m_graph );
-		}
-
-		VkPipelineStageFlags doGetSemaphoreWaitFlags()const
-		{
-			return m_pipelineStageFlags;
 		}
 
 	private:

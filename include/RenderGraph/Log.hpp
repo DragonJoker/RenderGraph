@@ -6,10 +6,13 @@ See LICENSE file in root folder
 
 #include "FrameGraphPrerequisites.hpp"
 
+#pragma warning( push )
+#pragma warning( disable: 4365 )
 #include <functional>
 #include <memory>
 #include <sstream>
 #include <string>
+#pragma warning( pop )
 
 namespace crg
 {
