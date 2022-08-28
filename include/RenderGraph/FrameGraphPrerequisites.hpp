@@ -136,18 +136,19 @@ namespace crg
 	using VkViewportArray = std::vector< VkViewport >;
 	using VkWriteDescriptorSetArray = std::vector< VkWriteDescriptorSet >;
 
-	struct LayoutState
+	struct PipelineState
 	{
-		VkImageLayout layout;
 		VkAccessFlags access;
 		VkPipelineStageFlags pipelineStage;
 	};
 
-	struct AccessState
+	struct LayoutState
 	{
-		VkAccessFlags access;
-		VkPipelineStageFlags pipelineStage;
+		VkImageLayout layout;
+		PipelineState state;
 	};
+
+	using AccessState = PipelineState;
 
 	using MipLayoutStates = std::map< uint32_t, LayoutState >;
 	using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
@@ -347,6 +348,9 @@ namespace crg
 	CRG_API uint32_t getMipLevels( ImageViewId const & image );
 	CRG_API uint32_t getArrayLayers( ImageId const & image );
 	CRG_API uint32_t getArrayLayers( ImageViewId const & image );
+	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
+	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
+	CRG_API PipelineState getPipelineState( VkPipelineStageFlags flags )noexcept;
 
 	template< typename T >
 	static size_t hashCombine( size_t hash

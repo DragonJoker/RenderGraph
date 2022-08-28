@@ -25,7 +25,6 @@ namespace crg
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		VkPipelineStageFlags doGetSemaphoreWaitFlags()const;
 
 	private:
 		VkOffset3D m_copyOffset;

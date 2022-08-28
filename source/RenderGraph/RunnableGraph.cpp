@@ -117,13 +117,33 @@ namespace crg
 
 		auto itGraph = m_states.emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
 		itGraph->second.resize( m_passes.size() );
-		auto it = itGraph->second.begin();
 
-		for ( auto & pass : m_passes )
+		if ( !m_passes.empty() )
 		{
-			pass->recordCurrent( recordContext );
-			*it = pass->getIndex();
-			++it;
+			auto it = itGraph->second.begin();
+			auto currPass = m_passes.begin();
+			recordContext.setNextPipelineState( ( *currPass )->getPipelineState() );
+			auto nextPass = std::next( currPass );
+
+			while ( currPass != m_passes.end() )
+			{
+				auto & pass = *currPass;
+				++currPass;
+
+				if ( nextPass != m_passes.end() )
+				{
+					recordContext.setNextPipelineState( ( *nextPass )->getPipelineState() );
+					++nextPass;
+				}
+				else
+				{
+					recordContext.setNextPipelineState( pass->getPipelineState() );
+				}
+
+				pass->recordCurrent( recordContext );
+				*it = pass->getIndex();
+				++it;
+			}
 		}
 
 		m_graph.registerFinalState( recordContext );
@@ -290,8 +310,8 @@ namespace crg
 		if ( it != passIt->transitions.viewTransitions.end() )
 		{
 			result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-			result.access = it->inputAttach.getAccessMask();
-			result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
+			result.state.access = it->inputAttach.getAccessMask();
+			result.state.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
 		}
 		else
 		{
@@ -324,27 +344,27 @@ namespace crg
 			if ( it == passIt->transitions.viewTransitions.end() )
 			{
 				result.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-				result.access = 0u;
-				result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
+				result.state.access = 0u;
+				result.state.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 			}
 			else if ( it->inputAttach.getFlags() != 0u )
 			{
 				result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-				result.access = it->inputAttach.getAccessMask();
-				result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
+				result.state.access = it->inputAttach.getAccessMask();
+				result.state.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
 			}
 			else if ( it->outputAttach.isColourClearingAttach()
 				|| it->outputAttach.isDepthClearingAttach() )
 			{
 				result.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				result.access = VK_ACCESS_SHADER_READ_BIT;
-				result.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				result.state.access = VK_ACCESS_SHADER_READ_BIT;
+				result.state.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 			}
 			else
 			{
 				result.layout = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-				result.access = it->outputAttach.getAccessMask();
-				result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
+				result.state.access = it->outputAttach.getAccessMask();
+				result.state.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
 			}
 		}
 

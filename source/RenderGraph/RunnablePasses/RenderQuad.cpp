@@ -15,7 +15,7 @@ namespace crg
 			, context
 			, graph
 			, { [this](){ doInitialise(); }
-				, GetSemaphoreWaitFlagsCallback( [this](){ return doGetSemaphoreWaitFlags(); } )
+				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, GetPassIndexCallback( [this](){ return m_renderQuad.getPassIndex(); } )
 				, IsEnabledCallback( [this](){ return m_renderQuad.isEnabled(); } ) }
@@ -62,10 +62,5 @@ namespace crg
 		m_renderQuad.record( context, commandBuffer, index );
 		m_renderPass.end( context, commandBuffer );
 		m_renderQuad.end( context, commandBuffer, index );
-	}
-
-	VkPipelineStageFlags RenderQuad::doGetSemaphoreWaitFlags()const
-	{
-		return VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	}
 }

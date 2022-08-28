@@ -52,103 +52,6 @@ namespace crg
 					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
 	}
 
-	VkAccessFlags getAccessMask( VkImageLayout layout )noexcept
-	{
-		VkAccessFlags result{ 0u };
-
-		switch ( layout )
-		{
-		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-		case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
-			result |= VK_ACCESS_MEMORY_READ_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-			result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-			result |= VK_ACCESS_SHADER_READ_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-			result |= VK_ACCESS_TRANSFER_READ_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-			result |= VK_ACCESS_TRANSFER_WRITE_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
-		case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
-			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
-			result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-			break;
-#ifdef VK_NV_shading_rate_image
-		case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-			result |= VK_ACCESS_SHADING_RATE_IMAGE_READ_BIT_NV;
-			break;
-#endif
-#ifdef VK_EXT_fragment_density_map
-		case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
-			result |= VK_ACCESS_FRAGMENT_DENSITY_MAP_READ_BIT_EXT;
-			break;
-#endif
-		default:
-			break;
-		}
-
-		return result;
-	}
-
-	VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept
-	{
-		VkPipelineStageFlags result{ 0u };
-
-		switch ( layout )
-		{
-		case VK_IMAGE_LAYOUT_UNDEFINED:
-			result |= VK_PIPELINE_STAGE_HOST_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_GENERAL:
-			result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_PRESENT_SRC_KHR:
-		case VK_IMAGE_LAYOUT_SHARED_PRESENT_KHR:
-			result |= VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL:
-		case VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_STENCIL_ATTACHMENT_OPTIMAL:
-		case VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_STENCIL_READ_ONLY_OPTIMAL:
-		case VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL:
-			result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL:
-			result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-			break;
-#ifdef VK_EXT_fragment_density_map
-		case VK_IMAGE_LAYOUT_FRAGMENT_DENSITY_MAP_OPTIMAL_EXT:
-#endif
-		case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
-			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-			break;
-		case VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL:
-		case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
-			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-			break;
-#ifdef VK_NV_shading_rate_image
-		case VK_IMAGE_LAYOUT_SHADING_RATE_OPTIMAL_NV:
-			result |= VK_PIPELINE_STAGE_SHADING_RATE_IMAGE_BIT_NV;
-			break;
-#endif
-		default:
-			break;
-		}
-
-		return result;
-	}
-
 	LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
 		, VkImageSubresourceRange const & range
 		, LayoutState const & newLayout )
@@ -161,8 +64,8 @@ namespace crg
 			{
 				auto & level = layers.emplace( range.baseMipLevel + levelIdx, LayoutState{} ).first->second;
 				level.layout = newLayout.layout;
-				level.access = newLayout.access;
-				level.pipelineStage = newLayout.pipelineStage;
+				level.state.access = newLayout.state.access;
+				level.state.pipelineStage = newLayout.state.pipelineStage;
 			}
 		}
 
@@ -193,7 +96,7 @@ namespace crg
 
 						if ( !ires.second )
 						{
-							ires.first->second.access |= state.access;
+							ires.first->second.state.access |= state.state.access;
 						}
 					}
 				}
@@ -221,6 +124,9 @@ namespace crg
 		, GraphContext & context )
 		: m_handler{ &handler }
 		, m_context{ &context }
+		, m_prevPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
+		, m_currPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
+		, m_nextPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
 	{
 	}
 
@@ -241,6 +147,18 @@ namespace crg
 		{
 			m_buffers.insert( state );
 		}
+
+		if ( m_prevPipelineState.access < data.m_currPipelineState.access )
+		{
+			m_prevPipelineState = data.m_currPipelineState;
+		}
+	}
+
+	void RecordContext::setNextPipelineState( PipelineState const & state )
+	{
+		m_prevPipelineState = m_currPipelineState;
+		m_currPipelineState = m_nextPipelineState;
+		m_nextPipelineState = state;
 	}
 
 	void RecordContext::setLayoutState( crg::ImageViewId view
@@ -406,8 +324,8 @@ namespace crg
 		{
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
 				, nullptr
-				, from.access
-				, wantedState.access
+				, from.state.access
+				, wantedState.state.access
 				, from.layout
 				, wantedState.layout
 				, VK_QUEUE_FAMILY_IGNORED
@@ -415,8 +333,8 @@ namespace crg
 				, m_handler->createImage( *m_context, image )
 				, range };
 			m_context->vkCmdPipelineBarrier( commandBuffer
-				, from.pipelineStage
-				, wantedState.pipelineStage
+				, from.state.pipelineStage
+				, wantedState.state.pipelineStage
 				, VK_DEPENDENCY_BY_REGION_BIT
 				, 0u
 				, nullptr

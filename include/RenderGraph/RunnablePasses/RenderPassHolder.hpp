@@ -68,7 +68,9 @@ namespace crg
 
 	private:
 		void doCreateRenderPass( RecordContext & context
-			, crg::RunnablePass const & runnable );
+			, crg::RunnablePass const & runnable
+			, PipelineState const & previousState
+			, PipelineState const & nextState );
 		void doCreateFramebuffer();
 		void doCleanup();
 

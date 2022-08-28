@@ -49,9 +49,9 @@ namespace crg
 	//*********************************************************************************************
 
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags )
+		, GetPipelineStateCallback getPipelineState )
 		: Callbacks{ std::move( initialise )
-			, std::move( getSemaphoreWaitFlags )
+			, std::move( getPipelineState )
 			, getDefaultV< RecordCallback >()
 			, getDefaultV< GetPassIndexCallback >()
 			, getDefaultV< IsEnabledCallback >()
@@ -60,10 +60,10 @@ namespace crg
 	}
 
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, GetPipelineStateCallback getPipelineState
 		, RecordCallback record )
 		: Callbacks{ std::move( initialise )
-			, std::move( getSemaphoreWaitFlags )
+			, std::move( getPipelineState )
 			, std::move( record )
 			, getDefaultV< GetPassIndexCallback >()
 			, getDefaultV< IsEnabledCallback >()
@@ -72,11 +72,11 @@ namespace crg
 	}
 
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, GetPipelineStateCallback getPipelineState
 		, RecordCallback record
 		, GetPassIndexCallback getPassIndex )
 		: Callbacks{ std::move( initialise )
-			, std::move( getSemaphoreWaitFlags )
+			, std::move( getPipelineState )
 			, std::move( record )
 			, std::move( getPassIndex )
 			, getDefaultV< IsEnabledCallback >()
@@ -85,12 +85,12 @@ namespace crg
 	}
 
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, GetPipelineStateCallback getPipelineState
 		, RecordCallback record
 		, GetPassIndexCallback getPassIndex
 		, IsEnabledCallback isEnabled )
 		: Callbacks{ std::move( initialise )
-			, std::move( getSemaphoreWaitFlags )
+			, std::move( getPipelineState )
 			, std::move( record )
 			, std::move( getPassIndex )
 			, std::move( isEnabled )
@@ -99,13 +99,13 @@ namespace crg
 	}
 
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+		, GetPipelineStateCallback getPipelineState
 		, RecordCallback record
 		, GetPassIndexCallback getPassIndex
 		, IsEnabledCallback isEnabled
 		, IsComputePassCallback isComputePass )
 		: initialise{ std::move( initialise ) }
-		, getSemaphoreWaitFlags{ std::move( getSemaphoreWaitFlags ) }
+		, getPipelineState{ std::move( getPipelineState ) }
 		, record{ std::move( record ) }
 		, getPassIndex{ std::move( getPassIndex ) }
 		, isEnabled{ std::move( isEnabled ) }
@@ -207,6 +207,7 @@ namespace crg
 		, m_graph{ graph }
 		, m_callbacks{ std::move( callbacks ) }
 		, m_ruConfig{ std::move( ruConfig ) }
+		, m_pipelineState{ m_callbacks.getPipelineState() }
 		, m_fence{ context, m_pass.getGroupName(), { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
 		, m_timer{ context, m_pass.getGroupName(), 1u }
 	{
@@ -539,7 +540,7 @@ namespace crg
 
 		return { 1u
 			, { m_semaphore
-				, m_callbacks.getSemaphoreWaitFlags() } };
+				, m_callbacks.getPipelineState().pipelineStage } };
 	}
 
 	void RunnablePass::resetCommandBuffer()
@@ -725,8 +726,8 @@ namespace crg
 		auto it = layoutTransitions.find( view );
 		assert( it != layoutTransitions.end() );
 		it->second.to.layout = layout;
-		it->second.to.access = accessMask;
-		it->second.to.pipelineStage = pipelineStage;
+		it->second.to.state.access = accessMask;
+		it->second.to.state.pipelineStage = pipelineStage;
 		m_graph.updateCurrentLayout( m_pass
 			, passIndex, view, it->second.to );
 

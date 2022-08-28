@@ -135,7 +135,7 @@ namespace crg
 		struct PassIndexT
 		{
 		};
-		struct SemaphoreWaitFlagsT
+		struct PipelineStateT
 		{
 		};
 		struct EnabledT
@@ -147,7 +147,7 @@ namespace crg
 
 		using InitialiseCallback = std::function< void() >;
 		using RecordCallback = std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) >;
-		using GetSemaphoreWaitFlagsCallback = GetValueCallbackT< SemaphoreWaitFlagsT, VkPipelineStageFlags >;
+		using GetPipelineStateCallback = GetValueCallbackT< PipelineStateT, PipelineState >;
 		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
 		using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
 		using IsComputePassCallback = GetValueCallbackT< ComputePassT, bool >;
@@ -155,28 +155,28 @@ namespace crg
 		struct Callbacks
 		{
 			CRG_API Callbacks( InitialiseCallback initialise
-				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags );
+				, GetPipelineStateCallback getPipelineState );
 			CRG_API Callbacks( InitialiseCallback initialise
-				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, GetPipelineStateCallback getPipelineState
 				, RecordCallback record );
 			CRG_API Callbacks( InitialiseCallback initialise
-				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, GetPipelineStateCallback getPipelineState
 				, RecordCallback record
 				, GetPassIndexCallback getPassIndex );
 			CRG_API Callbacks( InitialiseCallback initialise
-				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, GetPipelineStateCallback getPipelineState
 				, RecordCallback record
 				, GetPassIndexCallback getPassIndex
 				, IsEnabledCallback isEnabled );
 			CRG_API Callbacks( InitialiseCallback initialise
-				, GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags
+				, GetPipelineStateCallback getPipelineState
 				, RecordCallback record
 				, GetPassIndexCallback getPassIndex
 				, IsEnabledCallback isEnabled
 				, IsComputePassCallback isComputePass );
 
 			InitialiseCallback initialise;
-			GetSemaphoreWaitFlagsCallback getSemaphoreWaitFlags;
+			GetPipelineStateCallback getPipelineState;
 			RecordCallback record;
 			GetPassIndexCallback getPassIndex;
 			IsEnabledCallback isEnabled;
@@ -278,6 +278,11 @@ namespace crg
 			return uint32_t( m_commandBuffers.size() );
 		}
 
+		PipelineState const & getPipelineState()const
+		{
+			return m_pipelineState;
+		}
+
 	protected:
 		struct CommandBuffer
 		{
@@ -321,6 +326,7 @@ namespace crg
 		RunnableGraph & m_graph;
 		Callbacks m_callbacks;
 		ru::Config m_ruConfig;
+		PipelineState m_pipelineState;
 		VkCommandPool m_commandPool{ nullptr };
 		std::vector< CommandBuffer > m_commandBuffers;
 		VkSemaphore m_semaphore{ nullptr };
@@ -344,11 +350,11 @@ namespace crg
 	};
 
 	template<>
-	struct DefaultValueGetterT< RunnablePass::GetSemaphoreWaitFlagsCallback >
+	struct DefaultValueGetterT< RunnablePass::GetPipelineStateCallback >
 	{
-		static RunnablePass::GetSemaphoreWaitFlagsCallback get()
+		static RunnablePass::GetPipelineStateCallback get()
 		{
-			RunnablePass::GetSemaphoreWaitFlagsCallback const result{ [](){ return VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT; } };
+			RunnablePass::GetPipelineStateCallback const result{ [](){ return PipelineState{ VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT }; } };
 			return result;
 		}
 	};
