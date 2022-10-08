@@ -59,6 +59,8 @@ if ( NOT DEFINED CRG_UNITY_BUILD )
 	option( CRG_UNITY_BUILD "Build RenderGraph using Unity (Jumbo) build method" OFF )
 endif ()
 
+set( PROJECTS_UNITY_BUILD ${CRG_UNITY_BUILD} )
+
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	if ( NOT DEFINED VULKAN_HEADERS_INCLUDE_DIRS )
 		find_path( VULKAN_HEADERS_INCLUDE_DIRS "vulkan/vk_icd.h" )
@@ -163,6 +165,12 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	)
 	source_group( "Header Files\\RunnablePasses" FILES ${${PROJECT_NAME}_FOLDER_HDR_FILES} )
 	source_group( "Source Files\\RunnablePasses" FILES ${${PROJECT_NAME}_FOLDER_SRC_FILES} )
+	if ( ${PROJECTS_UNITY_BUILD} )
+		file( GLOB ${PROJECT_NAME}_FOLDER_SRC_FILES
+			${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PROJECT_NAME}.dir/Unity/*.cxx
+		)
+		source_group( "Source Files\\Unity" FILES ${${PROJECT_NAME}_FOLDER_SRC_FILES} )
+	endif ()
 	if ( CRG_BUILD_STATIC )
 		add_library( ${PROJECT_NAME} STATIC
 			${${PROJECT_NAME}_HDR_FILES}
