@@ -7,13 +7,17 @@ See LICENSE file in root folder.
 #include "RenderGraph/GraphVisitor.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
-#include <atomic>
 #include <numeric>
 #include <array>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <type_traits>
+
+#pragma warning( push )
+#pragma warning( disable: 5262 )
+#include <atomic>
+#include <fstream>
+#include <sstream>
+#pragma warning( pop )
 
 namespace crg::dot
 {

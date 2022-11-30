@@ -7,9 +7,13 @@ See LICENSE file in root folder.
 
 #include <cassert>
 #include <cmath>
-#include <iomanip>
 #include <stdexcept>
+
+#pragma warning( push )
+#pragma warning( disable: 5262 )
+#include <iomanip>
 #include <sstream>
+#pragma warning( pop )
 
 namespace crg
 {

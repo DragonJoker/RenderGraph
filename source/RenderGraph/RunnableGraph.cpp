@@ -8,10 +8,14 @@ See LICENSE file in root folder.
 
 #include <array>
 #include <cassert>
-#include <fstream>
 #include <string>
 #include <type_traits>
 #include <unordered_set>
+
+#pragma warning( push )
+#pragma warning( disable: 5262 )
+#include <fstream>
+#pragma warning( pop )
 
 #pragma GCC diagnostic ignored "-Wnull-dereference"
 
