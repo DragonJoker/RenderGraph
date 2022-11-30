@@ -8,7 +8,11 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <cassert>
+
+#pragma warning( push )
+#pragma warning( disable: 5262 )
 #include <thread>
+#pragma warning( pop )
 
 namespace crg
 {

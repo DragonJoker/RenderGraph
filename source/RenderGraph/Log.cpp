@@ -1,8 +1,11 @@
 #include "RenderGraph/Log.hpp"
 
+#pragma warning( push )
+#pragma warning( disable: 5262 )
 #include <iostream>
 #include <sstream>
 #include <mutex>
+#pragma warning( pop )
 
 namespace crg
 {
