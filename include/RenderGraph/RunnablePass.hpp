@@ -327,9 +327,9 @@ namespace crg
 		Callbacks m_callbacks;
 		ru::Config m_ruConfig;
 		PipelineState m_pipelineState;
-		VkCommandPool m_commandPool{ nullptr };
+		VkCommandPool m_commandPool{};
 		std::vector< CommandBuffer > m_commandBuffers;
-		VkSemaphore m_semaphore{ nullptr };
+		VkSemaphore m_semaphore{};
 		Fence m_fence;
 		FramePassTimer m_timer;
 		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;

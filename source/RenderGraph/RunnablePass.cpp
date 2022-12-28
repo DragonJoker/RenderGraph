@@ -140,8 +140,8 @@ namespace crg
 		, m_fence{ rhs.m_fence }
 		, m_fenceWaited{ rhs.m_fenceWaited }
 	{
-		rhs.m_context = nullptr;
-		rhs.m_fence = nullptr;
+		rhs.m_context = {};
+		rhs.m_fence = {};
 	}
 
 	Fence & Fence::operator=( Fence && rhs )
@@ -149,8 +149,8 @@ namespace crg
 		m_context = rhs.m_context;
 		m_fence = rhs.m_fence;
 		m_fenceWaited = rhs.m_fenceWaited;
-		rhs.m_context = nullptr;
-		rhs.m_fence = nullptr;
+		rhs.m_context = {};
+		rhs.m_fence = {};
 		return *this;
 	}
 

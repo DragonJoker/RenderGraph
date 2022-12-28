@@ -94,7 +94,7 @@ namespace crg
 				, 0u
 				, program.front()
 				, m_pipeline.getPipelineLayout()
-				, nullptr
+				, VkPipeline{}
 				, 0u };
 			auto res = m_context.vkCreateComputePipelines( m_context.device
 				, m_context.cache

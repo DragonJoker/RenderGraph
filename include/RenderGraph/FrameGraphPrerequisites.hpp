@@ -181,8 +181,8 @@ namespace crg
 
 	struct VertexBuffer
 	{
-		VertexBuffer( Buffer pbuffer = { nullptr, std::string{} }
-			, VkDeviceMemory pmemory = nullptr
+		VertexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
+			, VkDeviceMemory pmemory = VkDeviceMemory{}
 			, VkVertexInputAttributeDescriptionArray pvertexAttribs = {}
 			, VkVertexInputBindingDescriptionArray pvertexBindings = {} )
 			: buffer{ std::move( pbuffer ) }
@@ -257,8 +257,8 @@ namespace crg
 
 		~VertexBuffer() = default;
 
-		Buffer buffer{ nullptr, std::string{} };
-		VkDeviceMemory memory{ nullptr };
+		Buffer buffer{ VkBuffer{}, std::string{} };
+		VkDeviceMemory memory{};
 		VkVertexInputAttributeDescriptionArray vertexAttribs{};
 		VkVertexInputBindingDescriptionArray vertexBindings{};
 		VkPipelineVertexInputStateCreateInfo inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} };
@@ -268,8 +268,8 @@ namespace crg
 
 	struct IndexBuffer
 	{
-		IndexBuffer( Buffer pbuffer = { nullptr, std::string{} }
-			, VkDeviceMemory pmemory = nullptr )
+		IndexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
+			, VkDeviceMemory pmemory = VkDeviceMemory{} )
 			: buffer{ std::move( pbuffer ) }
 			, memory{ pmemory }
 		{

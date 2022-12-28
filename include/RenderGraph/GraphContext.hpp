@@ -38,22 +38,6 @@ namespace crg
 	};
 
 	template<>
-	struct DebugTypeTraits< VkBufferView >
-	{
-#if VK_EXT_debug_utils
-		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_BUFFER_VIEW;
-#endif
-#if VK_EXT_debug_report || VK_EXT_debug_marker
-		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT;
-#endif
-		static std::string const & getName()
-		{
-			static std::string result{ "VkBufferView" };
-			return result;
-		}
-	};
-
-	template<>
 	struct DebugTypeTraits< VkCommandBuffer >
 	{
 #if VK_EXT_debug_utils
@@ -65,6 +49,87 @@ namespace crg
 		static std::string const & getName()
 		{
 			static std::string result{ "VkCommandBuffer" };
+			return result;
+		}
+	};
+
+	template<>
+	struct DebugTypeTraits< VkDevice >
+	{
+#if VK_EXT_debug_utils
+		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+#endif
+#if VK_EXT_debug_report || VK_EXT_debug_marker
+		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
+#endif
+		static std::string const & getName()
+		{
+			static std::string result{ "VkDevice" };
+			return result;
+		}
+	};
+
+	template<>
+	struct DebugTypeTraits< VkInstance >
+	{
+#if VK_EXT_debug_utils
+		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_INSTANCE;
+#endif
+#if VK_EXT_debug_report || VK_EXT_debug_marker
+		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
+#endif
+		static std::string const & getName()
+		{
+			static std::string result{ "VkInstance" };
+			return result;
+		}
+	};
+
+	template<>
+	struct DebugTypeTraits< VkPhysicalDevice >
+	{
+#if VK_EXT_debug_utils
+		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
+#endif
+#if VK_EXT_debug_report || VK_EXT_debug_marker
+		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
+#endif
+		static std::string const & getName()
+		{
+			static std::string result{ "VkPhysicalDevice" };
+			return result;
+		}
+	};
+
+	template<>
+	struct DebugTypeTraits< VkQueue >
+	{
+#if VK_EXT_debug_utils
+		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_QUEUE;
+#endif
+#if VK_EXT_debug_report || VK_EXT_debug_marker
+		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
+#endif
+		static std::string const & getName()
+		{
+			static std::string result{ "VkQueue" };
+			return result;
+		}
+	};
+
+#if ( VK_USE_64_BIT_PTR_DEFINES == 1 )
+	template<>
+	struct DebugTypeTraits< VkBufferView >
+	{
+#if VK_EXT_debug_utils
+		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_BUFFER_VIEW;
+#endif
+#if VK_EXT_debug_report || VK_EXT_debug_marker
+		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT;
+#endif
+		static std::string const & getName()
+		{
+			static std::string result{ "VkBufferView" };
 			return result;
 		}
 	};
@@ -129,22 +194,6 @@ namespace crg
 		static std::string const & getName()
 		{
 			static std::string result{ "VkDescriptorSetLayout" };
-			return result;
-		}
-	};
-
-	template<>
-	struct DebugTypeTraits< VkDevice >
-	{
-#if VK_EXT_debug_utils
-		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
-#endif
-#if VK_EXT_debug_report || VK_EXT_debug_marker
-		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
-#endif
-		static std::string const & getName()
-		{
-			static std::string result{ "VkDevice" };
 			return result;
 		}
 	};
@@ -246,38 +295,6 @@ namespace crg
 	};
 
 	template<>
-	struct DebugTypeTraits< VkInstance >
-	{
-#if VK_EXT_debug_utils
-		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_INSTANCE;
-#endif
-#if VK_EXT_debug_report || VK_EXT_debug_marker
-		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
-#endif
-		static std::string const & getName()
-		{
-			static std::string result{ "VkInstance" };
-			return result;
-		}
-	};
-
-	template<>
-	struct DebugTypeTraits< VkPhysicalDevice >
-	{
-#if VK_EXT_debug_utils
-		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_PHYSICAL_DEVICE;
-#endif
-#if VK_EXT_debug_report || VK_EXT_debug_marker
-		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
-#endif
-		static std::string const & getName()
-		{
-			static std::string result{ "VkPhysicalDevice" };
-			return result;
-		}
-	};
-
-	template<>
 	struct DebugTypeTraits< VkPipeline >
 	{
 #if VK_EXT_debug_utils
@@ -321,22 +338,6 @@ namespace crg
 		static std::string const & getName()
 		{
 			static std::string result{ "VkQueryPool" };
-			return result;
-		}
-	};
-
-	template<>
-	struct DebugTypeTraits< VkQueue >
-	{
-#if VK_EXT_debug_utils
-		static VkObjectType constexpr UtilsValue = VK_OBJECT_TYPE_QUEUE;
-#endif
-#if VK_EXT_debug_report || VK_EXT_debug_marker
-		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
-#endif
-		static std::string const & getName()
-		{
-			static std::string result{ "VkQueue" };
 			return result;
 		}
 	};
@@ -437,6 +438,8 @@ namespace crg
 		}
 	};
 
+#endif // ( VK_USE_64_BIT_PTR_DEFINES == 1 )
+
 	struct DebugBlockInfo
 	{
 		std::string markerName;
@@ -458,9 +461,9 @@ namespace crg
 			, bool separateDepthStencilLayouts
 			, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr );
 
-		VkDevice device{ nullptr };
-		VkPipelineCache cache{ nullptr };
-		VkAllocationCallbacks const * allocator{ nullptr };
+		VkDevice device{};
+		VkPipelineCache cache{};
+		VkAllocationCallbacks const * allocator{};
 		VkPhysicalDeviceMemoryProperties memoryProperties{};
 		VkPhysicalDeviceProperties properties{};
 		VkPhysicalDeviceFeatures features{};
