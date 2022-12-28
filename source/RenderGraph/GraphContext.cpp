@@ -390,7 +390,7 @@ namespace crg
 		if ( object )
 		{
 			std::unique_lock< std::mutex > lock{ m_mutex };
-			auto it = m_allocated.find( object );
+			auto it = m_allocated.find( size_t( object ) );
 			assert( it != m_allocated.end() );
 			m_allocated.erase( it );
 		}

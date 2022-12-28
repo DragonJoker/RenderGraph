@@ -158,15 +158,31 @@ namespace crg
 		static size_t makeHash( FramePass const & pass
 			, ImageViewId const & view )
 		{
-			return size_t( pass.id ) << 32u
-				| view.id;
+			if constexpr ( sizeof( size_t ) == sizeof( uint64_t ) )
+			{
+				return size_t( pass.id ) << 32u
+					| size_t( view.id );
+			}
+			else
+			{
+				return size_t( pass.id ) << 16u
+					| size_t( view.id );
+			}
 		}
 
 		static size_t makeHash( FramePass const & pass
 			, Buffer const & buffer )
 		{
-			return size_t( pass.id ) << 32u
-				| ( ptrdiff_t( buffer.buffer ) & 0xFFFFFFFF );
+			if constexpr ( sizeof( size_t ) == sizeof( uint64_t ) )
+			{
+				return size_t( pass.id ) << 32u
+					| ( ptrdiff_t( buffer.buffer ) & 0xFFFFFFFF );
+			}
+			else
+			{
+				return size_t( pass.id ) << 16u
+					| ( ptrdiff_t( buffer.buffer ) & 0x0000FFFF );
+			}
 		}
 	}
 

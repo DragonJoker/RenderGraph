@@ -207,7 +207,7 @@ namespace crg
 	{
 		if ( !context.device )
 		{
-			return nullptr;
+			return VkImage{};
 		}
 
 		std::unique_lock< std::mutex > lock( m_imagesMutex );
@@ -260,7 +260,7 @@ namespace crg
 	{
 		if ( !context.device )
 		{
-			return nullptr;
+			return VkImageView{};
 		}
 
 		std::unique_lock< std::mutex > lock( m_viewsMutex );
@@ -286,7 +286,7 @@ namespace crg
 	{
 		if ( !context.device )
 		{
-			return nullptr;
+			return VkSampler{};
 		}
 
 		std::unique_lock< std::mutex > lock( m_samplersMutex );
@@ -455,7 +455,7 @@ namespace crg
 
 		if ( it == m_images.end() )
 		{
-			return nullptr;
+			return VkImage{};
 		}
 
 		return it->second.first;
@@ -468,7 +468,7 @@ namespace crg
 
 		if ( it == m_imageViews.end() )
 		{
-			return nullptr;
+			return VkImageView{};
 		}
 
 		return it->second;

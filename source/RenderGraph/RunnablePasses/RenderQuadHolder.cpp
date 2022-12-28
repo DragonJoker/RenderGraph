@@ -176,7 +176,7 @@ namespace crg
 			, m_pipeline.getPipelineLayout()
 			, m_renderPass
 			, 0u
-			, nullptr
+			, VkPipeline{}
 			, 0u };
 		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
 			, m_context.cache

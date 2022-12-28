@@ -132,8 +132,8 @@ namespace crg
 	//*********************************************************************************************
 
 	BufferAttachment::BufferAttachment()
-		: buffer{ nullptr, std::string{} }
-		, view{ nullptr }
+		: buffer{ {}, std::string{} }
+		, view{}
 		, range{}
 		, flags{}
 	{
@@ -141,7 +141,7 @@ namespace crg
 
 	BufferAttachment::BufferAttachment( Buffer buffer )
 		: buffer{ std::move( buffer ) }
-		, view{ nullptr }
+		, view{}
 		, range{}
 		, flags{}
 	{
@@ -152,7 +152,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: buffer{ std::move( buffer ) }
-		, view{ nullptr }
+		, view{}
 		, range{ offset, range }
 		, flags{ flags }
 	{

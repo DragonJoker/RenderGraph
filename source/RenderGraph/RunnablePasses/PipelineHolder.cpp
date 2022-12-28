@@ -61,7 +61,7 @@ namespace crg
 			if ( descriptorSet.set )
 			{
 				crgUnregisterObject( m_context, descriptorSet.set );
-				descriptorSet.set = nullptr;
+				descriptorSet.set = {};
 			}
 		}
 
@@ -71,7 +71,7 @@ namespace crg
 			m_context.vkDestroyDescriptorPool( m_context.device
 				, m_descriptorSetPool
 				, m_context.allocator );
-			m_descriptorSetPool = nullptr;
+			m_descriptorSetPool = {};
 		}
 
 		for ( auto & pipeline : m_pipelines )
@@ -80,7 +80,7 @@ namespace crg
 			m_context.vkDestroyPipeline( m_context.device
 				, pipeline
 				, m_context.allocator );
-			pipeline = nullptr;
+			pipeline = {};
 		}
 
 		if ( m_pipelineLayout )
@@ -89,7 +89,7 @@ namespace crg
 			m_context.vkDestroyPipelineLayout( m_context.device
 				, m_pipelineLayout
 				, m_context.allocator );
-			m_pipelineLayout = nullptr;
+			m_pipelineLayout = {};
 		}
 
 		if ( m_descriptorSetLayout )
@@ -98,7 +98,7 @@ namespace crg
 			m_context.vkDestroyDescriptorSetLayout( m_context.device
 				, m_descriptorSetLayout
 				, m_context.allocator );
-			m_descriptorSetLayout = nullptr;
+			m_descriptorSetLayout = {};
 		}
 	}
 
@@ -151,7 +151,7 @@ namespace crg
 				m_context.vkDestroyPipeline( m_context.device
 					, m_pipelines[index]
 					, m_context.allocator );
-				m_pipelines[index] = nullptr;
+				m_pipelines[index] = {};
 			}
 
 			if ( !config.empty() )
@@ -166,7 +166,7 @@ namespace crg
 	{
 		auto & descriptorSet = m_descriptorSets[index];
 
-		if ( descriptorSet.set != nullptr )
+		if ( descriptorSet.set != VkDescriptorSet{} )
 		{
 			return;
 		}
@@ -189,7 +189,7 @@ namespace crg
 					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
 						, 0u
 						, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-						, VkDescriptorImageInfo{ nullptr
+						, VkDescriptorImageInfo{ VkSampler{}
 							, m_graph.createImageView( attach.view( index ) )
 							, VK_IMAGE_LAYOUT_GENERAL } } );
 				}
@@ -218,7 +218,7 @@ namespace crg
 
 					for ( uint32_t i = 0u; i < attach.count; ++i )
 					{
-						imageInfos.push_back( { nullptr
+						imageInfos.push_back( { VkSampler{}
 							, m_graph.createImageView( attach.view( i ) )
 							, VK_IMAGE_LAYOUT_GENERAL } );
 					}

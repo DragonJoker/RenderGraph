@@ -15,7 +15,7 @@ namespace crg
 			, std::string const & name
 			, uint32_t passesCount )
 		{
-			VkQueryPool result{ nullptr };
+			VkQueryPool result{};
 
 			if ( context.device )
 			{
