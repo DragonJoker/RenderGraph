@@ -117,16 +117,17 @@ namespace crg
 			, runnable
 			, context.getPrevPipelineState()
 			, context.getNextPipelineState() );
-		doCreateFramebuffer();
+		doInitialiseRenderArea();
 		return true;
 	}
 
 	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )
 	{
+		auto frameBuffer = getFramebuffer( index );
 		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
 			, nullptr
 			, getRenderPass()
-			, getFramebuffer( index )
+			, frameBuffer
 			, getRenderArea()
 			, uint32_t( getClearValues().size() )
 			, getClearValues().data() };
@@ -254,50 +255,64 @@ namespace crg
 			, {} };
 	}
 
-	void RenderPassHolder::doCreateFramebuffer()
+	VkFramebuffer RenderPassHolder::getFramebuffer( uint32_t index )const
 	{
-		for ( uint32_t index = 0; index < m_frameBuffers.size(); ++index )
+		return doCreateFramebuffer( index );
+	}
+
+	void RenderPassHolder::doInitialiseRenderArea()
+	{
+		uint32_t width{ m_size.width };
+		uint32_t height{ m_size.height };
+		m_attachments.clear();
+		m_layers = 1u;
+
+		for ( auto & attach : m_pass.images )
 		{
-			VkImageViewArray attachments;
-			uint32_t width{};
-			uint32_t height{};
-			uint32_t layers{ 1u };
-
-			for ( auto & attach : m_pass.images )
+			if ( attach.isColourAttach()
+				|| attach.isDepthAttach()
+				|| attach.isStencilAttach() )
 			{
-				if ( attach.isColourAttach()
-					|| attach.isDepthAttach()
-					|| attach.isStencilAttach() )
-				{
-					auto view = attach.view( index );
-					attachments.push_back( m_graph.createImageView( view ) );
-					width = view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel;
-					height = view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel;
-					layers = std::max( layers, view.data->info.subresourceRange.layerCount );
-				}
+				auto view = attach.view();
+				m_attachments.push_back( m_graph.createImageView( view ) );
+				width = std::max( width
+					, view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel );
+				height = std::max( height
+					, view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel );
+				m_layers = std::max( m_layers
+					, view.data->info.subresourceRange.layerCount );
 			}
+		}
 
-			width = std::max( width, m_size.width );
-			height = std::max( height, m_size.height );
-			m_renderArea.extent.width = width;
-			m_renderArea.extent.height = height;
-			auto frameBuffer = &m_frameBuffers[index];
+		m_renderArea.extent.width = width;
+		m_renderArea.extent.height = height;
+	}
+
+	VkFramebuffer RenderPassHolder::doCreateFramebuffer( uint32_t passIndex )const
+	{
+		auto frameBuffer = &m_frameBuffers[passIndex];
+
+		if ( !*frameBuffer )
+		{
 			VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
 				, nullptr
 				, 0u
 				, m_renderPass
-				, uint32_t( attachments.size() )
-				, attachments.data()
-				, width
-				, height
-				, layers };
+				, uint32_t( m_attachments.size() )
+				, m_attachments.data()
+				, m_renderArea.extent.width
+				, m_renderArea.extent.height
+				, m_layers };
 			auto res = m_context.vkCreateFramebuffer( m_context.device
 				, &createInfo
 				, m_context.allocator
 				, frameBuffer );
-			checkVkResult( res, m_pass.getGroupName() + " - Framebuffer creation" );
-			crgRegisterObject( m_context, m_pass.getGroupName(), *frameBuffer );
+			auto name = m_pass.getGroupName() + std::string( "[" ) + std::to_string( passIndex ) + std::string( "]" );
+			checkVkResult( res, name + " - Framebuffer creation" );
+			crgRegisterObject( m_context, name, *frameBuffer );
 		}
+
+		return *frameBuffer;
 	}
 
 	void RenderPassHolder::doCleanup()
