@@ -23,6 +23,237 @@ namespace crg
 {
 	//************************************************************************************************
 
+	RunnableGraph::LayoutsCache::LayoutsCache( FrameGraph & graph
+		, GraphContext & context
+		, FramePassArray & passes )
+		: m_graph{ graph }
+		, m_context{ context }
+	{
+		Logger::logDebug( m_graph.getName() + " - Initialising resources" );
+
+		for ( auto pass : passes )
+		{
+			doRegisterViews( *pass );
+			doRegisterBuffers( *pass );
+		}
+
+		doCreateImages();
+		doCreateImageViews();
+	}
+
+	void RunnableGraph::LayoutsCache::registerPass( FramePass const & pass
+		, uint32_t remainingPassCount )
+	{
+		m_passesLayouts.emplace( &pass
+			, RemainingPasses{ remainingPassCount, {}, {} } );
+	}
+
+	void RunnableGraph::LayoutsCache::initialise( GraphNodePtrArray const & nodes
+		, std::vector< RunnablePassPtr > const & passes
+		, uint32_t maxPassCount )
+	{
+		Logger::logDebug( m_graph.getName() + " - Creating layouts" );
+		m_viewsLayouts.resize( maxPassCount, std::make_pair( LayoutStateMap{}, false ) );
+		m_buffersLayouts.resize( maxPassCount, std::make_pair( AccessStateMap{}, false ) );
+
+		Logger::logDebug( m_graph.getName() + " - Initialising nodes layouts" );
+		auto remainingCount = maxPassCount;
+		uint32_t index = 0u;
+
+		for ( auto & node : nodes )
+		{
+			auto it = m_passesLayouts.find( getFramePass( *node ) );
+			remainingCount /= it->second.count;
+			it->second.count = remainingCount;
+
+			for ( uint32_t i = 0u; i < passes[index]->getMaxPassCount(); ++i )
+			{
+				it->second.views.push_back( m_viewsLayouts.begin() + ( i * remainingCount ) );
+				it->second.buffers.push_back( m_buffersLayouts.begin() + ( i * remainingCount ) );
+			}
+
+			++index;
+		}
+	}
+
+	LayoutStateMap & RunnableGraph::LayoutsCache::getViewsLayout( FramePass const & pass
+		, uint32_t passIndex )
+	{
+		auto it = m_passesLayouts.find( &pass );
+		assert( it != m_passesLayouts.end() );
+		assert( it->second.views.size() >= passIndex );
+		auto & viewsLayouts = *it->second.views[passIndex];
+		doInitialiseLayout( viewsLayouts );
+		return viewsLayouts.first;
+	}
+
+	AccessStateMap & RunnableGraph::LayoutsCache::getBuffersLayout( FramePass const & pass
+		, uint32_t passIndex )
+	{
+		auto it = m_passesLayouts.find( &pass );
+		assert( it != m_passesLayouts.end() );
+		assert( it->second.buffers.size() >= passIndex );
+		auto & buffersLayouts = *it->second.buffers[passIndex];
+		doInitialiseLayout( buffersLayouts );
+		return buffersLayouts.first;
+	}
+
+	VkImage RunnableGraph::LayoutsCache::createImage( ImageId const & image )
+	{
+		auto result = m_graph.m_handler.createImage( m_context, image );
+		m_images[image] = result;
+		return result;
+	}
+	VkImageView RunnableGraph::LayoutsCache::createImageView( ImageViewId const & view )
+	{
+		auto result = m_graph.m_handler.createImageView( m_context, view );
+		m_imageViews[view] = result;
+		return result;
+	}
+
+	void RunnableGraph::LayoutsCache::doCreateImages()
+	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
+		for ( auto & img : m_graph.m_images )
+		{
+			createImage( img );
+		}
+	}
+
+
+	void RunnableGraph::LayoutsCache::doCreateImageViews()
+	{
+		if ( !m_context.device )
+		{
+			return;
+		}
+
+		for ( auto & view : m_graph.m_imageViews )
+		{
+			createImageView( view );
+		}
+	}
+
+	void RunnableGraph::LayoutsCache::doRegisterViews( FramePass const & pass )
+	{
+		static LayoutState const defaultState{ VK_IMAGE_LAYOUT_UNDEFINED
+			, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+
+		for ( auto & attach : pass.images )
+		{
+			if ( attach.count > 1u )
+			{
+				for ( uint32_t i = 0u; i < attach.count; ++i )
+				{
+					auto view = attach.view( i );
+					auto image = view.data->image;
+					createImage( image );
+					createImageView( view );
+					auto ires = m_viewsStates.emplace( image.id, LayerLayoutStates{} );
+
+					if ( ires.second )
+					{
+						auto & layers = ires.first->second;
+						auto sliceArrayCount = ( image.data->info.extent.depth > 1u
+							? image.data->info.extent.depth
+							: image.data->info.arrayLayers );
+
+						for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
+						{
+							auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
+
+							for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
+							{
+								levels.emplace( level, defaultState );
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				auto view = attach.view();
+				auto image = view.data->image;
+				createImage( image );
+				createImageView( view );
+				auto ires = m_viewsStates.emplace( image.id, LayerLayoutStates{} );
+
+				if ( ires.second )
+				{
+					auto & layers = ires.first->second;
+					auto sliceArrayCount = ( image.data->info.extent.depth > 1u
+						? image.data->info.extent.depth
+						: image.data->info.arrayLayers );
+
+					for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
+					{
+						auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
+
+						for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
+						{
+							levels.emplace( level, defaultState );
+						}
+					}
+				}
+			}
+		}
+	}
+
+	void RunnableGraph::LayoutsCache::doRegisterBuffers( FramePass const & pass )
+	{
+		static AccessState const defaultState{ getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+
+		for ( auto & attach : pass.buffers )
+		{
+			auto buffer = attach.buffer.buffer.buffer;
+			m_bufferStates.emplace( buffer, defaultState );
+		}
+	}
+
+	void RunnableGraph::LayoutsCache::doInitialiseLayout( ViewsLayoutInit & viewsLayouts )const
+	{
+		if ( !viewsLayouts.second )
+		{
+			viewsLayouts.second = true;
+
+			for ( auto & srcLayers : m_viewsStates )
+			{
+				LayerLayoutStates & dstLayers = viewsLayouts.first.emplace( srcLayers.first, LayerLayoutStates{} ).first->second;
+
+				for ( auto & srcMips : srcLayers.second )
+				{
+					MipLayoutStates & dstMips = dstLayers.emplace( srcMips.first, MipLayoutStates{} ).first->second;
+
+					for ( auto & srcLevel : srcMips.second )
+					{
+						dstMips.emplace( srcLevel );
+					}
+				}
+			}
+		}
+	}
+
+	void RunnableGraph::LayoutsCache::doInitialiseLayout( BuffersLayoutInit & buffersLayouts )const
+	{
+		if ( !buffersLayouts.second )
+		{
+			buffersLayouts.second = true;
+
+			for ( auto & srcState : m_bufferStates )
+			{
+				buffersLayouts.first.emplace( srcState );
+			}
+		}
+	}
+
+	//************************************************************************************************
+
 	RunnableGraph::RunnableGraph( FrameGraph & graph
 		, FramePassArray passes
 		, FramePassDependencies inputTransitions
@@ -38,19 +269,8 @@ namespace crg
 		, m_transitions{ std::move( transitions ) }
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
+		, m_layouts{ std::make_unique< LayoutsCache >( graph, m_context, passes ) }
 	{
-		Logger::logDebug( graph.getName() + " - Initialising resources" );
-		LayoutStateMap images;
-		AccessStateMap buffers;
-
-		for ( auto & pass : passes )
-		{
-			doRegisterImages( *pass, images );
-			doRegisterBuffers( *pass, buffers );
-		}
-
-		doCreateImages();
-		doCreateImageViews();
 		Logger::logDebug( graph.getName() + " - Creating runnable passes" );
 
 		for ( auto & node : m_nodes )
@@ -62,43 +282,12 @@ namespace crg
 					, *this ) );
 				auto & pass = m_passes.back();
 				auto passCount = pass->getMaxPassCount();
-				m_passesLayouts.emplace( &pass->getPass()
-					, RemainingPasses{ passCount, {}, {} } );
+				m_layouts->registerPass( pass->getPass(), passCount );
 				m_maxPassCount *= passCount;
 			}
 		}
 
-		Logger::logDebug( graph.getName() + " - Creating layouts" );
-		m_viewsLayouts.reserve( m_maxPassCount );
-		m_buffersLayouts.reserve( m_maxPassCount );
-
-		for ( uint32_t index = 0; index < m_maxPassCount; ++index )
-		{
-			m_viewsLayouts.push_back( images );
-			m_buffersLayouts.push_back( buffers );
-		}
-
-		Logger::logDebug( graph.getName() + " - Initialising nodes layouts" );
-		auto remainingCount = m_maxPassCount;
-		uint32_t index = 0u;
-
-		for ( auto & node : m_nodes )
-		{
-			auto it = m_passesLayouts.find( getFramePass( *node ) );
-			remainingCount /= it->second.count;
-			it->second.count = remainingCount;
-
-			for ( uint32_t i = 0u; i < m_passes[index]->getMaxPassCount(); ++i )
-			{
-				it->second.views.push_back( { m_viewsLayouts.begin() + ( i * remainingCount )
-					, m_viewsLayouts.begin() + ( ( i + 1 ) * remainingCount ) } );
-				it->second.buffers.push_back( { m_buffersLayouts.begin() + ( i * remainingCount )
-					, m_buffersLayouts.begin() + ( ( i + 1 ) * remainingCount ) } );
-			}
-
-			++index;
-		}
-
+		m_layouts->initialise( m_nodes, m_passes, m_maxPassCount );
 		Logger::logDebug( graph.getName() + " - Initialising passes" );
 
 		for ( auto & pass : m_passes )
@@ -155,16 +344,12 @@ namespace crg
 
 	VkImage RunnableGraph::createImage( ImageId const & image )
 	{
-		auto result = m_graph.m_handler.createImage( m_context, image );
-		m_images[image] = result;
-		return result;
+		return m_layouts->createImage( image );
 	}
 
 	VkImageView RunnableGraph::createImageView( ImageViewId const & view )
 	{
-		auto result = m_graph.m_handler.createImageView( m_context, view );
-		m_imageViews[view] = result;
-		return result;
+		return m_layouts->createImageView( view );
 	}
 
 	SemaphoreWaitArray RunnableGraph::run( VkQueue queue )
@@ -239,10 +424,7 @@ namespace crg
 		, uint32_t passIndex
 		, ImageViewId view )const
 	{
-		auto it = m_passesLayouts.find( &pass );
-		assert( it != m_passesLayouts.end() );
-		assert( it->second.views.size() >= passIndex );
-		auto & viewsLayouts = *it->second.views[passIndex].begin;
+		auto & viewsLayouts = m_layouts->getViewsLayout( pass, passIndex );
 		auto imageIt = viewsLayouts.find( view.data->image.id );
 
 		if ( imageIt != viewsLayouts.end() )
@@ -261,22 +443,13 @@ namespace crg
 		, ImageViewId view
 		, LayoutState newLayout )
 	{
-		auto it = m_passesLayouts.find( &pass );
-		assert( it != m_passesLayouts.end() );
-		assert( it->second.views.size() >= passIndex );
-		auto subresourceRange = getVirtualRange( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
-		auto & views = it->second.views[passIndex];
-		std::for_each( views.begin
-			, views.end
-			, [&subresourceRange, &newLayout, &view]( LayoutStateMap & viewsLayouts )
-			{
-				auto ires = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} );
-				addSubresourceRangeLayout( ires.first->second
-					, subresourceRange
-					, newLayout );
-			} );
+		auto & viewsLayouts = m_layouts->getViewsLayout( pass, passIndex );
+		auto & ranges = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} ).first->second;
+		addSubresourceRangeLayout( ranges
+			, getVirtualRange( view.data->image
+				, view.data->info.viewType
+				, view.data->info.subresourceRange )
+			, newLayout );
 		return newLayout;
 	}
 
@@ -379,10 +552,7 @@ namespace crg
 		, uint32_t passIndex
 		, Buffer const & buffer )const
 	{
-		auto it = m_passesLayouts.find( &pass );
-		assert( it != m_passesLayouts.end() );
-		assert( it->second.buffers.size() >= passIndex );
-		auto & buffersLayouts = *it->second.buffers[passIndex].begin;
+		auto & buffersLayouts = m_layouts->getBuffersLayout( pass, passIndex );
 		auto bufferIt = buffersLayouts.find( buffer.buffer );
 
 		if ( bufferIt != buffersLayouts.end() )
@@ -398,16 +568,8 @@ namespace crg
 		, Buffer const & buffer
 		, AccessState newState )
 	{
-		auto it = m_passesLayouts.find( &pass );
-		assert( it != m_passesLayouts.end() );
-		assert( it->second.buffers.size() >= passIndex );
-		auto & buffers = it->second.buffers[passIndex];
-		std::for_each( buffers.begin
-			, buffers.end
-			, [&newState, &buffer]( AccessStateMap & buffersLayouts )
-			{
-				buffersLayouts[buffer.buffer] = newState;
-			} );
+		auto & buffersLayouts = m_layouts->getBuffersLayout( pass, passIndex );
+		buffersLayouts[buffer.buffer] = newState;
 		return newState;
 	}
 
@@ -530,107 +692,5 @@ namespace crg
 			, initialMask
 			, initialStage
 			, wantedState );
-	}
-
-	void RunnableGraph::doRegisterImages( FramePass const & pass
-		, LayoutStateMap & images )
-	{
-		static LayoutState const defaultState{ VK_IMAGE_LAYOUT_UNDEFINED
-			, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
-			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
-
-		for ( auto & attach : pass.images )
-		{
-			if ( attach.count > 1u )
-			{
-				for ( uint32_t i = 0u; i < attach.count; ++i )
-				{
-					auto view = attach.view( i );
-					auto image = view.data->image;
-					createImage( image );
-					createImageView( view );
-					auto ires = images.emplace( image.id, LayerLayoutStates{} );
-
-					if ( ires.second )
-					{
-						auto & layers = ires.first->second;
-						auto sliceArrayCount = ( image.data->info.extent.depth > 1u
-							? image.data->info.extent.depth
-							: image.data->info.arrayLayers );
-
-						for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
-						{
-							auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
-
-							for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
-							{
-								levels.emplace( level, defaultState );
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				auto view = attach.view();
-				auto image = view.data->image;
-				createImage( image );
-				createImageView( view );
-				auto ires = images.emplace( image.id, LayerLayoutStates{} );
-
-				if ( ires.second )
-				{
-					auto & layers = ires.first->second;
-					auto sliceArrayCount = ( image.data->info.extent.depth > 1u
-						? image.data->info.extent.depth
-						: image.data->info.arrayLayers );
-
-					for ( uint32_t slice = 0; slice < sliceArrayCount; ++slice )
-					{
-						auto & levels = layers.emplace( slice, MipLayoutStates{} ).first->second;
-
-						for ( uint32_t level = 0; level < image.data->info.mipLevels; ++level )
-						{
-							levels.emplace( level, defaultState );
-						}
-					}
-				}
-			}
-		}
-	}
-
-	void RunnableGraph::doRegisterBuffers( FramePass const & pass
-		, AccessStateMap & buffers )
-	{
-		static AccessState const defaultState{ getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
-			, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
-
-		for ( auto & attach : pass.buffers )
-		{
-			auto buffer = attach.buffer.buffer.buffer;
-			buffers.emplace( buffer, defaultState );
-		}
-	}
-
-	void RunnableGraph::doCreateImages()
-	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		for ( auto & img : m_graph.m_images )
-		{
-			createImage( img );
-		}
-	}
-
-	void RunnableGraph::doCreateImageViews()
-	{
-		for ( auto & view : m_graph.m_imageViews )
-		{
-			createImageView( view );
-			m_imageViews[view] = m_graph.m_handler.createImageView( m_context, view );
-		}
 	}
 }
