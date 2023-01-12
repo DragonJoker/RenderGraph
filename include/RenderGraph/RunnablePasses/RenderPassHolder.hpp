@@ -35,15 +35,11 @@ namespace crg
 		CRG_API void end( RecordContext & context
 			, VkCommandBuffer commandBuffer );
 		CRG_API VkPipelineColorBlendStateCreateInfo createBlendState();
+		CRG_API VkFramebuffer getFramebuffer( uint32_t index )const;
 
 		VkRenderPass getRenderPass()const
 		{
 			return m_renderPass;
-		}
-
-		VkFramebuffer getFramebuffer( uint32_t index )const
-		{
-			return m_frameBuffers[index];
 		}
 
 		VkExtent2D const & getRenderSize()const
@@ -71,7 +67,8 @@ namespace crg
 			, crg::RunnablePass const & runnable
 			, PipelineState const & previousState
 			, PipelineState const & nextState );
-		void doCreateFramebuffer();
+		void doInitialiseRenderArea();
+		VkFramebuffer doCreateFramebuffer( uint32_t passIndex )const;
 		void doCleanup();
 
 	private:
@@ -80,8 +77,10 @@ namespace crg
 		RunnableGraph & m_graph;
 		VkExtent2D m_size;
 		VkRenderPass m_renderPass{};
-		std::vector< VkFramebuffer > m_frameBuffers;
+		mutable std::vector< VkFramebuffer > m_frameBuffers;
 		VkRect2D m_renderArea{};
+		VkImageViewArray m_attachments;
+		uint32_t m_layers{};
 		std::vector< VkClearValue > m_clearValues;
 		std::vector< Entry > m_attaches;
 		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
