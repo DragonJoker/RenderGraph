@@ -142,16 +142,50 @@ namespace crg
 		struct RemainingPasses
 		{
 			uint32_t count;
-			ViewLayoutRanges views;
-			BufferLayoutRanges buffers;
+			ViewLayoutIterators views;
+			BufferLayoutIterators buffers;
 		};
 
-		void doRegisterImages( crg::FramePass const & pass
-			, LayoutStateMap & images );
-		void doRegisterBuffers( crg::FramePass const & pass
-			, AccessStateMap & buffers );
-		void doCreateImages();
-		void doCreateImageViews();
+		class LayoutsCache
+		{
+		public:
+			LayoutsCache( FrameGraph & graph
+				, GraphContext & context
+				, FramePassArray & passes );
+
+			void registerPass( FramePass const & pass
+				, uint32_t remainingPassCount );
+			void initialise( GraphNodePtrArray const & nodes
+				, std::vector< RunnablePassPtr > const & passes
+				, uint32_t maxPassCount );
+
+			LayoutStateMap & getViewsLayout( FramePass const & pass
+				, uint32_t passIndex );
+			AccessStateMap & getBuffersLayout( FramePass const & pass
+				, uint32_t passIndex );
+
+			VkImage createImage( ImageId const & image );
+			VkImageView createImageView( ImageViewId const & view );
+
+		private:
+			void doCreateImages();
+			void doCreateImageViews();
+			void doRegisterViews( crg::FramePass const & pass );
+			void doRegisterBuffers( crg::FramePass const & pass );
+			void doInitialiseLayout( ViewsLayoutInit & viewsLayouts )const;
+			void doInitialiseLayout( BuffersLayoutInit & buffersLayouts )const;
+
+		private:
+			FrameGraph & m_graph;
+			GraphContext & m_context;
+			std::map< ImageId, VkImage > m_images;
+			std::map< ImageViewId, VkImageView > m_imageViews;
+			LayoutStateMap m_viewsStates;
+			ViewsLayouts m_viewsLayouts;
+			AccessStateMap m_bufferStates;
+			BuffersLayouts m_buffersLayouts;
+			std::map< FramePass const *, RemainingPasses > m_passesLayouts;
+		};
 
 	private:
 		FrameGraph & m_graph;
@@ -162,11 +196,7 @@ namespace crg
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;
 		std::vector< RunnablePassPtr > m_passes;
-		std::map< ImageId, VkImage > m_images;
-		std::map< ImageViewId, VkImageView > m_imageViews;
-		std::vector< LayoutStateMap > m_viewsLayouts;
-		std::vector< AccessStateMap > m_buffersLayouts;
-		std::map< FramePass const *, RemainingPasses > m_passesLayouts;
+		std::unique_ptr< LayoutsCache > m_layouts;
 		uint32_t m_maxPassCount{ 1u };
 		RecordContext::GraphIndexMap m_states;
 	};
