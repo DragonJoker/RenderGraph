@@ -79,7 +79,7 @@ namespace crg
 		VkRenderPass m_renderPass{};
 		mutable std::vector< VkFramebuffer > m_frameBuffers;
 		VkRect2D m_renderArea{};
-		VkImageViewArray m_attachments;
+		std::vector< Attachment const * > m_attachments;
 		uint32_t m_layers{};
 		std::vector< VkClearValue > m_clearValues;
 		std::vector< Entry > m_attaches;
