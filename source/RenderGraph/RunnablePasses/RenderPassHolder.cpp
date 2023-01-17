@@ -274,7 +274,7 @@ namespace crg
 				|| attach.isStencilAttach() )
 			{
 				auto view = attach.view();
-				m_attachments.push_back( m_graph.createImageView( view ) );
+				m_attachments.push_back( &attach );
 				width = std::max( width
 					, view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel );
 				height = std::max( height
@@ -294,12 +294,19 @@ namespace crg
 
 		if ( !*frameBuffer )
 		{
+			VkImageViewArray attachments;
+
+			for ( auto & attach : m_attachments )
+			{
+				attachments.push_back( m_graph.createImageView( attach->view( passIndex ) ) );
+			}
+
 			VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
 				, nullptr
 				, 0u
 				, m_renderPass
-				, uint32_t( m_attachments.size() )
-				, m_attachments.data()
+				, uint32_t( attachments.size() )
+				, attachments.data()
 				, m_renderArea.extent.width
 				, m_renderArea.extent.height
 				, m_layers };
