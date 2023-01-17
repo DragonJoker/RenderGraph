@@ -53,8 +53,8 @@ namespace crg
 		, uint32_t maxPassCount )
 	{
 		Logger::logDebug( m_graph.getName() + " - Creating layouts" );
-		m_viewsLayouts.resize( maxPassCount, std::make_pair( LayoutStateMap{}, false ) );
-		m_buffersLayouts.resize( maxPassCount, std::make_pair( AccessStateMap{}, false ) );
+		m_viewsLayouts.resize( maxPassCount );
+		m_buffersLayouts.resize( maxPassCount );
 
 		Logger::logDebug( m_graph.getName() + " - Initialising nodes layouts" );
 		auto remainingCount = maxPassCount;
@@ -84,7 +84,7 @@ namespace crg
 		assert( it->second.views.size() >= passIndex );
 		auto & viewsLayouts = *it->second.views[passIndex];
 		doInitialiseLayout( viewsLayouts );
-		return viewsLayouts.first;
+		return *viewsLayouts;
 	}
 
 	AccessStateMap & RunnableGraph::LayoutsCache::getBuffersLayout( FramePass const & pass
@@ -95,7 +95,7 @@ namespace crg
 		assert( it->second.buffers.size() >= passIndex );
 		auto & buffersLayouts = *it->second.buffers[passIndex];
 		doInitialiseLayout( buffersLayouts );
-		return buffersLayouts.first;
+		return *buffersLayouts;
 	}
 
 	VkImage RunnableGraph::LayoutsCache::createImage( ImageId const & image )
@@ -216,15 +216,15 @@ namespace crg
 		}
 	}
 
-	void RunnableGraph::LayoutsCache::doInitialiseLayout( ViewsLayoutInit & viewsLayouts )const
+	void RunnableGraph::LayoutsCache::doInitialiseLayout( ViewsLayoutPtr & viewsLayouts )const
 	{
-		if ( !viewsLayouts.second )
+		if ( !viewsLayouts )
 		{
-			viewsLayouts.second = true;
+			viewsLayouts = std::make_unique< ViewsLayout >();
 
 			for ( auto & srcLayers : m_viewsStates )
 			{
-				LayerLayoutStates & dstLayers = viewsLayouts.first.emplace( srcLayers.first, LayerLayoutStates{} ).first->second;
+				LayerLayoutStates & dstLayers = viewsLayouts->emplace( srcLayers.first, LayerLayoutStates{} ).first->second;
 
 				for ( auto & srcMips : srcLayers.second )
 				{
@@ -239,15 +239,15 @@ namespace crg
 		}
 	}
 
-	void RunnableGraph::LayoutsCache::doInitialiseLayout( BuffersLayoutInit & buffersLayouts )const
+	void RunnableGraph::LayoutsCache::doInitialiseLayout( BuffersLayoutPtr & buffersLayouts )const
 	{
-		if ( !buffersLayouts.second )
+		if ( !buffersLayouts )
 		{
-			buffersLayouts.second = true;
+			buffersLayouts = std::make_unique< BuffersLayout >();
 
 			for ( auto & srcState : m_bufferStates )
 			{
-				buffersLayouts.first.emplace( srcState );
+				buffersLayouts->emplace( srcState );
 			}
 		}
 	}

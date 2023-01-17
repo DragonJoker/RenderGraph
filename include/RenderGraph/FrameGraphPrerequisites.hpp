@@ -155,10 +155,12 @@ namespace crg
 	using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
 	using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
 	using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
-	using ViewsLayoutInit = std::pair< LayoutStateMap, bool >;
-	using BuffersLayoutInit = std::pair< AccessStateMap, bool >;
-	using ViewsLayouts = std::vector< ViewsLayoutInit >;
-	using BuffersLayouts = std::vector< BuffersLayoutInit >;
+	using ViewsLayout = LayoutStateMap;
+	using BuffersLayout = AccessStateMap;
+	using ViewsLayoutPtr = std::unique_ptr< ViewsLayout >;
+	using BuffersLayoutPtr = std::unique_ptr< BuffersLayout >;
+	using ViewsLayouts = std::vector< ViewsLayoutPtr >;
+	using BuffersLayouts = std::vector< BuffersLayoutPtr >;
 
 	using ViewLayoutIterators = std::vector< ViewsLayouts::iterator >;
 	using BufferLayoutIterators = std::vector< BuffersLayouts::iterator >;

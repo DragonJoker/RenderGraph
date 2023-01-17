@@ -172,8 +172,8 @@ namespace crg
 			void doCreateImageViews();
 			void doRegisterViews( crg::FramePass const & pass );
 			void doRegisterBuffers( crg::FramePass const & pass );
-			void doInitialiseLayout( ViewsLayoutInit & viewsLayouts )const;
-			void doInitialiseLayout( BuffersLayoutInit & buffersLayouts )const;
+			void doInitialiseLayout( ViewsLayoutPtr & viewsLayouts )const;
+			void doInitialiseLayout( BuffersLayoutPtr & buffersLayouts )const;
 
 		private:
 			FrameGraph & m_graph;
