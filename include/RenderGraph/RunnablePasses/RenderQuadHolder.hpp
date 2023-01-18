@@ -61,7 +61,6 @@ namespace crg
 
 	private:
 		rq::ConfigData m_config;
-		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		PipelineHolder m_pipeline;

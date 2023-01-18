@@ -48,7 +48,6 @@ namespace crg
 
 	private:
 		rm::ConfigData m_config;
-		FramePass const & m_pass;
 		GraphContext & m_context;
 		PipelineHolder m_pipeline;
 		uint32_t m_maxPassCount;

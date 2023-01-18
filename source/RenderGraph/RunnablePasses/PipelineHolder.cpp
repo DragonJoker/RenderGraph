@@ -28,12 +28,12 @@ namespace crg
 	{
 		if ( m_baseConfig.m_programCreator.create )
 		{
-			m_pipelines.resize( m_baseConfig.m_programCreator.maxCount );
+			m_pipelines.resize( m_baseConfig.m_programCreator.maxCount, VkPipeline{} );
 			m_baseConfig.m_programs.resize( m_baseConfig.m_programCreator.maxCount );
 		}
 		else
 		{
-			m_pipelines.resize( m_baseConfig.m_programs.size() );
+			m_pipelines.resize( m_baseConfig.m_programs.size(), VkPipeline{} );
 		}
 
 		m_descriptorSets.resize( maxPassCount );
@@ -61,6 +61,7 @@ namespace crg
 			if ( descriptorSet.set )
 			{
 				crgUnregisterObject( m_context, descriptorSet.set );
+				descriptorSet.writes.clear();
 				descriptorSet.set = {};
 			}
 		}
@@ -76,11 +77,14 @@ namespace crg
 
 		for ( auto & pipeline : m_pipelines )
 		{
-			crgUnregisterObject( m_context, pipeline );
-			m_context.vkDestroyPipeline( m_context.device
-				, pipeline
-				, m_context.allocator );
-			pipeline = {};
+			if ( pipeline != VkPipeline{} )
+			{
+				crgUnregisterObject( m_context, pipeline );
+				m_context.vkDestroyPipeline( m_context.device
+					, pipeline
+					, m_context.allocator );
+				pipeline = {};
+			}
 		}
 
 		if ( m_pipelineLayout )
@@ -129,6 +133,52 @@ namespace crg
 
 		assert( m_pipelines.size() > index );
 		return m_pipelines[index];
+	}
+
+	void PipelineHolder::createPipeline( uint32_t index
+		, std::string const & name
+		, VkGraphicsPipelineCreateInfo createInfo )
+	{
+		auto & pipeline = getPipeline( index );
+		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
+			, m_context.cache
+			, 1u
+			, &createInfo
+			, m_context.allocator
+			, &pipeline );
+		crg::checkVkResult( res, name + " - Pipeline creation" );
+		crgRegisterObject( m_context, name, pipeline );
+	}
+
+	void PipelineHolder::createPipeline( uint32_t index
+		, VkGraphicsPipelineCreateInfo createInfo )
+	{
+		createPipeline( index
+			, m_pass.getGroupName()
+			, std::move( createInfo ) );
+	}
+
+	void PipelineHolder::createPipeline( uint32_t index
+		, std::string const & name
+		, VkComputePipelineCreateInfo createInfo )
+	{
+		auto & pipeline = getPipeline( index );
+		auto res = m_context.vkCreateComputePipelines( m_context.device
+			, m_context.cache
+			, 1u
+			, &createInfo
+			, m_context.allocator
+			, &pipeline );
+		checkVkResult( res, name + " - Pipeline creation" );
+		crgRegisterObject( m_context, name, pipeline );
+	}
+
+	void PipelineHolder::createPipeline( uint32_t index
+		, VkComputePipelineCreateInfo createInfo )
+	{
+		createPipeline( index
+			, m_pass.getGroupName()
+			, std::move( createInfo ) );
 	}
 
 	void PipelineHolder::recordInto( RecordContext & context
