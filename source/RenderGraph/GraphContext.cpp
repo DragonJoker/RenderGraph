@@ -339,7 +339,7 @@ namespace crg
 		stream << "Created " << typeName
 			<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
 			<< " - " << objectName;
-		Logger::logDebug( stream.str() );
+		Logger::logTrace( stream.str() );
 		std::stringstream callStack;
 
 		if ( m_callstackCallback )
@@ -391,8 +391,26 @@ namespace crg
 		{
 			std::unique_lock< std::mutex > lock{ m_mutex };
 			auto it = m_allocated.find( size_t( object ) );
-			assert( it != m_allocated.end() );
-			m_allocated.erase( it );
+
+			if ( it != m_allocated.end() )
+			{
+				std::stringstream stream;
+				stream.imbue( std::locale{ "C" } );
+				stream << "Destroyed " << it->second.type
+					<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
+					<< " - " << it->second.name;
+				Logger::logTrace( stream.str() );
+				m_allocated.erase( it );
+			}
+			else
+			{
+				std::stringstream stream;
+				stream.imbue( std::locale{ "C" } );
+				stream << "Destroyed Unknown"
+					<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
+					<< " - Unregistered";
+				Logger::logTrace( stream.str() );
+			}
 		}
 	}
 

@@ -25,7 +25,6 @@ namespace crg
 			, config.m_getCullMode ? std::move( *config.m_getCullMode ) : getDefaultV< GetCullModeCallback >()
 			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : getDefaultV< VertexBuffer >()
 			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : getDefaultV< IndexBuffer >() }
-		, m_pass{ pass }
 		, m_context{ context }
 		, m_pipeline{ pass
 			, context
@@ -173,7 +172,6 @@ namespace crg
 		}
 
 		auto & program = m_pipeline.getProgram( index );
-		auto & pipeline = m_pipeline.getPipeline( index );
 		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
 			, nullptr
 			, 0u
@@ -193,14 +191,7 @@ namespace crg
 			, 0u
 			, VkPipeline{}
 			, 0u };
-		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
-			, m_context.cache
-			, 1u
-			, &createInfo
-			, m_context.allocator
-			, &pipeline );
-		checkVkResult( res, m_pass.getGroupName() + " - Pipeline creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), pipeline );
+		m_pipeline.createPipeline( index, createInfo );
 
 	}
 

@@ -88,7 +88,6 @@ namespace crg
 		for ( auto index = 0u; index < m_ruConfig.maxPassCount; ++index )
 		{
 			auto & program = m_pipeline.getProgram( index );
-			auto & pipeline = m_pipeline.getPipeline( index );
 			VkComputePipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
 				, nullptr
 				, 0u
@@ -96,14 +95,7 @@ namespace crg
 				, m_pipeline.getPipelineLayout()
 				, VkPipeline{}
 				, 0u };
-			auto res = m_context.vkCreateComputePipelines( m_context.device
-				, m_context.cache
-				, 1u
-				, &createInfo
-				, m_context.allocator
-				, &pipeline );
-			checkVkResult( res, m_pass.getGroupName() + " - Pipeline creation" );
-			crgRegisterObject( m_context, m_pass.getGroupName(), pipeline );
+			m_pipeline.createPipeline( index, createInfo );
 		}
 	}
 }

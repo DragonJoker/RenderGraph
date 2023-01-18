@@ -24,7 +24,6 @@ namespace crg
 			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
 			, config.m_instances ? std::move( *config.m_instances ) : 1u }
-		, m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
 		, m_pipeline{ pass
@@ -158,7 +157,6 @@ namespace crg
 		}
 
 		auto & program = m_pipeline.getProgram( index );
-		auto & pipeline = m_pipeline.getPipeline( index );
 		VkGraphicsPipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO
 			, nullptr
 			, 0u
@@ -178,14 +176,7 @@ namespace crg
 			, 0u
 			, VkPipeline{}
 			, 0u };
-		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
-			, m_context.cache
-			, 1u
-			, &createInfo
-			, m_context.allocator
-			, &pipeline );
-		checkVkResult( res, m_pass.getGroupName() + " - Pipeline creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), pipeline );
+		m_pipeline.createPipeline( index, createInfo );
 	}
 
 	VkPipelineViewportStateCreateInfo RenderQuadHolder::doCreateViewportState( VkExtent2D const & renderSize

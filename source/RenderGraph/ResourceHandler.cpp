@@ -98,6 +98,7 @@ namespace crg
 				{
 					if ( vertexBuffer.second->memory )
 					{
+						crgUnregisterObject( context, vertexBuffer.second->memory );
 						context.vkFreeMemory( context.device
 							, vertexBuffer.second->memory
 							, context.allocator );
@@ -105,6 +106,7 @@ namespace crg
 
 					if ( vertexBuffer.second->buffer.buffer )
 					{
+						crgUnregisterObject( context, vertexBuffer.second->buffer.buffer );
 						context.vkDestroyBuffer( context.device
 							, vertexBuffer.second->buffer.buffer
 							, context.allocator );
@@ -118,6 +120,7 @@ namespace crg
 
 				for ( auto & sampler : m_samplers )
 				{
+					crgUnregisterObject( context, sampler.second );
 					context.vkDestroySampler( context.device
 						, sampler.second
 						, context.allocator );
@@ -299,6 +302,7 @@ namespace crg
 				return ires.first->second;
 			}
 
+			std::string suffix = "_" + std::to_string( ires.first->first );
 			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
 				, nullptr
 				, 0u
@@ -322,7 +326,7 @@ namespace crg
 				, context.allocator
 				, &ires.first->second );
 			checkVkResult( res, "Sampler creation" );
-			crgRegisterObject( context, "Sampler" + std::to_string( reshdl::makeHash( samplerDesc ) ), ires.first->second );
+			crgRegisterObject( context, "Sampler" + suffix, ires.first->second );
 		}
 
 		return ires.first->second;
@@ -339,6 +343,7 @@ namespace crg
 
 		if ( ires.second && context.device )
 		{
+			std::string suffix = "_" + std::to_string( hash );
 			auto & vertexBuffer = ires.first->second;
 			VkBufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO
 				, nullptr
@@ -353,7 +358,7 @@ namespace crg
 				, context.allocator
 				, &vertexBuffer->buffer.buffer );
 			checkVkResult( res, "Vertex buffer creation" );
-			crgRegisterObject( context, "QuadVertexBuffer", vertexBuffer->buffer.buffer );
+			crgRegisterObject( context, "QuadVertexBuffer" + suffix, vertexBuffer->buffer.buffer );
 
 			VkMemoryRequirements requirements{};
 			context.vkGetBufferMemoryRequirements( context.device
@@ -370,7 +375,7 @@ namespace crg
 				, context.allocator
 				, &vertexBuffer->memory );
 			checkVkResult( res, "Buffer memory allocation" );
-			crgRegisterObject( context, "QuadVertexMemory", vertexBuffer->memory );
+			crgRegisterObject( context, "QuadVertexMemory" + suffix, vertexBuffer->memory );
 
 			res = context.vkBindBufferMemory( context.device
 				, vertexBuffer->buffer.buffer
