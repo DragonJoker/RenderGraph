@@ -298,7 +298,6 @@ namespace crg
 			, uint32_t index
 			, RecordContext & context );
 
-		void doCreateCommandPool();
 		VkCommandBuffer doCreateCommandBuffer( std::string const & suffix );
 		void doCreateCommandBuffers();
 		void doCreateSemaphore();
@@ -327,7 +326,6 @@ namespace crg
 		Callbacks m_callbacks;
 		ru::Config m_ruConfig;
 		PipelineState m_pipelineState;
-		VkCommandPool m_commandPool{};
 		std::vector< CommandBuffer > m_commandBuffers;
 		VkSemaphore m_semaphore{};
 		Fence m_fence;

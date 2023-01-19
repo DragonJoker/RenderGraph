@@ -10,6 +10,7 @@ See LICENSE file in root folder.
 #pragma warning( disable: 4365 )
 #pragma warning( disable: 5262 )
 #include <algorithm>
+#include <functional>
 #include <map>
 #include <memory>
 #include <string>
@@ -56,6 +57,7 @@ namespace crg
 	class RecordContext;
 	class ResourceHandler;
 	class RunnableGraph;
+	class RunnableLayoutsCache;
 	class RunnablePass;
 
 	class ImageCopy;
@@ -166,6 +168,31 @@ namespace crg
 	using BufferLayoutIterators = std::vector< BuffersLayouts::iterator >;
 
 	class RecordContext;
+
+	template< typename VkTypeT >
+	struct ContextObjectT
+	{
+		ContextObjectT( GraphContext & ctx
+			, VkTypeT obj = {}
+			, std::function< void( GraphContext &, VkTypeT & ) > dtor = nullptr )
+			: context{ ctx }
+			, object{ obj }
+			, destroy{ dtor }
+		{
+		}
+
+		~ContextObjectT()noexcept
+		{
+			if ( destroy && object )
+			{
+				destroy( context, object );
+			}
+		}
+
+		GraphContext & context;
+		VkTypeT object;
+		std::function< void( GraphContext &, VkTypeT & ) > destroy;
+	};
 
 	struct Buffer
 	{
@@ -380,4 +407,7 @@ namespace crg
 		, std::vector< VkPipelineStageFlags > & dstStageMasks );
 	CRG_API void convert( SemaphoreWaitArray const & toWait
 		, std::vector< VkSemaphore > & semaphores );
+	CRG_API VkQueryPool createQueryPool( GraphContext & context
+		, std::string const & name
+		, uint32_t passesCount );
 }

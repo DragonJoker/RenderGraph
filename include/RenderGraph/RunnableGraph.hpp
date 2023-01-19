@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 
 #include "GraphContext.hpp"
 #include "FrameGraph.hpp"
+#include "RunnableLayoutsCache.hpp"
 #include "RunnablePass.hpp"
 
 namespace crg
@@ -138,65 +139,34 @@ namespace crg
 			return m_transitions;
 		}
 
-	private:
-		struct RemainingPasses
+		VkCommandPool getCommandPool()const
 		{
-			uint32_t count;
-			ViewLayoutIterators views;
-			BufferLayoutIterators buffers;
-		};
+			return m_commandPool.object;
+		}
 
-		class LayoutsCache
+		VkQueryPool getTimerQueryPool()const
 		{
-		public:
-			LayoutsCache( FrameGraph & graph
-				, GraphContext & context
-				, FramePassArray & passes );
+			return m_timerQueries.object;
+		}
 
-			void registerPass( FramePass const & pass
-				, uint32_t remainingPassCount );
-			void initialise( GraphNodePtrArray const & nodes
-				, std::vector< RunnablePassPtr > const & passes
-				, uint32_t maxPassCount );
-
-			LayoutStateMap & getViewsLayout( FramePass const & pass
-				, uint32_t passIndex );
-			AccessStateMap & getBuffersLayout( FramePass const & pass
-				, uint32_t passIndex );
-
-			VkImage createImage( ImageId const & image );
-			VkImageView createImageView( ImageViewId const & view );
-
-		private:
-			void doCreateImages();
-			void doCreateImageViews();
-			void doRegisterViews( crg::FramePass const & pass );
-			void doRegisterBuffers( crg::FramePass const & pass );
-			void doInitialiseLayout( ViewsLayoutPtr & viewsLayouts )const;
-			void doInitialiseLayout( BuffersLayoutPtr & buffersLayouts )const;
-
-		private:
-			FrameGraph & m_graph;
-			GraphContext & m_context;
-			std::map< ImageId, VkImage > m_images;
-			std::map< ImageViewId, VkImageView > m_imageViews;
-			LayoutStateMap m_viewsStates;
-			ViewsLayouts m_viewsLayouts;
-			AccessStateMap m_bufferStates;
-			BuffersLayouts m_buffersLayouts;
-			std::map< FramePass const *, RemainingPasses > m_passesLayouts;
-		};
+		uint32_t & getTimerQueryOffset()
+		{
+			return m_timerQueryOffset;
+		}
 
 	private:
 		FrameGraph & m_graph;
 		GraphContext & m_context;
+		std::unique_ptr< RunnableLayoutsCache > m_layouts;
 		FramePassDependencies m_inputTransitions;
 		FramePassDependencies m_outputTransitions;
 		AttachmentTransitions m_transitions;
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;
+		ContextObjectT< VkQueryPool > m_timerQueries;
+		uint32_t m_timerQueryOffset{};
+		ContextObjectT< VkCommandPool > m_commandPool;
 		std::vector< RunnablePassPtr > m_passes;
-		std::unique_ptr< LayoutsCache > m_layouts;
 		uint32_t m_maxPassCount{ 1u };
 		RecordContext::GraphIndexMap m_states;
 	};
