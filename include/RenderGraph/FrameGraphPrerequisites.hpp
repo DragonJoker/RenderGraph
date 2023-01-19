@@ -49,6 +49,7 @@ namespace crg
 	struct Texcoord;
 	struct WriteDescriptorSet;
 
+	class ContextResourcesCache;
 	class Exception;
 	class Fence;
 	class FrameGraph;
@@ -56,6 +57,7 @@ namespace crg
 	class GraphVisitor;
 	class RecordContext;
 	class ResourceHandler;
+	class ResourcesCache;
 	class RunnableGraph;
 	class RunnableLayoutsCache;
 	class RunnablePass;

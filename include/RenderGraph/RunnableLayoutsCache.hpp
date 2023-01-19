@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 
 #include "GraphContext.hpp"
 #include "FrameGraph.hpp"
+#include "ResourceHandler.hpp"
 
 namespace crg
 {
@@ -15,7 +16,6 @@ namespace crg
 		CRG_API RunnableLayoutsCache( FrameGraph & graph
 			, GraphContext & context
 			, FramePassArray & passes );
-		CRG_API ~RunnableLayoutsCache();
 
 		CRG_API void registerPass( FramePass const & pass
 			, uint32_t remainingPassCount );
@@ -30,6 +30,11 @@ namespace crg
 
 		CRG_API VkImage createImage( ImageId const & image );
 		CRG_API VkImageView createImageView( ImageViewId const & view );
+
+		ContextResourcesCache & getResources()
+		{
+			return m_resources;
+		}
 
 	private:
 		void doCreateImages();
@@ -49,9 +54,7 @@ namespace crg
 
 	private:
 		FrameGraph & m_graph;
-		GraphContext & m_context;
-		std::map< ImageId, VkImage > m_images;
-		std::map< ImageViewId, VkImageView > m_imageViews;
+		ContextResourcesCache m_resources;
 		LayoutStateMap m_viewsStates;
 		ViewsLayouts m_viewsLayouts;
 		AccessStateMap m_bufferStates;

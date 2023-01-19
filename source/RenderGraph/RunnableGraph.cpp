@@ -25,7 +25,7 @@ namespace crg
 
 	namespace rungrf
 	{
-		VkCommandPool createCommandPool( GraphContext & context
+		static VkCommandPool createCommandPool( GraphContext & context
 			, std::string const & name )
 		{
 			VkCommandPool result{};
@@ -95,18 +95,18 @@ namespace crg
 		, m_rootNode{ std::move( rootNode ) }
 		, m_timerQueries{ context
 			, createQueryPool( context, graph.getName() + "TimerQueries", uint32_t( m_nodes.size() * 2u ) )
-			, []( GraphContext & context, VkQueryPool & object )
+			, []( GraphContext & ctx, VkQueryPool & object )
 			{
-				crgUnregisterObject( context, object );
-				context.vkDestroyQueryPool( context.device, object, context.allocator );
+				crgUnregisterObject( ctx, object );
+				ctx.vkDestroyQueryPool( ctx.device, object, ctx.allocator );
 				object = {};
 			} }
 		, m_commandPool{ context
 			, rungrf::createCommandPool( context, graph.getName() )
-			, []( GraphContext & context, VkCommandPool & object )
+			, []( GraphContext & ctx, VkCommandPool & object )
 			{
-				crgUnregisterObject( context, object );
-				context.vkDestroyCommandPool( context.device, object, context.allocator );
+				crgUnregisterObject( ctx, object );
+				ctx.vkDestroyCommandPool( ctx.device, object, ctx.allocator );
 				object = {};
 			} }
 	{
@@ -138,7 +138,7 @@ namespace crg
 	void RunnableGraph::record()
 	{
 		m_states.clear();
-		RecordContext recordContext{ m_graph.getHandler(), m_context };
+		RecordContext recordContext{ m_layouts->getResources() };
 
 		for ( auto & dependency : m_graph.getDependencies() )
 		{

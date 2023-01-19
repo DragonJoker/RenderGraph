@@ -16,6 +16,9 @@ namespace crg
 {
 	class ResourceHandler
 	{
+		template< typename ValueT >
+		using CreatedT = std::pair< ValueT, bool >;
+
 	public:
 		CRG_API ResourceHandler() = default;
 		CRG_API ResourceHandler( ResourceHandler const & ) = delete;
@@ -30,9 +33,9 @@ namespace crg
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
 		CRG_API ImageId findImageId( uint32_t id )const;
 
-		CRG_API VkImage createImage( GraphContext & context
+		CRG_API CreatedT< VkImage > createImage( GraphContext & context
 			, ImageId imageId );
-		CRG_API VkImageView createImageView( GraphContext & context
+		CRG_API CreatedT< VkImageView > createImageView( GraphContext & context
 			, ImageViewId viewId );
 		CRG_API VkSampler createSampler( GraphContext & context
 			, SamplerDesc const & samplerDesc );
@@ -64,5 +67,77 @@ namespace crg
 		std::unordered_map< size_t, VkSampler > m_samplers;
 		std::mutex m_buffersMutex;
 		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
+	};
+
+	class ContextResourcesCache
+	{
+	public:
+		CRG_API ContextResourcesCache( ContextResourcesCache const & ) = delete;
+		CRG_API ContextResourcesCache & operator=( ContextResourcesCache const & ) = delete;
+		CRG_API ContextResourcesCache( ContextResourcesCache && )noexcept = default;
+		CRG_API ContextResourcesCache & operator=( ContextResourcesCache && ) = delete;
+
+		CRG_API ContextResourcesCache( ResourceHandler & handler
+			, GraphContext & context );
+		CRG_API ~ContextResourcesCache()noexcept;
+
+		CRG_API VkImage createImage( ImageId const & imageId );
+		CRG_API VkImageView createImageView( ImageViewId const & viewId );
+		CRG_API bool destroyImage( ImageId const & imageId );
+		CRG_API bool destroyImageView( ImageViewId const & viewId );
+
+		GraphContext * operator->()const noexcept
+		{
+			return &m_context;
+		}
+
+		operator GraphContext & ()const noexcept
+		{
+			return m_context;
+		}
+
+		ResourceHandler & getHandler()const
+		{
+			return m_handler;
+		}
+
+	private:
+		using VkImageIdMap = std::map< ImageId, VkImage >;
+		using VkImageViewIdMap = std::map< ImageViewId, VkImageView >;
+
+		ResourceHandler & m_handler;
+		GraphContext & m_context;
+		VkImageIdMap m_images;
+		VkImageViewIdMap m_imageViews;
+	};
+
+	class ResourcesCache
+	{
+	public:
+		CRG_API ResourcesCache( ResourceHandler & handler );
+
+		CRG_API VkImage createImage( GraphContext & context
+			, ImageId const & imageId );
+		CRG_API VkImageView createImageView( GraphContext & context
+			, ImageViewId const & viewId );
+		CRG_API bool destroyImage( ImageId const & imageId );
+		CRG_API bool destroyImageView( ImageViewId const & viewId );
+		CRG_API bool destroyImage( GraphContext & context
+			, ImageId const & imageId );
+		CRG_API bool destroyImageView( GraphContext & context
+			, ImageViewId const & viewId );
+
+		CRG_API ContextResourcesCache & getContextCache( GraphContext & context );
+
+		ResourceHandler & getHandler()const
+		{
+			return m_handler;
+		}
+
+	private:
+		using ContextCacheMap = std::unordered_map< GraphContext *, ContextResourcesCache >;
+
+		ResourceHandler & m_handler;
+		ContextCacheMap m_caches;
 	};
 }

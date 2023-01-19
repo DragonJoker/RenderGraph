@@ -597,6 +597,7 @@ namespace crg
 			, VkMemoryPropertyFlags requirements )const;
 
 	private:
+		friend class ResourceHandler;
 		struct ObjectAllocation
 		{
 			std::string type;

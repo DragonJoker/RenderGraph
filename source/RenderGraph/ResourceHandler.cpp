@@ -19,6 +19,8 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	//*********************************************************************************************
+
 	namespace reshdl
 	{
 		struct Quad
@@ -69,6 +71,8 @@ namespace crg
 			return result;
 		}
 	}
+
+	//*********************************************************************************************
 
 	ResourceHandler::~ResourceHandler()
 	{
@@ -205,14 +209,15 @@ namespace crg
 			: ImageId{};
 	}
 
-	VkImage ResourceHandler::createImage( GraphContext & context
+	ResourceHandler::CreatedT< VkImage > ResourceHandler::createImage( GraphContext & context
 		, ImageId imageId )
 	{
 		if ( !context.device )
 		{
-			return VkImage{};
+			return {};
 		}
 
+		bool created{};
 		std::unique_lock< std::mutex > lock( m_imagesMutex );
 		auto ires = m_images.emplace( imageId, std::pair< VkImage, VkDeviceMemory >{} );
 
@@ -253,25 +258,27 @@ namespace crg
 				, memory
 				, 0u );
 			checkVkResult( res, "Image memory binding" );
+			created = true;
 		}
 
-		return ires.first->second.first;
+		return { ires.first->second.first, created };
 	}
 
-	VkImageView ResourceHandler::createImageView( GraphContext & context
+	ResourceHandler::CreatedT< VkImageView > ResourceHandler::createImageView( GraphContext & context
 		, ImageViewId view )
 	{
 		if ( !context.device )
 		{
-			return VkImageView{};
+			return {};
 		}
 
+		bool created{};
 		std::unique_lock< std::mutex > lock( m_viewsMutex );
 		auto ires = m_imageViews.emplace( view, VkImageView{} );
 
 		if ( ires.second )
 		{
-			auto image = createImage( context, view.data->image );
+			auto image = createImage( context, view.data->image ).first;
 			auto createInfo = reshdl::convert( *view.data, image );
 			auto res = context.vkCreateImageView( context.device
 				, &createInfo
@@ -279,9 +286,10 @@ namespace crg
 				, &ires.first->second );
 			checkVkResult( res, "ImageView creation" );
 			crgRegisterObjectName( context, view.data->name, ires.first->second );
+			created = true;
 		}
 
-		return ires.first->second;
+		return { ires.first->second, created };
 	}
 
 	VkSampler ResourceHandler::createSampler( GraphContext & context
@@ -511,4 +519,147 @@ namespace crg
 			m_imageViews.erase( it );
 		}
 	}
+
+	//*********************************************************************************************
+
+	ContextResourcesCache::ContextResourcesCache( ResourceHandler & handler
+		, GraphContext & context )
+		: m_handler{ handler }
+		, m_context{ context }
+	{
+	}
+
+	ContextResourcesCache::~ContextResourcesCache()noexcept
+	{
+		for ( auto & imageViewIt : m_imageViews )
+		{
+			m_handler.destroyImageView( m_context, imageViewIt.first );
+		}
+
+		for ( auto & imageIt : m_images )
+		{
+			m_handler.destroyImage( m_context, imageIt.first );
+		}
+	}
+
+	VkImage ContextResourcesCache::createImage( ImageId const & image )
+	{
+		auto [result, created] = m_handler.createImage( m_context, image );
+
+		if ( created )
+		{
+			m_images[image] = result;
+		}
+
+		return result;
+	}
+
+	VkImageView ContextResourcesCache::createImageView( ImageViewId const & view )
+	{
+		auto [result, created] = m_handler.createImageView( m_context, view );
+
+		if ( created )
+		{
+			m_imageViews[view] = result;
+		}
+
+		return result;
+	}
+
+	bool ContextResourcesCache::destroyImage( ImageId const & imageId )
+	{
+		auto it = m_images.find( imageId );
+		auto result = it != m_images.end();
+
+		if ( result )
+		{
+			m_handler.destroyImage( m_context, imageId );
+		}
+
+		return result;
+	}
+
+	bool ContextResourcesCache::destroyImageView( ImageViewId const & viewId )
+	{
+		auto it = m_imageViews.find( viewId );
+		auto result = it != m_imageViews.end();
+
+		if ( result )
+		{
+			m_handler.destroyImageView( m_context, viewId );
+		}
+
+		return result;
+	}
+
+	//*********************************************************************************************
+
+	ResourcesCache::ResourcesCache( ResourceHandler & handler )
+		: m_handler{ handler }
+	{
+	}
+
+	VkImage ResourcesCache::createImage( GraphContext & context
+		, ImageId const & imageId )
+	{
+		auto & cache = getContextCache( context );
+		return cache.createImage( imageId );
+	}
+
+	VkImageView ResourcesCache::createImageView( GraphContext & context
+		, ImageViewId const & viewId )
+	{
+		auto & cache = getContextCache( context );
+		return cache.createImageView( viewId );
+	}
+
+	bool ResourcesCache::destroyImage( ImageId const & imageId )
+	{
+		auto it = std::find_if( m_caches.begin()
+			, m_caches.end()
+			, [&imageId]( ContextCacheMap::value_type & lookup )
+			{
+				return lookup.second.destroyImage( imageId );
+			} );
+		return it != m_caches.end();
+	}
+
+	bool ResourcesCache::destroyImageView( ImageViewId const & viewId )
+	{
+		auto it = std::find_if( m_caches.begin()
+			, m_caches.end()
+			, [&viewId]( ContextCacheMap::value_type & lookup )
+			{
+				return lookup.second.destroyImageView( viewId );
+			} );
+		return it != m_caches.end();
+	}
+
+	bool ResourcesCache::destroyImage( GraphContext & context
+		, ImageId const & imageId )
+	{
+		auto & cache = getContextCache( context );
+		return cache.destroyImage( imageId );
+	}
+
+	bool ResourcesCache::destroyImageView( GraphContext & context
+		, ImageViewId const & viewId )
+	{
+		auto & cache = getContextCache( context );
+		return cache.destroyImageView( viewId );
+	}
+
+	ContextResourcesCache & ResourcesCache::getContextCache( GraphContext & context )
+	{
+		auto it = m_caches.find( &context );
+
+		if ( it == m_caches.end() )
+		{
+			it = m_caches.emplace( &context, ContextResourcesCache{ m_handler, context } ).first;
+		}
+
+		return it->second;
+	}
+
+	//*********************************************************************************************
 }
