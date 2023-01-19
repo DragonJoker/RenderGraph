@@ -8,36 +8,6 @@ namespace crg
 	using namespace std::literals::chrono_literals;
 
 	//*********************************************************************************************
-	
-	namespace timer
-	{
-		static VkQueryPool createQueryPool( GraphContext & context
-			, std::string const & name
-			, uint32_t passesCount )
-		{
-			VkQueryPool result{};
-
-			if ( context.device )
-			{
-				VkQueryPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO
-					, nullptr
-					, 0u
-					, VK_QUERY_TYPE_TIMESTAMP
-					, 2u * passesCount
-					, 0u };
-				auto res = context.vkCreateQueryPool( context.device
-					, &createInfo
-					, context.allocator
-					, &result );
-				checkVkResult( res, ( name + " VkQueryPool creation" ).c_str() );
-				crgRegisterObject( context, name + "QueryPools", result );
-			}
-
-			return result;
-		}
-	}
-
-	//*********************************************************************************************
 
 	FramePassTimerBlock::FramePassTimerBlock( FramePassTimer & timer )
 		: m_timer{ &timer }
@@ -73,15 +43,35 @@ namespace crg
 
 	FramePassTimer::FramePassTimer( GraphContext & context
 		, std::string const & name
+		, VkQueryPool timerQueries
+		, uint32_t & baseQueryOffset
 		, uint32_t passesCount )
 		: m_context{ context }
 		, m_passesCount{ passesCount }
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }
-		, m_timerQuery{ timer::createQueryPool( context
+		, m_timerQueries{ timerQueries }
+		, m_baseQueryOffset{ baseQueryOffset }
+		, m_ownPool{ false }
+		, m_startedPasses( size_t( m_passesCount ), { false, false } )
+	{
+		baseQueryOffset += passesCount * 2u;
+	}
+
+	FramePassTimer::FramePassTimer( GraphContext & context
+		, std::string const & name
+		, uint32_t passesCount )
+		: m_context{ context }
+		, m_passesCount{ passesCount }
+		, m_name{ name }
+		, m_cpuTime{ 0ns }
+		, m_gpuTime{ 0ns }
+		, m_timerQueries{ createQueryPool( context
 			, name
-			, passesCount ) }
+			, passesCount * 2u ) }
+		, m_baseQueryOffset{ 0u }
+		, m_ownPool{ true }
 		, m_startedPasses( size_t( m_passesCount ), { false, false } )
 	{
 	}
@@ -90,11 +80,11 @@ namespace crg
 	{
 		onDestroy( *this );
 
-		if ( m_timerQuery )
+		if ( m_ownPool && m_timerQueries )
 		{
-			crgUnregisterObject( m_context, m_timerQuery );
+			crgUnregisterObject( m_context, m_timerQueries );
 			m_context.vkDestroyQueryPool( m_context.device
-				, m_timerQuery
+				, m_timerQueries
 				, m_context.allocator );
 		}
 	}
@@ -131,13 +121,13 @@ namespace crg
 	{
 		assert( passIndex < m_passesCount );
 		m_context.vkCmdResetQueryPool( commandBuffer
-			, m_timerQuery
-			, passIndex * 2u
+			, m_timerQueries
+			, m_baseQueryOffset + passIndex * 2u
 			, 2u );
 		m_context.vkCmdWriteTimestamp( commandBuffer
 			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-			, m_timerQuery
-			, passIndex * 2u + 0u );
+			, m_timerQueries
+			, m_baseQueryOffset + passIndex * 2u + 0u );
 	}
 
 	void FramePassTimer::endPass( VkCommandBuffer commandBuffer
@@ -146,8 +136,8 @@ namespace crg
 		assert( passIndex < m_passesCount );
 		m_context.vkCmdWriteTimestamp( commandBuffer
 			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-			, m_timerQuery
-			, passIndex * 2u + 1u );
+			, m_timerQueries
+			, m_baseQueryOffset + passIndex * 2u + 1u );
 	}
 
 	void FramePassTimer::retrieveGpuTime()
@@ -164,8 +154,8 @@ namespace crg
 			{
 				std::vector< uint64_t > values{ 0u, 0u };
 				m_context.vkGetQueryPoolResults( m_context.device
-					, m_timerQuery
-					, i * 2u
+					, m_timerQueries
+					, m_baseQueryOffset + i * 2u
 					, 2u
 					, sizeof( uint64_t ) * values.size()
 					, values.data()
@@ -191,13 +181,18 @@ namespace crg
 		if ( m_passesCount != count )
 		{
 			m_passesCount = count;
-			crgUnregisterObject( m_context, m_timerQuery );
-			m_context.vkDestroyQueryPool( m_context.device
-				, m_timerQuery
-				, m_context.allocator );
-			m_timerQuery = timer::createQueryPool( m_context
-				, m_name
-				, m_passesCount );
+
+			if ( m_ownPool )
+			{
+				crgUnregisterObject( m_context, m_timerQueries );
+				m_context.vkDestroyQueryPool( m_context.device
+					, m_timerQueries
+					, m_context.allocator );
+				m_timerQueries = createQueryPool( m_context
+					, m_name
+					, m_passesCount );
+			}
+
 			m_startedPasses.resize( m_passesCount );
 		}
 	}

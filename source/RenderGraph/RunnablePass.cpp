@@ -213,7 +213,7 @@ namespace crg
 		, m_ruConfig{ std::move( ruConfig ) }
 		, m_pipelineState{ m_callbacks.getPipelineState() }
 		, m_fence{ context, m_pass.getGroupName(), { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
-		, m_timer{ context, m_pass.getGroupName(), 1u }
+		, m_timer{ context, pass.getGroupName(), graph.getTimerQueryPool(), graph.getTimerQueryOffset() }
 	{
 		m_commandBuffers.resize( m_ruConfig.maxPassCount );
 	}
@@ -234,18 +234,10 @@ namespace crg
 			{
 				crgUnregisterObject( m_context, cb.commandBuffer );
 				m_context.vkFreeCommandBuffers( m_context.device
-					, m_commandPool
+					, m_graph.getCommandPool()
 					, 1u
 					, &cb.commandBuffer );
 			}
-		}
-
-		if ( m_commandPool )
-		{
-			crgUnregisterObject( m_context, m_commandPool );
-			m_context.vkDestroyCommandPool( m_context.device
-				, m_commandPool
-				, m_context.allocator );
 		}
 	}
 
@@ -379,11 +371,6 @@ namespace crg
 		, uint32_t index
 		, RecordContext & context )
 	{
-		if ( !m_commandPool )
-		{
-			doCreateCommandPool();
-		}
-
 		if ( !enabled.commandBuffer )
 		{
 			enabled.commandBuffer = doCreateCommandBuffer( std::string{} );
@@ -587,25 +574,6 @@ namespace crg
 		return it->second;
 	}
 
-	void RunnablePass::doCreateCommandPool()
-	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
-			, nullptr
-			, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
-			, 0 };
-		auto res = m_context.vkCreateCommandPool( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_commandPool );
-		checkVkResult( res, m_pass.getGroupName() + " - CommandPool creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_commandPool );
-	}
-
 	VkCommandBuffer RunnablePass::doCreateCommandBuffer( std::string const & suffix )
 	{
 		VkCommandBuffer result{};
@@ -617,7 +585,7 @@ namespace crg
 
 		VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
 			, nullptr
-			, m_commandPool
+			, m_graph.getCommandPool()
 			, VK_COMMAND_BUFFER_LEVEL_PRIMARY
 			, 1u };
 		auto res = m_context.vkAllocateCommandBuffers( m_context.device

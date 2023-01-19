@@ -19,6 +19,7 @@ namespace crg
 	class FrameGraph
 	{
 		friend class RunnableGraph;
+		friend class RunnableLayoutsCache;
 
 	public:
 		/**

@@ -42,6 +42,25 @@ namespace crg
 
 	public:
 		/**
+		*\brief
+		*	Reserves queries from given pool.
+		*\param[in] device
+		*	The GPU device.
+		*\param[in] category
+		*	The render pass category.
+		*\param[in] name
+		*	The timer name.
+		*\param[in] passesCount
+		*	The number of render passes.
+		*/
+		CRG_API FramePassTimer( GraphContext & context
+			, std::string const & name
+			, VkQueryPool timerQueries
+			, uint32_t & baseQueryOffset
+			, uint32_t passesCount = 1u );
+		/**
+		*\brief
+		*	Owns its query pool.
 		*\param[in] device
 		*	The GPU device.
 		*\param[in] category
@@ -151,7 +170,9 @@ namespace crg
 		Nanoseconds m_cpuTime;
 		Nanoseconds m_gpuTime;
 		Nanoseconds m_subtracteGpuTime;
-		VkQueryPool m_timerQuery;
+		VkQueryPool m_timerQueries;
+		uint32_t m_baseQueryOffset{};
+		bool m_ownPool{};
 		std::vector< std::pair< bool, bool > > m_startedPasses;
 	};
 }
