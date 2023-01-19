@@ -2,6 +2,8 @@
 See LICENSE file in root folder.
 */
 #include "RenderGraph/RecordContext.hpp"
+
+#include "RenderGraph/Exception.hpp"
 #include "RenderGraph/ResourceHandler.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
@@ -124,10 +126,9 @@ namespace crg
 
 	//************************************************************************************************
 
-	RecordContext::RecordContext( ResourceHandler & handler
-		, GraphContext & context )
-		: m_handler{ &handler }
-		, m_context{ &context }
+	RecordContext::RecordContext( ContextResourcesCache & resources )
+		: m_handler{ &resources.getHandler() }
+		, m_resources{ &resources }
 		, m_prevPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
 		, m_currPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
 		, m_nextPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
@@ -136,7 +137,7 @@ namespace crg
 
 	RecordContext::RecordContext( ResourceHandler & handler )
 		: m_handler{ &handler }
-		, m_context{ nullptr }
+		, m_resources{ nullptr }
 	{
 	}
 
@@ -304,12 +305,14 @@ namespace crg
 		, VkImageLayout initialLayout
 		, LayoutState const & wantedState )
 	{
-		if ( !m_context->device )
+		auto & resources = getResources();
+
+		if( !resources->device )
 		{
 			return;
 		}
 
-		auto range = recctx::adaptRange( *m_context
+		auto range = recctx::adaptRange( *m_resources
 				, image.data->info.format
 				, subresourceRange );
 		auto from = getLayoutState( image
@@ -334,9 +337,9 @@ namespace crg
 				, wantedState.layout
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
-				, m_handler->createImage( *m_context, image )
+				, resources.createImage( image )
 				, range };
-			m_context->vkCmdPipelineBarrier( commandBuffer
+			resources->vkCmdPipelineBarrier( commandBuffer
 				, from.state.pipelineStage
 				, wantedState.state.pipelineStage
 				, VK_DEPENDENCY_BY_REGION_BIT
@@ -399,7 +402,9 @@ namespace crg
 		, VkPipelineStageFlags initialStage
 		, AccessState const & wantedState )
 	{
-		if ( !m_context->device )
+		auto & resources = getResources();
+
+		if ( !resources->device )
 		{
 			return;
 		}
@@ -424,7 +429,7 @@ namespace crg
 				, buffer
 				, subresourceRange.offset
 				, subresourceRange.size };
-			m_context->vkCmdPipelineBarrier( commandBuffer
+			resources->vkCmdPipelineBarrier( commandBuffer
 				, from.pipelineStage
 				, wantedState.pipelineStage
 				, VK_DEPENDENCY_BY_REGION_BIT
@@ -453,6 +458,11 @@ namespace crg
 			, wantedState );
 	}
 
+	GraphContext & RecordContext::getContext()const
+	{
+		return getResources();
+	}
+
 	LayoutState makeLayoutState( VkImageLayout layout )
 	{
 		return { layout
@@ -468,6 +478,7 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
+			auto & resources = recContext.getResources();
 			recContext.runImplicitTransition( commandBuffer
 				, index
 				, srcView );
@@ -488,10 +499,10 @@ namespace crg
 				, dstView.data->info.viewType
 				, dstView.data->info.subresourceRange
 				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
-			recContext.m_context->vkCmdCopyImage( commandBuffer
-				, recContext.m_handler->createImage( *recContext.m_context, srcView.data->image )
+			resources->vkCmdCopyImage( commandBuffer
+				, resources.createImage( srcView.data->image )
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				, resources.createImage( dstView.data->image )
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, 1u
 				, &region );
@@ -510,6 +521,7 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
+			auto & resources = recContext.getResources();
 			recContext.runImplicitTransition( commandBuffer
 				, index
 				, srcView );
@@ -531,10 +543,10 @@ namespace crg
 				, dstView.data->info.viewType
 				, dstView.data->info.subresourceRange
 				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
-			recContext.m_context->vkCmdBlitImage( commandBuffer
-				, recContext.m_handler->createImage( *recContext.m_context, srcView.data->image )
+			resources->vkCmdBlitImage( commandBuffer
+				, resources.createImage( srcView.data->image )
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				, resources.createImage( dstView.data->image )
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, 1u
 				, &region
@@ -548,6 +560,7 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
+			auto & resources = recContext.getResources();
 			auto dstView = attach.view( index );
 			recContext.memoryBarrier( commandBuffer
 				, dstView.data->image
@@ -558,8 +571,8 @@ namespace crg
 			if ( isColourFormat( getFormat( dstView ) ) )
 			{
 				auto colour = attach.image.clearValue.color;
-				recContext.m_context->vkCmdClearColorImage( commandBuffer
-					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				resources->vkCmdClearColorImage( commandBuffer
+					, resources.createImage( dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, &colour
 					, 1u
@@ -568,14 +581,25 @@ namespace crg
 			else
 			{
 				auto depthStencil = attach.image.clearValue.depthStencil;
-				recContext.m_context->vkCmdClearDepthStencilImage( commandBuffer
-					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				resources->vkCmdClearDepthStencilImage( commandBuffer
+					, resources.createImage( dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, &depthStencil
 					, 1u
 					, &dstView.data->info.subresourceRange );
 			}
 		};
+	}
+
+	ContextResourcesCache & RecordContext::getResources()const
+	{
+		if ( !m_resources )
+		{
+			assert( false );
+			CRG_Exception( "No resources available." );
+		}
+
+		return *m_resources;
 	}
 
 	RecordContext::ImplicitAction RecordContext::clearAttachment( ImageViewId dstView
@@ -585,6 +609,7 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
+			auto & resources = recContext.getResources();
 			recContext.memoryBarrier( commandBuffer
 				, dstView.data->image
 				, dstView.data->info.viewType
@@ -594,8 +619,8 @@ namespace crg
 			if ( isColourFormat( getFormat( dstView ) ) )
 			{
 				auto colour = clearValue.color;
-				recContext.m_context->vkCmdClearColorImage( commandBuffer
-					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				resources->vkCmdClearColorImage( commandBuffer
+					, resources.createImage( dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, &colour
 					, 1u
@@ -604,8 +629,8 @@ namespace crg
 			else
 			{
 				auto depthStencil = clearValue.depthStencil;
-				recContext.m_context->vkCmdClearDepthStencilImage( commandBuffer
-					, recContext.m_handler->createImage( *recContext.m_context, dstView.data->image )
+				resources->vkCmdClearDepthStencilImage( commandBuffer
+					, resources.createImage( dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, &depthStencil
 					, 1u

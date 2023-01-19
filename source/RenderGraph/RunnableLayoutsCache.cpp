@@ -25,7 +25,7 @@ namespace crg
 		, GraphContext & context
 		, FramePassArray & passes )
 		: m_graph{ graph }
-		, m_context{ context }
+		, m_resources{ graph.getHandler(), context }
 	{
 		Logger::logDebug( m_graph.getName() + " - Initialising resources" );
 
@@ -37,19 +37,6 @@ namespace crg
 
 		doCreateImages();
 		doCreateImageViews();
-	}
-
-	RunnableLayoutsCache::~RunnableLayoutsCache()
-	{
-		for ( auto & imageViewIt : m_imageViews )
-		{
-			m_graph.m_handler.destroyImageView( m_context, imageViewIt.first );
-		}
-
-		for ( auto & imageIt : m_images )
-		{
-			m_graph.m_handler.destroyImage( m_context, imageIt.first );
-		}
 	}
 
 	void RunnableLayoutsCache::registerPass( FramePass const & pass
@@ -110,25 +97,16 @@ namespace crg
 
 	VkImage RunnableLayoutsCache::createImage( ImageId const & image )
 	{
-		auto result = m_graph.m_handler.createImage( m_context, image );
-		m_images[image] = result;
-		return result;
+		return m_resources.createImage( image );
 	}
 
 	VkImageView RunnableLayoutsCache::createImageView( ImageViewId const & view )
 	{
-		auto result = m_graph.m_handler.createImageView( m_context, view );
-		m_imageViews[view] = result;
-		return result;
+		return m_resources.createImageView( view );
 	}
 
 	void RunnableLayoutsCache::doCreateImages()
 	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
 		for ( auto & img : m_graph.m_images )
 		{
 			createImage( img );
@@ -137,11 +115,6 @@ namespace crg
 
 	void RunnableLayoutsCache::doCreateImageViews()
 	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
 		for ( auto & view : m_graph.m_imageViews )
 		{
 			createImageView( view );

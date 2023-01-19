@@ -35,8 +35,7 @@ namespace crg
 		};
 
 	public:
-		CRG_API RecordContext( ResourceHandler & handler
-			, GraphContext & context );
+		CRG_API explicit RecordContext( ContextResourcesCache & resources );
 		CRG_API explicit RecordContext( ResourceHandler & handler );
 		/**
 		*\name	States
@@ -136,6 +135,8 @@ namespace crg
 			, AccessState const & wantedState );
 		//@}
 		//@}
+		CRG_API GraphContext & getContext()const;
+
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView
 			, VkExtent2D extent );
@@ -153,11 +154,6 @@ namespace crg
 		ResourceHandler & getHandler()const
 		{
 			return *m_handler;
-		}
-
-		GraphContext & getContext()const
-		{
-			return *m_context;
 		}
 
 		PassIndexArray const & getIndexState()const
@@ -181,8 +177,11 @@ namespace crg
 		}
 
 	private:
+		ContextResourcesCache & getResources()const;
+
+	private:
 		ResourceHandler * m_handler;
-		GraphContext * m_context;
+		ContextResourcesCache * m_resources;
 		std::map< uint32_t, LayerLayoutStates > m_images;
 		AccessStateMap m_buffers;
 		std::vector< ImplicitTransition > m_implicitTransitions;
