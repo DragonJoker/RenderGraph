@@ -11,9 +11,16 @@ See LICENSE file in root folder.
 #include <mutex>
 #pragma warning( pop )
 #include <unordered_map>
+#include <unordered_set>
 
 namespace crg
 {
+	struct Sampler
+	{
+		VkSampler sampler;
+		std::string name;
+	};
+
 	class ResourceHandler
 	{
 		template< typename ValueT >
@@ -27,8 +34,6 @@ namespace crg
 		CRG_API ResourceHandler & operator=( ResourceHandler && ) = delete;
 		CRG_API ~ResourceHandler();
 
-		CRG_API void clear( GraphContext & context );
-
 		CRG_API ImageId createImageId( ImageData const & img );
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
 		CRG_API ImageId findImageId( uint32_t id )const;
@@ -38,23 +43,23 @@ namespace crg
 		CRG_API CreatedT< VkImageView > createImageView( GraphContext & context
 			, ImageViewId viewId );
 		CRG_API VkSampler createSampler( GraphContext & context
+			, std::string const & suffix
 			, SamplerDesc const & samplerDesc );
-		CRG_API VertexBuffer const & createQuadTriVertexBuffer( GraphContext & context
+		CRG_API VertexBuffer const * createQuadTriVertexBuffer( GraphContext & context
+			, std::string const & suffix
 			, bool texCoords
 			, Texcoord const & config );
 		CRG_API void destroyImage( GraphContext & context
 			, ImageId imageId );
 		CRG_API void destroyImageView( GraphContext & context
 			, ImageViewId viewId );
+		CRG_API void destroySampler( GraphContext & context
+			, VkSampler sampler );
+		CRG_API void destroyVertexBuffer( GraphContext & context
+			, VertexBuffer const * buffer );
 
 		CRG_API VkImage getImage( ImageId const & image )const;
 		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
-
-	private:
-		CRG_API void doDestroyImage( GraphContext & context
-			, ImageId imageId );
-		CRG_API void doDestroyImageView( GraphContext & context
-			, ImageViewId viewId );
 
 	private:
 		mutable std::mutex m_imagesMutex;
@@ -64,9 +69,9 @@ namespace crg
 		ImageMemoryMap m_images;
 		ImageViewMap m_imageViews;
 		std::mutex m_samplersMutex;
-		std::unordered_map< size_t, VkSampler > m_samplers;
+		std::unordered_map< VkSampler, Sampler > m_samplers;
 		std::mutex m_buffersMutex;
-		std::unordered_map< size_t, VertexBufferPtr > m_vertexBuffers;
+		std::unordered_set< VertexBufferPtr > m_vertexBuffers;
 	};
 
 	class ContextResourcesCache
@@ -85,6 +90,10 @@ namespace crg
 		CRG_API VkImageView createImageView( ImageViewId const & viewId );
 		CRG_API bool destroyImage( ImageId const & imageId );
 		CRG_API bool destroyImageView( ImageViewId const & viewId );
+
+		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
+		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
+			, Texcoord const & config );
 
 		GraphContext * operator->()const noexcept
 		{
@@ -109,6 +118,8 @@ namespace crg
 		GraphContext & m_context;
 		VkImageIdMap m_images;
 		VkImageViewIdMap m_imageViews;
+		std::unordered_map< size_t, VkSampler > m_samplers;
+		std::unordered_map< size_t, VertexBuffer const * > m_vertexBuffers;
 	};
 
 	class ResourcesCache
@@ -126,6 +137,12 @@ namespace crg
 			, ImageId const & imageId );
 		CRG_API bool destroyImageView( GraphContext & context
 			, ImageViewId const & viewId );
+
+		CRG_API VkSampler createSampler( GraphContext & context
+			, SamplerDesc const & samplerDesc );
+		CRG_API VertexBuffer const & createQuadTriVertexBuffer( GraphContext & context
+			, bool texCoords
+			, Texcoord const & config );
 
 		CRG_API ContextResourcesCache & getContextCache( GraphContext & context );
 

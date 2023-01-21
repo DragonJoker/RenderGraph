@@ -249,14 +249,13 @@ namespace crg
 	VertexBuffer const & RunnableGraph::createQuadTriVertexBuffer( bool texCoords
 		, Texcoord const & config )
 	{
-		return m_graph.getHandler().createQuadTriVertexBuffer( m_context
-			, texCoords
+		return m_layouts->getResources().createQuadTriVertexBuffer( texCoords
 			, config );
 	}
 
 	VkSampler RunnableGraph::createSampler( SamplerDesc const & samplerDesc )
 	{
-		return m_graph.getHandler().createSampler( m_context, samplerDesc );
+		return m_layouts->getResources().createSampler( samplerDesc );
 	}
 
 	LayoutState RunnableGraph::getCurrentLayout( FramePass const & pass
