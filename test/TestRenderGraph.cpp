@@ -28,7 +28,7 @@ namespace
 			: crg::RunnablePass{ pass
 				, context
 				, graph
-				, { crg::RunnablePass::InitialiseCallback( [this](){ doInitialise(); } )
+				, { crg::RunnablePass::InitialiseCallback( [this]( uint32_t index ){ doInitialise( index ); } )
 					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) } }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -37,7 +37,7 @@ namespace
 		}
 
 	private:
-		void doInitialise()
+		void doInitialise( uint32_t index )
 		{
 			m_checkViews( m_testCounts
 				, m_pass
