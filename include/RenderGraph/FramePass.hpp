@@ -24,7 +24,7 @@ namespace crg
 		*\name
 		*	Construction.
 		*/
-		/**@[*/
+		/**@{*/
 		CRG_API FramePass( FramePassGroup const & group
 			, FrameGraph & graph
 			, uint32_t id
@@ -37,7 +37,7 @@ namespace crg
 		*\name
 		*	Dependencies.
 		*/
-		/**@[*/
+		/**@{*/
 		void addDependency( FramePass const & pass )
 		{
 			passDepends.push_back( &pass );
@@ -83,7 +83,7 @@ namespace crg
 		*\name
 		*	Buffer attachments.
 		*/
-		/**@[*/
+		/**@{*/
 		/**
 		*\brief
 		*	Creates a uniform buffer attachment.
@@ -139,7 +139,7 @@ namespace crg
 		*\name
 		*	Image view split/merge.
 		*/
-		/**@[*/
+		/**@{*/
 		/**
 		*\brief
 		*	Creates a view which represents the given views merging.
@@ -152,7 +152,7 @@ namespace crg
 		*\name
 		*	Image single-pass attachments.
 		*/
-		/**@[*/
+		/**@{*/
 		/**
 		*\brief
 		*	Creates a sampled image attachment.
@@ -285,7 +285,7 @@ namespace crg
 		*\name
 		*	Image multi-pass attachments.
 		*/
-		/**@[*/
+		/**@{*/
 		/**
 		*\brief
 		*	Creates a sampled image attachment.
@@ -474,7 +474,7 @@ namespace crg
 		*\name
 		*	Image specified attachments.
 		*/
-		/**@[*/
+		/**@{*/
 		/**
 		*\brief
 		*	Creates an input colour attachment.
@@ -702,7 +702,7 @@ namespace crg
 		*\name
 		*	Graph compilation.
 		*/
-		/**@[*/
+		/**@{*/
 		CRG_API RunnablePassPtr createRunnable( GraphContext & context
 			, RunnableGraph & graph )const;
 		/**@}*/

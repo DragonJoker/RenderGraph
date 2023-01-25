@@ -87,22 +87,23 @@ namespace crg
 		, GraphContext & context )
 		: m_graph{ graph }
 		, m_context{ context }
-		, m_layouts{ std::make_unique< RunnableLayoutsCache >( graph, m_context, passes ) }
+		, m_resources{ m_graph.getHandler(), m_context }
+		, m_layouts{ std::make_unique< RunnableLayoutsCache >( m_graph, m_resources, std::move( passes ) ) }
 		, m_inputTransitions{ std::move( inputTransitions ) }
 		, m_outputTransitions{ std::move( outputTransitions ) }
 		, m_transitions{ std::move( transitions ) }
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
-		, m_timerQueries{ context
-			, createQueryPool( context, graph.getName() + "TimerQueries", uint32_t( m_nodes.size() * 2u ) )
+		, m_timerQueries{ m_context
+			, createQueryPool( m_context, m_graph.getName() + "TimerQueries", uint32_t( m_nodes.size() * 2u ) )
 			, []( GraphContext & ctx, VkQueryPool & object )
 			{
 				crgUnregisterObject( ctx, object );
 				ctx.vkDestroyQueryPool( ctx.device, object, ctx.allocator );
 				object = {};
 			} }
-		, m_commandPool{ context
-			, rungrf::createCommandPool( context, graph.getName() )
+		, m_commandPool{ m_context
+			, rungrf::createCommandPool( m_context, m_graph.getName() )
 			, []( GraphContext & ctx, VkCommandPool & object )
 			{
 				crgUnregisterObject( ctx, object );
@@ -110,7 +111,7 @@ namespace crg
 				object = {};
 			} }
 	{
-		Logger::logDebug( graph.getName() + " - Creating runnable passes" );
+		Logger::logDebug( m_graph.getName() + " - Creating runnable passes" );
 
 		for ( auto & node : m_nodes )
 		{
@@ -120,14 +121,12 @@ namespace crg
 				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
 					, *this ) );
 				auto & pass = m_passes.back();
-				auto passCount = pass->getMaxPassCount();
-				m_layouts->registerPass( pass->getPass(), passCount );
-				m_maxPassCount *= passCount;
+				m_layouts->registerPass( pass->getPass()
+					, pass->getMaxPassCount() );
 			}
 		}
 
-		m_layouts->initialise( m_nodes, m_passes, m_maxPassCount );
-		Logger::logDebug( graph.getName() + " - Initialising passes" );
+		Logger::logDebug( m_graph.getName() + " - Initialising passes" );
 
 		for ( auto & pass : m_passes )
 		{
@@ -138,7 +137,7 @@ namespace crg
 	void RunnableGraph::record()
 	{
 		m_states.clear();
-		RecordContext recordContext{ m_layouts->getResources() };
+		RecordContext recordContext{ m_resources };
 
 		for ( auto & dependency : m_graph.getDependencies() )
 		{
@@ -179,16 +178,6 @@ namespace crg
 		}
 
 		m_graph.registerFinalState( recordContext );
-	}
-
-	VkImage RunnableGraph::createImage( ImageId const & image )
-	{
-		return m_layouts->createImage( image );
-	}
-
-	VkImageView RunnableGraph::createImageView( ImageViewId const & view )
-	{
-		return m_layouts->createImageView( view );
 	}
 
 	SemaphoreWaitArray RunnableGraph::run( VkQueue queue )
@@ -246,16 +235,26 @@ namespace crg
 		return result;
 	}
 
-	VertexBuffer const & RunnableGraph::createQuadTriVertexBuffer( bool texCoords
-		, Texcoord const & config )
+	VkImage RunnableGraph::createImage( ImageId const & image )
 	{
-		return m_layouts->getResources().createQuadTriVertexBuffer( texCoords
-			, config );
+		return m_resources.createImage( image );
+	}
+
+	VkImageView RunnableGraph::createImageView( ImageViewId const & view )
+	{
+		return m_resources.createImageView( view );
 	}
 
 	VkSampler RunnableGraph::createSampler( SamplerDesc const & samplerDesc )
 	{
-		return m_layouts->getResources().createSampler( samplerDesc );
+		return m_resources.createSampler( samplerDesc );
+	}
+
+	VertexBuffer const & RunnableGraph::createQuadTriVertexBuffer( bool texCoords
+		, Texcoord const & config )
+	{
+		return m_resources.createQuadTriVertexBuffer( texCoords
+			, config );
 	}
 
 	LayoutState RunnableGraph::getCurrentLayout( FramePass const & pass

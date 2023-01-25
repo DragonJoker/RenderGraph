@@ -22,10 +22,10 @@ See LICENSE file in root folder.
 namespace crg
 {
 	RunnableLayoutsCache::RunnableLayoutsCache( FrameGraph & graph
-		, GraphContext & context
-		, FramePassArray & passes )
+		, ContextResourcesCache & resources
+		, FramePassArray passes )
 		: m_graph{ graph }
-		, m_resources{ graph.getHandler(), context }
+		, m_resources{ resources }
 	{
 		Logger::logDebug( m_graph.getName() + " - Initialising resources" );
 
@@ -40,37 +40,10 @@ namespace crg
 	}
 
 	void RunnableLayoutsCache::registerPass( FramePass const & pass
-		, uint32_t remainingPassCount )
+		, uint32_t passCount )
 	{
 		m_passesLayouts.emplace( &pass
-			, RemainingPasses{ remainingPassCount, {}, {} } );
-	}
-
-	void RunnableLayoutsCache::initialise( GraphNodePtrArray const & nodes
-		, std::vector< RunnablePassPtr > const & passes
-		, uint32_t maxPassCount )
-	{
-		Logger::logDebug( m_graph.getName() + " - Creating layouts" );
-		m_viewsLayouts.resize( maxPassCount );
-		m_buffersLayouts.resize( maxPassCount );
-
-		Logger::logDebug( m_graph.getName() + " - Initialising nodes layouts" );
-		auto remainingCount = maxPassCount;
-		uint32_t index = 0u;
-
-		for ( auto & node : nodes )
-		{
-			auto it = m_passesLayouts.find( getFramePass( *node ) );
-			remainingCount /= it->second.count;
-			it->second.count = remainingCount;
-
-			for ( uint32_t i = 0u; i < passes[index]->getMaxPassCount(); ++i )
-			{
-				it->second.views.push_back( m_viewsLayouts.begin() + ( i * remainingCount ) );
-				it->second.buffers.push_back( m_buffersLayouts.begin() + ( i * remainingCount ) );
-			}
-			++index;
-		}
+			, RemainingPasses{ passCount, {}, {} } );
 	}
 
 	LayoutStateMap & RunnableLayoutsCache::getViewsLayout( FramePass const & pass
@@ -79,7 +52,7 @@ namespace crg
 		auto it = m_passesLayouts.find( &pass );
 		assert( it != m_passesLayouts.end() );
 		assert( it->second.views.size() >= passIndex );
-		auto & viewsLayouts = *it->second.views[passIndex];
+		auto & viewsLayouts = it->second.views[passIndex];
 		doInitialiseLayout( viewsLayouts );
 		return *viewsLayouts;
 	}
@@ -90,26 +63,16 @@ namespace crg
 		auto it = m_passesLayouts.find( &pass );
 		assert( it != m_passesLayouts.end() );
 		assert( it->second.buffers.size() >= passIndex );
-		auto & buffersLayouts = *it->second.buffers[passIndex];
+		auto & buffersLayouts = it->second.buffers[passIndex];
 		doInitialiseLayout( buffersLayouts );
 		return *buffersLayouts;
-	}
-
-	VkImage RunnableLayoutsCache::createImage( ImageId const & image )
-	{
-		return m_resources.createImage( image );
-	}
-
-	VkImageView RunnableLayoutsCache::createImageView( ImageViewId const & view )
-	{
-		return m_resources.createImageView( view );
 	}
 
 	void RunnableLayoutsCache::doCreateImages()
 	{
 		for ( auto & img : m_graph.m_images )
 		{
-			createImage( img );
+			m_resources.createImage( img );
 		}
 	}
 
@@ -117,7 +80,7 @@ namespace crg
 	{
 		for ( auto & view : m_graph.m_imageViews )
 		{
-			createImageView( view );
+			m_resources.createImageView( view );
 		}
 	}
 
@@ -135,8 +98,8 @@ namespace crg
 				{
 					auto view = attach.view( i );
 					auto image = view.data->image;
-					createImage( image );
-					createImageView( view );
+					m_resources.createImage( image );
+					m_resources.createImageView( view );
 					auto ires = m_viewsStates.emplace( image.id, LayerLayoutStates{} );
 
 					if ( ires.second )
@@ -162,8 +125,8 @@ namespace crg
 			{
 				auto view = attach.view();
 				auto image = view.data->image;
-				createImage( image );
-				createImageView( view );
+				m_resources.createImage( image );
+				m_resources.createImageView( view );
 				auto ires = m_viewsStates.emplace( image.id, LayerLayoutStates{} );
 
 				if ( ires.second )
@@ -227,6 +190,7 @@ namespace crg
 		if ( !buffersLayouts )
 		{
 			buffersLayouts = std::make_unique< BuffersLayout >();
+
 			for ( auto & srcState : m_bufferStates )
 			{
 				buffersLayouts->emplace( srcState );

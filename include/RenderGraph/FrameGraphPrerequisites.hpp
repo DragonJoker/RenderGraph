@@ -166,8 +166,8 @@ namespace crg
 	using ViewsLayouts = std::vector< ViewsLayoutPtr >;
 	using BuffersLayouts = std::vector< BuffersLayoutPtr >;
 
-	using ViewLayoutIterators = std::vector< ViewsLayouts::iterator >;
-	using BufferLayoutIterators = std::vector< BuffersLayouts::iterator >;
+	using ViewLayoutIterators = std::map< uint32_t, ViewsLayouts::iterator >;
+	using BufferLayoutIterators = std::map< uint32_t, BuffersLayouts::iterator >;
 
 	class RecordContext;
 
