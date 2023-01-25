@@ -216,6 +216,9 @@ namespace crg
 		, m_timer{ context, pass.getGroupName(), graph.getTimerQueryPool(), graph.getTimerQueryOffset() }
 	{
 		m_commandBuffers.resize( m_ruConfig.maxPassCount );
+		m_initialised.resize( m_ruConfig.maxPassCount );
+		m_layoutTransitions.resize( m_ruConfig.maxPassCount );
+		m_accessTransitions.resize( m_ruConfig.maxPassCount );
 	}
 
 	RunnablePass::~RunnablePass()
@@ -241,16 +244,47 @@ namespace crg
 		}
 	}
 
-	uint32_t RunnablePass::initialise()
+	uint32_t RunnablePass::initialise( uint32_t passIndex )
 	{
-		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
+		for ( auto & attach : m_pass.images )
 		{
-			for ( auto & attach : m_pass.images )
+			if ( attach.count <= 1u )
 			{
-				if ( attach.count <= 1u )
+				auto view = attach.view( passIndex );
+				auto inputLayout = m_graph.getCurrentLayout( m_pass, passIndex, view );
+
+				if ( ( attach.isInput() )
+					&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
 				{
-					auto view = attach.view( index );
-					auto inputLayout = m_graph.getCurrentLayout( m_pass, index, view );
+					inputLayout = { attach.image.initialLayout
+						, getAccessMask( attach.image.initialLayout )
+						, getStageMask( attach.image.initialLayout ) };
+				}
+
+				auto outputLayout = m_graph.getOutputLayout( m_pass, view, m_callbacks.isComputePass() );
+
+				if ( ( attach.isOutput() )
+					&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+				{
+					outputLayout = { attach.image.finalLayout
+						, getAccessMask( attach.image.finalLayout )
+						, getStageMask( attach.image.finalLayout ) };
+				}
+
+				doRegisterTransition( passIndex
+					, view
+					, { inputLayout
+					, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
+						, attach.getAccessMask()
+						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
+					, outputLayout } );
+			}
+			else
+			{
+				for ( uint32_t i = 0u; i < attach.count; ++i )
+				{
+					auto view = attach.view( i );
+					auto inputLayout = m_graph.getCurrentLayout( m_pass, passIndex, view );
 
 					if ( ( attach.isInput() )
 						&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
@@ -270,67 +304,37 @@ namespace crg
 							, getStageMask( attach.image.finalLayout ) };
 					}
 
-					doRegisterTransition( index
+					doRegisterTransition( passIndex
 						, view
 						, { inputLayout
 						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-							, attach.getAccessMask()
-							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
-						, outputLayout } );
-				}
-				else
-				{
-					for ( uint32_t i = 0u; i < attach.count; ++i )
-					{
-						auto view = attach.view( i );
-						auto inputLayout = m_graph.getCurrentLayout( m_pass, index, view );
-
-						if ( ( attach.isInput() )
-							&& attach.image.initialLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-						{
-							inputLayout = { attach.image.initialLayout
-								, getAccessMask( attach.image.initialLayout )
-								, getStageMask( attach.image.initialLayout ) };
-						}
-
-						auto outputLayout = m_graph.getOutputLayout( m_pass, view, m_callbacks.isComputePass() );
-
-						if ( ( attach.isOutput() )
-							&& attach.image.finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-						{
-							outputLayout = { attach.image.finalLayout
-								, getAccessMask( attach.image.finalLayout )
-								, getStageMask( attach.image.finalLayout ) };
-						}
-
-						doRegisterTransition( index
-							, view
-							, { inputLayout
-							, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-							, attach.getAccessMask()
-							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
-						, outputLayout } );
-					}
-				}
-			}
-
-			for ( auto & attach : m_pass.buffers )
-			{
-				if ( attach.isStorageBuffer() )
-				{
-					auto buffer = attach.buffer.buffer;
-					doRegisterTransition( index
-						, buffer
-						, { m_graph.getCurrentAccessState( m_pass, index, buffer )
-						, { attach.getAccessMask()
+						, attach.getAccessMask()
 						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
-					, m_graph.getOutputAccessState( m_pass, buffer, m_callbacks.isComputePass() ) } );
+					, outputLayout } );
 				}
 			}
 		}
 
-		doCreateSemaphore();
-		m_callbacks.initialise();
+		for ( auto & attach : m_pass.buffers )
+		{
+			if ( attach.isStorageBuffer() )
+			{
+				auto buffer = attach.buffer.buffer;
+				doRegisterTransition( passIndex
+					, buffer
+					, { m_graph.getCurrentAccessState( m_pass, passIndex, buffer )
+					, { attach.getAccessMask()
+					, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) }
+				, m_graph.getOutputAccessState( m_pass, buffer, m_callbacks.isComputePass() ) } );
+			}
+		}
+		if ( !m_semaphore )
+		{
+			doCreateSemaphore();
+		}
+
+		m_callbacks.initialise( passIndex );
+		m_initialised[passIndex] = true;
 		return uint32_t( m_commandBuffers.size() );
 	}
 
@@ -400,6 +404,11 @@ namespace crg
 
 		if ( isEnabled() )
 		{
+			if ( !m_initialised[index] )
+			{
+				initialise( index );
+			}
+
 			auto block( m_timer.start() );
 			m_context.vkCmdBeginDebugBlock( commandBuffer
 				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName(), m_context.getNextRainbowColour() } );
@@ -433,8 +442,7 @@ namespace crg
 						LayoutState needed = { layout
 							, getAccessMask( layout )
 							, getStageMask( layout ) };
-						m_graph.memoryBarrier( context
-							, commandBuffer
+						context.memoryBarrier( commandBuffer
 							, view
 							, attach.image.initialLayout
 							, needed );
@@ -446,8 +454,7 @@ namespace crg
 							auto view = attach.view( i );
 							auto transition = getTransition( index
 								, view );
-							m_graph.memoryBarrier( context
-								, commandBuffer
+							context.memoryBarrier( commandBuffer
 								, view
 								, attach.image.initialLayout
 								, transition.needed );
@@ -464,8 +471,7 @@ namespace crg
 					auto buffer = attach.buffer;
 					auto transition = getTransition( index
 						, buffer.buffer );
-					m_graph.memoryBarrier( context
-						, commandBuffer
+					context.memoryBarrier( commandBuffer
 						, buffer.buffer.buffer
 						, buffer.range
 						, transition.from.access
@@ -626,11 +632,6 @@ namespace crg
 		, ImageViewId view
 		, LayoutTransition transition )
 	{
-		if ( m_layoutTransitions.size() <= passIndex )
-		{
-			m_layoutTransitions.push_back( {} );
-		}
-
 		assert( m_layoutTransitions.size() > passIndex );
 		auto & layoutTransitions = m_layoutTransitions[passIndex];
 
@@ -661,11 +662,6 @@ namespace crg
 		, Buffer buffer
 		, AccessTransition transition )
 	{
-		if ( m_accessTransitions.size() <= passIndex )
-		{
-			m_accessTransitions.push_back( {} );
-		}
-
 		assert( m_accessTransitions.size() > passIndex );
 		auto & accessTransitions = m_accessTransitions[passIndex];
 

@@ -21,12 +21,15 @@ namespace crg
 		CRG_API void initialise( RunnablePass const & runnable
 			, VkExtent2D const & renderSize
 			, VkRenderPass renderPass
-			, VkPipelineColorBlendStateCreateInfo blendState );
+			, VkPipelineColorBlendStateCreateInfo blendState
+			, uint32_t index );
 		CRG_API void cleanup();
 		CRG_API void resetRenderPass( VkExtent2D const & renderSize
 			, VkRenderPass renderPass
-			, VkPipelineColorBlendStateCreateInfo blendState );
-		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+			, VkPipelineColorBlendStateCreateInfo blendState
+			, uint32_t index );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index );
 		CRG_API void record( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
@@ -41,7 +44,7 @@ namespace crg
 		void doPreparePipelineStates( VkExtent2D const & renderSize
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState );
-		void doCreatePipeline();
+		void doCreatePipeline( uint32_t index );
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkExtent2D const & renderSize
 			, VkViewportArray & viewports
 			, VkScissorArray & scissors );
@@ -50,7 +53,6 @@ namespace crg
 		rm::ConfigData m_config;
 		GraphContext & m_context;
 		PipelineHolder m_pipeline;
-		uint32_t m_maxPassCount;
 		VkRenderPass m_renderPass{};
 		VkExtent2D m_renderSize{};
 		VkViewportArray m_viewports{};

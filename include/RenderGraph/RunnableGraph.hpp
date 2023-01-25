@@ -97,33 +97,6 @@ namespace crg
 		CRG_API RunnablePass::LayoutTransition getTransition( FramePass const & pass
 			, ImageViewId const & view )const;
 
-		CRG_API void memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, ImageViewId const & view
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState );
-		CRG_API void memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState );
-		CRG_API void memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState );
-
-		CRG_API void memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange
-			, VkAccessFlags initialMask
-			, VkPipelineStageFlags initialStage
-			, AccessState const & wantedState );
-
 		ConstGraphAdjacentNode getGraph()const
 		{
 			return &m_rootNode;

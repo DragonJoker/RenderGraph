@@ -46,10 +46,13 @@ namespace crg
 
 	void PipelineHolder::initialise()
 	{
-		doFillDescriptorBindings();
-		doCreateDescriptorSetLayout();
-		doCreatePipelineLayout();
-		doCreateDescriptorPool();
+		if ( !m_pipelineLayout )
+		{
+			doFillDescriptorBindings();
+			doCreateDescriptorSetLayout();
+			doCreatePipelineLayout();
+			doCreateDescriptorPool();
+		}
 	}
 
 	void PipelineHolder::cleanup()
@@ -191,24 +194,22 @@ namespace crg
 		m_context.vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
-	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
+	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
+		, uint32_t index )
 	{
-		for ( uint32_t index = 0; index < m_pipelines.size(); ++index )
+		if ( m_pipelines[index] )
 		{
-			if ( m_pipelines[index] )
-			{
-				crgUnregisterObject( m_context, m_pipelines[index] );
-				m_context.vkDestroyPipeline( m_context.device
-					, m_pipelines[index]
-					, m_context.allocator );
-				m_pipelines[index] = {};
-			}
+			crgUnregisterObject( m_context, m_pipelines[index] );
+			m_context.vkDestroyPipeline( m_context.device
+				, m_pipelines[index]
+				, m_context.allocator );
+			m_pipelines[index] = {};
+		}
 
-			if ( !config.empty() )
-			{
-				assert( m_baseConfig.m_programs.size() > index );
-				m_baseConfig.m_programs[index] = std::move( config );
-			}
+		if ( !config.empty() )
+		{
+			assert( m_baseConfig.m_programs.size() > index );
+			m_baseConfig.m_programs[index] = std::move( config );
 		}
 	}
 

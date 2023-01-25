@@ -190,16 +190,17 @@ namespace crg
 			, RunnableGraph & graph
 			, ru::Config ruConfig = {}
 			, cp::Config cpConfig = {} );
-		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index );
 
 	private:
-		void doInitialise();
+		void doInitialise( uint32_t index );
 		uint32_t doGetPassIndex()const;
 		bool doIsEnabled()const;
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		void doCreatePipeline();
+		void doCreatePipeline( uint32_t index );
 
 	private:
 		cp::ConfigData m_cpConfig;

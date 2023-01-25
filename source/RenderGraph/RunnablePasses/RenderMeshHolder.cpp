@@ -32,7 +32,6 @@ namespace crg
 			, config.m_baseConfig
 			, VK_PIPELINE_BIND_POINT_GRAPHICS
 			, maxPassCount }
-		, m_maxPassCount{ maxPassCount }
 		, m_renderSize{ config.m_renderSize ? *config.m_renderSize : getDefaultV< VkExtent2D >() }
 	{
 		m_iaState = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
@@ -67,11 +66,12 @@ namespace crg
 	void RenderMeshHolder::initialise( RunnablePass const & runnable
 		, VkExtent2D const & renderSize
 		, VkRenderPass renderPass
-		, VkPipelineColorBlendStateCreateInfo blendState )
+		, VkPipelineColorBlendStateCreateInfo blendState
+		, uint32_t index )
 	{
 		m_pipeline.initialise();
 		doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
-		doCreatePipeline();
+		doCreatePipeline( index );
 	}
 
 	void RenderMeshHolder::cleanup()
@@ -81,20 +81,22 @@ namespace crg
 
 	void RenderMeshHolder::resetRenderPass( VkExtent2D const & renderSize
 		, VkRenderPass renderPass
-		, VkPipelineColorBlendStateCreateInfo blendState )
+		, VkPipelineColorBlendStateCreateInfo blendState
+		, uint32_t index )
 	{
-		m_pipeline.resetPipeline( {} );
+		m_pipeline.resetPipeline( {}, index );
 		doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
-		doCreatePipeline();
+		doCreatePipeline( index );
 	}
 
-	void RenderMeshHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
+	void RenderMeshHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
+		, uint32_t index )
 	{
-		m_pipeline.resetPipeline( std::move( config ) );
+		m_pipeline.resetPipeline( std::move( config ), index );
 
 		if ( m_renderPass )
 		{
-			doCreatePipeline();
+			doCreatePipeline( index );
 		}
 	}
 
@@ -102,7 +104,7 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		doCreatePipeline();
+		doCreatePipeline( index );
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
@@ -157,15 +159,8 @@ namespace crg
 		m_blendState.pAttachments = m_blendAttachs.data();
 	}
 
-	void RenderMeshHolder::doCreatePipeline()
+	void RenderMeshHolder::doCreatePipeline( uint32_t index )
 	{
-		auto index = getPassIndex();
-
-		if ( index >= m_maxPassCount )
-		{
-			assert( false );
-		}
-
 		if ( m_pipeline.getPipeline( index ) )
 		{
 			return;

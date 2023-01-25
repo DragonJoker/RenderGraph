@@ -130,7 +130,10 @@ namespace crg
 
 		for ( auto & pass : m_passes )
 		{
-			pass->initialise();
+			if ( pass->isEnabled() )
+			{
+				pass->initialise( pass->getIndex() );
+			}
 		}
 	}
 
@@ -468,66 +471,5 @@ namespace crg
 		}
 
 		return result;
-	}
-
-	void RunnableGraph::memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, ImageViewId const & view
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState )
-	{
-		context.memoryBarrier( commandBuffer
-			, view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange
-			, initialLayout
-			, wantedState );
-	}
-
-	void RunnableGraph::memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState )
-	{
-		context.memoryBarrier( commandBuffer
-			, image
-			, VkImageViewType( image.data->info.imageType )
-			, subresourceRange
-			, initialLayout
-			, wantedState );
-	}
-
-	void RunnableGraph::memoryBarrier( RecordContext & context
-			, VkCommandBuffer commandBuffer
-			, ImageId const & image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, VkImageLayout initialLayout
-			, LayoutState const & wantedState )
-	{
-		context.memoryBarrier( commandBuffer
-			, image
-			, viewType
-			, subresourceRange
-			, initialLayout
-			, wantedState );
-	}
-
-	void RunnableGraph::memoryBarrier( RecordContext & context
-		, VkCommandBuffer commandBuffer
-		, VkBuffer buffer
-		, BufferSubresourceRange const & subresourceRange
-		, VkAccessFlags initialMask
-		, VkPipelineStageFlags initialStage
-		, AccessState const & wantedState )
-	{
-		context.memoryBarrier( commandBuffer
-			, buffer
-			, subresourceRange
-			, initialMask
-			, initialStage
-			, wantedState );
 	}
 }

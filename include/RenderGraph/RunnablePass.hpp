@@ -145,7 +145,7 @@ namespace crg
 		{
 		};
 
-		using InitialiseCallback = std::function< void() >;
+		using InitialiseCallback = std::function< void( uint32_t passIndex ) >;
 		using RecordCallback = std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) >;
 		using GetPipelineStateCallback = GetValueCallbackT< PipelineStateT, PipelineState >;
 		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
@@ -194,7 +194,7 @@ namespace crg
 		*\brief
 		*	Initialises the descriptor set.
 		*/
-		CRG_API uint32_t initialise();
+		CRG_API uint32_t initialise( uint32_t passIndex );
 		/**
 		*\brief
 		*	Records the pass commands into its command buffer.
@@ -335,6 +335,7 @@ namespace crg
 		std::vector< LayoutTransitionMap > m_layoutTransitions;
 		std::vector< AccessTransitionMap > m_accessTransitions;
 		std::map< uint32_t, RecordContext > m_passContexts;
+		std::vector< bool > m_initialised;
 	};
 
 	template<>
@@ -342,7 +343,7 @@ namespace crg
 	{
 		static RunnablePass::InitialiseCallback get()
 		{
-			RunnablePass::InitialiseCallback const result{ [](){} };
+			RunnablePass::InitialiseCallback const result{ []( uint32_t ){} };
 			return result;
 		}
 	};

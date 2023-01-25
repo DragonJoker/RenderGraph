@@ -100,7 +100,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [](){}
+			, { []( uint32_t ){}
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( callbacks.getPassIndex )
@@ -121,7 +121,7 @@ namespace crg
 	{
 		if ( m_holder.initialise( context, *this, index ) )
 		{
-			m_rpCallbacks.initialise();
+			m_rpCallbacks.initialise( index );
 		}
 
 		m_holder.begin( context

@@ -40,7 +40,7 @@ namespace crg
 
 		VkRenderPass getRenderPass( uint32_t index )const
 		{
-			return m_renderPasses[index];
+			return m_passes[index].renderPass;
 		}
 
 		VkExtent2D const & getRenderSize()const
@@ -48,14 +48,14 @@ namespace crg
 			return m_size;
 		}
 
-		VkRect2D const & getRenderArea()const
+		VkRect2D const & getRenderArea( uint32_t index )const
 		{
-			return m_renderArea;
+			return m_passes[index].renderArea;
 		}
 
-		std::vector< VkClearValue > const & getClearValues()const
+		std::vector< VkClearValue > const & getClearValues( uint32_t index )const
 		{
-			return m_clearValues;
+			return m_passes[index].clearValues;
 		}
 
 		VkPipelineColorBlendAttachmentStateArray const & getBlendAttachs()const
@@ -69,22 +69,29 @@ namespace crg
 			, PipelineState const & previousState
 			, PipelineState const & nextState
 			, uint32_t passIndex );
-		void doInitialiseRenderArea();
+		void doInitialiseRenderArea( uint32_t index );
 		VkFramebuffer doCreateFramebuffer( uint32_t passIndex )const;
-		void doCleanup();
 
 	private:
+		struct PassData
+		{
+			VkRenderPass renderPass{};
+			mutable VkFramebuffer frameBuffer{};
+			VkRect2D renderArea{};
+			std::vector< Attachment const * > attachments;
+			std::vector< VkClearValue > clearValues;
+			std::vector< Entry > attaches;
+
+			void cleanup( crg::GraphContext & context );
+		};
+
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		VkExtent2D m_size;
-		std::vector< VkRenderPass > m_renderPasses{};
-		mutable std::vector< VkFramebuffer > m_frameBuffers;
-		VkRect2D m_renderArea{};
-		std::vector< Attachment const * > m_attachments;
-		uint32_t m_layers{};
-		std::vector< VkClearValue > m_clearValues;
-		std::vector< Entry > m_attaches;
+		std::vector< PassData > m_passes;
+		PassData const * m_currentPass{};
 		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
+		uint32_t m_layers{};
 	};
 }

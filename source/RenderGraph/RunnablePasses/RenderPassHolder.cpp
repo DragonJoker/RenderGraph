@@ -85,6 +85,32 @@ namespace crg
 
 	//*********************************************************************************************
 
+	void RenderPassHolder::PassData::cleanup( crg::GraphContext & context )
+	{
+		attaches.clear();
+		clearValues.clear();
+
+		if ( frameBuffer )
+		{
+			crgUnregisterObject( context, frameBuffer );
+			context.vkDestroyFramebuffer( context.device
+				, frameBuffer
+				, context.allocator );
+			frameBuffer = {};
+		}
+
+		if ( renderPass )
+		{
+			crgUnregisterObject( context, renderPass );
+			context.vkDestroyRenderPass( context.device
+				, renderPass
+				, context.allocator );
+			renderPass = {};
+		}
+	}
+
+	//*********************************************************************************************
+
 	RenderPassHolder::RenderPassHolder( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
@@ -95,34 +121,36 @@ namespace crg
 		, m_graph{ graph }
 		, m_size{ size }
 	{
-		m_renderPasses.resize( maxPassCount );
-		m_frameBuffers.resize( maxPassCount );
+		m_passes.resize( maxPassCount );
 	}
 
 	RenderPassHolder::~RenderPassHolder()
 	{
-		doCleanup();
+		for ( auto & data : m_passes )
+		{
+			data.cleanup( m_context );
+		}
 	}
 
 	bool RenderPassHolder::initialise( RecordContext & context
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
-		auto & renderPass = m_renderPasses[passIndex];
+		auto & renderPass = m_passes[passIndex].renderPass;
 
 		if ( renderPass
-			&& rpHolder::checkAttaches( context, m_attaches ) )
+			&& rpHolder::checkAttaches( context, m_passes[passIndex].attaches ) )
 		{
 			return false;
 		}
 
-		doCleanup();
+		m_passes[passIndex].cleanup( m_context );
 		doCreateRenderPass( context
 			, runnable
 			, context.getPrevPipelineState()
 			, context.getNextPipelineState()
 			, passIndex );
-		doInitialiseRenderArea();
+		doInitialiseRenderArea( passIndex );
 		return true;
 	}
 
@@ -133,9 +161,9 @@ namespace crg
 			, nullptr
 			, getRenderPass( index )
 			, frameBuffer
-			, getRenderArea()
-			, uint32_t( getClearValues().size() )
-			, getClearValues().data() };
+			, getRenderArea( index )
+			, uint32_t( getClearValues( index ).size() )
+			, getClearValues( index ).data() };
 	}
 
 	void RenderPassHolder::begin( RecordContext & context
@@ -143,7 +171,9 @@ namespace crg
 		, VkSubpassContents subpassContents
 		, uint32_t index )
 	{
-		for ( auto & attach : m_attaches )
+		m_currentPass = &m_passes[index];
+
+		for ( auto & attach : m_currentPass->attaches )
 		{
 			context.setLayoutState( attach.view
 				, attach.input );
@@ -160,11 +190,13 @@ namespace crg
 	{
 		m_context.vkCmdEndRenderPass( commandBuffer );
 
-		for ( auto & attach : m_attaches )
+		for ( auto & attach : m_currentPass->attaches )
 		{
 			context.setLayoutState( attach.view
 				, attach.output );
 		}
+
+		m_currentPass = nullptr;
 	}
 
 	void RenderPassHolder::doCreateRenderPass( RecordContext & context
@@ -176,19 +208,21 @@ namespace crg
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
 		VkAttachmentReference depthReference{};
+		auto & data = m_passes[passIndex];
+		m_blendAttachs.clear();
 
 		for ( auto & attach : m_pass.images )
 		{
 			auto view = attach.view( passIndex );
-			auto & transition = runnable.getTransition( 0u, view );
+			auto & transition = runnable.getTransition( passIndex, view );
 
 			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
 				depthReference = rpHolder::addAttach( context
 					, attach
 					, attaches
-					, m_attaches
-					, m_clearValues
+					, data.attaches
+					, data.clearValues
 					, transition.from
 					, transition.to
 					, m_context.separateDepthStencilLayouts );
@@ -198,8 +232,8 @@ namespace crg
 				colorReferences.push_back( rpHolder::addAttach( context
 					, attach
 					, attaches
-					, m_attaches
-					, m_clearValues
+					, data.attaches
+					, data.clearValues
 					, m_blendAttachs
 					, transition.from
 					, transition.to
@@ -244,9 +278,9 @@ namespace crg
 		auto res = m_context.vkCreateRenderPass( m_context.device
 			, &createInfo
 			, m_context.allocator
-			, &m_renderPasses[passIndex] );
+			, &data.renderPass );
 		checkVkResult( res, m_pass.getGroupName() + " - RenderPass creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_renderPasses[passIndex] );
+		crgRegisterObject( m_context, m_pass.getGroupName(), data.renderPass );
 	}
 
 	VkPipelineColorBlendStateCreateInfo RenderPassHolder::createBlendState()
@@ -266,11 +300,11 @@ namespace crg
 		return doCreateFramebuffer( index );
 	}
 
-	void RenderPassHolder::doInitialiseRenderArea()
+	void RenderPassHolder::doInitialiseRenderArea( uint32_t index )
 	{
 		uint32_t width{ m_size.width };
 		uint32_t height{ m_size.height };
-		m_attachments.clear();
+		m_passes[index].attachments.clear();
 		m_layers = 1u;
 
 		for ( auto & attach : m_pass.images )
@@ -280,7 +314,7 @@ namespace crg
 				|| attach.isStencilAttach() )
 			{
 				auto view = attach.view();
-				m_attachments.push_back( &attach );
+				m_passes[index].attachments.push_back( &attach );
 				width = std::max( width
 					, view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel );
 				height = std::max( height
@@ -290,19 +324,20 @@ namespace crg
 			}
 		}
 
-		m_renderArea.extent.width = width;
-		m_renderArea.extent.height = height;
+		m_passes[index].renderArea.extent.width = width;
+		m_passes[index].renderArea.extent.height = height;
 	}
 
 	VkFramebuffer RenderPassHolder::doCreateFramebuffer( uint32_t passIndex )const
 	{
-		auto frameBuffer = &m_frameBuffers[passIndex];
+		auto & data = m_passes[passIndex];
+		auto frameBuffer = &data.frameBuffer;
 
 		if ( !*frameBuffer )
 		{
 			VkImageViewArray attachments;
 
-			for ( auto & attach : m_attachments )
+			for ( auto & attach : data.attachments )
 			{
 				attachments.push_back( m_graph.createImageView( attach->view( passIndex ) ) );
 			}
@@ -310,11 +345,11 @@ namespace crg
 			VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
 				, nullptr
 				, 0u
-				, m_renderPasses[passIndex]
+				, data.renderPass
 				, uint32_t( attachments.size() )
 				, attachments.data()
-				, m_renderArea.extent.width
-				, m_renderArea.extent.height
+				, data.renderArea.extent.width
+				, data.renderArea.extent.height
 				, m_layers };
 			auto res = m_context.vkCreateFramebuffer( m_context.device
 				, &createInfo
@@ -326,37 +361,5 @@ namespace crg
 		}
 
 		return *frameBuffer;
-	}
-
-	void RenderPassHolder::doCleanup()
-	{
-		m_attaches.clear();
-		m_clearValues.clear();
-		m_blendAttachs.clear();
-
-		for ( auto & frameBuffer : m_frameBuffers )
-		{
-			// Don't clear vector, only delete its values (it is sized at creation).
-			if ( frameBuffer )
-			{
-				crgUnregisterObject( m_context, frameBuffer );
-				m_context.vkDestroyFramebuffer( m_context.device
-					, frameBuffer
-					, m_context.allocator );
-				frameBuffer = {};
-			}
-		}
-
-		for ( auto & renderPass : m_renderPasses )
-		{
-			if ( renderPass )
-			{
-				crgUnregisterObject( m_context, renderPass );
-				m_context.vkDestroyRenderPass( m_context.device
-					, renderPass
-					, m_context.allocator );
-				renderPass = {};
-			}
-		}
 	}
 }

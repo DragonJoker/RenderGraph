@@ -23,7 +23,8 @@ namespace crg
 			, ru::Config ruConfig
 			, rq::Config rqConfig );
 
-		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index );
 
 		VkPipelineLayout getPipelineLayout()const
 		{

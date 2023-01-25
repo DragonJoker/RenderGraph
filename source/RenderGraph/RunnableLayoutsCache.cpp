@@ -51,7 +51,6 @@ namespace crg
 	{
 		auto it = m_passesLayouts.find( &pass );
 		assert( it != m_passesLayouts.end() );
-		assert( it->second.views.size() >= passIndex );
 		auto & viewsLayouts = it->second.views[passIndex];
 		doInitialiseLayout( viewsLayouts );
 		return *viewsLayouts;
@@ -62,7 +61,6 @@ namespace crg
 	{
 		auto it = m_passesLayouts.find( &pass );
 		assert( it != m_passesLayouts.end() );
-		assert( it->second.buffers.size() >= passIndex );
 		auto & buffersLayouts = it->second.buffers[passIndex];
 		doInitialiseLayout( buffersLayouts );
 		return *buffersLayouts;
