@@ -35,7 +35,8 @@ namespace crg
 		CRG_API void recordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
-		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index );
 		CRG_API void createDescriptorSet( uint32_t index );
 
 		VkDescriptorSet getDescriptorSet( uint32_t index )

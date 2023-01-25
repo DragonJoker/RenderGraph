@@ -31,7 +31,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this](){ doInitialise(); }
+			, { [this]( uint32_t index ){ doInitialise( index ); }
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, passIndex
@@ -43,22 +43,18 @@ namespace crg
 	{
 	}
 
-	void GenerateMipmaps::doInitialise()
+	void GenerateMipmaps::doInitialise( uint32_t passIndex )
 	{
 		auto & attach = m_pass.images.front();
-
-		for ( auto passIndex = 0u; passIndex < m_commandBuffers.size(); ++passIndex )
-		{
-			auto viewId = attach.view( passIndex );
-			auto layoutState = ( m_outputLayout.layout != VK_IMAGE_LAYOUT_UNDEFINED
-				? m_outputLayout
-				: m_graph.getOutputLayout( m_pass, viewId, false ) );
-			doUpdateFinalLayout( passIndex
-				, viewId
-				, layoutState.layout
-				, layoutState.state.access
-				, layoutState.state.pipelineStage );
-		}
+		auto viewId = attach.view( passIndex );
+		auto layoutState = ( m_outputLayout.layout != VK_IMAGE_LAYOUT_UNDEFINED
+			? m_outputLayout
+			: m_graph.getOutputLayout( m_pass, viewId, false ) );
+		doUpdateFinalLayout( passIndex
+			, viewId
+			, layoutState.layout
+			, layoutState.state.access
+			, layoutState.state.pipelineStage );
 	}
 
 	void GenerateMipmaps::doRecordInto( RecordContext & context
@@ -105,8 +101,7 @@ namespace crg
 			imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 			// Transition first mip level to transfer source for read in next iteration
-			m_graph.memoryBarrier( context
-				, commandBuffer
+			context.memoryBarrier( commandBuffer
 				, imageId
 				, mipSubRange
 				, srcImageLayout.layout
@@ -130,8 +125,7 @@ namespace crg
 				imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 				// Transition current mip level to transfer dest
-				m_graph.memoryBarrier( context
-					, commandBuffer
+				context.memoryBarrier( commandBuffer
 					, imageId
 					, mipSubRange
 					, VK_IMAGE_LAYOUT_UNDEFINED
@@ -150,8 +144,7 @@ namespace crg
 					, VK_FILTER_LINEAR );
 
 				// Transition previous mip level to wanted output layout
-				m_graph.memoryBarrier( context
-					, commandBuffer
+				context.memoryBarrier( commandBuffer
 					, imageId
 					, { mipSubRange.aspectMask
 						, mipSubRange.baseMipLevel - 1u
@@ -164,8 +157,7 @@ namespace crg
 				if ( mipSubRange.baseMipLevel == ( mipLevels - 1u ) )
 				{
 					// Transition final mip level to wanted output layout
-					m_graph.memoryBarrier( context
-						, commandBuffer
+					context.memoryBarrier( commandBuffer
 						, imageId
 						, mipSubRange
 						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -174,8 +166,7 @@ namespace crg
 				else
 				{
 					// Transition current mip level to transfer source for read in next iteration
-					m_graph.memoryBarrier( context
-						,commandBuffer
+					context.memoryBarrier( commandBuffer
 						, imageId
 						, mipSubRange
 						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL

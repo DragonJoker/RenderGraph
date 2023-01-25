@@ -19,7 +19,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this](){ doInitialise(); }
+			, { [this]( uint32_t index ){ doInitialise( index ); }
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
@@ -43,18 +43,19 @@ namespace crg
 	{
 	}
 
-	void ComputePass::resetPipeline( VkPipelineShaderStageCreateInfoArray config )
+	void ComputePass::resetPipeline( VkPipelineShaderStageCreateInfoArray config
+		, uint32_t index )
 	{
 		resetCommandBuffer();
-		m_pipeline.resetPipeline( std::move( config ) );
-		doCreatePipeline();
+		m_pipeline.resetPipeline( std::move( config ), index );
+		doCreatePipeline( index );
 		reRecordCurrent();
 	}
 
-	void ComputePass::doInitialise()
+	void ComputePass::doInitialise( uint32_t index )
 	{
 		m_pipeline.initialise();
-		doCreatePipeline();
+		doCreatePipeline( index );
 	}
 
 	uint32_t ComputePass::doGetPassIndex()const
@@ -83,19 +84,16 @@ namespace crg
 		m_cpConfig.end( context, commandBuffer, index );
 	}
 
-	void ComputePass::doCreatePipeline()
+	void ComputePass::doCreatePipeline( uint32_t index )
 	{
-		for ( auto index = 0u; index < m_ruConfig.maxPassCount; ++index )
-		{
-			auto & program = m_pipeline.getProgram( index );
-			VkComputePipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
-				, nullptr
-				, 0u
-				, program.front()
-				, m_pipeline.getPipelineLayout()
-				, VkPipeline{}
-				, 0u };
-			m_pipeline.createPipeline( index, createInfo );
-		}
+		auto & program = m_pipeline.getProgram( index );
+		VkComputePipelineCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO
+			, nullptr
+			, 0u
+			, program.front()
+			, m_pipeline.getPipelineLayout()
+			, VkPipeline{}
+			, 0u };
+		m_pipeline.createPipeline( index, createInfo );
 	}
 }

@@ -20,7 +20,8 @@ namespace crg
 			, rm::Config rmConfig );
 		CRG_API ~RenderMesh()override = default;
 
-		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config );
+		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
+			, uint32_t index );
 
 	private:
 		void doInitialise();
