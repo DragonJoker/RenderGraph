@@ -95,6 +95,7 @@ namespace crg
 		, m_graph{ graph }
 		, m_size{ size }
 	{
+		m_renderPasses.resize( maxPassCount );
 		m_frameBuffers.resize( maxPassCount );
 	}
 
@@ -104,9 +105,12 @@ namespace crg
 	}
 
 	bool RenderPassHolder::initialise( RecordContext & context
-			, crg::RunnablePass const & runnable )
+		, crg::RunnablePass const & runnable
+		, uint32_t passIndex )
 	{
-		if ( m_renderPass
+		auto & renderPass = m_renderPasses[passIndex];
+
+		if ( renderPass
 			&& rpHolder::checkAttaches( context, m_attaches ) )
 		{
 			return false;
@@ -116,7 +120,8 @@ namespace crg
 		doCreateRenderPass( context
 			, runnable
 			, context.getPrevPipelineState()
-			, context.getNextPipelineState() );
+			, context.getNextPipelineState()
+			, passIndex );
 		doInitialiseRenderArea();
 		return true;
 	}
@@ -126,7 +131,7 @@ namespace crg
 		auto frameBuffer = getFramebuffer( index );
 		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
 			, nullptr
-			, getRenderPass()
+			, getRenderPass( index )
 			, frameBuffer
 			, getRenderArea()
 			, uint32_t( getClearValues().size() )
@@ -165,7 +170,8 @@ namespace crg
 	void RenderPassHolder::doCreateRenderPass( RecordContext & context
 			, crg::RunnablePass const & runnable
 			, PipelineState const & previousState
-			, PipelineState const & nextState )
+			, PipelineState const & nextState
+			, uint32_t passIndex )
 	{
 		VkAttachmentDescriptionArray attaches;
 		VkAttachmentReferenceArray colorReferences;
@@ -173,8 +179,8 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			auto view = attach.view();
-			auto transition = runnable.getTransition( 0u, view );
+			auto view = attach.view( passIndex );
+			auto & transition = runnable.getTransition( 0u, view );
 
 			if ( attach.isDepthAttach() || attach.isStencilAttach() )
 			{
@@ -238,9 +244,9 @@ namespace crg
 		auto res = m_context.vkCreateRenderPass( m_context.device
 			, &createInfo
 			, m_context.allocator
-			, &m_renderPass );
+			, &m_renderPasses[passIndex] );
 		checkVkResult( res, m_pass.getGroupName() + " - RenderPass creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_renderPass );
+		crgRegisterObject( m_context, m_pass.getGroupName(), m_renderPasses[passIndex] );
 	}
 
 	VkPipelineColorBlendStateCreateInfo RenderPassHolder::createBlendState()
@@ -304,7 +310,7 @@ namespace crg
 			VkFramebufferCreateInfo createInfo{ VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO
 				, nullptr
 				, 0u
-				, m_renderPass
+				, m_renderPasses[passIndex]
 				, uint32_t( attachments.size() )
 				, attachments.data()
 				, m_renderArea.extent.width
@@ -341,13 +347,16 @@ namespace crg
 			}
 		}
 
-		if ( m_renderPass )
+		for ( auto & renderPass : m_renderPasses )
 		{
-			crgUnregisterObject( m_context, m_renderPass );
-			m_context.vkDestroyRenderPass( m_context.device
-				, m_renderPass
-				, m_context.allocator );
-			m_renderPass = {};
+			if ( renderPass )
+			{
+				crgUnregisterObject( m_context, renderPass );
+				m_context.vkDestroyRenderPass( m_context.device
+					, renderPass
+					, m_context.allocator );
+				renderPass = {};
+			}
 		}
 	}
 }

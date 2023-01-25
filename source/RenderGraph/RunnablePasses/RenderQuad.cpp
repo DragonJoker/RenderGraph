@@ -50,11 +50,11 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		if ( m_renderPass.initialise( context, *this ) )
+		if ( m_renderPass.initialise( context, *this, index ) )
 		{
 			m_renderQuad.initialise( *this
 				, m_renderPass.getRenderSize()
-				, m_renderPass.getRenderPass()
+				, m_renderPass.getRenderPass( index )
 				, m_renderPass.createBlendState() );
 		}
 
