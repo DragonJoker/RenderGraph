@@ -61,18 +61,18 @@ namespace crg
 
 		CRG_API void record();
 
-		CRG_API VkImage createImage( ImageId const & image );
-		CRG_API VkImageView createImageView( ImageViewId const & view );
-
 		CRG_API SemaphoreWaitArray run( VkQueue queue );
 		CRG_API SemaphoreWaitArray run( SemaphoreWait toWait
 			, VkQueue queue );
 		CRG_API SemaphoreWaitArray run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
+
 		CRG_API ImageViewId createView( ImageViewData const & view );
+		CRG_API VkImage createImage( ImageId const & image );
+		CRG_API VkImageView createImageView( ImageViewId const & view );
+		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
 			, Texcoord const & config );
-		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
 
 		CRG_API LayoutState getCurrentLayout( FramePass const & pass
 			, uint32_t passIndex
@@ -154,9 +154,15 @@ namespace crg
 			return m_timerQueryOffset;
 		}
 
+		ContextResourcesCache & getResources()
+		{
+			return m_resources;
+		}
+
 	private:
 		FrameGraph & m_graph;
 		GraphContext & m_context;
+		ContextResourcesCache m_resources;
 		std::unique_ptr< RunnableLayoutsCache > m_layouts;
 		FramePassDependencies m_inputTransitions;
 		FramePassDependencies m_outputTransitions;
@@ -167,7 +173,6 @@ namespace crg
 		uint32_t m_timerQueryOffset{};
 		ContextObjectT< VkCommandPool > m_commandPool;
 		std::vector< RunnablePassPtr > m_passes;
-		uint32_t m_maxPassCount{ 1u };
 		RecordContext::GraphIndexMap m_states;
 	};
 }
