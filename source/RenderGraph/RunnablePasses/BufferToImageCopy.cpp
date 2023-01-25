@@ -53,7 +53,7 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto dstAttach{ m_pass.images.back().view() };
+		auto dstAttach{ m_pass.images.back().view( index ) };
 		auto srcBuffer{ m_pass.buffers.front().buffer.buffer.buffer };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
 		// Copy source to target.

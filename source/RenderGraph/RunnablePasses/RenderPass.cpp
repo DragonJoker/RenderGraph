@@ -119,7 +119,7 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		if ( m_holder.initialise( context, *this ) )
+		if ( m_holder.initialise( context, *this, index ) )
 		{
 			m_rpCallbacks.initialise();
 		}

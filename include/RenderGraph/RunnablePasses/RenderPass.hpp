@@ -68,9 +68,9 @@ namespace crg
 			, VkExtent2D const & size = {}
 			, ru::Config ruConfig = {} );
 
-		VkRenderPass getRenderPass()const
+		VkRenderPass getRenderPass( uint32_t passIndex )const
 		{
-			return m_holder.getRenderPass();
+			return m_holder.getRenderPass( passIndex );
 		}
 
 	protected:
