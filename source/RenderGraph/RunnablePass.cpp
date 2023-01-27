@@ -201,6 +201,46 @@ namespace crg
 
 	//*********************************************************************************************
 
+	RunnablePass::PassData::PassData( RunnableGraph & grh
+		, GraphContext & ctx
+		, std::string const & baseName )
+		: graph{ grh }
+		, context{ ctx }
+		, fence{ context, baseName, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
+	{
+		VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+			, nullptr
+			, 0u };
+		auto res = context.vkCreateSemaphore( context.device
+			, &createInfo
+			, context.allocator
+			, &semaphore );
+		checkVkResult( res, baseName + " - Semaphore creation" );
+		crgRegisterObject( context, baseName, semaphore );
+	}
+
+	RunnablePass::PassData::~PassData()
+	{
+		if ( semaphore )
+		{
+			crgUnregisterObject( context, semaphore );
+			context.vkDestroySemaphore( context.device
+				, semaphore
+				, context.allocator );
+		}
+
+		if ( commandBuffer.commandBuffer )
+		{
+			crgUnregisterObject( context, commandBuffer.commandBuffer );
+			context.vkFreeCommandBuffers( context.device
+				, graph.getCommandPool()
+				, 1u
+				, &commandBuffer.commandBuffer );
+		}
+	}
+
+	//*********************************************************************************************
+
 	RunnablePass::RunnablePass( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
@@ -212,40 +252,24 @@ namespace crg
 		, m_callbacks{ std::move( callbacks ) }
 		, m_ruConfig{ std::move( ruConfig ) }
 		, m_pipelineState{ m_callbacks.getPipelineState() }
-		, m_fence{ context, m_pass.getGroupName(), { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
 		, m_timer{ context, pass.getGroupName(), graph.getTimerQueryPool(), graph.getTimerQueryOffset() }
 	{
-		m_commandBuffers.resize( m_ruConfig.maxPassCount );
-		m_initialised.resize( m_ruConfig.maxPassCount );
-		m_layoutTransitions.resize( m_ruConfig.maxPassCount );
-		m_accessTransitions.resize( m_ruConfig.maxPassCount );
+		for ( uint32_t i = 0u; i < m_ruConfig.maxPassCount; ++i )
+		{
+			m_passes.emplace_back( m_graph, m_context, m_pass.getGroupName() );
+		}
 	}
 
 	RunnablePass::~RunnablePass()
 	{
-		if ( m_semaphore )
-		{
-			crgUnregisterObject( m_context, m_semaphore );
-			m_context.vkDestroySemaphore( m_context.device
-				, m_semaphore
-				, m_context.allocator );
-		}
-
-		for ( auto & cb : m_commandBuffers )
-		{
-			if ( cb.commandBuffer )
-			{
-				crgUnregisterObject( m_context, cb.commandBuffer );
-				m_context.vkFreeCommandBuffers( m_context.device
-					, m_graph.getCommandPool()
-					, 1u
-					, &cb.commandBuffer );
-			}
-		}
+		m_passes.clear();
 	}
 
-	uint32_t RunnablePass::initialise( uint32_t passIndex )
+	void RunnablePass::initialise( uint32_t passIndex )
 	{
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
+
 		for ( auto & attach : m_pass.images )
 		{
 			if ( attach.count <= 1u )
@@ -328,20 +352,17 @@ namespace crg
 				, m_graph.getOutputAccessState( m_pass, buffer, m_callbacks.isComputePass() ) } );
 			}
 		}
-		if ( !m_semaphore )
-		{
-			doCreateSemaphore();
-		}
 
 		m_callbacks.initialise( passIndex );
-		m_initialised[passIndex] = true;
-		return uint32_t( m_commandBuffers.size() );
+		pass.initialised = true;
 	}
 
 	void RunnablePass::recordCurrent( RecordContext & context )
 	{
 		auto index = m_callbacks.getPassIndex();
-		recordOne( m_commandBuffers[index]
+		assert( m_passes.size() > index );
+		auto & pass = m_passes[index];
+		recordOne( pass.commandBuffer
 			, index
 			, context );
 	}
@@ -355,7 +376,8 @@ namespace crg
 		if ( it != m_passContexts.end() )
 		{
 			auto context = it->second;
-			recordOne( m_commandBuffers[index]
+			auto & pass = m_passes[index];
+			recordOne( pass.commandBuffer
 				, index
 				, context );
 		}
@@ -363,10 +385,12 @@ namespace crg
 
 	void RunnablePass::recordAll( RecordContext & context )
 	{
-		for ( uint32_t index = 0u; index < m_commandBuffers.size(); ++index )
+		uint32_t index{};
+
+		for ( auto & pass : m_passes )
 		{
-			recordOne( m_commandBuffers[index]
-				, index
+			recordOne( pass.commandBuffer
+				, index++
 				, context );
 		}
 	}
@@ -380,7 +404,9 @@ namespace crg
 			enabled.commandBuffer = doCreateCommandBuffer( std::string{} );
 		}
 
-		m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
+		assert( m_passes.size() > index );
+		auto & pass = m_passes[index];
+		pass.fence.wait( 0xFFFFFFFFFFFFFFFFull );
 		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 			, nullptr
 			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
@@ -404,7 +430,10 @@ namespace crg
 
 		if ( isEnabled() )
 		{
-			if ( !m_initialised[index] )
+			assert( m_passes.size() > index );
+			auto & pass = m_passes[index];
+
+			if ( !pass.initialised )
 			{
 				initialise( index );
 			}
@@ -452,7 +481,7 @@ namespace crg
 						for ( uint32_t i = 0u; i < attach.count; ++i )
 						{
 							auto view = attach.view( i );
-							auto transition = getTransition( index
+							auto & transition = getTransition( index
 								, view );
 							context.memoryBarrier( commandBuffer
 								, view
@@ -469,7 +498,7 @@ namespace crg
 					&& attach.isStorageBuffer() )
 				{
 					auto buffer = attach.buffer;
-					auto transition = getTransition( index
+					auto & transition = getTransition( index
 						, buffer.buffer );
 					context.memoryBarrier( commandBuffer
 						, buffer.buffer.buffer
@@ -511,13 +540,16 @@ namespace crg
 			return toWait;
 		}
 
+		auto index = m_callbacks.getPassIndex();
+		assert( m_passes.size() > index );
+		auto & pass = m_passes[index];
+
 		if ( m_context.device )
 		{
 			std::vector< VkSemaphore > semaphores;
 			std::vector< VkPipelineStageFlags > dstStageMasks;
 			convert( toWait, semaphores, dstStageMasks );
-			auto index = m_callbacks.getPassIndex();
-			auto & cb = m_commandBuffers[index];
+			auto & cb = pass.commandBuffer;
 			m_timer.notifyPassRender();
 			VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 				, nullptr
@@ -527,56 +559,63 @@ namespace crg
 				, 1u
 				, &cb.commandBuffer
 				, 1u
-				, &m_semaphore };
-			m_fence.reset();
+				, &pass.semaphore };
+			pass.fence.reset();
 			m_context.vkQueueSubmit( queue
 				, 1u
 				, &submitInfo
-				, m_fence );
+				, pass.fence );
 		}
 
 		return { 1u
-			, { m_semaphore
+			, { pass.semaphore
 				, m_callbacks.getPipelineState().pipelineStage } };
 	}
 
-	void RunnablePass::resetCommandBuffer()
-{
+	void RunnablePass::resetCommandBuffer( uint32_t passIndex )
+	{
 		if ( !m_context.device )
 		{
 			return;
 		}
 
-		m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
+		pass.fence.wait( 0xFFFFFFFFFFFFFFFFull );
 
-		for ( auto & cb : m_commandBuffers )
+		if ( pass.commandBuffer.commandBuffer )
 		{
-			if ( cb.commandBuffer )
-			{
-				cb.recorded = false;
-				m_context.vkResetCommandBuffer( cb.commandBuffer
-					, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
-			}
+			pass.commandBuffer.recorded = false;
+			m_context.vkResetCommandBuffer( pass.commandBuffer.commandBuffer
+				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+		}
+	}
+
+	void RunnablePass::resetCommandBuffers()
+	{
+		for ( uint32_t i = 0u; i < uint32_t( m_passes.size() ); ++i )
+		{
+			resetCommandBuffer( i );
 		}
 	}
 
 	RunnablePass::LayoutTransition const & RunnablePass::getTransition( uint32_t passIndex
 		, ImageViewId const & view )const
 	{
-		assert( m_layoutTransitions.size() > passIndex );
-		auto & layoutTransitions = m_layoutTransitions[passIndex];
-		auto it = layoutTransitions.find( view );
-		assert( it != layoutTransitions.end() );
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
+		auto it = pass.layoutTransitions.find( view );
+		assert( it != pass.layoutTransitions.end() );
 		return it->second;
 	}
 
 	RunnablePass::AccessTransition const & RunnablePass::getTransition( uint32_t passIndex
 		, Buffer const & buffer )const
 	{
-		assert( m_accessTransitions.size() > passIndex );
-		auto & accessTransitions = m_accessTransitions[passIndex];
-		auto it = accessTransitions.find( buffer.buffer );
-		assert( it != accessTransitions.end() );
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
+		auto it = pass.accessTransitions.find( buffer.buffer );
+		assert( it != pass.accessTransitions.end() );
 		return it->second;
 	}
 
@@ -602,45 +641,19 @@ namespace crg
 		return result;
 	}
 
-	void RunnablePass::doCreateCommandBuffers()
-	{
-		for ( auto & cb : m_commandBuffers )
-		{
-			cb.commandBuffer = doCreateCommandBuffer( std::string{} );
-		}
-	}
-
-	void RunnablePass::doCreateSemaphore()
-	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
-			, nullptr
-			, 0u };
-		auto res = m_context.vkCreateSemaphore( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_semaphore );
-		checkVkResult( res, m_pass.getGroupName() + " - Semaphore creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_semaphore );
-	}
-
 	void RunnablePass::doRegisterTransition( uint32_t passIndex
 		, ImageViewId view
 		, LayoutTransition transition )
 	{
-		assert( m_layoutTransitions.size() > passIndex );
-		auto & layoutTransitions = m_layoutTransitions[passIndex];
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
 
 		if ( transition.to.layout == VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			transition.to = transition.needed;
 		}
 
-		auto ires = layoutTransitions.emplace( view, transition );
+		auto ires = pass.layoutTransitions.emplace( view, transition );
 
 		if ( !ires.second )
 		{
@@ -662,15 +675,15 @@ namespace crg
 		, Buffer buffer
 		, AccessTransition transition )
 	{
-		assert( m_accessTransitions.size() > passIndex );
-		auto & accessTransitions = m_accessTransitions[passIndex];
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
 
 		if ( transition.to.access == 0u )
 		{
 			transition.to = transition.needed;
 		}
 
-		auto ires = accessTransitions.emplace( buffer.buffer, transition );
+		auto ires = pass.accessTransitions.emplace( buffer.buffer, transition );
 
 		if ( !ires.second )
 		{
@@ -689,10 +702,10 @@ namespace crg
 		, VkAccessFlags accessMask
 		, VkPipelineStageFlags pipelineStage )
 	{
-		assert( m_layoutTransitions.size() > passIndex );
-		auto & layoutTransitions = m_layoutTransitions[passIndex];
-		auto it = layoutTransitions.find( view );
-		assert( it != layoutTransitions.end() );
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
+		auto it = pass.layoutTransitions.find( view );
+		assert( it != pass.layoutTransitions.end() );
 		it->second.to.layout = layout;
 		it->second.to.state.access = accessMask;
 		it->second.to.state.pipelineStage = pipelineStage;
@@ -714,10 +727,10 @@ namespace crg
 		, VkAccessFlags accessMask
 		, VkPipelineStageFlags pipelineStage )
 	{
-		assert( m_accessTransitions.size() > passIndex );
-		auto & accessTransitions = m_accessTransitions[passIndex];
-		auto it = accessTransitions.find( buffer.buffer );
-		assert( it != accessTransitions.end() );
+		assert( m_passes.size() > passIndex );
+		auto & pass = m_passes[passIndex];
+		auto it = pass.accessTransitions.find( buffer.buffer );
+		assert( it != pass.accessTransitions.end() );
 		it->second.to.access = accessMask;
 		it->second.to.pipelineStage = pipelineStage;
 		m_graph.updateCurrentAccessState( m_pass

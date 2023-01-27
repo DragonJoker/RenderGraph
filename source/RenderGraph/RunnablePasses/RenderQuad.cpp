@@ -38,7 +38,7 @@ namespace crg
 	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{
-		resetCommandBuffer();
+		resetCommandBuffer( index );
 		m_renderQuad.resetPipeline( std::move( config ), index );
 		reRecordCurrent();
 	}

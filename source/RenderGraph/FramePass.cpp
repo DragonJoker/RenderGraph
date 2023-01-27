@@ -331,7 +331,7 @@ namespace crg
 		, VkDeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "IOSB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
 			, *this
 			, binding
 			, 1u
@@ -354,7 +354,7 @@ namespace crg
 			, binding
 			, 1u
 			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform ) | BufferAttachment::FlagKind( BufferAttachment::Flag::View )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::UniformView )
 			, buffer
 			, view
 			, offset
@@ -373,7 +373,7 @@ namespace crg
 			, binding
 			, 1u
 			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage ) | BufferAttachment::FlagKind( BufferAttachment::Flag::View )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
 			, buffer
 			, view
 			, offset
@@ -468,371 +468,6 @@ namespace crg
 		}
 
 		return graph.createView( data );
-	}
-
-	void FramePass::addSampledView( ImageViewId view
-		, uint32_t binding
-		, VkImageLayout initialLayout
-		, SamplerDesc samplerDesc )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Spl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
-			, 1u
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
-			, std::move( samplerDesc )
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addImplicitColourView( ImageViewId view
-		, VkImageLayout wantedLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Impl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, ~( 0u )
-			, 1u
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, wantedLayout } );
-	}
-
-	void FramePass::addImplicitDepthView( ImageViewId view
-		, VkImageLayout wantedLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Impl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, ~( 0u )
-			, 1u
-			, std::move( attachName )
-			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth ) )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, wantedLayout } );
-	}
-
-	void FramePass::addImplicitDepthStencilView( ImageViewId view
-		, VkImageLayout wantedLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Impl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, ~( 0u )
-			, 1u
-			, std::move( attachName )
-			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, wantedLayout } );
-	}
-
-	void FramePass::addInputStorageView( ImageViewId view
-		, uint32_t binding
-		, VkImageLayout initialLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Str";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
-			, 1u
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addOutputStorageView( ImageViewId view
-		, uint32_t binding
-		, VkImageLayout initialLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Str";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, binding
-			, 1u
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addInOutStorageView( ImageViewId view
-		, uint32_t binding
-		, VkImageLayout initialLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Str";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, binding
-			, 1u
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addTransferInputView( ImageViewId view
-		, VkImageLayout initialLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/It";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, uint32_t{}
-			, uint32_t{}
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addTransferOutputView( ImageViewId view
-		, VkImageLayout initialLayout )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/Ot";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, uint32_t{}
-			, uint32_t{}
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addTransferInOutView( ImageViewId view
-		, crg::Attachment::Flag flag )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/IOt";
-		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( flag ) )
-			, *this
-			, uint32_t{}
-			, uint32_t{}
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
-			, { view }
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
-			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addColourView( std::string const & pname
-		, ImageViewId view
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
-		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
-			, *this
-			, uint32_t{}
-			, uint32_t{}
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
-			, { view }
-			, loadOp
-			, storeOp
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, finalLayout
-			, SamplerDesc{}
-			, std::move( clearValue )
-			, std::move( blendState )
-			, VkImageLayout{} } );
-	}
-
-	void FramePass::addDepthView( std::string const & pname
-		, ImageViewId view
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
-		, VkClearValue clearValue )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
-		images.insert( images.begin()
-			, { Attachment::FlagKind( Attachment::Flag::None )
-				, *this
-				, uint32_t{}
-				, uint32_t{}
-				, std::move( attachName )
-				, Attachment::FlagKind( ImageAttachment::Flag::Depth )
-				, { view }
-				, loadOp
-				, storeOp
-				, stencilLoadOp
-				, stencilStoreOp
-				, initialLayout
-				, finalLayout
-				, SamplerDesc{}
-				, std::move( clearValue )
-				, VkPipelineColorBlendAttachmentState{}
-				, VkImageLayout{} } );
-	}
-
-	void FramePass::addStencilView( std::string const & pname
-		, ImageAttachment::FlagKind stencilFlags
-		, ImageViewId view
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
-		, VkClearValue clearValue )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
-		images.insert( images.begin()
-			, { Attachment::FlagKind( Attachment::Flag::None )
-				, *this
-				, uint32_t{}
-				, uint32_t{}
-				, std::move( attachName )
-				, ImageAttachment::FlagKind( stencilFlags
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
-				, { view }
-				, loadOp
-				, storeOp
-				, stencilLoadOp
-				, stencilStoreOp
-				, initialLayout
-				, finalLayout
-				, SamplerDesc{}
-				, std::move( clearValue )
-				, VkPipelineColorBlendAttachmentState{}
-				, VkImageLayout{} } );
-	}
-
-	void FramePass::addDepthStencilView( std::string const & pname
-		, ImageAttachment::FlagKind stencilFlags
-		, ImageViewId view
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
-		, VkClearValue clearValue )
-	{
-		auto attachName = fpass::adjustName( *this, view.data->name ) + "/" + pname;
-		images.insert( images.begin()
-			, { Attachment::FlagKind( Attachment::Flag::None )
-				, *this
-				, uint32_t{}
-				, uint32_t{}
-				, std::move( attachName )
-				, ImageAttachment::FlagKind( stencilFlags
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
-				, { view }
-				, loadOp
-				, storeOp
-				, stencilLoadOp
-				, stencilStoreOp
-				, initialLayout
-				, finalLayout
-				, SamplerDesc{}
-				, std::move( clearValue )
-				, VkPipelineColorBlendAttachmentState{}
-				, VkImageLayout{} } );
 	}
 
 	void FramePass::addSampledView( ImageViewIdArray views
@@ -992,8 +627,7 @@ namespace crg
 			, 1u
 			, std::move( attachName )
 			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
+				| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
 			, std::move( views )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -1018,8 +652,7 @@ namespace crg
 			, count
 			, std::move( attachName )
 			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
+				| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
 			, std::move( views )
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -1136,7 +769,7 @@ namespace crg
 		, VkImageLayout initialLayout )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+		images.push_back( { Attachment::FlagKind( Attachment::Flag::InOut )
 			, *this
 			, binding
 			, 1u
@@ -1161,7 +794,7 @@ namespace crg
 	{
 		auto count = uint32_t( views.size() );
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output )
+		images.push_back( { Attachment::FlagKind( Attachment::Flag::InOut )
 			, *this
 			, binding
 			, count
@@ -1191,10 +824,10 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, VkImageLayout{}
 			, SamplerDesc{}
@@ -1214,10 +847,10 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, initialLayout
 			, VkImageLayout{}
 			, SamplerDesc{}
@@ -1230,17 +863,17 @@ namespace crg
 		, crg::Attachment::Flag flag )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IOt";
-		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::Input ) | Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( flag ) )
+		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
 			, *this
 			, uint32_t{}
 			, uint32_t{}
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
-			, VkAttachmentLoadOp{}
-			, VkAttachmentStoreOp{}
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VkImageLayout{}
 			, VkImageLayout{}
 			, SamplerDesc{}
@@ -1250,6 +883,7 @@ namespace crg
 	}
 
 	void FramePass::addColourView( std::string const & pname
+		, crg::Attachment::FlagKind flags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -1259,7 +893,7 @@ namespace crg
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::None )
+		images.push_back( { flags
 			, *this
 			, uint32_t{}
 			, uint32_t{}
@@ -1279,6 +913,7 @@ namespace crg
 	}
 
 	void FramePass::addDepthView( std::string const & pname
+		, crg::Attachment::FlagKind flags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
@@ -1290,7 +925,7 @@ namespace crg
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
-			, { Attachment::FlagKind( Attachment::Flag::None )
+			, { flags
 				, *this
 				, uint32_t{}
 				, uint32_t{}
@@ -1310,6 +945,7 @@ namespace crg
 	}
 
 	void FramePass::addStencilView( std::string const & pname
+		, crg::Attachment::FlagKind flags
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
@@ -1322,7 +958,7 @@ namespace crg
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
-			, { Attachment::FlagKind( Attachment::Flag::None )
+			, { flags
 				, *this
 				, uint32_t{}
 				, uint32_t{}
@@ -1343,6 +979,7 @@ namespace crg
 	}
 
 	void FramePass::addDepthStencilView( std::string const & pname
+		, crg::Attachment::FlagKind flags
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
@@ -1355,14 +992,13 @@ namespace crg
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
-			, { Attachment::FlagKind( Attachment::Flag::None )
+			, { flags
 				, *this
 				, uint32_t{}
 				, uint32_t{}
 				, std::move( attachName )
 				, ImageAttachment::FlagKind( stencilFlags
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
+					| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
 				, std::move( views )
 				, loadOp
 				, storeOp

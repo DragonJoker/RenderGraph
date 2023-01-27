@@ -213,31 +213,44 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			auto view = attach.view( passIndex );
-			auto & transition = runnable.getTransition( passIndex, view );
+			if ( attach.isDepthAttach()
+				|| attach.isStencilAttach()
+				|| attach.isColourAttach() )
+			{
+				auto view = attach.view( passIndex );
+				auto currentLayout = context.getLayoutState( view );
+				auto & transition = runnable.getTransition( passIndex, view );
+				auto from = ( !attach.isInput()
+					? LayoutState{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } }
+					: ( currentLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+						? transition.from
+						: currentLayout );
 
-			if ( attach.isDepthAttach() || attach.isStencilAttach() )
-			{
-				depthReference = rpHolder::addAttach( context
-					, attach
-					, attaches
-					, data.attaches
-					, data.clearValues
-					, transition.from
-					, transition.to
-					, m_context.separateDepthStencilLayouts );
-			}
-			else if ( attach.isColourAttach() )
-			{
-				colorReferences.push_back( rpHolder::addAttach( context
-					, attach
-					, attaches
-					, data.attaches
-					, data.clearValues
-					, m_blendAttachs
-					, transition.from
-					, transition.to
-					, m_context.separateDepthStencilLayouts ) );
+				if ( attach.isDepthAttach() || attach.isStencilAttach() )
+				{
+					depthReference = rpHolder::addAttach( context
+						, attach
+						, attaches
+						, data.attaches
+						, data.clearValues
+						, from
+						, transition.to
+						, m_context.separateDepthStencilLayouts );
+					context.setLayoutState( view, transition.to );
+				}
+				else if ( attach.isColourAttach() )
+				{
+					colorReferences.push_back( rpHolder::addAttach( context
+						, attach
+						, attaches
+						, data.attaches
+						, data.clearValues
+						, m_blendAttachs
+						, from
+						, transition.to
+						, m_context.separateDepthStencilLayouts ) );
+					context.setLayoutState( view, transition.to );
+				}
 			}
 		}
 
