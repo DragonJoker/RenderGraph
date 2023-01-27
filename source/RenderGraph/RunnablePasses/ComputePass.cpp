@@ -46,7 +46,7 @@ namespace crg
 	void ComputePass::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{
-		resetCommandBuffer();
+		resetCommandBuffer( index );
 		m_pipeline.resetPipeline( std::move( config ), index );
 		doCreatePipeline( index );
 		reRecordCurrent();

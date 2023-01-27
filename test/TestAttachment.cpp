@@ -62,6 +62,7 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addColourView( "Colour"
+			, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
 			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR
 			, VK_ATTACHMENT_STORE_OP_STORE );
@@ -85,6 +86,7 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addDepthStencilView("DepthStencil"
+			, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
 			, crg::ImageAttachment::FlagKind( crg::ImageAttachment::Flag::StencilOutput )
 			, view
 			, VK_ATTACHMENT_LOAD_OP_CLEAR

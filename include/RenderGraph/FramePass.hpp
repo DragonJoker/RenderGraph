@@ -150,139 +150,6 @@ namespace crg
 		/**@}*/
 		/**
 		*\name
-		*	Image single-pass attachments.
-		*/
-		/**@{*/
-		/**
-		*\brief
-		*	Creates a sampled image attachment.
-		*/
-		CRG_API void addSampledView( ImageViewId view
-			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, SamplerDesc samplerDesc = SamplerDesc{} );
-		/**
-		*\brief
-		*	Creates an implicit image attachment.
-		*\remarks
-		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
-		*	It will also be used to compute dependencies, and is considered an input, in that goal.
-		*/
-		CRG_API void addImplicitColourView( ImageViewId view
-			, VkImageLayout wantedLayout );
-		/**
-		*\brief
-		*	Creates an implicit image attachment.
-		*\remarks
-		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
-		*	It will also be used to compute dependencies, and is considered an input, in that goal.
-		*/
-		CRG_API void addImplicitDepthView( ImageViewId view
-			, VkImageLayout wantedLayout );
-		/**
-		*\brief
-		*	Creates an implicit image attachment.
-		*\remarks
-		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
-		*	It will also be used to compute dependencies, and is considered an input, in that goal.
-		*/
-		CRG_API void addImplicitDepthStencilView( ImageViewId view
-			, VkImageLayout wantedLayout );
-		/**
-		*\brief
-		*	Creates a storage image attachment.
-		*/
-		CRG_API void addInputStorageView( ImageViewId view
-			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
-		/**
-		*\brief
-		*	Creates a storage image attachment.
-		*/
-		CRG_API void addOutputStorageView( ImageViewId view
-			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
-		/**
-		*\brief
-		*	Creates a storage image attachment.
-		*/
-		CRG_API void addInOutStorageView( ImageViewId view
-			, uint32_t binding
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
-		/**
-		*\brief
-		*	Creates an transfer input attachment.
-		*/
-		CRG_API void addTransferInputView( ImageViewId view
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
-		/**
-		*\brief
-		*	Creates an transfer output attachment.
-		*/
-		CRG_API void addTransferOutputView( ImageViewId view
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED );
-		/**
-		*\brief
-		*	Creates an transfer input/output attachment.
-		*/
-		CRG_API void addTransferInOutView( ImageViewId view
-			, crg::Attachment::Flag flag = {} );
-		/**
-		*\brief
-		*	Creates a colour attachment.
-		*/
-		CRG_API void addColourView( std::string const & name
-			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkClearValue clearValue = {}
-			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
-		/**
-		*\brief
-		*	Creates a depth and/or stencil output attachment.
-		*/
-		CRG_API void addDepthView( std::string const & name
-			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkClearValue clearValue = {} );
-		/**
-		*\brief
-		*	Creates a depth and/or stencil output attachment.
-		*/
-		CRG_API void addStencilView( std::string const & name
-			, ImageAttachment::FlagKind stencilFlags
-			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkClearValue clearValue = {} );
-		/**
-		*\brief
-		*	Creates a depth and/or stencil output attachment.
-		*/
-		CRG_API void addDepthStencilView( std::string const & name
-			, ImageAttachment::FlagKind stencilFlags
-			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
-			, VkClearValue clearValue = {} );
-		/**@}*/
-		/**
-		*\name
 		*	Image multi-pass attachments.
 		*/
 		/**@{*/
@@ -421,6 +288,7 @@ namespace crg
 		*	Creates a colour attachment.
 		*/
 		CRG_API void addColourView( std::string const & name
+			, crg::Attachment::FlagKind flags
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -433,6 +301,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addDepthView( std::string const & name
+			, crg::Attachment::FlagKind flags
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
@@ -446,6 +315,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addStencilView( std::string const & name
+			, crg::Attachment::FlagKind flags
 			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
@@ -460,6 +330,7 @@ namespace crg
 		*	Creates a depth and/or stencil output attachment.
 		*/
 		CRG_API void addDepthStencilView( std::string const & name
+			, crg::Attachment::FlagKind flags
 			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
@@ -469,6 +340,237 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
 			, VkClearValue clearValue = {} );
+		/**@}*/
+		/**
+		*\name
+		*	Image single-pass attachments.
+		*/
+		/**@{*/
+		/**
+		*\brief
+		*	Creates a sampled image attachment.
+		*/
+		inline void addSampledView( ImageViewId view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, SamplerDesc samplerDesc = SamplerDesc{} )
+		{
+			addSampledView( ImageViewIdArray{ view }
+				, binding
+				, initialLayout
+				, samplerDesc );
+		}
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		inline void addImplicitColourView( ImageViewId view
+			, VkImageLayout wantedLayout )
+		{
+			addImplicitColourView( ImageViewIdArray{ view }
+				, wantedLayout );
+		}
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		inline void addImplicitDepthView( ImageViewId view
+			, VkImageLayout wantedLayout )
+		{
+			addImplicitDepthView( ImageViewIdArray{ view }
+				, wantedLayout );
+		}
+		/**
+		*\brief
+		*	Creates an implicit image attachment.
+		*\remarks
+		*	This image will only be transitioned to wanted layout at pass start, without being actually used.
+		*	It will also be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		inline void addImplicitDepthStencilView( ImageViewId view
+			, VkImageLayout wantedLayout )
+		{
+			addImplicitDepthStencilView( ImageViewIdArray{ view }
+				, wantedLayout );
+		}
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
+		inline void addInputStorageView( ImageViewId view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			addInputStorageView( ImageViewIdArray{ view }
+				, binding
+				, initialLayout );
+		}
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
+		inline void addOutputStorageView( ImageViewId view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			addOutputStorageView( ImageViewIdArray{ view }
+				, binding
+				, initialLayout );
+		}
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
+		inline void addInOutStorageView( ImageViewId view
+			, uint32_t binding
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			addInOutStorageView( ImageViewIdArray{ view }
+				, binding
+				, initialLayout );
+		}
+		/**
+		*\brief
+		*	Creates an transfer input attachment.
+		*/
+		inline void addTransferInputView( ImageViewId view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			addTransferInputView( ImageViewIdArray{ view }
+				, initialLayout );
+		}
+		/**
+		*\brief
+		*	Creates an transfer output attachment.
+		*/
+		inline void addTransferOutputView( ImageViewId view
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			addTransferOutputView( ImageViewIdArray{ view }
+				, initialLayout );
+		}
+		/**
+		*\brief
+		*	Creates an transfer input/output attachment.
+		*/
+		inline void addTransferInOutView( ImageViewId view
+			, crg::Attachment::Flag flag = {} )
+		{
+			addTransferInOutView( ImageViewIdArray{ view }
+				, flag );
+		}
+		/**
+		*\brief
+		*	Creates a colour attachment.
+		*/
+		inline void addColourView( std::string const & name
+			, crg::Attachment::FlagKind flags
+			, ImageViewId view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {}
+			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
+		{
+			addColourView( name
+				, flags
+				, ImageViewIdArray{ view }
+				, loadOp
+				, storeOp
+				, initialLayout
+				, finalLayout
+				, clearValue
+				, blendState );
+		}
+		/**
+		*\brief
+		*	Creates a depth and/or stencil output attachment.
+		*/
+		inline void addDepthView( std::string const & name
+			, crg::Attachment::FlagKind flags
+			, ImageViewId view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkAttachmentLoadOp stencilLoadOp
+			, VkAttachmentStoreOp stencilStoreOp
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {} )
+		{
+			addDepthView( name
+				, flags
+				, ImageViewIdArray{ view }
+				, loadOp
+				, storeOp
+				, stencilLoadOp
+				, stencilStoreOp
+				, initialLayout
+				, finalLayout
+				, clearValue );
+		}
+		/**
+		*\brief
+		*	Creates a depth and/or stencil output attachment.
+		*/
+		inline void addStencilView( std::string const & name
+			, crg::Attachment::FlagKind flags
+			, ImageAttachment::FlagKind stencilFlags
+			, ImageViewId view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkAttachmentLoadOp stencilLoadOp
+			, VkAttachmentStoreOp stencilStoreOp
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {} )
+		{
+			addStencilView( name
+				, flags
+				, stencilFlags
+				, ImageViewIdArray{ view }
+				, loadOp
+				, storeOp
+				, stencilLoadOp
+				, stencilStoreOp
+				, initialLayout
+				, finalLayout
+				, clearValue );
+		}
+		/**
+		*\brief
+		*	Creates a depth and/or stencil output attachment.
+		*/
+		inline void addDepthStencilView( std::string const & name
+			, crg::Attachment::FlagKind flags
+			, ImageAttachment::FlagKind stencilFlags
+			, ImageViewId view
+			, VkAttachmentLoadOp loadOp
+			, VkAttachmentStoreOp storeOp
+			, VkAttachmentLoadOp stencilLoadOp
+			, VkAttachmentStoreOp stencilStoreOp
+			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, VkClearValue clearValue = {} )
+		{
+			addDepthStencilView( name
+				, flags
+				, stencilFlags
+				, ImageViewIdArray{ view }
+				, loadOp
+				, storeOp
+				, stencilLoadOp
+				, stencilStoreOp
+				, initialLayout
+				, finalLayout
+				, clearValue );
+		}
 		/**@}*/
 		/**
 		*\name
@@ -483,7 +585,8 @@ namespace crg
 		void addInputColourView( ImageViewT view
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
-			return addColourView( "Ic"
+			addColourView( "Ic"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Input )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -501,6 +604,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addColourView( "IOc"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::InOut )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -519,6 +623,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addColourView( "Oc"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -535,6 +640,7 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthView( "Id"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Input )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -553,6 +659,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthView( "IOd"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::InOut )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -572,6 +679,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthView( "Od"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -590,6 +698,7 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "Ids"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Input )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
@@ -609,7 +718,8 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "IOds"
-				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::InOut )
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInOut )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
@@ -629,6 +739,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addDepthStencilView( "Ods"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
@@ -648,6 +759,7 @@ namespace crg
 			, VkImageLayout initialLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "Is"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Input )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
@@ -667,7 +779,8 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "IOs"
-				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::InOut )
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInOut )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
@@ -687,6 +800,7 @@ namespace crg
 			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			addStencilView( "Os"
+				, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput )
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE

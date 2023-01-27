@@ -38,7 +38,7 @@ namespace crg
 	void RenderMesh::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{
-		resetCommandBuffer();
+		resetCommandBuffer( index );
 		m_renderMesh.resetPipeline( std::move( config ), index );
 		reRecordCurrent();
 	}

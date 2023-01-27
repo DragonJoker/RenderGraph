@@ -194,7 +194,7 @@ namespace crg
 		*\brief
 		*	Initialises the descriptor set.
 		*/
-		CRG_API uint32_t initialise( uint32_t passIndex );
+		CRG_API void initialise( uint32_t passIndex );
 		/**
 		*\brief
 		*	Records the pass commands into its command buffer.
@@ -242,7 +242,8 @@ namespace crg
 		*\brief
 		*	Resets the command buffer to initial state.
 		*/
-		CRG_API void resetCommandBuffer();
+		CRG_API void resetCommandBuffer( uint32_t passIndex );
+		CRG_API void resetCommandBuffers();
 		CRG_API LayoutTransition const & getTransition( uint32_t passIndex
 			, ImageViewId const & view )const;
 		CRG_API AccessTransition const & getTransition( uint32_t passIndex
@@ -275,7 +276,7 @@ namespace crg
 
 		uint32_t getMaxPassCount()const
 		{
-			return uint32_t( m_commandBuffers.size() );
+			return uint32_t( m_passes.size() );
 		}
 
 		PipelineState const & getPipelineState()const
@@ -299,8 +300,6 @@ namespace crg
 			, RecordContext & context );
 
 		VkCommandBuffer doCreateCommandBuffer( std::string const & suffix );
-		void doCreateCommandBuffers();
-		void doCreateSemaphore();
 		void doRegisterTransition( uint32_t passIndex
 			, ImageViewId view
 			, LayoutTransition transition );
@@ -319,6 +318,47 @@ namespace crg
 			, VkAccessFlags accessMask
 			, VkPipelineStageFlags pipelineStage );
 
+	private:
+		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
+		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
+
+		struct PassData
+		{
+			PassData( PassData const & ) = delete;
+			PassData & operator=( PassData const & ) = delete;
+			PassData & operator=( PassData && )noexcept = delete;
+
+			PassData( PassData && rhs )noexcept
+				: graph{ rhs.graph }
+				, context{ rhs.context }
+				, commandBuffer{ std::move( rhs.commandBuffer ) }
+				, semaphore{ std::move( rhs.semaphore ) }
+				, fence{ std::move( rhs.fence ) }
+				, layoutTransitions{ std::move( rhs.layoutTransitions ) }
+				, accessTransitions{ std::move( rhs.accessTransitions ) }
+				, initialised{ std::move( rhs.initialised ) }
+			{
+				rhs.commandBuffer.commandBuffer = {};
+				rhs.commandBuffer.recorded = {};
+				rhs.semaphore = {};
+				rhs.initialised = {};
+			}
+
+			PassData( RunnableGraph & graph
+				, GraphContext & context
+				, std::string const & baseName );
+			~PassData();
+
+			RunnableGraph & graph;
+			GraphContext & context;
+			CommandBuffer commandBuffer;
+			VkSemaphore semaphore{};
+			Fence fence;
+			LayoutTransitionMap layoutTransitions;
+			AccessTransitionMap accessTransitions;
+			bool initialised{};
+		};
+
 	protected:
 		FramePass const & m_pass;
 		GraphContext & m_context;
@@ -326,16 +366,9 @@ namespace crg
 		Callbacks m_callbacks;
 		ru::Config m_ruConfig;
 		PipelineState m_pipelineState;
-		std::vector< CommandBuffer > m_commandBuffers;
-		VkSemaphore m_semaphore{};
-		Fence m_fence;
+		std::vector< PassData > m_passes;
 		FramePassTimer m_timer;
-		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
-		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
-		std::vector< LayoutTransitionMap > m_layoutTransitions;
-		std::vector< AccessTransitionMap > m_accessTransitions;
 		std::map< uint32_t, RecordContext > m_passContexts;
-		std::vector< bool > m_initialised;
 	};
 
 	template<>

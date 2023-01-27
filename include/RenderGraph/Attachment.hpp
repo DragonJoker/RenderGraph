@@ -73,6 +73,8 @@ namespace crg
 			StencilInput = 0x01 << 7,
 			StencilOutput = 0x01 << 8,
 			Transition = 0x01 << 9,
+			DepthStencil = Depth | Stencil,
+			StencilInOut = StencilInput | StencilOutput,
 		};
 		CRG_API ImageAttachment( ImageViewId view
 			, ImageAttachment const & origin );
@@ -235,6 +237,8 @@ namespace crg
 			Uniform = 0x01 << 0,
 			Storage = 0x01 << 1,
 			View = 0x01 << 2,
+			UniformView = Uniform | View,
+			StorageView = Storage | View,
 		};
 
 		CRG_API VkDescriptorType getDescriptorType()const;
@@ -332,6 +336,7 @@ namespace crg
 			Image = 0x01 << 2,
 			Buffer = 0x01 << 3,
 			NoTransition = 0x01 << 4,
+			InOut = Input | Output,
 		};
 		/**
 		*\name
