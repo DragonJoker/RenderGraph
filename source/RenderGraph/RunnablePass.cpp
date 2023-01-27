@@ -208,34 +208,40 @@ namespace crg
 		, context{ ctx }
 		, fence{ context, baseName, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
 	{
-		VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
-			, nullptr
-			, 0u };
-		auto res = context.vkCreateSemaphore( context.device
-			, &createInfo
-			, context.allocator
-			, &semaphore );
-		checkVkResult( res, baseName + " - Semaphore creation" );
-		crgRegisterObject( context, baseName, semaphore );
+		if ( context.device )
+		{
+			VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+				, nullptr
+				, 0u };
+			auto res = context.vkCreateSemaphore( context.device
+				, &createInfo
+				, context.allocator
+				, &semaphore );
+			checkVkResult( res, baseName + " - Semaphore creation" );
+			crgRegisterObject( context, baseName, semaphore );
+		}
 	}
 
 	RunnablePass::PassData::~PassData()
 	{
-		if ( semaphore )
+		if ( context.device )
 		{
-			crgUnregisterObject( context, semaphore );
-			context.vkDestroySemaphore( context.device
-				, semaphore
-				, context.allocator );
-		}
+			if ( semaphore )
+			{
+				crgUnregisterObject( context, semaphore );
+				context.vkDestroySemaphore( context.device
+					, semaphore
+					, context.allocator );
+			}
 
-		if ( commandBuffer.commandBuffer )
-		{
-			crgUnregisterObject( context, commandBuffer.commandBuffer );
-			context.vkFreeCommandBuffers( context.device
-				, graph.getCommandPool()
-				, 1u
-				, &commandBuffer.commandBuffer );
+			if ( commandBuffer.commandBuffer )
+			{
+				crgUnregisterObject( context, commandBuffer.commandBuffer );
+				context.vkFreeCommandBuffers( context.device
+					, graph.getCommandPool()
+					, 1u
+					, &commandBuffer.commandBuffer );
+			}
 		}
 	}
 
