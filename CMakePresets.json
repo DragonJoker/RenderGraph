@@ -1,0 +1,59 @@
+{
+	"version": 3,
+	"cmakeMinimumRequired": {
+		"major": 3,
+		"minor": 21,
+		"patch": 0
+	},
+	"configurePresets": [
+		{
+			"name": "default-base",
+			"hidden": true,
+			"displayName": "Default Config",
+			"description": "Default build configuration",
+			"installDir": "${sourceDir}/package/RenderGraph",
+			"cacheVariables": {
+				"CRG_BUILD_STATIC": false,
+				"CRG_BUILD_TESTS": true
+			}
+		},
+		{
+			"name": "dev-base",
+			"hidden": true,
+			"displayName": "Developer Visual Studio Config",
+			"description": "Developer build configuration using Visual Studio",
+			"inherits": "default-base",
+			"cacheVariables": {
+				"PROJECTS_WARNINGS_AS_ERRORS": true
+			}
+		},
+		{
+			"name": "default-msvc",
+			"displayName": "Default Visual Studio Config",
+			"description": "Default build configuration using Visual Studio",
+			"inherits": "default-base",
+			"generator": "Visual Studio 17 2022"
+		},
+		{
+			"name": "default-ninja",
+			"displayName": "Default Ninja Config",
+			"description": "Default build configuration using Ninja",
+			"inherits": "default-base",
+			"generator": "Ninja"
+		},
+		{
+			"name": "dev-msvc",
+			"displayName": "Developer Visual Studio Config",
+			"description": "Developer build configuration using Visual Studio",
+			"inherits": "dev-base",
+			"generator": "Visual Studio 17 2022"
+		},
+		{
+			"name": "dev-ninja",
+			"displayName": "Developer Ninja Config",
+			"description": "Developer build configuration using Ninja",
+			"inherits": "dev-base",
+			"generator": "Ninja"
+		}
+	]
+}
