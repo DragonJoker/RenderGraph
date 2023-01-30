@@ -125,6 +125,16 @@ namespace crg
 		}
 	}
 
+	void FramePassGroup::addGroupInput( ImageViewId view )
+	{
+		m_inputs.emplace( view.id );
+	}
+
+	void FramePassGroup::addGroupOutput( ImageViewId view )
+	{
+		m_outputs.emplace( view.id );
+	}
+
 	ResourceHandler & FramePassGroup::getHandler()const
 	{
 		return m_graph.getHandler();
@@ -150,9 +160,76 @@ namespace crg
 		return m_graph.createView( view );
 	}
 
-	void FramePassGroup::addOutput( ImageViewId view )
+	void FramePassGroup::addInput( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range
+		, LayoutState outputLayout )
 	{
-		m_outputs.emplace( view.id );
+		m_graph.addInput( image
+			, viewType
+			, std::move( range )
+			, std::move( outputLayout ) );
+	}
+
+	void FramePassGroup::addInput( ImageViewId view
+		, LayoutState outputLayout )
+	{
+		addInput( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, outputLayout );
+	}
+
+	LayoutState FramePassGroup::getInputLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range )const
+	{
+		return m_graph.getInputLayoutState( image
+			, viewType
+			, range );
+	}
+
+	LayoutState FramePassGroup::getInputLayoutState( ImageViewId view )const
+	{
+		return getInputLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
+	}
+
+	void FramePassGroup::addOutput( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range
+		, LayoutState outputLayout )
+	{
+		m_graph.addOutput( image
+			, viewType
+			, std::move( range )
+			, std::move( outputLayout ) );
+	}
+
+	void FramePassGroup::addOutput( ImageViewId view
+		, LayoutState outputLayout )
+	{
+		addOutput( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, outputLayout );
+	}
+
+	LayoutState FramePassGroup::getOutputLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range )const
+	{
+		return m_graph.getOutputLayoutState( image
+			, viewType
+			, range );
+	}
+
+	LayoutState FramePassGroup::getOutputLayoutState( ImageViewId view )const
+	{
+		return getOutputLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
 	}
 
 	std::string FramePassGroup::getFullName()const

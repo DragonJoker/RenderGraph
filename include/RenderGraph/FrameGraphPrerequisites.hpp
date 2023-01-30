@@ -376,6 +376,21 @@ namespace crg
 	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
 	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
 	CRG_API PipelineState getPipelineState( VkPipelineStageFlags flags )noexcept;
+	CRG_API LayoutState makeLayoutState( VkImageLayout layout );
+	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
+	CRG_API LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
+		, VkImageSubresourceRange const & range
+		, LayoutState const & newLayout );
+	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
+		, VkImageSubresourceRange const & range );
+	CRG_API VkImageSubresourceRange getVirtualRange( ImageId const & image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & range )noexcept;
+	CRG_API bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept;
+	CRG_API bool isDepthFormat( VkFormat fmt )noexcept;
+	CRG_API bool isStencilFormat( VkFormat fmt )noexcept;
+	CRG_API bool isColourFormat( VkFormat fmt )noexcept;
+	CRG_API bool isDepthStencilFormat( VkFormat fmt )noexcept;
 
 	template< typename T >
 	static size_t hashCombine( size_t hash

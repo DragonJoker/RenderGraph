@@ -39,11 +39,6 @@ namespace crg
 		}
 	};
 
-	CRG_API VkImageSubresourceRange getVirtualRange( ImageId const & image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & range )noexcept;
-	CRG_API bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept;
-
 	inline bool operator==( VkImageSubresourceRange const & lhs, VkImageSubresourceRange const & rhs )
 	{
 		return lhs.aspectMask == rhs.aspectMask

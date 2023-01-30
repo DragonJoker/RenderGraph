@@ -74,6 +74,16 @@ namespace crg
 		/**@{*/
 		CRG_API LayoutState getFinalLayoutState( ImageViewId view )const;
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
+		CRG_API void addInput( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange range
+			, LayoutState outputLayout );
+		CRG_API void addInput( ImageViewId view
+			, LayoutState outputLayout );
+		CRG_API LayoutState getInputLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange range )const;
+		CRG_API LayoutState getInputLayoutState( ImageViewId view )const;
 		CRG_API void addOutput( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange range
@@ -125,6 +135,7 @@ namespace crg
 		std::map< std::string, ImageViewId > m_attachViews;
 		RecordContext m_finalState;
 		FrameGraphArray m_depends;
+		LayerLayoutStatesHandler m_inputs;
 		LayerLayoutStatesHandler m_outputs;
 	};
 }

@@ -179,12 +179,10 @@ namespace crg
 		VkAttachmentStoreOp storeOp{};
 		VkAttachmentLoadOp stencilLoadOp{};
 		VkAttachmentStoreOp stencilStoreOp{};
-		VkImageLayout initialLayout{};
-		VkImageLayout finalLayout{};
 		SamplerDesc samplerDesc{};
 		VkClearValue clearValue{};
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
-		VkImageLayout transitionLayout{};
+		VkImageLayout wantedLayout{};
 
 	private:
 		CRG_API ImageAttachment();
@@ -195,12 +193,10 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState
-			, VkImageLayout transitionLayout );
+			, VkImageLayout wantedLayout );
 
 		void setFlag( Flag flag, bool set )
 		{
@@ -598,12 +594,10 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout initialLayout
-			, VkImageLayout finalLayout
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState
-			, VkImageLayout transitionLayout );
+			, VkImageLayout wantedLayout );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding
@@ -647,9 +641,4 @@ namespace crg
 	CRG_API bool operator!=( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 	CRG_API bool operator!=( Attachment const & lhs, Attachment const & rhs );
-
-	CRG_API bool isDepthFormat( VkFormat fmt )noexcept;
-	CRG_API bool isStencilFormat( VkFormat fmt )noexcept;
-	CRG_API bool isColourFormat( VkFormat fmt )noexcept;
-	CRG_API bool isDepthStencilFormat( VkFormat fmt )noexcept;
 }

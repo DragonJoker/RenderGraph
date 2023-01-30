@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/AttachmentTransition.hpp"
 
 #include "RenderGraph/FramePass.hpp"
+#include "RenderGraph/LayerLayoutStatesHandler.hpp"
 
 #include <algorithm>
 

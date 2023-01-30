@@ -17,8 +17,6 @@ See LICENSE file in root folder.
 #include <fstream>
 #pragma warning( pop )
 
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-
 namespace crg
 {
 	//************************************************************************************************
@@ -43,149 +41,6 @@ namespace crg
 
 			return result;
 		}
-	}
-
-	//************************************************************************************************
-
-	VkImageAspectFlags getAspectMask( VkFormat format )noexcept
-	{
-		return VkImageAspectFlags( isDepthStencilFormat( format )
-			? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
-			: ( isDepthFormat( format )
-				? VK_IMAGE_ASPECT_DEPTH_BIT
-				: ( isStencilFormat( format )
-					? VK_IMAGE_ASPECT_STENCIL_BIT
-					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
-	}
-
-	LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
-		, VkImageSubresourceRange const & range
-		, LayoutState const & newLayout )
-	{
-		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
-		{
-			auto & layers = ranges.emplace( range.baseArrayLayer + layerIdx, MipLayoutStates{} ).first->second;
-
-			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
-			{
-				auto & level = layers.emplace( range.baseMipLevel + levelIdx, LayoutState{} ).first->second;
-				level.layout = newLayout.layout;
-				level.state.access = newLayout.state.access;
-				level.state.pipelineStage = newLayout.state.pipelineStage;
-			}
-		}
-
-		return newLayout;
-	}
-
-	LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
-		, VkImageSubresourceRange const & range )
-	{
-		std::map< VkImageLayout, LayoutState > states;
-
-		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
-		{
-			auto layerIt = ranges.find( range.baseArrayLayer + layerIdx );
-				
-			if ( layerIt != ranges.end() )
-			{
-				auto & layers = layerIt->second;
-
-				for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
-				{
-					auto it = layers.find( range.baseMipLevel + levelIdx );
-
-					if ( it != layers.end() )
-					{
-						auto state = it->second;
-						auto ires = states.emplace( state.layout, state );
-
-						if ( !ires.second )
-						{
-							ires.first->second.state.access |= state.state.access;
-						}
-					}
-				}
-			}
-		}
-
-		if ( states.empty() )
-		{
-			return { VK_IMAGE_LAYOUT_UNDEFINED
-				, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
-				, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
-		}
-
-		if ( states.size() == 1u )
-		{
-			return states.begin()->second;
-		}
-
-		return states.begin()->second;
-	}
-
-	//************************************************************************************************
-
-	LayerLayoutStatesHandler::LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs )
-		: images{ rhs }
-	{
-	}
-
-	void LayerLayoutStatesHandler::addStates( LayerLayoutStatesHandler const & data )
-	{
-		for ( auto & state : data.images )
-		{
-			images.insert( state );
-		}
-	}
-
-	void LayerLayoutStatesHandler::setLayoutState( ImageId image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState layoutState )
-	{
-		auto range = getVirtualRange( image
-			, viewType
-			, subresourceRange );
-		auto ires = images.emplace( image.id, LayerLayoutStates{} );
-		addSubresourceRangeLayout( ires.first->second
-			, range
-			, layoutState );
-	}
-
-	void LayerLayoutStatesHandler::setLayoutState( crg::ImageViewId view
-		, LayoutState layoutState )
-	{
-		setLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange
-			, layoutState );
-	}
-
-	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageId image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & subresourceRange )const
-	{
-		static LayoutState const undefLayout{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } };
-		auto imageIt = images.find( image.id );
-
-		if ( imageIt != images.end() )
-		{
-			auto range = getVirtualRange( image
-				, viewType
-				, subresourceRange );
-			return getSubresourceRangeLayout( imageIt->second
-				, range );
-		}
-
-		return undefLayout;
-	}
-
-	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
-	{
-		return getLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
 	}
 
 	//************************************************************************************************
@@ -521,13 +376,6 @@ namespace crg
 	GraphContext & RecordContext::getContext()const
 	{
 		return getResources();
-	}
-
-	LayoutState makeLayoutState( VkImageLayout layout )
-	{
-		return { layout
-			, crg::getAccessMask( layout )
-			, crg::getStageMask( layout ) };
 	}
 
 	RecordContext::ImplicitAction RecordContext::copyImage( ImageViewId srcView

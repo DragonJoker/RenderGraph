@@ -472,7 +472,6 @@ namespace crg
 
 	void FramePass::addSampledView( ImageViewIdArray views
 		, uint32_t binding
-		, VkImageLayout initialLayout
 		, SamplerDesc samplerDesc )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Spl";
@@ -487,17 +486,14 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, std::move( samplerDesc )
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
 	}
 
 	void FramePass::addSampledViews( ImageViewIdArray views
 		, uint32_t binding
-		, VkImageLayout initialLayout
 		, SamplerDesc samplerDesc )
 	{
 		auto count = uint32_t( views.size() );
@@ -513,12 +509,10 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, std::move( samplerDesc )
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
 	}
 
 	void FramePass::addImplicitColourView( ImageViewIdArray views
@@ -536,8 +530,6 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
@@ -560,8 +552,6 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
@@ -584,8 +574,6 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
@@ -609,8 +597,6 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
@@ -633,8 +619,6 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
@@ -658,8 +642,6 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
@@ -667,8 +649,7 @@ namespace crg
 	}
 
 	void FramePass::addInputStorageView( ImageViewIdArray views
-		, uint32_t binding
-		, VkImageLayout initialLayout )
+		, uint32_t binding )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
@@ -682,17 +663,14 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_GENERAL } );
 	}
 
 	void FramePass::addInputStorageViews( ImageViewIdArray views
-		, uint32_t binding
-		, VkImageLayout initialLayout )
+		, uint32_t binding )
 	{
 		auto count = uint32_t( views.size() );
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
@@ -707,17 +685,14 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_GENERAL } );
 	}
 
 	void FramePass::addOutputStorageView( ImageViewIdArray views
-		, uint32_t binding
-		, VkImageLayout initialLayout )
+		, uint32_t binding )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
@@ -731,17 +706,14 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_GENERAL } );
 	}
 
 	void FramePass::addOutputStorageViews( ImageViewIdArray views
-		, uint32_t binding
-		, VkImageLayout initialLayout )
+		, uint32_t binding )
 	{
 		auto count = uint32_t( views.size() );
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
@@ -756,17 +728,14 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_GENERAL } );
 	}
 
 	void FramePass::addInOutStorageView( ImageViewIdArray views
-		, uint32_t binding
-		, VkImageLayout initialLayout )
+		, uint32_t binding )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::InOut )
@@ -780,17 +749,14 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_GENERAL } );
 	}
 
 	void FramePass::addInOutStorageViews( ImageViewIdArray views
-		, uint32_t binding
-		, VkImageLayout initialLayout )
+		, uint32_t binding )
 	{
 		auto count = uint32_t( views.size() );
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
@@ -805,16 +771,13 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_GENERAL } );
 	}
 
-	void FramePass::addTransferInputView( ImageViewIdArray views
-		, VkImageLayout initialLayout )
+	void FramePass::addTransferInputView( ImageViewIdArray views )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/It";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
@@ -828,16 +791,13 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL } );
 	}
 
-	void FramePass::addTransferOutputView( ImageViewIdArray views
-		, VkImageLayout initialLayout )
+	void FramePass::addTransferOutputView( ImageViewIdArray views )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Ot";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
@@ -851,12 +811,10 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL } );
 	}
 
 	void FramePass::addTransferInOutView( ImageViewIdArray views
@@ -874,12 +832,10 @@ namespace crg
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VkImageLayout{}
-			, VkImageLayout{}
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VkImageLayout{} } );
+			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL } );
 	}
 
 	void FramePass::addColourView( std::string const & pname
@@ -887,8 +843,7 @@ namespace crg
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
+		, VkImageLayout wantedLayout
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
@@ -904,12 +859,10 @@ namespace crg
 			, storeOp
 			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, initialLayout
-			, finalLayout
 			, SamplerDesc{}
 			, std::move( clearValue )
 			, std::move( blendState )
-			, VkImageLayout{} } );
+			, wantedLayout } );
 	}
 
 	void FramePass::addDepthView( std::string const & pname
@@ -919,8 +872,7 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
+		, VkImageLayout wantedLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
@@ -936,12 +888,10 @@ namespace crg
 				, storeOp
 				, stencilLoadOp
 				, stencilStoreOp
-				, initialLayout
-				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{}
-				, VkImageLayout{} } );
+				, wantedLayout } );
 	}
 
 	void FramePass::addStencilView( std::string const & pname
@@ -952,8 +902,7 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
+		, VkImageLayout wantedLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
@@ -970,12 +919,10 @@ namespace crg
 				, storeOp
 				, stencilLoadOp
 				, stencilStoreOp
-				, initialLayout
-				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{}
-				, VkImageLayout{} } );
+				, wantedLayout } );
 	}
 
 	void FramePass::addDepthStencilView( std::string const & pname
@@ -986,8 +933,7 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
+		, VkImageLayout wantedLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
@@ -1004,12 +950,10 @@ namespace crg
 				, storeOp
 				, stencilLoadOp
 				, stencilStoreOp
-				, initialLayout
-				, finalLayout
 				, SamplerDesc{}
 				, std::move( clearValue )
 				, VkPipelineColorBlendAttachmentState{}
-				, VkImageLayout{} } );
+				, wantedLayout } );
 	}
 
 	RunnablePassPtr FramePass::createRunnable( GraphContext & context

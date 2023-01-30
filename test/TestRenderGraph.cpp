@@ -2090,7 +2090,7 @@ namespace
 					} );
 				blurPassX.addDependency( *previous );
 				previous = &blurPassX;
-				blurPassX.addSampledView( varianceMapv, 0u, {} );
+				blurPassX.addSampledView( varianceMapv, 0u );
 				blurPassX.addOutputColourView( dirIntermediatev );
 
 				auto & blurPassY = graph.createPass( "dirBlurPassY" + std::to_string( index )
@@ -2104,7 +2104,7 @@ namespace
 					} );
 				blurPassY.addDependency( *previous );
 				previous = &blurPassY;
-				blurPassY.addSampledView( dirIntermediatev, 0u, {} );
+				blurPassY.addSampledView( dirIntermediatev, 0u );
 				blurPassY.addOutputColourView( varianceMapv );
 			}
 		}
@@ -2149,7 +2149,7 @@ namespace
 					} );
 				blurPassX.addDependency( *previous );
 				previous = &blurPassX;
-				blurPassX.addSampledView( varianceMapv, 0u, {} );
+				blurPassX.addSampledView( varianceMapv, 0u );
 				blurPassX.addOutputColourView( pntIntermediatev );
 
 				auto & blurPassY = graph.createPass( "pntBlurPassY" + std::to_string( index )
@@ -2163,7 +2163,7 @@ namespace
 					} );
 				blurPassY.addDependency( *previous );
 				previous = &blurPassY;
-				blurPassY.addSampledView( pntIntermediatev, 0u, {} );
+				blurPassY.addSampledView( pntIntermediatev, 0u );
 				blurPassY.addOutputColourView( varianceMapv );
 			}
 		}
@@ -2208,7 +2208,7 @@ namespace
 					} );
 				blurPassX.addDependency( *previous );
 				previous = &blurPassX;
-				blurPassX.addSampledView( varianceMapv, 0u, {} );
+				blurPassX.addSampledView( varianceMapv, 0u );
 				blurPassX.addOutputColourView( sptIntermediatev );
 
 				auto & blurPassY = graph.createPass( "sptBlurPassY" + std::to_string( index )
@@ -2222,7 +2222,7 @@ namespace
 					} );
 				blurPassY.addDependency( *previous );
 				previous = &blurPassY;
-				blurPassY.addSampledView( sptIntermediatev, 0u, {} );
+				blurPassY.addSampledView( sptIntermediatev, 0u );
 				blurPassY.addOutputColourView( varianceMapv );
 			}
 		}

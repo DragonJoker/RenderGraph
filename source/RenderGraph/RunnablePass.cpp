@@ -408,10 +408,7 @@ namespace crg
 				if ( !attach.isNoTransition()
 					&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
 				{
-					auto layout = attach.getImageLayout( m_context.separateDepthStencilLayouts );
-					LayoutState needed = { layout
-						, getAccessMask( layout )
-						, getStageMask( layout ) };
+					auto needed = makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) );
 
 					if ( attach.count <= 1u )
 					{
@@ -419,9 +416,7 @@ namespace crg
 						auto currentLayout = context.getLayoutState( view );
 						context.memoryBarrier( commandBuffer
 							, view
-							, ( currentLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED
-								? attach.image.initialLayout
-								: currentLayout.layout )
+							, currentLayout.layout
 							, needed );
 					}
 					else
@@ -432,9 +427,7 @@ namespace crg
 							auto currentLayout = context.getLayoutState( view );
 							context.memoryBarrier( commandBuffer
 								, view
-								, ( currentLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED
-									? attach.image.initialLayout
-									: currentLayout.layout )
+								, currentLayout.layout
 								, needed );
 						}
 					}

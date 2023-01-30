@@ -116,7 +116,49 @@ namespace crg
 
 			return sortedPasses;
 		}
-	}
+
+		static bool match( VkImageSubresourceRange const & lhsRange
+			, VkImageSubresourceRange const & rhsRange )noexcept
+		{
+			return ( ( lhsRange.aspectMask & rhsRange.aspectMask ) != 0 )
+				&& lhsRange.baseArrayLayer == rhsRange.baseArrayLayer
+				&& lhsRange.layerCount == rhsRange.layerCount
+				&& lhsRange.baseMipLevel == rhsRange.baseMipLevel
+				&& lhsRange.levelCount == rhsRange.levelCount;
+		}
+
+		static bool match( ImageId const & image
+			, VkImageViewType lhsType
+			, VkImageViewType rhsType
+			, VkImageSubresourceRange const & lhsRange
+			, VkImageSubresourceRange const & rhsRange )noexcept
+		{
+			auto result = lhsType == rhsType;
+
+			if ( !result )
+			{
+				result = match( getVirtualRange( image, lhsType, lhsRange )
+					, getVirtualRange( image, rhsType, rhsRange ) );
+			}
+			else
+			{
+				result = match( lhsRange, rhsRange );
+			}
+
+			return result;
+		}
+
+		static bool match( ImageId const & image
+			, VkImageViewCreateInfo const & lhsInfo
+			, VkImageViewCreateInfo const & rhsInfo )noexcept
+		{
+			return lhsInfo.flags == rhsInfo.flags
+				&& lhsInfo.format == rhsInfo.format
+				&& match( image
+					, lhsInfo.viewType, rhsInfo.viewType
+					, lhsInfo.subresourceRange, rhsInfo.subresourceRange );
+		}
+}
 
 	FrameGraph::FrameGraph( ResourceHandler & handler
 		, std::string name )
@@ -208,6 +250,42 @@ namespace crg
 	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer )const
 	{
 		return m_finalState.getAccessState( buffer.buffer, { 0u, VK_WHOLE_SIZE } );
+	}
+
+	void FrameGraph::addInput( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range
+		, LayoutState outputLayout )
+	{
+		m_inputs.setLayoutState( image
+			, viewType
+			, std::move( range )
+			, std::move( outputLayout ) );
+	}
+
+	void FrameGraph::addInput( ImageViewId view
+		, LayoutState outputLayout )
+	{
+		addInput( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, outputLayout );
+	}
+
+	LayoutState FrameGraph::getInputLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range )const
+	{
+		return m_inputs.getLayoutState( image
+			, viewType
+			, range );
+	}
+
+	LayoutState FrameGraph::getInputLayoutState( ImageViewId view )const
+	{
+		return getInputLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
 	}
 
 	void FrameGraph::addOutput( ImageId image
@@ -404,6 +482,13 @@ namespace crg
 		return { result, flags };
 	}
 
+	LayoutState makeLayoutState( VkImageLayout layout )
+	{
+		return { layout
+			, crg::getAccessMask( layout )
+			, crg::getStageMask( layout ) };
+	}
+
 	VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept
 	{
 		VkPipelineStageFlags result{ 0u };
@@ -449,5 +534,138 @@ namespace crg
 		}
 
 		return result;
+	}
+
+	VkImageAspectFlags getAspectMask( VkFormat format )noexcept
+	{
+		return VkImageAspectFlags( isDepthStencilFormat( format )
+			? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
+			: ( isDepthFormat( format )
+				? VK_IMAGE_ASPECT_DEPTH_BIT
+				: ( isStencilFormat( format )
+					? VK_IMAGE_ASPECT_STENCIL_BIT
+					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
+	}
+
+	LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
+		, VkImageSubresourceRange const & range
+		, LayoutState const & newLayout )
+	{
+		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
+		{
+			auto & layers = ranges.emplace( range.baseArrayLayer + layerIdx, MipLayoutStates{} ).first->second;
+
+			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+			{
+				auto & level = layers.emplace( range.baseMipLevel + levelIdx, LayoutState{} ).first->second;
+				level.layout = newLayout.layout;
+				level.state.access = newLayout.state.access;
+				level.state.pipelineStage = newLayout.state.pipelineStage;
+			}
+		}
+
+		return newLayout;
+	}
+
+	LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
+		, VkImageSubresourceRange const & range )
+	{
+		std::map< VkImageLayout, LayoutState > states;
+
+		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
+		{
+			auto layerIt = ranges.find( range.baseArrayLayer + layerIdx );
+
+			if ( layerIt != ranges.end() )
+			{
+				auto & layers = layerIt->second;
+
+				for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+				{
+					auto it = layers.find( range.baseMipLevel + levelIdx );
+
+					if ( it != layers.end() )
+					{
+						auto state = it->second;
+						auto ires = states.emplace( state.layout, state );
+
+						if ( !ires.second )
+						{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+							ires.first->second.state.access |= state.state.access;
+#pragma GCC diagnostic pop
+						}
+					}
+				}
+			}
+		}
+
+		if ( states.empty() )
+		{
+			return { VK_IMAGE_LAYOUT_UNDEFINED
+				, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
+				, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+		}
+
+		if ( states.size() == 1u )
+		{
+			return states.begin()->second;
+		}
+
+		return states.begin()->second;
+	}
+
+	VkImageSubresourceRange getVirtualRange( ImageId const & image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & range )noexcept
+	{
+		auto result = range;
+
+		if ( viewType == VK_IMAGE_VIEW_TYPE_3D
+			&& ( range.levelCount == 1u
+				|| range.levelCount == image.data->info.mipLevels ) )
+		{
+			result.baseArrayLayer = 0u;
+			result.layerCount = getExtent( image ).depth >> range.baseMipLevel;
+		}
+
+		return result;
+	}
+
+	bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept
+	{
+		return lhs.image.id == rhs.image.id
+			&& fgph::match( lhs.image
+				, lhs.info
+				, rhs.info );
+	}
+
+	bool isDepthFormat( VkFormat fmt )noexcept
+	{
+		return fmt == VK_FORMAT_D16_UNORM
+			|| fmt == VK_FORMAT_X8_D24_UNORM_PACK32
+			|| fmt == VK_FORMAT_D32_SFLOAT
+			|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
+			|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
+			|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
+	}
+
+	bool isStencilFormat( VkFormat fmt )noexcept
+	{
+		return fmt == VK_FORMAT_S8_UINT
+			|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
+			|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
+			|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
+	}
+
+	bool isColourFormat( VkFormat fmt )noexcept
+	{
+		return !isDepthFormat( fmt ) && !isStencilFormat( fmt );
+	}
+
+	bool isDepthStencilFormat( VkFormat fmt )noexcept
+	{
+		return isDepthFormat( fmt ) && isStencilFormat( fmt );
 	}
 }

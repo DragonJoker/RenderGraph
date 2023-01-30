@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #pragma once
 
 #include "Attachment.hpp"
+#include "LayerLayoutStatesHandler.hpp"
 
 #include <functional>
 #include <map>
@@ -12,34 +13,6 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	CRG_API LayoutState makeLayoutState( VkImageLayout layout );
-	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
-	CRG_API LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
-		, VkImageSubresourceRange const & range
-		, LayoutState const & newLayout );
-	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
-		, VkImageSubresourceRange const & range );
-
-	struct LayerLayoutStatesHandler
-	{
-		CRG_API LayerLayoutStatesHandler() = default;
-		CRG_API LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs );
-		CRG_API void addStates( LayerLayoutStatesHandler const & data );
-
-		CRG_API void setLayoutState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState layoutState );
-		CRG_API void setLayoutState( crg::ImageViewId view
-			, LayoutState layoutState );
-		CRG_API LayoutState getLayoutState( ImageId image
-			, VkImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange )const;
-		CRG_API LayoutState getLayoutState( ImageViewId view )const;
-
-		LayerLayoutStatesMap images;
-	};
-
 	class RecordContext
 	{
 	public:

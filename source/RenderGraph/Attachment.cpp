@@ -12,50 +12,7 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace attach
-	{
-		static bool match( VkImageSubresourceRange const & lhsRange
-			, VkImageSubresourceRange const & rhsRange )noexcept
-		{
-			return ( ( lhsRange.aspectMask & rhsRange.aspectMask ) != 0 )
-				&& lhsRange.baseArrayLayer == rhsRange.baseArrayLayer
-				&& lhsRange.layerCount == rhsRange.layerCount
-				&& lhsRange.baseMipLevel == rhsRange.baseMipLevel
-				&& lhsRange.levelCount == rhsRange.levelCount;
-		}
-
-		static bool match( ImageId const & image
-			, VkImageViewType lhsType
-			, VkImageViewType rhsType
-			, VkImageSubresourceRange const & lhsRange
-			, VkImageSubresourceRange const & rhsRange )noexcept
-		{
-			auto result = lhsType == rhsType;
-
-			if ( !result )
-			{
-				result = match( getVirtualRange( image, lhsType, lhsRange )
-					, getVirtualRange( image, rhsType, rhsRange ) );
-			}
-			else
-			{
-				result = match( lhsRange, rhsRange );
-			}
-
-			return result;
-		}
-
-		static bool match( ImageId const & image
-			, VkImageViewCreateInfo const & lhsInfo
-			, VkImageViewCreateInfo const & rhsInfo )noexcept
-		{
-			return lhsInfo.flags == rhsInfo.flags
-				&& lhsInfo.format == rhsInfo.format
-				&& match( image
-					, lhsInfo.viewType, rhsInfo.viewType
-					, lhsInfo.subresourceRange, rhsInfo.subresourceRange );
-		}
-	}
+	//*********************************************************************************************
 
 	static bool operator==( VkClearValue const & lhs
 		, VkClearValue const & rhs )
@@ -74,59 +31,6 @@ namespace crg
 			&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
 			&& lhs.alphaBlendOp == rhs.alphaBlendOp
 			&& lhs.colorWriteMask == rhs.colorWriteMask;
-	}
-
-	bool isDepthFormat( VkFormat fmt )noexcept
-	{
-		return fmt == VK_FORMAT_D16_UNORM
-			|| fmt == VK_FORMAT_X8_D24_UNORM_PACK32
-			|| fmt == VK_FORMAT_D32_SFLOAT
-			|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
-			|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
-			|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
-	}
-
-	bool isStencilFormat( VkFormat fmt )noexcept
-	{
-		return fmt == VK_FORMAT_S8_UINT
-			|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
-			|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
-			|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
-	}
-
-	bool isColourFormat( VkFormat fmt )noexcept
-	{
-		return !isDepthFormat( fmt ) && !isStencilFormat( fmt );
-	}
-
-	bool isDepthStencilFormat( VkFormat fmt )noexcept
-	{
-		return isDepthFormat( fmt ) && isStencilFormat( fmt );
-	}
-
-	VkImageSubresourceRange getVirtualRange( ImageId const & image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & range )noexcept
-	{
-		auto result = range;
-
-		if ( viewType == VK_IMAGE_VIEW_TYPE_3D
-			&& ( range.levelCount == 1u
-				|| range.levelCount == image.data->info.mipLevels ) )
-		{
-			result.baseArrayLayer = 0u;
-			result.layerCount = getExtent( image ).depth >> range.baseMipLevel;
-		}
-
-		return result;
-	}
-
-	bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept
-	{
-		return lhs.image.id == rhs.image.id
-			&& attach::match( lhs.image
-				, lhs.info
-				, rhs.info );
 	}
 
 	//*********************************************************************************************
@@ -261,11 +165,10 @@ namespace crg
 		, storeOp{ origin.storeOp }
 		, stencilLoadOp{ origin.stencilLoadOp }
 		, stencilStoreOp{ origin.stencilStoreOp }
-		, initialLayout{ origin.initialLayout }
 		, samplerDesc{ origin.samplerDesc }
 		, clearValue{ origin.clearValue }
 		, blendState{ origin.blendState }
-		, transitionLayout{ origin.transitionLayout }
+		, wantedLayout{ origin.wantedLayout }
 		, flags{ origin.flags }
 	{
 	}
@@ -276,11 +179,10 @@ namespace crg
 		, storeOp{}
 		, stencilLoadOp{}
 		, stencilStoreOp{}
-		, initialLayout{}
 		, samplerDesc{}
 		, clearValue{}
 		, blendState{}
-		, transitionLayout{}
+		, wantedLayout{}
 		, flags{}
 	{
 	}
@@ -291,11 +193,10 @@ namespace crg
 		, storeOp{}
 		, stencilLoadOp{}
 		, stencilStoreOp{}
-		, initialLayout{}
 		, samplerDesc{}
 		, clearValue{}
 		, blendState{}
-		, transitionLayout{}
+		, wantedLayout{}
 		, flags{}
 	{
 	}
@@ -306,23 +207,19 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState
-		, VkImageLayout transitionLayout )
+		, VkImageLayout wantedLayout )
 		: views{ std::move( views ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
 		, stencilStoreOp{ stencilStoreOp }
-		, initialLayout{ initialLayout }
-		, finalLayout{ finalLayout }
 		, samplerDesc{ std::move( samplerDesc ) }
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
-		, transitionLayout{ transitionLayout }
+		, wantedLayout{ wantedLayout }
 		, flags{ FlagKind( flags
 			| ( loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
 				? FlagKind( Flag::Clearing )
@@ -374,7 +271,7 @@ namespace crg
 
 		if ( isTransitionView() )
 		{
-			return transitionLayout;
+			return wantedLayout;
 		}
 
 		if ( isStorageView() )
@@ -475,7 +372,7 @@ namespace crg
 		}
 		else if ( isTransitionView() )
 		{
-			result |= crg::getAccessMask( transitionLayout );
+			result |= crg::getAccessMask( wantedLayout );
 		}
 		else if ( isStorageView() )
 		{
@@ -539,7 +436,7 @@ namespace crg
 		}
 		else if ( isTransitionView() )
 		{
-			result |= getStageMask( transitionLayout );
+			result |= getStageMask( wantedLayout );
 		}
 		else if ( isStorageView() )
 		{
@@ -608,12 +505,10 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout initialLayout
-		, VkImageLayout finalLayout
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState
-		, VkImageLayout transitionLayout )
+		, VkImageLayout wantedLayout )
 		: pass{ &pass }
 		, binding{ binding }
 		, count{ count }
@@ -624,12 +519,10 @@ namespace crg
 			, storeOp
 			, stencilLoadOp
 			, stencilStoreOp
-			, initialLayout
-			, finalLayout
 			, std::move( samplerDesc )
 			, std::move( clearValue )
 			, std::move( blendState )
-			, transitionLayout }
+			, wantedLayout }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Image )
 			| ( loadOp == VK_ATTACHMENT_LOAD_OP_LOAD

@@ -53,57 +53,6 @@ namespace
 		testEnd();
 	}
 
-	void testColourAttachment( test::TestCounts & testCounts )
-	{
-		testBegin( "testColourAttachment" );
-		crg::ResourceHandler handler;
-		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addColourView( "Colour"
-			, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
-			, view
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE );
-		require( pass.images.size() == 1u );
-		auto & attachment = pass.images[0];
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Colour" );
-		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
-		check( attachment.image.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
-		check( attachment.view() == view );
-		testEnd();
-	}
-
-	void testDepthStencilAttachment( test::TestCounts & testCounts )
-	{
-		testBegin( "testDepthStencilAttachment" );
-		crg::ResourceHandler handler;
-		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
-		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addDepthStencilView("DepthStencil"
-			, crg::Attachment::FlagKind( crg::Attachment::Flag::Output )
-			, crg::ImageAttachment::FlagKind( crg::ImageAttachment::Flag::StencilOutput )
-			, view
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE
-			, VK_ATTACHMENT_LOAD_OP_CLEAR
-			, VK_ATTACHMENT_STORE_OP_STORE );
-		require( !pass.images.empty() );
-		auto & attachment = pass.images[0];
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/DepthStencil" );
-		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
-		check( attachment.image.stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE );
-		check( attachment.view() == view );
-		testEnd();
-	}
-
 	void testInColourAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testInColourAttachment" );
@@ -350,8 +299,6 @@ int main( int argc, char ** argv )
 	testSuiteBegin( "TestAttachment" );
 	testSampledAttachment( testCounts );
 	testStorageAttachment( testCounts );
-	testColourAttachment( testCounts );
-	testDepthStencilAttachment( testCounts );
 	testInColourAttachment( testCounts );
 	testOutColourAttachment( testCounts );
 	testInOutColourAttachment( testCounts );
