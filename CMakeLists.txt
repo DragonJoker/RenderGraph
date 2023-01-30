@@ -88,7 +88,6 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RecordContext.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/ResourceHandler.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableGraph.hpp
-		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnableLayoutsCache.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Signal.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/WriteDescriptorSet.hpp
@@ -115,7 +114,6 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceHandler.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableLayoutsCache.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePass.cpp
 	)
 	set( ${PROJECT_NAME}_NVS_FILES

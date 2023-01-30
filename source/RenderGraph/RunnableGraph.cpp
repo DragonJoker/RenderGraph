@@ -46,6 +46,76 @@ namespace crg
 
 			return result;
 		}
+
+		static LayerLayoutStates mergeRanges( LayerLayoutStatesMap nextLayouts
+			, LayerLayoutStatesMap::value_type const & currentLayout )
+		{
+			LayerLayoutStates result;
+			auto nextIt = nextLayouts.find( currentLayout.first );
+
+			if ( nextIt != nextLayouts.end() )
+			{
+				auto & nxtLayout = nextIt->second;
+
+				for ( auto curLayerIt : currentLayout.second )
+				{
+					auto nxtLayerIt = nxtLayout.find( curLayerIt.first );
+
+					if ( nxtLayerIt != nxtLayout.end() )
+					{
+						auto resLayerIt = result.emplace( curLayerIt.first, MipLayoutStates{} ).first;
+
+						for ( auto curLevelIt : curLayerIt.second )
+						{
+							auto nxtLevelIt = nxtLayerIt->second.find( curLevelIt.first );
+
+							if ( nxtLevelIt != nxtLayerIt->second.end() )
+							{
+								resLayerIt->second.emplace( *nxtLevelIt );
+							}
+						}
+					}
+				}
+			}
+
+			return result;
+		}
+
+		static LayerLayoutStatesMap gatherNextImageLayouts( LayerLayoutStatesMap currentLayouts
+			, std::vector< RunnablePassPtr >::iterator nextPassIt
+			, std::vector< RunnablePassPtr >::iterator endIt )
+		{
+			LayerLayoutStatesMap result;
+
+			while ( !currentLayouts.empty()
+				&& endIt != nextPassIt )
+			{
+				auto & nextPass = **nextPassIt;
+
+				if ( nextPass.isEnabled() )
+				{
+					auto & nextLayouts = nextPass.getImageLayouts();
+					LayerLayoutStates layoutStates;
+					auto currIt = std::find_if( currentLayouts.begin()
+						, currentLayouts.end()
+						, [&nextLayouts, &layoutStates]( LayerLayoutStatesMap::value_type const & lookup )
+						{
+							layoutStates = mergeRanges( nextLayouts, lookup );
+							return !layoutStates.empty();
+						} );
+
+					if ( currIt != currentLayouts.end() )
+					{
+						result.emplace( currIt->first, layoutStates );
+						currentLayouts.erase( currIt );
+					}
+				}
+				
+				++nextPassIt;
+			}
+
+			return result;
+		}
 	}
 
 	//************************************************************************************************
@@ -88,7 +158,6 @@ namespace crg
 		: m_graph{ graph }
 		, m_context{ context }
 		, m_resources{ m_graph.getHandler(), m_context }
-		, m_layouts{ std::make_unique< RunnableLayoutsCache >( m_graph, m_resources, std::move( passes ) ) }
 		, m_inputTransitions{ std::move( inputTransitions ) }
 		, m_outputTransitions{ std::move( outputTransitions ) }
 		, m_transitions{ std::move( transitions ) }
@@ -111,6 +180,18 @@ namespace crg
 				object = {};
 			} }
 	{
+		Logger::logDebug( m_graph.getName() + " - Initialising resources" );
+
+		for ( auto & img : m_graph.m_images )
+		{
+			m_resources.createImage( img );
+		}
+
+		for ( auto & view : m_graph.m_imageViews )
+		{
+			m_resources.createImageView( view );
+		}
+
 		Logger::logDebug( m_graph.getName() + " - Creating runnable passes" );
 
 		for ( auto & node : m_nodes )
@@ -120,9 +201,6 @@ namespace crg
 				auto & renderPassNode = nodeCast< FramePassNode >( *node );
 				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
 					, *this ) );
-				auto & pass = m_passes.back();
-				m_layouts->registerPass( pass->getPass()
-					, pass->getMaxPassCount() );
 			}
 		}
 
@@ -156,7 +234,8 @@ namespace crg
 		{
 			auto it = itGraph->second.begin();
 			auto currPass = m_passes.begin();
-			recordContext.setNextPipelineState( ( *currPass )->getPipelineState() );
+			recordContext.setNextPipelineState( ( *currPass )->getPipelineState()
+				, ( *currPass )->getImageLayouts() );
 			auto nextPass = std::next( currPass );
 
 			while ( currPass != m_passes.end() )
@@ -166,12 +245,20 @@ namespace crg
 
 				if ( nextPass != m_passes.end() )
 				{
-					recordContext.setNextPipelineState( ( *nextPass )->getPipelineState() );
+					if ( pass->isEnabled() )
+					{
+						recordContext.setNextPipelineState( ( *nextPass )->getPipelineState()
+							, rungrf::gatherNextImageLayouts( pass->getImageLayouts()
+								, nextPass
+								, m_passes.end() ) );
+					}
+
 					++nextPass;
 				}
 				else
 				{
-					recordContext.setNextPipelineState( pass->getPipelineState() );
+					recordContext.setNextPipelineState( pass->getPipelineState()
+						, {} );
 				}
 
 				pass->recordCurrent( recordContext );
@@ -260,216 +347,29 @@ namespace crg
 			, config );
 	}
 
-	LayoutState RunnableGraph::getCurrentLayout( FramePass const & pass
-		, uint32_t passIndex
+	LayoutState RunnableGraph::getNextLayoutState( RecordContext & context
+		, crg::RunnablePass const & runnable
 		, ImageViewId view )const
 	{
-		auto & viewsLayouts = m_layouts->getViewsLayout( pass, passIndex );
-		auto imageIt = viewsLayouts.find( view.data->image.id );
+		auto result = context.getNextLayoutState( view );
 
-		if ( imageIt != viewsLayouts.end() )
+		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
 		{
-			return getSubresourceRangeLayout( imageIt->second
-				, getVirtualRange( view.data->image
-					, view.data->info.viewType
-					, view.data->info.subresourceRange ) );
+			// Next layout undefined means that there is no pass after this one in the graph.
+			result = m_graph.getOutputLayoutState( view );
 		}
 
-		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-	}
-
-	LayoutState RunnableGraph::updateCurrentLayout( FramePass const & pass
-		, uint32_t passIndex
-		, ImageViewId view
-		, LayoutState newLayout )
-	{
-		auto & viewsLayouts = m_layouts->getViewsLayout( pass, passIndex );
-		auto & ranges = viewsLayouts.emplace( view.data->image.id, LayerLayoutStates{} ).first->second;
-		addSubresourceRangeLayout( ranges
-			, getVirtualRange( view.data->image
-				, view.data->info.viewType
-				, view.data->info.subresourceRange )
-			, newLayout );
-		return newLayout;
-	}
-
-	LayoutState RunnableGraph::getOutputLayout( FramePass const & pass
-		, ImageViewId view
-		, bool isCompute )const
-	{
-		LayoutState result{ VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		auto passIt = std::find_if( m_outputTransitions.begin()
-			, m_outputTransitions.end()
-			, [&pass]( FramePassTransitions const & lookup )
-			{
-				return lookup.pass == &pass;
-			} );
-		assert( passIt != m_outputTransitions.end() );
-		auto it = std::find_if( passIt->transitions.viewTransitions.begin()
-			, passIt->transitions.viewTransitions.end()
-			, [&view]( ViewTransition const & lookup )
-			{
-				return match( *view.data, *lookup.data.data )
-					|| view.data->source.end() != std::find_if( view.data->source.begin()
-						, view.data->source.end()
-						, [&lookup]( ImageViewId const & lookupView )
-						{
-							return match( *lookup.data.data, *lookupView.data );
-						} )
-					|| lookup.data.data->source.end() != std::find_if( lookup.data.data->source.begin()
-						, lookup.data.data->source.end()
-						, [&view]( ImageViewId const & lookupView )
-						{
-							return match( *view.data, *lookupView.data );
-						} );
-			} );
-
-		if ( it != passIt->transitions.viewTransitions.end() )
+		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
 		{
-			result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-			result.state.access = it->inputAttach.getAccessMask();
-			result.state.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
-		}
-		else
-		{
-			passIt = std::find_if( m_inputTransitions.begin()
-				, m_inputTransitions.end()
-				, [&pass]( FramePassTransitions const & lookup )
-				{
-					return lookup.pass == &pass;
-				} );
-			assert( passIt != m_inputTransitions.end() );
-			it = std::find_if( passIt->transitions.viewTransitions.begin()
-				, passIt->transitions.viewTransitions.end()
-				, [&view]( ViewTransition const & lookup )
-				{
-					return match( *view.data, *lookup.data.data )
-						|| view.data->source.end() != std::find_if( view.data->source.begin()
-							, view.data->source.end()
-							, [&lookup]( ImageViewId const & lookupView )
-							{
-								return match( *lookup.data.data, *lookupView.data );
-							} )
-						|| lookup.data.data->source.end() != std::find_if( lookup.data.data->source.begin()
-							, lookup.data.data->source.end()
-							, [&view]( ImageViewId const & lookupView )
-							{
-								return match( *view.data, *lookupView.data );
-							} );
-				} );
-
-			if ( it == passIt->transitions.viewTransitions.end() )
-			{
-				result.layout = VK_IMAGE_LAYOUT_UNDEFINED;
-				result.state.access = 0u;
-				result.state.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-			}
-			else if ( it->inputAttach.getFlags() != 0u )
-			{
-				result.layout = it->inputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-				result.state.access = it->inputAttach.getAccessMask();
-				result.state.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
-			}
-			else if ( it->outputAttach.isColourClearingAttach()
-				|| it->outputAttach.isDepthClearingAttach() )
-			{
-				result.layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-				result.state.access = VK_ACCESS_SHADER_READ_BIT;
-				result.state.pipelineStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-			}
-			else
-			{
-				result.layout = it->outputAttach.getImageLayout( m_context.separateDepthStencilLayouts );
-				result.state.access = it->outputAttach.getAccessMask();
-				result.state.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
-			}
+			// Prevent from outputing a VK_IMAGE_LAYOUT_UNDEFINED anyway.
+			result = runnable.getLayoutState( view );
 		}
 
 		return result;
 	}
 
-	AccessState RunnableGraph::getCurrentAccessState( FramePass const & pass
-		, uint32_t passIndex
-		, Buffer const & buffer )const
+	LayoutState RunnableGraph::getOutputLayoutState( ImageViewId view )const
 	{
-		auto & buffersLayouts = m_layouts->getBuffersLayout( pass, passIndex );
-		auto bufferIt = buffersLayouts.find( buffer.buffer );
-
-		if ( bufferIt != buffersLayouts.end() )
-		{
-			return bufferIt->second;
-		}
-
-		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-	}
-
-	AccessState RunnableGraph::updateCurrentAccessState( FramePass const & pass
-		, uint32_t passIndex
-		, Buffer const & buffer
-		, AccessState newState )
-	{
-		auto & buffersLayouts = m_layouts->getBuffersLayout( pass, passIndex );
-		buffersLayouts[buffer.buffer] = newState;
-		return newState;
-	}
-
-	AccessState RunnableGraph::getOutputAccessState( FramePass const & pass
-		, Buffer const & buffer
-		, bool isCompute )const
-	{
-		AccessState result{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
-		auto passIt = std::find_if( m_outputTransitions.begin()
-			, m_outputTransitions.end()
-			, [&pass]( FramePassTransitions const & lookup )
-			{
-				return lookup.pass == &pass;
-			} );
-		assert( passIt != m_outputTransitions.end() );
-		auto it = std::find_if( passIt->transitions.bufferTransitions.begin()
-			, passIt->transitions.bufferTransitions.end()
-			, [&buffer]( BufferTransition const & lookup )
-			{
-				return buffer == lookup.data;
-			} );
-
-		if ( it != passIt->transitions.bufferTransitions.end() )
-		{
-			result.access = it->inputAttach.getAccessMask();
-			result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
-		}
-		else
-		{
-			passIt = std::find_if( m_inputTransitions.begin()
-				, m_inputTransitions.end()
-				, [&pass]( FramePassTransitions const & lookup )
-				{
-					return lookup.pass == &pass;
-				} );
-			assert( passIt != m_inputTransitions.end() );
-			it = std::find_if( passIt->transitions.bufferTransitions.begin()
-				, passIt->transitions.bufferTransitions.end()
-				, [&buffer]( BufferTransition const & lookup )
-				{
-					return buffer == lookup.data;
-				} );
-
-			if ( it == passIt->transitions.bufferTransitions.end() )
-			{
-				result.access = 0u;
-				result.pipelineStage = VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
-			}
-			else if ( it->inputAttach.getFlags() != 0u )
-			{
-				result.access = it->inputAttach.getAccessMask();
-				result.pipelineStage = it->inputAttach.getPipelineStageFlags( isCompute );
-			}
-			else
-			{
-				result.access = it->outputAttach.getAccessMask();
-				result.pipelineStage = it->outputAttach.getPipelineStageFlags( isCompute );
-			}
-		}
-
-		return result;
+		return m_graph.getOutputLayoutState( view );
 	}
 }

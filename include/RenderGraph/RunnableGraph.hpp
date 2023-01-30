@@ -6,7 +6,7 @@ See LICENSE file in root folder.
 
 #include "GraphContext.hpp"
 #include "FrameGraph.hpp"
-#include "RunnableLayoutsCache.hpp"
+#include "ResourceHandler.hpp"
 #include "RunnablePass.hpp"
 
 namespace crg
@@ -74,28 +74,10 @@ namespace crg
 		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
 			, Texcoord const & config );
 
-		CRG_API LayoutState getCurrentLayout( FramePass const & pass
-			, uint32_t passIndex
+		CRG_API LayoutState getNextLayoutState( RecordContext & context
+			, crg::RunnablePass const & runnable
 			, ImageViewId view )const;
-		CRG_API LayoutState updateCurrentLayout( FramePass const & pass
-			, uint32_t passIndex
-			, ImageViewId view
-			, LayoutState newLayout );
-		CRG_API LayoutState getOutputLayout( FramePass const & pass
-			, ImageViewId view
-			, bool isCompute )const;
-		CRG_API AccessState getCurrentAccessState( FramePass const & pass
-			, uint32_t passIndex
-			, Buffer const & buffer )const;
-		CRG_API AccessState updateCurrentAccessState( FramePass const & pass
-			, uint32_t passIndex
-			, Buffer const & buffer
-			, AccessState newState );
-		CRG_API AccessState getOutputAccessState( FramePass const & pass
-			, Buffer const & buffer
-			, bool isCompute )const;
-		CRG_API RunnablePass::LayoutTransition getTransition( FramePass const & pass
-			, ImageViewId const & view )const;
+		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
 
 		ConstGraphAdjacentNode getGraph()const
 		{
@@ -136,7 +118,6 @@ namespace crg
 		FrameGraph & m_graph;
 		GraphContext & m_context;
 		ContextResourcesCache m_resources;
-		std::unique_ptr< RunnableLayoutsCache > m_layouts;
 		FramePassDependencies m_inputTransitions;
 		FramePassDependencies m_outputTransitions;
 		AttachmentTransitions m_transitions;

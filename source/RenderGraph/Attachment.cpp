@@ -685,6 +685,13 @@ namespace crg
 	{
 	}
 
+	uint32_t Attachment::getViewCount()const
+	{
+		return isImage()
+			? image.getViewCount()
+			: uint32_t{};
+	}
+
 	ImageViewId Attachment::view( uint32_t index )const
 	{
 		return isImage()

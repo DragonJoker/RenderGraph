@@ -13,7 +13,8 @@ namespace
 {
 	using CheckViews = std::function< void( test::TestCounts &
 		, crg::FramePass const &
-		, crg::RunnableGraph const & ) >;
+		, crg::RunnableGraph const &
+		, crg::RecordContext & ) >;
 
 	class DummyRunnable
 		: public crg::RunnablePass
@@ -28,8 +29,9 @@ namespace
 			: crg::RunnablePass{ pass
 				, context
 				, graph
-				, { crg::RunnablePass::InitialiseCallback( [this]( uint32_t index ){ doInitialise( index ); } )
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) } }
+				, { crg::RunnablePass::InitialiseCallback( []( uint32_t ){} )
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } ) } }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
 			, m_checkViews{ checkViews }
@@ -37,11 +39,14 @@ namespace
 		}
 
 	private:
-		void doInitialise( uint32_t index )
+		void doRecordInto( crg::RecordContext & context
+			, VkCommandBuffer buffer
+			, uint32_t index )
 		{
 			m_checkViews( m_testCounts
 				, m_pass
-				, m_graph );
+				, m_graph
+				, context );
 		}
 
 	private:
@@ -67,7 +72,8 @@ namespace
 
 	void checkDummy( test::TestCounts & testCounts
 		, crg::FramePass const & pass
-		, crg::RunnableGraph const & graph )
+		, crg::RunnableGraph const & graph
+		, crg::RecordContext & context )
 	{
 	}
 
@@ -85,26 +91,28 @@ namespace
 
 	void checkOutputColourIsShaderReadOnly( test::TestCounts & testCounts
 		, crg::FramePass const & pass
-		, crg::RunnableGraph const & graph )
+		, crg::RunnableGraph const & graph
+		, crg::RecordContext & context )
 	{
 		for ( auto & view : pass.images )
 		{
 			if ( view.isColourOutputAttach() )
 			{
-				check( graph.getOutputLayout( pass, view.view( 0u ), false ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+				check( context.getNextLayoutState( view.view( 0u ) ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
 			}
 		}
 	}
 
 	void checkSampledIsShaderReadOnly( test::TestCounts & testCounts
 		, crg::FramePass const & pass
-		, crg::RunnableGraph const & graph )
+		, crg::RunnableGraph const & graph
+		, crg::RecordContext & context )
 	{
 		for ( auto & view : pass.images )
 		{
 			if ( view.isSampledView() )
 			{
-				check( graph.getCurrentLayout( pass, 0u, view.view( 0u ) ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+				check( context.getLayoutState( view.view( 0u ) ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
 			}
 		}
 	}

@@ -150,6 +150,11 @@ namespace crg
 		return m_graph.createView( view );
 	}
 
+	void FramePassGroup::addOutput( ImageViewId view )
+	{
+		m_outputs.emplace( view.id );
+	}
+
 	std::string FramePassGroup::getFullName()const
 	{
 		return ( &m_graph.getDefaultGroup() == this )

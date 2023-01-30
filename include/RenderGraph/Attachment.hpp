@@ -97,6 +97,11 @@ namespace crg
 			return flags;
 		}
 
+		uint32_t getViewCount()const
+		{
+			return uint32_t( views.size() );
+		}
+
 		bool hasFlag( Flag flag )const
 		{
 			return Flag( flags & FlagKind( flag ) ) == flag;
@@ -343,6 +348,7 @@ namespace crg
 		*	Getters.
 		*/
 		/**@{*/
+		CRG_API uint32_t getViewCount()const;
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		CRG_API VkDescriptorType getDescriptorType()const;

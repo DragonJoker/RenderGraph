@@ -18,6 +18,7 @@ namespace crg
 	{
 		static VkAttachmentReference addAttach( RecordContext & context
 			, Attachment const & attach
+			, ImageViewId view
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
 			, std::vector< VkClearValue > & clearValues
@@ -25,16 +26,8 @@ namespace crg
 			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
 		{
-			auto view = attach.view();
 			VkAttachmentReference result{ uint32_t( attaches.size() )
 				, attach.getImageLayout( separateDepthStencilLayouts ) };
-			auto from = context.getLayoutState( view );
-
-			if ( from.layout == VK_IMAGE_LAYOUT_UNDEFINED )
-			{
-				from = initialLayout;
-			}
-
 			attaches.push_back( { 0u
 				, view.data->info.format
 				, view.data->image.data->info.samples
@@ -42,15 +35,17 @@ namespace crg
 				, attach.image.storeOp
 				, attach.image.stencilLoadOp
 				, attach.image.stencilStoreOp
-				, from.layout
+				, initialLayout.layout
 				, finalLayout.layout } );
-			viewAttaches.push_back( { view, from, finalLayout } );
+			viewAttaches.push_back( { view, initialLayout, finalLayout } );
 			clearValues.push_back( attach.image.clearValue );
+			context.setLayoutState( view, finalLayout );
 			return result;
 		}
 
 		static VkAttachmentReference addAttach( RecordContext & context
 			, Attachment const & attach
+			, ImageViewId view
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
 			, std::vector< VkClearValue > & clearValues
@@ -62,6 +57,7 @@ namespace crg
 			blendAttachs.push_back( attach.image.blendState );
 			return addAttach( context
 				, attach
+				, view
 				, attaches
 				, viewAttaches
 				, clearValues
@@ -219,37 +215,36 @@ namespace crg
 			{
 				auto view = attach.view( passIndex );
 				auto currentLayout = context.getLayoutState( view );
-				auto & transition = runnable.getTransition( passIndex, view );
+				auto nextLayout = m_graph.getNextLayoutState( context, runnable, view );
 				auto from = ( !attach.isInput()
 					? LayoutState{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } }
-					: ( currentLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED )
-						? transition.from
-						: currentLayout );
+				: currentLayout );
+				assert( !attach.isInput() || from.layout != VK_IMAGE_LAYOUT_UNDEFINED );
 
 				if ( attach.isDepthAttach() || attach.isStencilAttach() )
 				{
 					depthReference = rpHolder::addAttach( context
 						, attach
+						, view
 						, attaches
 						, data.attaches
 						, data.clearValues
 						, from
-						, transition.to
+						, nextLayout
 						, m_context.separateDepthStencilLayouts );
-					context.setLayoutState( view, transition.to );
 				}
 				else if ( attach.isColourAttach() )
 				{
 					colorReferences.push_back( rpHolder::addAttach( context
 						, attach
+						, view
 						, attaches
 						, data.attaches
 						, data.clearValues
 						, m_blendAttachs
 						, from
-						, transition.to
+						, nextLayout
 						, m_context.separateDepthStencilLayouts ) );
-					context.setLayoutState( view, transition.to );
 				}
 			}
 		}

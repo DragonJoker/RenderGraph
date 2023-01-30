@@ -6,6 +6,8 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/FramePass.hpp"
 
+#include <unordered_set>
+
 namespace crg
 {
 	struct FramePassGroup
@@ -47,6 +49,12 @@ namespace crg
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 		CRG_API ImageId createImage( ImageData const & img )const;
 		CRG_API ImageViewId createView( ImageViewData const & view )const;
+		CRG_API void addOutput( ImageViewId view );
+
+		std::unordered_set< uint32_t > const & getOutputs()const
+		{
+			return m_outputs;
+		}
 		/**@}*/
 
 		CRG_API std::string getFullName()const;
@@ -65,5 +73,6 @@ namespace crg
 	private:
 		std::string m_name;
 		FrameGraph & m_graph;
+		std::unordered_set< uint32_t > m_outputs;
 	};
 }

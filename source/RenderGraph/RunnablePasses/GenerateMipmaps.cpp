@@ -45,16 +45,6 @@ namespace crg
 
 	void GenerateMipmaps::doInitialise( uint32_t passIndex )
 	{
-		auto & attach = m_pass.images.front();
-		auto viewId = attach.view( passIndex );
-		auto layoutState = ( m_outputLayout.layout != VK_IMAGE_LAYOUT_UNDEFINED
-			? m_outputLayout
-			: m_graph.getOutputLayout( m_pass, viewId, false ) );
-		doUpdateFinalLayout( passIndex
-			, viewId
-			, layoutState.layout
-			, layoutState.state.access
-			, layoutState.state.pipelineStage );
 	}
 
 	void GenerateMipmaps::doRecordInto( RecordContext & context
@@ -64,16 +54,14 @@ namespace crg
 		auto viewId{ m_pass.images.front().view( index ) };
 		auto imageId{ viewId.data->image };
 		auto image{ m_graph.createImage( imageId ) };
-		auto transition = getTransition( index, viewId );
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );
 		auto baseArrayLayer = viewId.data->info.subresourceRange.baseArrayLayer;
 		auto layerCount = viewId.data->info.subresourceRange.layerCount;
 		auto mipLevels = imageId.data->info.mipLevels;
-		auto srcImageLayout = transition.needed;
-		auto dstMipImageLayout = ( viewId.data->info.subresourceRange.levelCount == mipLevels )
-			? srcImageLayout
-			: transition.to;
+		auto nextLayoutState = m_graph.getNextLayoutState( context
+			, *this
+			, viewId );
 
 		auto const width = int32_t( extent.width );
 		auto const height = int32_t( extent.height );
@@ -101,10 +89,13 @@ namespace crg
 			imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 			// Transition first mip level to transfer source for read in next iteration
+			auto firstLayoutState = context.getLayoutState( imageId
+				, viewId.data->info.viewType
+				, mipSubRange );
 			context.memoryBarrier( commandBuffer
 				, imageId
 				, mipSubRange
-				, srcImageLayout.layout
+				, firstLayoutState.layout
 				, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 					, VK_ACCESS_TRANSFER_READ_BIT
 					, VK_PIPELINE_STAGE_TRANSFER_BIT } );
@@ -152,7 +143,7 @@ namespace crg
 						, mipSubRange.baseArrayLayer
 						, 1u }
 					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-					, dstMipImageLayout );
+					, nextLayoutState );
 
 				if ( mipSubRange.baseMipLevel == ( mipLevels - 1u ) )
 				{
@@ -161,7 +152,7 @@ namespace crg
 						, imageId
 						, mipSubRange
 						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-						, dstMipImageLayout );
+						, nextLayoutState );
 				}
 				else
 				{

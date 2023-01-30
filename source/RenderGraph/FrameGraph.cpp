@@ -210,6 +210,42 @@ namespace crg
 		return m_finalState.getAccessState( buffer.buffer, { 0u, VK_WHOLE_SIZE } );
 	}
 
+	void FrameGraph::addOutput( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range
+		, LayoutState outputLayout )
+	{
+		m_outputs.setLayoutState( image
+			, viewType
+			, std::move( range )
+			, std::move( outputLayout ) );
+	}
+
+	void FrameGraph::addOutput( ImageViewId view
+		, LayoutState outputLayout )
+	{
+		addOutput( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, outputLayout );
+	}
+
+	LayoutState FrameGraph::getOutputLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range )const
+	{
+		return m_outputs.getLayoutState( image
+			, viewType
+			, range );
+	}
+
+	LayoutState FrameGraph::getOutputLayoutState( ImageViewId view )const
+	{
+		return getOutputLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
+	}
+
 	void FrameGraph::registerFinalState( RecordContext const & context )
 	{
 		m_finalState = context;

@@ -59,7 +59,6 @@ namespace crg
 	class ResourceHandler;
 	class ResourcesCache;
 	class RunnableGraph;
-	class RunnableLayoutsCache;
 	class RunnablePass;
 
 	class ImageCopy;
@@ -158,6 +157,7 @@ namespace crg
 	using MipLayoutStates = std::map< uint32_t, LayoutState >;
 	using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
 	using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
+	using LayerLayoutStatesMap = std::map< uint32_t, LayerLayoutStates >;
 	using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
 	using ViewsLayout = LayoutStateMap;
 	using BuffersLayout = AccessStateMap;

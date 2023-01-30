@@ -244,10 +244,11 @@ namespace crg
 		*/
 		CRG_API void resetCommandBuffer( uint32_t passIndex );
 		CRG_API void resetCommandBuffers();
-		CRG_API LayoutTransition const & getTransition( uint32_t passIndex
-			, ImageViewId const & view )const;
-		CRG_API AccessTransition const & getTransition( uint32_t passIndex
-			, Buffer const & buffer )const;
+
+		LayoutState getLayoutState( crg::ImageViewId view )const
+		{
+			return m_imageLayouts.getLayoutState( view );
+		}
 
 		bool isEnabled()const
 		{
@@ -284,6 +285,11 @@ namespace crg
 			return m_pipelineState;
 		}
 
+		LayerLayoutStatesMap const & getImageLayouts()const
+		{
+			return m_imageLayouts.images;
+		}
+
 	protected:
 		struct CommandBuffer
 		{
@@ -300,23 +306,6 @@ namespace crg
 			, RecordContext & context );
 
 		VkCommandBuffer doCreateCommandBuffer( std::string const & suffix );
-		void doRegisterTransition( uint32_t passIndex
-			, ImageViewId view
-			, LayoutTransition transition );
-		void doRegisterTransition( uint32_t passIndex
-			, Buffer buffer
-			, AccessTransition transition );
-
-	protected:
-		CRG_API void doUpdateFinalLayout( uint32_t passIndex
-			, ImageViewId const & view
-			, VkImageLayout layout
-			, VkAccessFlags accessMask
-			, VkPipelineStageFlags pipelineStage );
-		CRG_API void doUpdateFinalAccess( uint32_t passIndex
-			, Buffer const & buffer
-			, VkAccessFlags accessMask
-			, VkPipelineStageFlags pipelineStage );
 
 	private:
 		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
@@ -369,6 +358,8 @@ namespace crg
 		std::vector< PassData > m_passes;
 		FramePassTimer m_timer;
 		std::map< uint32_t, RecordContext > m_passContexts;
+		LayerLayoutStatesHandler m_imageLayouts;
+		AccessStateMap m_bufferAccesses;
 	};
 
 	template<>

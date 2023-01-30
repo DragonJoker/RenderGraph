@@ -126,6 +126,70 @@ namespace crg
 
 	//************************************************************************************************
 
+	LayerLayoutStatesHandler::LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs )
+		: images{ rhs }
+	{
+	}
+
+	void LayerLayoutStatesHandler::addStates( LayerLayoutStatesHandler const & data )
+	{
+		for ( auto & state : data.images )
+		{
+			images.insert( state );
+		}
+	}
+
+	void LayerLayoutStatesHandler::setLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange
+		, LayoutState layoutState )
+	{
+		auto range = getVirtualRange( image
+			, viewType
+			, subresourceRange );
+		auto ires = images.emplace( image.id, LayerLayoutStates{} );
+		addSubresourceRangeLayout( ires.first->second
+			, range
+			, layoutState );
+	}
+
+	void LayerLayoutStatesHandler::setLayoutState( crg::ImageViewId view
+		, LayoutState layoutState )
+	{
+		setLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange
+			, layoutState );
+	}
+
+	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange )const
+	{
+		static LayoutState const undefLayout{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } };
+		auto imageIt = images.find( image.id );
+
+		if ( imageIt != images.end() )
+		{
+			auto range = getVirtualRange( image
+				, viewType
+				, subresourceRange );
+			return getSubresourceRangeLayout( imageIt->second
+				, range );
+		}
+
+		return undefLayout;
+	}
+
+	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
+	{
+		return getLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
+	}
+
+	//************************************************************************************************
+
 	RecordContext::RecordContext( ContextResourcesCache & resources )
 		: m_handler{ &resources.getHandler() }
 		, m_resources{ &resources }
@@ -143,10 +207,7 @@ namespace crg
 
 	void RecordContext::addStates( RecordContext const & data )
 	{
-		for ( auto & state : data.m_images )
-		{
-			m_images.insert( state );
-		}
+		m_images.addStates( data.m_images );
 
 		for ( auto & state : data.m_buffers )
 		{
@@ -159,27 +220,24 @@ namespace crg
 		}
 	}
 
-	void RecordContext::setNextPipelineState( PipelineState const & state )
+	void RecordContext::setNextPipelineState( PipelineState const & state
+		, LayerLayoutStatesMap const & imageLayouts )
 	{
 		m_prevPipelineState = m_currPipelineState;
 		m_currPipelineState = m_nextPipelineState;
 		m_nextPipelineState = state;
+		m_nextImages = { imageLayouts };
 	}
 
 	void RecordContext::setLayoutState( crg::ImageViewId view
 		, LayoutState layoutState )
 	{
-		setLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange
-			, layoutState );
+		m_images.setLayoutState( view, layoutState );
 	}
 
 	LayoutState RecordContext::getLayoutState( ImageViewId view )const
 	{
-		return getLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
+		return m_images.getLayoutState( view );
 	}
 
 	void RecordContext::setLayoutState( ImageId image
@@ -187,12 +245,9 @@ namespace crg
 		, VkImageSubresourceRange const & subresourceRange
 		, LayoutState layoutState )
 	{
-		auto range = getVirtualRange( image
+		m_images.setLayoutState( image
 			, viewType
-			, subresourceRange );
-		auto ires = m_images.emplace( image.id, LayerLayoutStates{} );
-		addSubresourceRangeLayout( ires.first->second
-			, range
+			, subresourceRange
 			, layoutState );
 	}
 
@@ -200,18 +255,23 @@ namespace crg
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
-		auto imageIt = m_images.find( image.id );
+		return m_images.getLayoutState( image
+			, viewType
+			, subresourceRange );
+	}
 
-		if ( imageIt != m_images.end() )
-		{
-			auto range = getVirtualRange( image
-				, viewType
-				, subresourceRange );
-			return getSubresourceRangeLayout( imageIt->second
-				, range );
-		}
+	LayoutState RecordContext::getNextLayoutState( ImageViewId view )const
+	{
+		return m_nextImages.getLayoutState( view );
+	}
 
-		return { VK_IMAGE_LAYOUT_UNDEFINED, 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+	LayoutState RecordContext::getNextLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange const & subresourceRange )const
+	{
+		return m_nextImages.getLayoutState( image
+			, viewType
+			, subresourceRange );
 	}
 
 	void RecordContext::registerImplicitTransition( RunnablePass const & pass

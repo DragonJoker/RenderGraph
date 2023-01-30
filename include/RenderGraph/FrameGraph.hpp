@@ -19,7 +19,6 @@ namespace crg
 	class FrameGraph
 	{
 		friend class RunnableGraph;
-		friend class RunnableLayoutsCache;
 
 	public:
 		/**
@@ -75,6 +74,16 @@ namespace crg
 		/**@{*/
 		CRG_API LayoutState getFinalLayoutState( ImageViewId view )const;
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
+		CRG_API void addOutput( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange range
+			, LayoutState outputLayout );
+		CRG_API void addOutput( ImageViewId view
+			, LayoutState outputLayout );
+		CRG_API LayoutState getOutputLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange range )const;
+		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
 
 		ResourceHandler & getHandler()
 		{
@@ -116,5 +125,6 @@ namespace crg
 		std::map< std::string, ImageViewId > m_attachViews;
 		RecordContext m_finalState;
 		FrameGraphArray m_depends;
+		LayerLayoutStatesHandler m_outputs;
 	};
 }

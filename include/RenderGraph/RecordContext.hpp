@@ -20,6 +20,26 @@ namespace crg
 	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range );
 
+	struct LayerLayoutStatesHandler
+	{
+		CRG_API LayerLayoutStatesHandler() = default;
+		CRG_API LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs );
+		CRG_API void addStates( LayerLayoutStatesHandler const & data );
+
+		CRG_API void setLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange
+			, LayoutState layoutState );
+		CRG_API void setLayoutState( crg::ImageViewId view
+			, LayoutState layoutState );
+		CRG_API LayoutState getLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange )const;
+		CRG_API LayoutState getLayoutState( ImageViewId view )const;
+
+		LayerLayoutStatesMap images;
+	};
+
 	class RecordContext
 	{
 	public:
@@ -46,7 +66,8 @@ namespace crg
 		*\name	Pipeline
 		*/
 		//@{
-		CRG_API void setNextPipelineState( PipelineState const & state );
+		CRG_API void setNextPipelineState( PipelineState const & state
+			, LayerLayoutStatesMap const & imageLayouts );
 		//@}
 		/**
 		*\name	Images
@@ -61,6 +82,11 @@ namespace crg
 			, VkImageSubresourceRange const & subresourceRange
 			, LayoutState layoutState );
 		CRG_API LayoutState getLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange const & subresourceRange )const;
+
+		CRG_API LayoutState getNextLayoutState( ImageViewId view )const;
+		CRG_API LayoutState getNextLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange )const;
 
@@ -182,12 +208,13 @@ namespace crg
 	private:
 		ResourceHandler * m_handler;
 		ContextResourcesCache * m_resources;
-		std::map< uint32_t, LayerLayoutStates > m_images;
+		LayerLayoutStatesHandler m_images;
 		AccessStateMap m_buffers;
 		std::vector< ImplicitTransition > m_implicitTransitions;
 		PassIndexArray m_state;
-		PipelineState m_prevPipelineState;
-		PipelineState m_currPipelineState;
-		PipelineState m_nextPipelineState;
+		PipelineState m_prevPipelineState{};
+		PipelineState m_currPipelineState{};
+		PipelineState m_nextPipelineState{};
+		LayerLayoutStatesHandler m_nextImages;
 	};
 }
