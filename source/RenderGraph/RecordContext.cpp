@@ -81,7 +81,7 @@ namespace crg
 		m_prevPipelineState = m_currPipelineState;
 		m_currPipelineState = m_nextPipelineState;
 		m_nextPipelineState = state;
-		m_nextImages = { imageLayouts };
+		m_nextImages = LayerLayoutStatesHandler{ imageLayouts };
 	}
 
 	void RecordContext::setLayoutState( crg::ImageViewId view
