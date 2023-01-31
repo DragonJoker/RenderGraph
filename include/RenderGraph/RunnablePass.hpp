@@ -244,6 +244,7 @@ namespace crg
 		*/
 		CRG_API void resetCommandBuffer( uint32_t passIndex );
 		CRG_API void resetCommandBuffers();
+		CRG_API void setToReset( uint32_t passIndex );
 
 		LayoutState getLayoutState( crg::ImageViewId view )const
 		{
@@ -346,6 +347,7 @@ namespace crg
 			LayoutTransitionMap layoutTransitions;
 			AccessTransitionMap accessTransitions;
 			bool initialised{};
+			bool toReset{};
 		};
 
 	protected:

@@ -224,61 +224,23 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			if ( attach.count <= 1u )
+			if ( attach.isSampledView() )
 			{
-				if ( attach.isSampledView() )
-				{
-					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
-						, 0u
-						, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-						, VkDescriptorImageInfo{ m_graph.createSampler( attach.image.samplerDesc )
-							, m_graph.createImageView( attach.view( index ) )
-							, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } } );
-				}
-				else if ( attach.isStorageView() )
-				{
-					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
-						, 0u
-						, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-						, VkDescriptorImageInfo{ VkSampler{}
-							, m_graph.createImageView( attach.view( index ) )
-							, VK_IMAGE_LAYOUT_GENERAL } } );
-				}
+				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+					, 0u
+					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
+					, VkDescriptorImageInfo{ m_graph.createSampler( attach.image.samplerDesc )
+						, m_graph.createImageView( attach.view( index ) )
+						, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } } );
 			}
-			else
+			else if ( attach.isStorageView() )
 			{
-				if ( attach.isSampledView() )
-				{
-					VkDescriptorImageInfoArray imageInfos;
-
-					for ( uint32_t i = 0u; i < attach.count; ++i )
-					{
-						imageInfos.push_back( { m_graph.createSampler( attach.image.samplerDesc )
-							, m_graph.createImageView( attach.view( i ) )
-							, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
-					}
-
-					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
-						, 0u
-						, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-						, imageInfos } );
-				}
-				else if ( attach.isStorageView() )
-				{
-					VkDescriptorImageInfoArray imageInfos;
-
-					for ( uint32_t i = 0u; i < attach.count; ++i )
-					{
-						imageInfos.push_back( { VkSampler{}
-							, m_graph.createImageView( attach.view( i ) )
-							, VK_IMAGE_LAYOUT_GENERAL } );
-					}
-
-					descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
-						, 0u
-						, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-						, imageInfos } );
-				}
+				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+					, 0u
+					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+					, VkDescriptorImageInfo{ VkSampler{}
+						, m_graph.createImageView( attach.view( index ) )
+						, VK_IMAGE_LAYOUT_GENERAL } } );
 			}
 		}
 
@@ -328,7 +290,7 @@ namespace crg
 			{
 				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, std::max( 1u, attach.count )
+					, 1u
 					, shaderStage
 					, nullptr } );
 			}
@@ -336,7 +298,7 @@ namespace crg
 			{
 				m_descriptorBindings.push_back( { attach.binding
 					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-					, std::max( 1u, attach.count )
+					, 1u
 					, shaderStage
 					, nullptr } );
 			}

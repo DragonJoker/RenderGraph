@@ -214,7 +214,7 @@ namespace crg
 				|| attach.isColourAttach() )
 			{
 				auto view = attach.view( passIndex );
-				auto currentLayout = context.getLayoutState( view );
+				auto currentLayout = m_graph.getCurrentLayoutState( context, view );
 				auto nextLayout = m_graph.getNextLayoutState( context, runnable, view );
 				auto from = ( !attach.isInput()
 					? LayoutState{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } }

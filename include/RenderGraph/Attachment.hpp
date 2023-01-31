@@ -571,7 +571,6 @@ namespace crg
 		/**@[*/
 		FramePass * pass{};
 		uint32_t binding{};
-		uint32_t count{};
 		std::string name{};
 		ImageAttachment image;
 		BufferAttachment buffer;
@@ -586,7 +585,6 @@ namespace crg
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding
-			, uint32_t count
 			, std::string name
 			, ImageAttachment::FlagKind imageFlags
 			, ImageViewIdArray views
@@ -601,7 +599,6 @@ namespace crg
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding
-			, uint32_t count
 			, std::string name
 			, BufferAttachment::FlagKind bufferFlags
 			, Buffer buffer
@@ -610,7 +607,6 @@ namespace crg
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding
-			, uint32_t count
 			, std::string name
 			, BufferAttachment::FlagKind bufferFlags
 			, Buffer buffer

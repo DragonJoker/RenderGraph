@@ -497,7 +497,6 @@ namespace crg
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, uint32_t binding
-		, uint32_t count
 		, std::string name
 		, ImageAttachment::FlagKind imageFlags
 		, ImageViewIdArray views
@@ -511,7 +510,6 @@ namespace crg
 		, VkImageLayout wantedLayout )
 		: pass{ &pass }
 		, binding{ binding }
-		, count{ count }
 		, name{ std::move( name ) }
 		, image{ imageFlags
 			, std::move( views )
@@ -543,7 +541,6 @@ namespace crg
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, uint32_t binding
-		, uint32_t count
 		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
 		, Buffer buffer
@@ -551,7 +548,6 @@ namespace crg
 		, VkDeviceSize range )
 		: pass{ &pass }
 		, binding{ binding }
-		, count{ count }
 		, name{ std::move( name ) }
 		, buffer{ bufferFlags, std::move( buffer ), offset, range }
 		, flags{ FlagKind( flags
@@ -562,7 +558,6 @@ namespace crg
 	Attachment::Attachment( FlagKind flags
 		, FramePass & pass
 		, uint32_t binding
-		, uint32_t count
 		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
 		, Buffer buffer
@@ -570,7 +565,6 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: pass{ &pass }
-		, count{ count }
 		, name{ std::move( name ) }
 		, buffer{ bufferFlags, std::move( buffer ), view, offset, range }
 		, flags{ FlagKind( flags
@@ -613,7 +607,7 @@ namespace crg
 	WriteDescriptorSet Attachment::getBufferWrite()const
 	{
 		assert( isBuffer() );
-		return buffer.getWrite( binding, count );
+		return buffer.getWrite( binding, 1u );
 	}
 
 	VkAccessFlags Attachment::getAccessMask()const

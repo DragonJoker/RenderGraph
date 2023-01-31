@@ -347,6 +347,31 @@ namespace crg
 			, config );
 	}
 
+	LayoutState RunnableGraph::getCurrentLayoutState( RecordContext & context
+		, ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range )const
+	{
+		auto result = context.getLayoutState( image, viewType, range );
+
+		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			// Lookup in graph's external inputs.
+			result = m_graph.getInputLayoutState( image, viewType, range );
+		}
+
+		return result;
+	}
+
+	LayoutState RunnableGraph::getCurrentLayoutState( RecordContext & context
+		, ImageViewId view )const
+	{
+		return getCurrentLayoutState( context
+			, view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
+	}
+
 	LayoutState RunnableGraph::getNextLayoutState( RecordContext & context
 		, crg::RunnablePass const & runnable
 		, ImageViewId view )const
