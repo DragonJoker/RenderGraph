@@ -389,48 +389,21 @@ namespace crg
 
 			for ( auto & attach : m_pass.images )
 			{
-				if ( attach.count <= 1u )
-				{
-					context.runImplicitTransition( commandBuffer
-						, index
-						, attach.view( index ) );
-				}
-				else
-				{
-					for ( uint32_t i = 0u; i < attach.count; ++i )
-					{
-						context.runImplicitTransition( commandBuffer
-							, index
-							, attach.view( i ) );
-					}
-				}
+				auto view = attach.view( index );
+				context.runImplicitTransition( commandBuffer
+					, index
+					, view );
 
 				if ( !attach.isNoTransition()
 					&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
 				{
 					auto needed = makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) );
-
-					if ( attach.count <= 1u )
-					{
-						auto view = attach.view( index );
-						auto currentLayout = context.getLayoutState( view );
-						context.memoryBarrier( commandBuffer
-							, view
-							, currentLayout.layout
-							, needed );
-					}
-					else
-					{
-						for ( uint32_t i = 0u; i < attach.count; ++i )
-						{
-							auto view = attach.view( i );
-							auto currentLayout = context.getLayoutState( view );
-							context.memoryBarrier( commandBuffer
-								, view
-								, currentLayout.layout
-								, needed );
-						}
-					}
+					auto currentLayout = m_graph.getCurrentLayoutState( context, view );
+					assert( attach.isTransitionView() || !attach.isInput() || currentLayout.layout != VK_IMAGE_LAYOUT_UNDEFINED );
+					context.memoryBarrier( commandBuffer
+						, view
+						, currentLayout.layout
+						, needed );
 				}
 			}
 
@@ -486,6 +459,12 @@ namespace crg
 		assert( m_passes.size() > index );
 		auto & pass = m_passes[index];
 
+		if ( pass.toReset )
+		{
+			crg::RunnablePass::resetCommandBuffer( index );
+			crg::RunnablePass::reRecordCurrent();
+		}
+
 		if ( m_context.device )
 		{
 			std::vector< VkSemaphore > semaphores;
@@ -538,6 +517,16 @@ namespace crg
 		for ( uint32_t i = 0u; i < uint32_t( m_passes.size() ); ++i )
 		{
 			resetCommandBuffer( i );
+		}
+	}
+
+	void RunnablePass::setToReset( uint32_t passIndex )
+	{
+		if ( m_ruConfig.resettable )
+		{
+			assert( m_passes.size() > passIndex );
+			auto & pass = m_passes[passIndex];
+			pass.toReset = true;
 		}
 	}
 

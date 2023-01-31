@@ -89,7 +89,8 @@ namespace crg
 			imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 			// Transition first mip level to transfer source for read in next iteration
-			auto firstLayoutState = context.getLayoutState( imageId
+			auto firstLayoutState = m_graph.getCurrentLayoutState( context
+				, imageId
 				, viewId.data->info.viewType
 				, mipSubRange );
 			context.memoryBarrier( commandBuffer

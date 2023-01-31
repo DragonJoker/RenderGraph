@@ -74,6 +74,12 @@ namespace crg
 		CRG_API VertexBuffer const & createQuadTriVertexBuffer( bool texCoords
 			, Texcoord const & config );
 
+		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
+			, ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange range )const;
+		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
+			, ImageViewId view )const;
 		CRG_API LayoutState getNextLayoutState( RecordContext & context
 			, crg::RunnablePass const & runnable
 			, ImageViewId view )const;
