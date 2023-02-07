@@ -18,6 +18,14 @@ namespace crg
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
+		CRG_API ImageCopy( FramePass const & pass
+			, GraphContext & context
+			, RunnableGraph & graph
+			, VkExtent3D copySize
+			, VkImageLayout finalOutputLayout
+			, ru::Config ruConfig = {}
+			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
+			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
 
 	private:
 		void doInitialise();
@@ -27,5 +35,6 @@ namespace crg
 
 	private:
 		VkExtent3D m_copySize;
+		VkImageLayout m_finalOutputLayout;
 	};
 }
