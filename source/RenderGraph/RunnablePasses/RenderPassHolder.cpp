@@ -6,6 +6,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/Attachment.hpp"
 #include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/ImageData.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -31,7 +32,9 @@ namespace crg
 			attaches.push_back( { 0u
 				, view.data->info.format
 				, view.data->image.data->info.samples
-				, attach.image.loadOp
+				, ( initialLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED
+					? VK_ATTACHMENT_LOAD_OP_CLEAR
+					: attach.image.loadOp )
 				, attach.image.storeOp
 				, attach.image.stencilLoadOp
 				, attach.image.stencilStoreOp
@@ -217,9 +220,13 @@ namespace crg
 				auto currentLayout = m_graph.getCurrentLayoutState( context, view );
 				auto nextLayout = m_graph.getNextLayoutState( context, runnable, view );
 				auto from = ( !attach.isInput()
-					? LayoutState{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } }
-				: currentLayout );
-				assert( !attach.isInput() || from.layout != VK_IMAGE_LAYOUT_UNDEFINED );
+					? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
+					: currentLayout );
+
+				if ( !( !attach.isInput() || from.layout != VK_IMAGE_LAYOUT_UNDEFINED ) )
+				{
+					Logger::logWarning( "Input image in undefined layout" );
+				}
 
 				if ( attach.isDepthAttach() || attach.isStencilAttach() )
 				{
