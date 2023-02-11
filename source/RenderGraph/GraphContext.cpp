@@ -111,6 +111,7 @@ namespace crg
 		DECL_vkFunction( CmdWriteTimestamp );
 		DECL_vkFunction( CmdPipelineBarrier );
 		DECL_vkFunction( CmdBlitImage );
+		DECL_vkFunction( CmdCopyBuffer );
 		DECL_vkFunction( CmdCopyBufferToImage );
 		DECL_vkFunction( CmdCopyImage );
 		DECL_vkFunction( CmdCopyImageToBuffer );
