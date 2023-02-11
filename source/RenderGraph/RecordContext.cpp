@@ -380,7 +380,8 @@ namespace crg
 
 	RecordContext::ImplicitAction RecordContext::copyImage( ImageViewId srcView
 		, ImageViewId dstView
-		, VkExtent2D extent )
+		, VkExtent2D extent
+		, VkImageLayout finalLayout )
 	{
 		return [srcView, dstView, extent]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
@@ -423,9 +424,10 @@ namespace crg
 		, VkExtent2D srcExtent
 		, VkOffset2D dstOffset
 		, VkExtent2D dstExtent
-		, VkFilter filter )
+		, VkFilter filter
+		, VkImageLayout finalLayout )
 	{
-		return [srcView, dstView, srcOffset, srcExtent, dstOffset, dstExtent, filter]( RecordContext & recContext
+		return [srcView, dstView, srcOffset, srcExtent, dstOffset, dstExtent, filter, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
@@ -459,12 +461,22 @@ namespace crg
 				, 1u
 				, &region
 				, filter );
+
+			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				recContext.memoryBarrier( commandBuffer
+					, dstView.data->image
+					, dstView.data->info.viewType
+					, dstView.data->info.subresourceRange
+					, makeLayoutState( finalLayout ) );
+			}
 		};
 	}
 
-	RecordContext::ImplicitAction RecordContext::clearAttachment( Attachment attach )
+	RecordContext::ImplicitAction RecordContext::clearAttachment( Attachment attach
+		, VkImageLayout finalLayout )
 	{
-		return [attach]( RecordContext & recContext
+		return [attach, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
@@ -496,6 +508,15 @@ namespace crg
 					, 1u
 					, &dstView.data->info.subresourceRange );
 			}
+
+			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				recContext.memoryBarrier( commandBuffer
+					, dstView.data->image
+					, dstView.data->info.viewType
+					, dstView.data->info.subresourceRange
+					, makeLayoutState( finalLayout ) );
+			}
 		};
 	}
 
@@ -511,9 +532,10 @@ namespace crg
 	}
 
 	RecordContext::ImplicitAction RecordContext::clearAttachment( ImageViewId dstView
-		, VkClearValue const & clearValue )
+		, VkClearValue const & clearValue
+		, VkImageLayout finalLayout )
 	{
-		return [clearValue, dstView]( RecordContext & recContext
+		return [clearValue, dstView, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
@@ -543,6 +565,15 @@ namespace crg
 					, &depthStencil
 					, 1u
 					, &dstView.data->info.subresourceRange );
+			}
+
+			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				recContext.memoryBarrier( commandBuffer
+					, dstView.data->image
+					, dstView.data->info.viewType
+					, dstView.data->info.subresourceRange
+					, makeLayoutState( finalLayout ) );
 			}
 		};
 	}

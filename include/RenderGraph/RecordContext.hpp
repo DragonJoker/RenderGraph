@@ -138,17 +138,21 @@ namespace crg
 
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView
-			, VkExtent2D extent );
+			, VkExtent2D extent
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		CRG_API static ImplicitAction blitImage( ImageViewId srcView
 			, ImageViewId dstView
 			, VkOffset2D srcOffset
 			, VkExtent2D srcExtent
 			, VkOffset2D dstOffset
 			, VkExtent2D dstExtent
-			, VkFilter filter);
-		CRG_API static ImplicitAction clearAttachment( Attachment attach );
+			, VkFilter filter
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
+		CRG_API static ImplicitAction clearAttachment( Attachment attach
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 		CRG_API static ImplicitAction clearAttachment( ImageViewId view
-			, VkClearValue const & clearValue );
+			, VkClearValue const & clearValue
+			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
 
 		ResourceHandler & getHandler()const
 		{
