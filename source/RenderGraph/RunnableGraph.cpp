@@ -358,6 +358,22 @@ namespace crg
 		{
 			// Lookup in graph's external inputs.
 			result = m_graph.getInputLayoutState( image, viewType, range );
+
+			if ( result.layout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				context.setLayoutState( image, viewType, range, result );
+			}
+		}
+
+		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			// Lookup in graph's previous final state.
+			result = m_graph.getFinalLayoutState( image, viewType, range );
+
+			if ( result.layout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				context.setLayoutState( image, viewType, range, result );
+			}
 		}
 
 		return result;

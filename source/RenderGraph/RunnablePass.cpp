@@ -340,6 +340,17 @@ namespace crg
 		}
 	}
 
+	void checkUndefinedInput( std::string const & stepName
+		, Attachment const & attach
+		, ImageViewId const & view
+		, VkImageLayout currentLayout )
+	{
+		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			Logger::logWarning( stepName + " - [" + attach.pass->getFullName() + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
+		}
+	}
+
 	void RunnablePass::recordOne( CommandBuffer & enabled
 		, uint32_t index
 		, RecordContext & context )
@@ -400,12 +411,7 @@ namespace crg
 				{
 					auto needed = makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) );
 					auto currentLayout = m_graph.getCurrentLayoutState( context, view );
-
-					if ( !( attach.isTransitionView() || !attach.isInput() || currentLayout.layout != VK_IMAGE_LAYOUT_UNDEFINED ) )
-					{
-						Logger::logWarning( "Input view [" + view.data->name + "] is currently in undefined layout" );
-					}
-
+					checkUndefinedInput( "Record", attach, view, currentLayout.layout );
 					context.memoryBarrier( commandBuffer
 						, view
 						, currentLayout.layout

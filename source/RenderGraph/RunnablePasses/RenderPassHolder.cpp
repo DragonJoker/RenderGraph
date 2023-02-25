@@ -222,11 +222,7 @@ namespace crg
 				auto from = ( !attach.isInput()
 					? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
 					: currentLayout );
-
-				if ( !( !attach.isInput() || from.layout != VK_IMAGE_LAYOUT_UNDEFINED ) )
-				{
-					Logger::logWarning( "Input image in undefined layout" );
-				}
+				checkUndefinedInput( "RenderPass", attach, view, from.layout );
 
 				if ( attach.isDepthAttach() || attach.isStencilAttach() )
 				{
