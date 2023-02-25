@@ -125,7 +125,7 @@ namespace crg
 	class ResourcesCache
 	{
 	public:
-		CRG_API ResourcesCache( ResourceHandler & handler );
+		CRG_API explicit ResourcesCache( ResourceHandler & handler );
 
 		CRG_API VkImage createImage( GraphContext & context
 			, ImageId const & imageId );

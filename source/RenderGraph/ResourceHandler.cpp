@@ -138,7 +138,7 @@ namespace crg
 		if ( it == m_imageViewIds.end() )
 		{
 			auto data = std::make_unique< ImageViewData >( view );
-			result = { uint32_t( m_imageViewIds.size() + 1u ), data.get() };
+			result = ImageViewId{ uint32_t( m_imageViewIds.size() + 1u ), data.get() };
 			m_imageViewIds.insert( { result, std::move( data ) } );
 		}
 		else

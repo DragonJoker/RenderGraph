@@ -174,7 +174,7 @@ namespace crg
 	template< typename VkTypeT >
 	struct ContextObjectT
 	{
-		ContextObjectT( GraphContext & ctx
+		explicit ContextObjectT( GraphContext & ctx
 			, VkTypeT obj = {}
 			, std::function< void( GraphContext &, VkTypeT & ) > dtor = nullptr )
 			: context{ ctx }
@@ -205,7 +205,7 @@ namespace crg
 
 	struct VertexBuffer
 	{
-		VertexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
+		explicit VertexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
 			, VkDeviceMemory pmemory = VkDeviceMemory{}
 			, VkVertexInputAttributeDescriptionArray pvertexAttribs = {}
 			, VkVertexInputBindingDescriptionArray pvertexBindings = {} )
@@ -279,7 +279,7 @@ namespace crg
 			return *this;
 		}
 
-		~VertexBuffer() = default;
+		~VertexBuffer()noexcept = default;
 
 		Buffer buffer{ VkBuffer{}, std::string{} };
 		VkDeviceMemory memory{};
@@ -292,7 +292,7 @@ namespace crg
 
 	struct IndexBuffer
 	{
-		IndexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
+		explicit IndexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
 			, VkDeviceMemory pmemory = VkDeviceMemory{} )
 			: buffer{ std::move( pbuffer ) }
 			, memory{ pmemory }

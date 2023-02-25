@@ -204,37 +204,37 @@ namespace crg
 				return *this;
 			}
 
-			pp::ConfigT< WrapperT > m_baseConfig;
-			WrapperT< VkOffset2D > m_renderPosition;
-			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState;
-			WrapperT< RunnablePass::GetPassIndexCallback > m_getPassIndex;
-			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled;
-			WrapperT< RunnablePass::RecordCallback > m_recordInto;
-			WrapperT< RunnablePass::RecordCallback > m_end;
-			WrapperT< GetPrimitiveCountCallback > m_getPrimitiveCount;
-			WrapperT< GetVertexCountCallback > m_getVertexCount;
-			WrapperT< GetIndexTypeCallback > m_getIndexType;
-			WrapperT< GetCullModeCallback > m_getCullMode;
-			WrapperT< VkExtent2D > m_renderSize;
-			WrapperT< VertexBuffer > m_vertexBuffer;
-			WrapperT< IndexBuffer > m_indexBuffer;
+			pp::ConfigT< WrapperT > m_baseConfig{};
+			WrapperT< VkOffset2D > m_renderPosition{};
+			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState{};
+			WrapperT< RunnablePass::GetPassIndexCallback > m_getPassIndex{};
+			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
+			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
+			WrapperT< RunnablePass::RecordCallback > m_end{};
+			WrapperT< GetPrimitiveCountCallback > m_getPrimitiveCount{};
+			WrapperT< GetVertexCountCallback > m_getVertexCount{};
+			WrapperT< GetIndexTypeCallback > m_getIndexType{};
+			WrapperT< GetCullModeCallback > m_getCullMode{};
+			WrapperT< VkExtent2D > m_renderSize{};
+			WrapperT< VertexBuffer > m_vertexBuffer{};
+			WrapperT< IndexBuffer > m_indexBuffer{};
 		};
 
 		template<>
 		struct ConfigT< RawTypeT >
 		{
-			RawTypeT< VkOffset2D > renderPosition;
-			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
-			RawTypeT< RunnablePass::GetPassIndexCallback > getPassIndex;
-			RawTypeT< RunnablePass::IsEnabledCallback > isEnabled;
-			RawTypeT< RunnablePass::RecordCallback > recordInto;
-			RawTypeT< RunnablePass::RecordCallback > end;
-			RawTypeT< GetPrimitiveCountCallback > getPrimitiveCount;
-			RawTypeT< GetVertexCountCallback > getVertexCount;
-			RawTypeT< GetIndexTypeCallback > getIndexType;
-			RawTypeT< GetCullModeCallback > getCullMode;
-			RawTypeT< VertexBuffer > vertexBuffer;
-			RawTypeT< IndexBuffer > indexBuffer;
+			RawTypeT< VkOffset2D > renderPosition{};
+			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState{};
+			RawTypeT< RunnablePass::GetPassIndexCallback > getPassIndex{};
+			RawTypeT< RunnablePass::IsEnabledCallback > isEnabled{};
+			RawTypeT< RunnablePass::RecordCallback > recordInto{};
+			RawTypeT< RunnablePass::RecordCallback > end{};
+			RawTypeT< GetPrimitiveCountCallback > getPrimitiveCount{};
+			RawTypeT< GetVertexCountCallback > getVertexCount{};
+			RawTypeT< GetIndexTypeCallback > getIndexType{};
+			RawTypeT< GetCullModeCallback > getCullMode{};
+			RawTypeT< VertexBuffer > vertexBuffer{};
+			RawTypeT< IndexBuffer > indexBuffer{};
 		};
 
 		using Config = ConfigT< std::optional >;
@@ -286,7 +286,7 @@ namespace crg
 	{
 		static VertexBuffer get()
 		{
-			return {};
+			return VertexBuffer{};
 		}
 	};
 
@@ -295,7 +295,7 @@ namespace crg
 	{
 		static IndexBuffer get()
 		{
-			return {};
+			return IndexBuffer{};
 		}
 	};
 }

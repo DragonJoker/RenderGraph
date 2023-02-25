@@ -17,7 +17,7 @@ namespace crg
 		std::string name;
 		VkImageCreateInfo info;
 
-		ImageData( std::string name = {}
+		explicit ImageData( std::string name = {}
 			, VkImageCreateFlags flags = {}
 			, VkImageType imageType = {}
 			, VkFormat format = {}

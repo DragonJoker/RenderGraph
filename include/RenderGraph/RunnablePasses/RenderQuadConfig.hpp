@@ -159,17 +159,17 @@ namespace crg
 				return *this;
 			}
 
-			pp::ConfigT< WrapperT > m_baseConfig;
-			WrapperT< Texcoord > m_texcoordConfig;
-			WrapperT< VkOffset2D > m_renderPosition;
-			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState;
-			WrapperT< uint32_t const * > m_passIndex;
-			WrapperT< bool const * > m_enabled;
-			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled;
-			WrapperT< RunnablePass::RecordCallback > m_recordInto;
-			WrapperT< RunnablePass::RecordCallback > m_end;
-			WrapperT< uint32_t > m_instances;
-			WrapperT< VkExtent2D > m_renderSize;
+			pp::ConfigT< WrapperT > m_baseConfig{};
+			WrapperT< Texcoord > m_texcoordConfig{};
+			WrapperT< VkOffset2D > m_renderPosition{};
+			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState{};
+			WrapperT< uint32_t const * > m_passIndex{};
+			WrapperT< bool const * > m_enabled{};
+			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
+			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
+			WrapperT< RunnablePass::RecordCallback > m_end{};
+			WrapperT< uint32_t > m_instances{};
+			WrapperT< VkExtent2D > m_renderSize{};
 		};
 
 		template<>

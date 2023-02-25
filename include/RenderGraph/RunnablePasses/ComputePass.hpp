@@ -140,15 +140,15 @@ namespace crg
 				return *this;
 			}
 
-			pp::ConfigT< WrapperT > m_baseConfig;
-			WrapperT< uint32_t const * > m_passIndex;
-			WrapperT< bool const * > m_enabled;
-			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled;
-			WrapperT< RunnablePass::RecordCallback > m_recordInto;
-			WrapperT< RunnablePass::RecordCallback > m_end;
-			WrapperT< uint32_t > m_groupCountX;
-			WrapperT< uint32_t > m_groupCountY;
-			WrapperT< uint32_t > m_groupCountZ;
+			pp::ConfigT< WrapperT > m_baseConfig{};
+			WrapperT< uint32_t const * > m_passIndex{};
+			WrapperT< bool const * > m_enabled{};
+			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
+			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
+			WrapperT< RunnablePass::RecordCallback > m_end{};
+			WrapperT< uint32_t > m_groupCountX{};
+			WrapperT< uint32_t > m_groupCountY{};
+			WrapperT< uint32_t > m_groupCountZ{};
 		};
 
 		template<>
