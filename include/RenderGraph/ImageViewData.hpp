@@ -19,8 +19,8 @@ namespace crg
 		VkImageViewCreateInfo info;
 		ImageViewIdArray source{};
 
-		ImageViewData( std::string name = {}
-			, ImageId image = {}
+		explicit ImageViewData( std::string name = {}
+			, ImageId image = ImageId{}
 			, VkImageViewCreateFlags flags = {}
 			, VkImageViewType viewType = {}
 			, VkFormat format = {}

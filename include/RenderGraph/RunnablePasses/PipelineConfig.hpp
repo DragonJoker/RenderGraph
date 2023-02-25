@@ -120,7 +120,7 @@ namespace crg
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
-			ConfigT( WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs = {}
+			explicit ConfigT( WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs = {}
 				, WrapperT< ProgramCreator > programCreator = {}
 				, WrapperT< std::vector< VkDescriptorSetLayout > > layouts = {}
 				, WrapperT< VkPushConstantRangeArray > pushConstants = {} )
