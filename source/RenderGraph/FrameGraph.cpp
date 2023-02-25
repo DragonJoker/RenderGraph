@@ -242,9 +242,18 @@ namespace crg
 			, context );
 	}
 
+	LayoutState FrameGraph::getFinalLayoutState( ImageId image
+		, VkImageViewType viewType
+		, VkImageSubresourceRange range )const
+	{
+		return m_finalState.getLayoutState( image, viewType, range );
+	}
+
 	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view )const
 	{
-		return m_finalState.getLayoutState( view );
+		return getFinalLayoutState( view.data->image
+			, view.data->info.viewType
+			, view.data->info.subresourceRange );
 	}
 
 	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer )const

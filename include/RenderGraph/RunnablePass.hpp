@@ -13,6 +13,11 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	CRG_API void checkUndefinedInput( std::string const & stepName
+		, Attachment const & attach
+		, ImageViewId const & view
+		, VkImageLayout currentLayout );
+
 	template< typename StrongT, typename ValueT >
 	struct GetValueCallbackT
 	{

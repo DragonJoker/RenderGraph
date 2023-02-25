@@ -72,6 +72,9 @@ namespace crg
 		*	Getters.
 		*/
 		/**@{*/
+		CRG_API LayoutState getFinalLayoutState( ImageId image
+			, VkImageViewType viewType
+			, VkImageSubresourceRange range )const;
 		CRG_API LayoutState getFinalLayoutState( ImageViewId view )const;
 		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
 		CRG_API void addInput( ImageId image
