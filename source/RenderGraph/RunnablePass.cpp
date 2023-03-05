@@ -410,7 +410,9 @@ namespace crg
 					&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
 				{
 					auto needed = makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) );
-					auto currentLayout = m_graph.getCurrentLayoutState( context, view );
+					auto currentLayout = ( !attach.isInput()
+						? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
+						: m_graph.getCurrentLayoutState( context, view ) );
 					checkUndefinedInput( "Record", attach, view, currentLayout.layout );
 					context.memoryBarrier( commandBuffer
 						, view
