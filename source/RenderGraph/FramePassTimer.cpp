@@ -143,6 +143,7 @@ namespace crg
 	void FramePassTimer::retrieveGpuTime()
 	{
 		static float const period = m_context.properties.limits.timestampPeriod;
+		auto before = Clock::now();
 		m_gpuTime = 0ns;
 		m_subtracteGpuTime = 0ns;
 
@@ -174,6 +175,9 @@ namespace crg
 				started.second = false;
 			}
 		}
+
+		auto after = Clock::now();
+		m_cpuTime += ( after - before );
 	}
 
 	void FramePassTimer::updateCount( uint32_t count )
