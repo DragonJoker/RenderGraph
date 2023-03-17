@@ -236,6 +236,6 @@ namespace crg
 	{
 		return ( &m_graph.getDefaultGroup() == this )
 			? m_graph.getName()
-			: m_graph.getName() + "/" + getName();
+			: parent->getFullName() + "/" + getName();
 	}
 }
