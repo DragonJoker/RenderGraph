@@ -9,9 +9,12 @@ set( MAIN_PROJECT_NAME "RenderGraph" )
 
 # Set project version numbers
 set( VERSION_MAJOR 1 )
-set( VERSION_MINOR 1 )
+set( VERSION_MINOR 3 )
 set( VERSION_BUILD 0 )
-set( VERSION_YEAR 2022 )
+set( VERSION_YEAR 2023 )
+
+set( _PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}" )
+set( _PROJECT_SOVERSION "${VERSION_BUILD}" )
 
 # Used to look for external modules
 if ( NOT CMAKE_MODULE_PATH )
@@ -190,6 +193,11 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			${${PROJECT_NAME}_HDR_FILES}
 			${${PROJECT_NAME}_SRC_FILES}
 			${${PROJECT_NAME}_NVS_FILES}
+		)
+		set_target_properties( ${PROJECT_NAME}
+			PROPERTIES
+				VERSION ${_PROJECT_VERSION}
+				SOVERSION ${_PROJECT_SOVERSION}
 		)
 		if ( WIN32 )
 			target_link_libraries( ${PROJECT_NAME}
