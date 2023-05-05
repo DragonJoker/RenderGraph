@@ -59,8 +59,8 @@ namespace crg
 			, VkPipelineColorBlendStateCreateInfo blendState );
 		void doCreatePipeline( uint32_t passIndex );
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkExtent2D const & renderSize
-			, VkViewportArray & viewports
-			, VkScissorArray & scissors );
+			, VkViewport & viewport
+			, VkRect2D & scissor );
 
 	private:
 		rq::ConfigData m_config;
@@ -71,8 +71,8 @@ namespace crg
 		VertexBuffer const * m_vertexBuffer{};
 		VkRenderPass m_renderPass{};
 		VkExtent2D m_renderSize{};
-		VkViewportArray m_viewports{};
-		VkScissorArray m_scissors{};
+		VkViewport m_viewport{};
+		VkRect2D m_scissor{};
 		VkPipelineViewportStateCreateInfo m_vpState{};
 		VkPipelineInputAssemblyStateCreateInfo m_iaState{};
 		VkPipelineMultisampleStateCreateInfo m_msState{};

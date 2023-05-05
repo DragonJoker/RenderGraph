@@ -140,7 +140,7 @@ namespace crg
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState )
 	{
-		m_vpState = doCreateViewportState( renderSize, m_viewports, m_scissors );
+		m_vpState = doCreateViewportState( renderSize, m_viewport, m_scissor );
 		m_renderSize = renderSize;
 		m_renderPass = renderPass;
 		m_blendAttachs = { blendState.pAttachments, blendState.pAttachments + blendState.attachmentCount };
@@ -179,23 +179,23 @@ namespace crg
 	}
 
 	VkPipelineViewportStateCreateInfo RenderQuadHolder::doCreateViewportState( VkExtent2D const & renderSize
-		, VkViewportArray & viewports
-		, VkScissorArray & scissors )
+		, VkViewport & viewport
+		, VkRect2D & scissor )
 	{
-		viewports.push_back( { float( m_config.renderPosition.x )
+		viewport = { float( m_config.renderPosition.x )
 			, float( m_config.renderPosition.y )
 			, float( renderSize.width )
 			, float( renderSize.height )
 			, 0.0f
-			, 1.0f } );
-		scissors.push_back( { { m_config.renderPosition.x, m_config.renderPosition.y }
-			, { renderSize.width, renderSize.height } } );
+			, 1.0f };
+		scissor = { { m_config.renderPosition.x, m_config.renderPosition.y }
+			, { renderSize.width, renderSize.height } };
 		return { VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO
 			, nullptr
 			, 0u
-			, uint32_t( viewports.size() )
-			, viewports.data()
-			, uint32_t( scissors.size() )
-			, scissors.data() };
+			, 1u
+			, &viewport
+			, 1u
+			, &scissor };
 	}
 }
