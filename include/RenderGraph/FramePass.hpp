@@ -110,6 +110,14 @@ namespace crg
 			, VkDeviceSize range );
 		/**
 		*\brief
+		*	Creates a storage buffer attachment that will be cleared a the beginning of the pass.
+		*/
+		CRG_API void addClearableOutputStorageBuffer( Buffer buffer
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
 		*	Creates a storage buffer attachment.
 		*/
 		CRG_API void addInOutStorageBuffer( Buffer buffer

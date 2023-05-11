@@ -238,6 +238,7 @@ namespace crg
 			Uniform = 0x01 << 0,
 			Storage = 0x01 << 1,
 			View = 0x01 << 2,
+			Clearable = 0x01 << 4,
 			UniformView = Uniform | View,
 			StorageView = Storage | View,
 		};
@@ -272,6 +273,11 @@ namespace crg
 		bool isView()const
 		{
 			return hasFlag( Flag::View );
+		}
+
+		bool isClearable()const
+		{
+			return hasFlag( Flag::Clearable );
 		}
 
 		bool isUniformView()const
@@ -400,6 +406,13 @@ namespace crg
 		bool isStorageBuffer()const
 		{
 			return isBuffer() && buffer.isStorage();
+		}
+
+		bool isClearableBuffer()const
+		{
+			return isBuffer()
+				&& isOutput()
+				&& buffer.isClearable();
 		}
 
 		bool isStorageBufferView()const
