@@ -17,6 +17,17 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	namespace details
+	{
+		static constexpr VkDeviceSize getAlignedSize( VkDeviceSize size, VkDeviceSize align )
+		{
+			auto rem = size % align;
+			return ( rem
+				? size + ( align - rem )
+				: size );
+		}
+	}
+
 	//*********************************************************************************************
 
 	void convert( SemaphoreWaitArray const & toWait
@@ -429,6 +440,24 @@ namespace crg
 					auto buffer = attach.buffer;
 					auto currentState = context.getAccessState( buffer.buffer.buffer
 						, buffer.range );
+
+					if ( attach.isClearableBuffer() )
+					{
+						context.memoryBarrier( commandBuffer
+							, buffer.buffer.buffer
+							, buffer.range
+							, currentState.access
+							, currentState.pipelineStage
+							, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
+						m_context.vkCmdFillBuffer( commandBuffer
+								, buffer.buffer.buffer
+								, buffer.range.offset == 0u ? 0u : details::getAlignedSize( buffer.range.offset, 4u )
+								, buffer.range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( buffer.range.size, 4u )
+								, 0u );
+						currentState.access = VK_ACCESS_TRANSFER_WRITE_BIT;
+						currentState.pipelineStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					}
+
 					context.memoryBarrier( commandBuffer
 						, buffer.buffer.buffer
 						, buffer.range

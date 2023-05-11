@@ -322,6 +322,23 @@ namespace crg
 			, range } );
 	}
 
+	void FramePass::addClearableOutputStorageBuffer( Buffer buffer
+		, uint32_t binding
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "OSB";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, binding
+			, std::move( attachName )
+			, ( BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
+				| BufferAttachment::FlagKind( BufferAttachment::Flag::Clearable ) )
+			, buffer
+			, offset
+			, range } );
+	}
+
 	void FramePass::addInOutStorageBuffer( Buffer buffer
 		, uint32_t binding
 		, VkDeviceSize offset
