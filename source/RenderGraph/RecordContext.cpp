@@ -189,28 +189,32 @@ namespace crg
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageViewId const & view
 		, VkImageLayout initialLayout
-		, LayoutState const & wantedState )
+		, LayoutState const & wantedState
+		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
 			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, initialLayout
-			, wantedState );
+			, wantedState
+			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageId const & image
 		, VkImageSubresourceRange const & subresourceRange
 		, VkImageLayout initialLayout
-		, LayoutState const & wantedState )
+		, LayoutState const & wantedState
+		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, image
 			, VkImageViewType( image.data->info.imageType )
 			, subresourceRange
 			, initialLayout
-			, wantedState );
+			, wantedState
+			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
@@ -218,7 +222,8 @@ namespace crg
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
 		, VkImageLayout initialLayout
-		, LayoutState const & wantedState )
+		, LayoutState const & wantedState
+		, bool force )
 	{
 		auto & resources = getResources();
 
@@ -241,8 +246,10 @@ namespace crg
 				, getStageMask( initialLayout ) };
 		}
 
-		if ( from.layout != wantedState.layout
-			&& wantedState.layout != VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( force
+			|| ( ( from.layout != wantedState.layout
+				|| from.state.pipelineStage != wantedState.state.pipelineStage )
+				&& wantedState.layout != VK_IMAGE_LAYOUT_UNDEFINED ) )
 		{
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
 				, nullptr
@@ -273,41 +280,47 @@ namespace crg
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageViewId const & view
-		, LayoutState const & wantedState )
+		, LayoutState const & wantedState
+		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
 			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, VK_IMAGE_LAYOUT_UNDEFINED
-			, wantedState );
+			, wantedState
+			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageId const & image
 		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState const & wantedState )
+		, LayoutState const & wantedState
+		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, image
 			, VkImageViewType( image.data->info.imageType )
 			, subresourceRange
 			, VK_IMAGE_LAYOUT_UNDEFINED
-			, wantedState );
+			, wantedState
+			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageId const & image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState const & wantedState )
+		, LayoutState const & wantedState
+		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, image
 			, viewType
 			, subresourceRange
 			, VK_IMAGE_LAYOUT_UNDEFINED
-			, wantedState );
+			, wantedState
+			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
@@ -315,7 +328,8 @@ namespace crg
 		, BufferSubresourceRange const & subresourceRange
 		, VkAccessFlags initialMask
 		, VkPipelineStageFlags initialStage
-		, AccessState const & wantedState )
+		, AccessState const & wantedState
+		, bool force )
 	{
 		auto & resources = getResources();
 
@@ -332,8 +346,9 @@ namespace crg
 			from = { initialMask, initialStage };
 		}
 
-		if ( from.access != wantedState.access
-			|| from.pipelineStage != wantedState.pipelineStage )
+		if ( force
+			|| ( from.access != wantedState.access
+				|| from.pipelineStage != wantedState.pipelineStage ) )
 		{
 			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
 				, nullptr
@@ -363,14 +378,16 @@ namespace crg
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, VkBuffer buffer
 		, BufferSubresourceRange const & subresourceRange
-		, AccessState const & wantedState )
+		, AccessState const & wantedState
+		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, buffer
 			, subresourceRange
 			, 0u
 			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
-			, wantedState );
+			, wantedState
+			, force );
 	}
 
 	GraphContext & RecordContext::getContext()const
