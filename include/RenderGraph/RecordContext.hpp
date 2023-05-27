@@ -93,30 +93,36 @@ namespace crg
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
 			, VkImageLayout initialLayout
-			, LayoutState const & wantedState );
+			, LayoutState const & wantedState
+			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageSubresourceRange const & subresourceRange
 			, VkImageLayout initialLayout
-			, LayoutState const & wantedState );
+			, LayoutState const & wantedState
+			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange
 			, VkImageLayout initialLayout
-			, LayoutState const & wantedState );
+			, LayoutState const & wantedState
+			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageViewId const & view
-			, LayoutState const & wantedState );
+			, LayoutState const & wantedState
+			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState const & wantedState );
+			, LayoutState const & wantedState
+			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState const & wantedState );
+			, LayoutState const & wantedState
+			, bool force = false );
 		//@}
 		/**
 		*\name	Buffers
@@ -127,11 +133,13 @@ namespace crg
 			, BufferSubresourceRange const & subresourceRange
 			, VkAccessFlags initialMask
 			, VkPipelineStageFlags initialStage
-			, AccessState const & wantedState );
+			, AccessState const & wantedState
+			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, VkBuffer buffer
 			, BufferSubresourceRange const & subresourceRange
-			, AccessState const & wantedState );
+			, AccessState const & wantedState
+			, bool force = false );
 		//@}
 		//@}
 		CRG_API GraphContext & getContext()const;
