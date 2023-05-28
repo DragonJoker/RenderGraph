@@ -140,14 +140,16 @@ namespace crg
 		return m_graph.getHandler();
 	}
 
-	LayoutState FramePassGroup::getFinalLayoutState( ImageViewId view )const
+	LayoutState FramePassGroup::getFinalLayoutState( ImageViewId view
+		, uint32_t passIndex )const
 	{
-		return m_graph.getFinalLayoutState( view );
+		return m_graph.getFinalLayoutState( view, passIndex );
 	}
 
-	AccessState FramePassGroup::getFinalAccessState( Buffer const & buffer )const
+	AccessState FramePassGroup::getFinalAccessState( Buffer const & buffer
+		, uint32_t passIndex )const
 	{
-		return m_graph.getFinalAccessState( buffer );
+		return m_graph.getFinalAccessState( buffer, passIndex );
 	}
 
 	ImageId FramePassGroup::createImage( ImageData const & img )const

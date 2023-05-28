@@ -44,8 +44,8 @@ namespace crg
 	{
 		auto srcBufferRange{ m_pass.buffers.front().buffer.range };
 		auto dstBufferRange{ m_pass.buffers.back().buffer.range };
-		auto srcBuffer{ m_pass.buffers.front().buffer.buffer.buffer };
-		auto dstBuffer{ m_pass.buffers.back().buffer.buffer.buffer };
+		auto srcBuffer{ m_pass.buffers.front().buffer.buffer.buffer( index ) };
+		auto dstBuffer{ m_pass.buffers.back().buffer.buffer.buffer( index ) };
 		// Copy source to target.
 		VkBufferCopy copyRegion{ srcBufferRange.offset + m_copyOffset
 			, dstBufferRange.offset + m_copyOffset

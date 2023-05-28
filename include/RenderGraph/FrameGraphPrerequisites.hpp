@@ -124,6 +124,7 @@ namespace crg
 
 	using VkAttachmentDescriptionArray = std::vector< VkAttachmentDescription >;
 	using VkAttachmentReferenceArray = std::vector< VkAttachmentReference >;
+	using VkBufferArray = std::vector< VkBuffer >;
 	using VkBufferViewArray = std::vector< VkBufferView >;
 	using VkDescriptorBufferInfoArray = std::vector< VkDescriptorBufferInfo >;
 	using VkDescriptorImageInfoArray = std::vector< VkDescriptorImageInfo >;
@@ -198,9 +199,46 @@ namespace crg
 
 	struct Buffer
 	{
-		VkBuffer buffer;
 		std::string name;
+
+		Buffer( VkBufferArray pbuffers
+			, std::string pname )noexcept
+			: name{ std::move( pname ) }
+			, m_buffers{ std::move( pbuffers ) }
+		{
+		}
+
+		Buffer( VkBuffer buffer
+			, std::string name )noexcept
+			: Buffer{ VkBufferArray{ buffer }, std::move( name ) }
+		{
+		}
+
+		VkBuffer const & buffer( uint32_t index = 0 )const noexcept
+		{
+			return m_buffers.size() == 1u
+				? m_buffers.front()
+				: m_buffers[index];
+		}
+
+		VkBuffer & buffer( uint32_t index = 0 )noexcept
+		{
+			return m_buffers.size() == 1u
+				? m_buffers.front()
+				: m_buffers[index];
+		}
+
+		size_t getCount()const noexcept
+		{
+			return m_buffers.size();
+		}
+
+	private:
+		VkBufferArray m_buffers;
+
+		friend CRG_API bool operator==( Buffer const & lhs, Buffer const & rhs );
 	};
+
 	CRG_API bool operator==( Buffer const & lhs, Buffer const & rhs );
 
 	struct VertexBuffer
@@ -391,6 +429,8 @@ namespace crg
 	CRG_API bool isStencilFormat( VkFormat fmt )noexcept;
 	CRG_API bool isColourFormat( VkFormat fmt )noexcept;
 	CRG_API bool isDepthStencilFormat( VkFormat fmt )noexcept;
+	CRG_API ImageViewId const & resolveView( ImageViewId const & view
+		, uint32_t passIndex );
 
 	template< typename T >
 	static size_t hashCombine( size_t hash

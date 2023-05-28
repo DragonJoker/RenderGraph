@@ -281,10 +281,25 @@ namespace crg
 		{
 			for ( uint32_t i = 0u; i < attach.getViewCount(); ++i )
 			{
-				m_imageLayouts.setLayoutState( attach.view( i )
-					, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-						, attach.getAccessMask()
-						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
+				auto view = attach.view( i );
+
+				if ( view.data->source.empty() )
+				{
+					m_imageLayouts.setLayoutState( view
+						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
+							, attach.getAccessMask()
+							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
+				}
+				else
+				{
+					for ( auto & source : view.data->source )
+					{
+						m_imageLayouts.setLayoutState( source
+							, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
+								, attach.getAccessMask()
+								, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
+					}
+				}
 			}
 		}
 
@@ -292,10 +307,14 @@ namespace crg
 		{
 			if ( attach.isStorageBuffer() )
 			{
-				auto buffer = attach.buffer.buffer;
-				auto bires = m_bufferAccesses.emplace( buffer.buffer, AccessState{} );
-				bires.first->second = { attach.getAccessMask()
-					, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) };
+				auto & buffer = attach.buffer.buffer;
+
+				for ( uint32_t i = 0u; i < uint32_t( buffer.getCount() ); ++i )
+				{
+					auto bires = m_bufferAccesses.emplace( buffer.buffer( i ), AccessState{} );
+					bires.first->second = { attach.getAccessMask()
+						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) };
+				}
 			}
 		}
 	}
@@ -313,7 +332,7 @@ namespace crg
 		pass.initialised = true;
 	}
 
-	void RunnablePass::recordCurrent( RecordContext & context )
+	uint32_t RunnablePass::recordCurrent( RecordContext & context )
 	{
 		auto index = m_callbacks.getPassIndex();
 		assert( m_passes.size() > index );
@@ -321,9 +340,10 @@ namespace crg
 		recordOne( pass.commandBuffer
 			, index
 			, context );
+		return isEnabled() ? index : ~( 0u );
 	}
 
-	void RunnablePass::reRecordCurrent()
+	uint32_t RunnablePass::reRecordCurrent()
 	{
 		assert( m_ruConfig.resettable );
 		auto index = m_callbacks.getPassIndex();
@@ -337,6 +357,8 @@ namespace crg
 				, index
 				, context );
 		}
+
+		return isEnabled() ? index : ~( 0u );
 	}
 
 	void RunnablePass::recordAll( RecordContext & context )
@@ -438,19 +460,19 @@ namespace crg
 					&& attach.isStorageBuffer() )
 				{
 					auto buffer = attach.buffer;
-					auto currentState = context.getAccessState( buffer.buffer.buffer
+					auto currentState = context.getAccessState( buffer.buffer.buffer( index )
 						, buffer.range );
 
 					if ( attach.isClearableBuffer() )
 					{
 						context.memoryBarrier( commandBuffer
-							, buffer.buffer.buffer
+							, buffer.buffer.buffer( index )
 							, buffer.range
 							, currentState.access
 							, currentState.pipelineStage
 							, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
 						m_context.vkCmdFillBuffer( commandBuffer
-								, buffer.buffer.buffer
+								, buffer.buffer.buffer( index )
 								, buffer.range.offset == 0u ? 0u : details::getAlignedSize( buffer.range.offset, 4u )
 								, buffer.range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( buffer.range.size, 4u )
 								, 0u );
@@ -459,7 +481,7 @@ namespace crg
 					}
 
 					context.memoryBarrier( commandBuffer
-						, buffer.buffer.buffer
+						, buffer.buffer.buffer( index )
 						, buffer.range
 						, currentState.access
 						, currentState.pipelineStage

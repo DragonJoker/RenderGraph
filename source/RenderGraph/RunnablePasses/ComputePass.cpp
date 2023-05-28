@@ -26,9 +26,10 @@ namespace crg
 				, IsEnabledCallback( [this](){ return doIsEnabled(); } )
 				, IsComputePassCallback( [](){ return true; } ) }
 			, ruConfig }
-		, m_cpConfig{ cpConfig.m_passIndex ? std::move( *cpConfig.m_passIndex ) : defaultV< uint32_t const * >
+		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : defaultV< RunnablePass::InitialiseCallback >
 			, cpConfig.m_enabled ? std::move( *cpConfig.m_enabled ) : defaultV< bool const * >
 			, cpConfig.m_isEnabled
+			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
 			, cpConfig.m_recordInto ? std::move( *cpConfig.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
 			, cpConfig.m_groupCountX ? std::move( *cpConfig.m_groupCountX ) : 1u
@@ -56,13 +57,12 @@ namespace crg
 	{
 		m_pipeline.initialise();
 		doCreatePipeline( index );
+		m_cpConfig.initialise( index );
 	}
 
 	uint32_t ComputePass::doGetPassIndex()const
 	{
-		return ( m_cpConfig.passIndex
-			? *m_cpConfig.passIndex
-			: 0u );
+		return m_cpConfig.getPassIndex();
 	}
 
 	bool ComputePass::doIsEnabled()const

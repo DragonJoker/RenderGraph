@@ -246,7 +246,7 @@ namespace crg
 
 		for ( auto & uniform : m_pass.buffers )
 		{
-			descriptorSet.writes.push_back( uniform.getBufferWrite() );
+			descriptorSet.writes.push_back( uniform.getBufferWrite( index ) );
 		}
 
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO

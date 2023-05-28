@@ -75,8 +75,10 @@ namespace crg
 		CRG_API LayoutState getFinalLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange range )const;
-		CRG_API LayoutState getFinalLayoutState( ImageViewId view )const;
-		CRG_API AccessState getFinalAccessState( Buffer const & buffer )const;
+		CRG_API LayoutState getFinalLayoutState( ImageViewId view
+			, uint32_t passIndex = 0u )const;
+		CRG_API AccessState getFinalAccessState( Buffer const & buffer
+			, uint32_t passIndex = 0u )const;
 		CRG_API void addInput( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange range
