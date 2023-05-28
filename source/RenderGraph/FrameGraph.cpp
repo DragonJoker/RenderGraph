@@ -249,16 +249,23 @@ namespace crg
 		return m_finalState.getLayoutState( image, viewType, range );
 	}
 
-	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view )const
+	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view
+		, uint32_t passIndex )const
 	{
-		return getFinalLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
+		if ( view.data->source.empty() )
+		{
+			return getFinalLayoutState( view.data->image
+				, view.data->info.viewType
+				, view.data->info.subresourceRange );
+		}
+
+		return getFinalLayoutState( view.data->source[passIndex], 0u );
 	}
 
-	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer )const
+	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer
+		, uint32_t passIndex )const
 	{
-		return m_finalState.getAccessState( buffer.buffer, { 0u, VK_WHOLE_SIZE } );
+		return m_finalState.getAccessState( buffer.buffer( passIndex ), { 0u, VK_WHOLE_SIZE } );
 	}
 
 	void FrameGraph::addInput( ImageId image
@@ -676,5 +683,13 @@ namespace crg
 	bool isDepthStencilFormat( VkFormat fmt )noexcept
 	{
 		return isDepthFormat( fmt ) && isStencilFormat( fmt );
+	}
+
+	ImageViewId const & resolveView( ImageViewId const & view
+		, uint32_t passIndex )
+	{
+		return view.data->source.empty()
+			? view
+			: view.data->source[passIndex];
 	}
 }

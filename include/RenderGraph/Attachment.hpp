@@ -245,7 +245,8 @@ namespace crg
 
 		CRG_API VkDescriptorType getDescriptorType()const;
 		CRG_API WriteDescriptorSet getWrite( uint32_t binding
-			, uint32_t count )const;
+			, uint32_t count
+			, uint32_t index )const;
 		CRG_API VkAccessFlags getAccessMask( bool isInput
 			, bool isOutput )const;
 		CRG_API VkPipelineStageFlags getPipelineStageFlags( bool isCompute )const;
@@ -258,6 +259,11 @@ namespace crg
 		bool hasFlag( Flag flag )const
 		{
 			return Flag( flags & FlagKind( flag ) ) == flag;
+		}
+
+		uint32_t getBufferCount()const
+		{
+			return uint32_t( buffer.getCount() );
 		}
 
 		bool isUniform()const
@@ -351,10 +357,11 @@ namespace crg
 		*/
 		/**@{*/
 		CRG_API uint32_t getViewCount()const;
+		CRG_API uint32_t getBufferCount()const;
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		CRG_API VkDescriptorType getDescriptorType()const;
-		CRG_API WriteDescriptorSet getBufferWrite()const;
+		CRG_API WriteDescriptorSet getBufferWrite( uint32_t index = 0u )const;
 		CRG_API VkAccessFlags getAccessMask()const;
 		CRG_API VkPipelineStageFlags getPipelineStageFlags( bool isCompute )const;
 

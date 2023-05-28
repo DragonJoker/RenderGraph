@@ -109,7 +109,7 @@ namespace crg
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
-		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer, &offset );
+		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer( index ), &offset );
 		m_context.vkCmdDraw( commandBuffer, 3u, m_config.m_instances, 0u, 0u );
 	}
 

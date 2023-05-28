@@ -99,7 +99,7 @@ namespace crg
 				Logger::logError( stream.str() );
 			}
 
-			if ( vertexBuffer->buffer.buffer )
+			if ( vertexBuffer->buffer.buffer() )
 			{
 				std::stringstream stream;
 				stream << "Leaked [VkBuffer](" << vertexBuffer->buffer.name << ")";
@@ -311,13 +311,13 @@ namespace crg
 		auto res = context.vkCreateBuffer( context.device
 			, &createInfo
 			, context.allocator
-			, &vertexBuffer->buffer.buffer );
+			, &vertexBuffer->buffer.buffer() );
 		checkVkResult( res, "Vertex buffer creation" );
-		crgRegisterObject( context, "QuadVertexBuffer_" + suffix, vertexBuffer->buffer.buffer );
+		crgRegisterObject( context, "QuadVertexBuffer_" + suffix, vertexBuffer->buffer.buffer() );
 
 		VkMemoryRequirements requirements{};
 		context.vkGetBufferMemoryRequirements( context.device
-			, vertexBuffer->buffer.buffer
+			, vertexBuffer->buffer.buffer()
 			, &requirements );
 		uint32_t deduced = context.deduceMemoryType( requirements.memoryTypeBits
 			, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT );
@@ -333,7 +333,7 @@ namespace crg
 		crgRegisterObject( context, "QuadVertexMemory_" + suffix, vertexBuffer->memory );
 
 		res = context.vkBindBufferMemory( context.device
-			, vertexBuffer->buffer.buffer
+			, vertexBuffer->buffer.buffer()
 			, vertexBuffer->memory
 			, 0u );
 		checkVkResult( res, "Buffer memory binding" );
@@ -474,11 +474,11 @@ namespace crg
 						, context.allocator );
 				}
 
-				if ( vertexBuffer.buffer.buffer )
+				if ( vertexBuffer.buffer.buffer() )
 				{
-					crgUnregisterObject( context, vertexBuffer.buffer.buffer );
+					crgUnregisterObject( context, vertexBuffer.buffer.buffer() );
 					context.vkDestroyBuffer( context.device
-						, vertexBuffer.buffer.buffer
+						, vertexBuffer.buffer.buffer()
 						, context.allocator );
 				}
 			}

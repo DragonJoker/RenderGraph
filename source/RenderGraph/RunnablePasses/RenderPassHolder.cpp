@@ -42,7 +42,19 @@ namespace crg
 				, finalLayout.layout } );
 			viewAttaches.push_back( { view, initialLayout, finalLayout } );
 			clearValues.push_back( attach.image.clearValue );
-			context.setLayoutState( view, finalLayout );
+
+			if ( view.data->source.empty() )
+			{
+				context.setLayoutState( view, finalLayout );
+			}
+			else
+			{
+				for ( auto & source : view.data->source )
+				{
+					context.setLayoutState( source, finalLayout );
+				}
+			}
+
 			return result;
 		}
 
@@ -170,15 +182,16 @@ namespace crg
 		, VkSubpassContents subpassContents
 		, uint32_t index )
 	{
-		m_currentPass = &m_passes[index];
+		m_index = index;
+		m_currentPass = &m_passes[m_index];
 
 		for ( auto & attach : m_currentPass->attaches )
 		{
-			context.setLayoutState( attach.view
+			context.setLayoutState( resolveView( attach.view, m_index )
 				, attach.input );
 		}
 
-		auto beginInfo = getBeginInfo( index );
+		auto beginInfo = getBeginInfo( m_index );
 		m_context.vkCmdBeginRenderPass( commandBuffer
 			, &beginInfo
 			, subpassContents );
@@ -191,7 +204,7 @@ namespace crg
 
 		for ( auto & attach : m_currentPass->attaches )
 		{
-			context.setLayoutState( attach.view
+			context.setLayoutState( resolveView( attach.view, m_index )
 				, attach.output );
 		}
 

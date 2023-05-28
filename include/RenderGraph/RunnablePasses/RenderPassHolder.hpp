@@ -93,5 +93,6 @@ namespace crg
 		PassData const * m_currentPass{};
 		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
 		uint32_t m_layers{};
+		uint32_t m_index{};
 	};
 }

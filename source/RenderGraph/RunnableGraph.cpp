@@ -261,8 +261,7 @@ namespace crg
 						, {} );
 				}
 
-				pass->recordCurrent( recordContext );
-				*it = pass->getIndex();
+				*it = pass->recordCurrent( recordContext );
 				++it;
 			}
 		}

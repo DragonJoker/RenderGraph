@@ -176,12 +176,12 @@ namespace crg
 			if constexpr ( sizeof( size_t ) == sizeof( uint64_t ) )
 			{
 				return size_t( pass.id ) << 32u
-					| ( ptrdiff_t( buffer.buffer ) & 0xFFFFFFFF );
+					| ( ptrdiff_t( buffer.buffer() ) & 0xFFFFFFFF );
 			}
 			else
 			{
 				return size_t( pass.id ) << 16u
-					| ( ptrdiff_t( buffer.buffer ) & 0x0000FFFF );
+					| ( ptrdiff_t( buffer.buffer() ) & 0x0000FFFF );
 			}
 		}
 	}

@@ -106,7 +106,7 @@ namespace crg
 
 	bool operator==( Buffer const & lhs, Buffer const & rhs )
 	{
-		return lhs.buffer == rhs.buffer;
+		return lhs.m_buffers == rhs.m_buffers;
 	}
 
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions transitions )

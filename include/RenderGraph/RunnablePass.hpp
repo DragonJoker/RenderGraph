@@ -213,12 +213,12 @@ namespace crg
 		*\param[in] index
 		*	The pass index.
 		*/
-		CRG_API void recordCurrent( RecordContext & context );
+		CRG_API uint32_t recordCurrent( RecordContext & context );
 		/**
 		*\brief
 		*	Re-records the pass commands into its command buffer.
 		*/
-		CRG_API void reRecordCurrent();
+		CRG_API uint32_t reRecordCurrent();
 		/**
 		*\brief
 		*	Submits this pass' command buffer to the given queue.

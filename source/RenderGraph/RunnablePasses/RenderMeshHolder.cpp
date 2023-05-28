@@ -109,14 +109,14 @@ namespace crg
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
 
-		if ( m_config.vertexBuffer.buffer.buffer )
+		if ( m_config.vertexBuffer.buffer.buffer( index ) )
 		{
-			m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_config.vertexBuffer.buffer.buffer, &offset );
+			m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_config.vertexBuffer.buffer.buffer( index ), &offset );
 		}
 
-		if ( m_config.indexBuffer.buffer.buffer )
+		if ( m_config.indexBuffer.buffer.buffer( index ) )
 		{
-			m_context.vkCmdBindIndexBuffer( commandBuffer, m_config.indexBuffer.buffer.buffer, offset, m_config.getIndexType() );
+			m_context.vkCmdBindIndexBuffer( commandBuffer, m_config.indexBuffer.buffer.buffer( index ), offset, m_config.getIndexType() );
 			m_context.vkCmdDrawIndexed( commandBuffer, m_config.getPrimitiveCount(), 1u, 0u, 0u, 0u );
 		}
 		else

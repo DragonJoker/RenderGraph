@@ -75,7 +75,8 @@ namespace crg
 	}
 
 	WriteDescriptorSet BufferAttachment::getWrite( uint32_t binding
-		, uint32_t count )const
+		, uint32_t count
+		, uint32_t index )const
 	{
 		WriteDescriptorSet result{ binding
 			, 0u
@@ -84,12 +85,12 @@ namespace crg
 
 		if ( isView() )
 		{
-			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, range.offset, range.size } );
+			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
 			result.texelBufferView.push_back( view );
 		}
 		else
 		{
-			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer, range.offset, range.size } );
+			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
 		}
 
 		return result;
@@ -579,6 +580,13 @@ namespace crg
 			: uint32_t{};
 	}
 
+	uint32_t Attachment::getBufferCount()const
+	{
+		return isBuffer()
+			? buffer.getBufferCount()
+			: uint32_t{};
+	}
+
 	ImageViewId Attachment::view( uint32_t index )const
 	{
 		return isImage()
@@ -604,10 +612,10 @@ namespace crg
 		return buffer.getDescriptorType();
 	}
 
-	WriteDescriptorSet Attachment::getBufferWrite()const
+	WriteDescriptorSet Attachment::getBufferWrite( uint32_t index )const
 	{
 		assert( isBuffer() );
-		return buffer.getWrite( binding, 1u );
+		return buffer.getWrite( binding, 1u, index );
 	}
 
 	VkAccessFlags Attachment::getAccessMask()const

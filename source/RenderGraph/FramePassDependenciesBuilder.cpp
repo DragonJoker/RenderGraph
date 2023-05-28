@@ -347,7 +347,7 @@ namespace crg
 			static bool areOverlapping( Buffer const & lhs
 				, Buffer const & rhs )
 			{
-				return lhs.buffer == rhs.buffer;
+				return lhs.buffer() == rhs.buffer();
 			}
 
 			template< typename DataT >
@@ -626,7 +626,7 @@ namespace crg
 
 			static bool match( Buffer const & lhs, Buffer const & rhs )
 			{
-				return lhs.buffer != rhs.buffer;
+				return lhs.buffer() != rhs.buffer();
 			}
 
 			static bool match( ImageViewId const & lhs, ImageViewId const & rhs )

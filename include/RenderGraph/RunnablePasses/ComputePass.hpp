@@ -73,7 +73,10 @@ namespace crg
 			*/
 			auto & passIndex( uint32_t const * config )
 			{
-				m_passIndex = config;
+				m_getPassIndex = [config]()
+				{
+					return *config;
+				};
 				return *this;
 			}
 			/**
@@ -83,6 +86,15 @@ namespace crg
 			auto & enabled( bool const * config )
 			{
 				m_enabled = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The pass index callback.
+			*/
+			auto & getPassIndex( RunnablePass::GetPassIndexCallback config )
+			{
+				m_getPassIndex = config;
 				return *this;
 			}
 			/**
@@ -101,6 +113,15 @@ namespace crg
 			auto & recordInto( RunnablePass::RecordCallback config )
 			{
 				m_recordInto = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The callback initialising the pass.
+			*/
+			auto & initialise( RunnablePass::InitialiseCallback config )
+			{
+				m_initialise = config;
 				return *this;
 			}
 			/**
@@ -141,9 +162,10 @@ namespace crg
 			}
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
-			WrapperT< uint32_t const * > m_passIndex{};
+			WrapperT< RunnablePass::InitialiseCallback > m_initialise{};
 			WrapperT< bool const * > m_enabled{};
 			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
+			WrapperT< RunnablePass::GetPassIndexCallback > m_getPassIndex{};
 			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
 			WrapperT< RunnablePass::RecordCallback > m_end{};
 			WrapperT< uint32_t > m_groupCountX{};
@@ -154,9 +176,10 @@ namespace crg
 		template<>
 		struct ConfigT< RawTypeT >
 		{
-			RawTypeT< uint32_t const * > passIndex{ nullptr };
+			RawTypeT< RunnablePass::InitialiseCallback > initialise{};
 			RawTypeT< bool const * > enabled{ nullptr };
 			std::optional< RunnablePass::IsEnabledCallback > isEnabled{};
+			RawTypeT< RunnablePass::GetPassIndexCallback > getPassIndex{};
 			RawTypeT< RunnablePass::RecordCallback > recordInto{};
 			RawTypeT< RunnablePass::RecordCallback > end{};
 			RawTypeT< uint32_t > groupCountX{ 1u };

@@ -6,6 +6,8 @@ See LICENSE file in root folder.
 #include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/ImageViewData.hpp"
 
+#include <cassert>
+
 namespace crg
 {
 	LayerLayoutStatesHandler::LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs )
@@ -38,6 +40,8 @@ namespace crg
 	void LayerLayoutStatesHandler::setLayoutState( crg::ImageViewId view
 		, LayoutState layoutState )
 	{
+		assert( view.data->source.empty()
+			&& "Merged image views must be resolved before setting their layout state" );
 		setLayoutState( view.data->image
 			, view.data->info.viewType
 			, view.data->info.subresourceRange
@@ -65,6 +69,8 @@ namespace crg
 
 	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
 	{
+		assert( view.data->source.empty()
+			&& "Merged image views must be resolved before finding their layout state" );
 		return getLayoutState( view.data->image
 			, view.data->info.viewType
 			, view.data->info.subresourceRange );
