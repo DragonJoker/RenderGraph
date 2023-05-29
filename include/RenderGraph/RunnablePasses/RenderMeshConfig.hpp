@@ -169,6 +169,15 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The indirect buffer.
+			*/
+			auto & indirectBuffer( IndirectBuffer config )
+			{
+				m_indirectBuffer = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	The primitive count retrieval callback.
 			*/
 			auto & getPrimitiveCount( GetPrimitiveCountCallback config )
@@ -218,6 +227,7 @@ namespace crg
 			WrapperT< VkExtent2D > m_renderSize{};
 			WrapperT< VertexBuffer > m_vertexBuffer{};
 			WrapperT< IndexBuffer > m_indexBuffer{};
+			WrapperT< IndirectBuffer > m_indirectBuffer{};
 		};
 
 		template<>
@@ -235,6 +245,7 @@ namespace crg
 			RawTypeT< GetCullModeCallback > getCullMode{};
 			RawTypeT< VertexBuffer > vertexBuffer{};
 			RawTypeT< IndexBuffer > indexBuffer{};
+			RawTypeT< IndirectBuffer > indirectBuffer{ defaultV< IndirectBuffer > };
 		};
 
 		using Config = ConfigT< std::optional >;

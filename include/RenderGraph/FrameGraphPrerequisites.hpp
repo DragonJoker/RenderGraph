@@ -341,7 +341,21 @@ namespace crg
 		VkDeviceMemory memory;
 	};
 
-	using IndexBufferPtr = std::unique_ptr< IndexBuffer >;
+	struct IndirectBuffer
+	{
+		explicit IndirectBuffer( Buffer pbuffer
+			, uint32_t pstride
+			, VkDeviceSize poffset = {} )
+			: buffer{ std::move( pbuffer ) }
+			, offset{ poffset }
+			, stride{ pstride }
+		{
+		}
+
+		Buffer buffer;
+		VkDeviceSize offset;
+		uint32_t stride;
+	};
 
 	static constexpr VkPipelineColorBlendAttachmentState DefaultBlendState{ VK_FALSE
 		, VK_BLEND_FACTOR_ONE
@@ -379,6 +393,16 @@ namespace crg
 						, {}
 						, {} };
 				}() };
+			return result;
+		}
+	};
+
+	template<>
+	struct DefaultValueGetterT< IndirectBuffer >
+	{
+		static IndirectBuffer get()
+		{
+			IndirectBuffer const result{ Buffer{ VkBuffer{}, std::string{} }, 0u };
 			return result;
 		}
 	};
