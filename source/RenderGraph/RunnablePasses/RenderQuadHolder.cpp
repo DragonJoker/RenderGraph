@@ -23,7 +23,8 @@ namespace crg
 			, config.m_isEnabled
 			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_instances ? std::move( *config.m_instances ) : 1u }
+			, config.m_instances ? std::move( *config.m_instances ) : 1u
+			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
 		, m_context{ context }
 		, m_graph{ graph }
 		, m_pipeline{ pass
@@ -110,7 +111,15 @@ namespace crg
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
 		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer( index ), &offset );
-		m_context.vkCmdDraw( commandBuffer, 3u, m_config.m_instances, 0u, 0u );
+
+		if ( auto indirectBuffer = m_config.indirectBuffer.buffer.buffer( index ) )
+		{
+			m_context.vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+		}
+		else
+		{
+			m_context.vkCmdDraw( commandBuffer, 3u, m_config.m_instances, 0u, 0u );
+		}
 	}
 
 	void RenderQuadHolder::end( RecordContext & context

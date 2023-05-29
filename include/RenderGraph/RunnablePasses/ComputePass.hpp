@@ -160,6 +160,15 @@ namespace crg
 				m_groupCountZ = config;
 				return *this;
 			}
+			/**
+			*\param[in] config
+			*	The buffer used during indirect compute.
+			*/
+			auto & indirectBuffer( IndirectBuffer config )
+			{
+				m_indirectBuffer = config;
+				return *this;
+			}
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
 			WrapperT< RunnablePass::InitialiseCallback > m_initialise{};
@@ -171,6 +180,7 @@ namespace crg
 			WrapperT< uint32_t > m_groupCountX{};
 			WrapperT< uint32_t > m_groupCountY{};
 			WrapperT< uint32_t > m_groupCountZ{};
+			WrapperT< IndirectBuffer > m_indirectBuffer{};
 		};
 
 		template<>
@@ -185,6 +195,7 @@ namespace crg
 			RawTypeT< uint32_t > groupCountX{ 1u };
 			RawTypeT< uint32_t > groupCountY{ 1u };
 			RawTypeT< uint32_t > groupCountZ{ 1u };
+			RawTypeT< IndirectBuffer > indirectBuffer{ defaultV< IndirectBuffer > };
 		};
 
 		using Config = ConfigT< std::optional >;

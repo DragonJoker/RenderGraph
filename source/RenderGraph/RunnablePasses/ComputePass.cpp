@@ -34,7 +34,8 @@ namespace crg
 			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
 			, cpConfig.m_groupCountX ? std::move( *cpConfig.m_groupCountX ) : 1u
 			, cpConfig.m_groupCountY ? std::move( *cpConfig.m_groupCountY ) : 1u
-			, cpConfig.m_groupCountZ ? std::move( *cpConfig.m_groupCountZ ) : 1u }
+			, cpConfig.m_groupCountZ ? std::move( *cpConfig.m_groupCountZ ) : 1u
+			, cpConfig.m_indirectBuffer ? *cpConfig.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
 		, m_pipeline{ pass
 			, context
 			, graph
@@ -80,7 +81,16 @@ namespace crg
 	{
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_cpConfig.recordInto( context, commandBuffer, index );
-		m_context.vkCmdDispatch( commandBuffer, m_cpConfig.groupCountX, m_cpConfig.groupCountY, m_cpConfig.groupCountZ );
+
+		if ( auto indirectBuffer = m_cpConfig.indirectBuffer.buffer.buffer( index ) )
+		{ 
+			m_context.vkCmdDispatchIndirect( commandBuffer, indirectBuffer, m_cpConfig.indirectBuffer.offset );
+		}
+		else
+		{
+			m_context.vkCmdDispatch( commandBuffer, m_cpConfig.groupCountX, m_cpConfig.groupCountY, m_cpConfig.groupCountZ );
+		}
+
 		m_cpConfig.end( context, commandBuffer, index );
 	}
 

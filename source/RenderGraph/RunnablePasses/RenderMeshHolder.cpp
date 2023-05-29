@@ -24,7 +24,8 @@ namespace crg
 			, config.m_getIndexType ? std::move( *config.m_getIndexType ) : getDefaultV< GetIndexTypeCallback >()
 			, config.m_getCullMode ? std::move( *config.m_getCullMode ) : getDefaultV< GetCullModeCallback >()
 			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : getDefaultV< VertexBuffer >()
-			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : getDefaultV< IndexBuffer >() }
+			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : getDefaultV< IndexBuffer >()
+			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV< IndirectBuffer >() }
 		, m_context{ context }
 		, m_pipeline{ pass
 			, context
@@ -114,9 +115,21 @@ namespace crg
 			m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_config.vertexBuffer.buffer.buffer( index ), &offset );
 		}
 
-		if ( m_config.indexBuffer.buffer.buffer( index ) )
+		if ( auto indirectBuffer = m_config.indirectBuffer.buffer.buffer( index ) )
 		{
-			m_context.vkCmdBindIndexBuffer( commandBuffer, m_config.indexBuffer.buffer.buffer( index ), offset, m_config.getIndexType() );
+			if ( auto indexBuffer = m_config.indexBuffer.buffer.buffer( index ) )
+			{
+				m_context.vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
+				m_context.vkCmdDrawIndexedIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+			}
+			else
+			{
+				m_context.vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+			}
+		}
+		else if ( auto indexBuffer = m_config.indexBuffer.buffer.buffer( index ) )
+		{
+			m_context.vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
 			m_context.vkCmdDrawIndexed( commandBuffer, m_config.getPrimitiveCount(), 1u, 0u, 0u, 0u );
 		}
 		else

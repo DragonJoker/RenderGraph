@@ -537,8 +537,11 @@ namespace crg
 		DECL_vkFunction( CmdClearColorImage );
 		DECL_vkFunction( CmdClearDepthStencilImage );
 		DECL_vkFunction( CmdDispatch );
+		DECL_vkFunction( CmdDispatchIndirect );
 		DECL_vkFunction( CmdDraw );
 		DECL_vkFunction( CmdDrawIndexed );
+		DECL_vkFunction( CmdDrawIndexedIndirect );
+		DECL_vkFunction( CmdDrawIndirect );
 		DECL_vkFunction( CmdBeginRenderPass );
 		DECL_vkFunction( CmdEndRenderPass );
 		DECL_vkFunction( CmdPushConstants );

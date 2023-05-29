@@ -158,6 +158,15 @@ namespace crg
 				m_instances = config;
 				return *this;
 			}
+			/**
+			*\param[in] config
+			*	The indirect buffer.
+			*/
+			auto & indirectBuffer( IndirectBuffer config )
+			{
+				m_indirectBuffer = config;
+				return *this;
+			}
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
 			WrapperT< Texcoord > m_texcoordConfig{};
@@ -170,6 +179,7 @@ namespace crg
 			WrapperT< RunnablePass::RecordCallback > m_end{};
 			WrapperT< uint32_t > m_instances{};
 			WrapperT< VkExtent2D > m_renderSize{};
+			WrapperT< IndirectBuffer > m_indirectBuffer{};
 		};
 
 		template<>
@@ -184,6 +194,7 @@ namespace crg
 			RawTypeT< RunnablePass::RecordCallback > recordInto;
 			RawTypeT< RunnablePass::RecordCallback > end;
 			RawTypeT< uint32_t > m_instances;
+			RawTypeT< IndirectBuffer > indirectBuffer{ Buffer{ VkBuffer{}, std::string{} }, 0u };
 		};
 
 		using Config = ConfigT< std::optional >;
