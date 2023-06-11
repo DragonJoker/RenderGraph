@@ -77,6 +77,11 @@ namespace crg
 				, m_config.texcoordConfig );
 			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
 		}
+		else if ( m_renderPass != renderPass )
+		{
+			m_pipeline.resetPipeline( m_pipeline.getProgram( index ), index );
+			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
+		}
 
 		if ( m_renderPass && m_renderPass != renderPass )
 		{

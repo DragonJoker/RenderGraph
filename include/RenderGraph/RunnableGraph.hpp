@@ -58,6 +58,7 @@ namespace crg
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
 			, GraphContext & context );
+		CRG_API ~RunnableGraph()noexcept;
 
 		CRG_API void record();
 
@@ -85,39 +86,59 @@ namespace crg
 			, ImageViewId view )const;
 		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
 
-		ConstGraphAdjacentNode getGraph()const
+		ConstGraphAdjacentNode getGraph()const noexcept
 		{
 			return &m_rootNode;
 		}
 		
-		std::string const & getName()const
+		std::string const & getName()const noexcept
 		{
 			return m_graph.getName();
 		}
 
-		AttachmentTransitions const & getTransitions()const
+		AttachmentTransitions const & getTransitions()const noexcept
 		{
 			return m_transitions;
 		}
 
-		VkCommandPool getCommandPool()const
+		VkCommandPool getCommandPool()const noexcept
 		{
 			return m_commandPool.object;
 		}
 
-		VkQueryPool getTimerQueryPool()const
+		VkQueryPool getTimerQueryPool()const noexcept
 		{
 			return m_timerQueries.object;
 		}
 
-		uint32_t & getTimerQueryOffset()
+		uint32_t & getTimerQueryOffset()noexcept
 		{
 			return m_timerQueryOffset;
 		}
 
-		ContextResourcesCache & getResources()
+		ContextResourcesCache & getResources()noexcept
 		{
 			return m_resources;
+		}
+
+		Fence & getFence()noexcept
+		{
+			return m_fence;
+		}
+
+		Fence const & getFence()const noexcept
+		{
+			return m_fence;
+		}
+
+		FramePassTimer const & getTimer()const
+		{
+			return m_timer;
+		}
+
+		FramePassTimer & getTimer()
+		{
+			return m_timer;
 		}
 
 	private:
@@ -134,5 +155,9 @@ namespace crg
 		ContextObjectT< VkCommandPool > m_commandPool;
 		std::vector< RunnablePassPtr > m_passes;
 		RecordContext::GraphIndexMap m_states;
+		VkCommandBuffer m_commandBuffer{};
+		VkSemaphore m_semaphore{};
+		Fence m_fence;
+		FramePassTimer m_timer;
 	};
 }

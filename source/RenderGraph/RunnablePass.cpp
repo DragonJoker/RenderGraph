@@ -343,19 +343,33 @@ namespace crg
 		return isEnabled() ? index : ~( 0u );
 	}
 
+	uint32_t RunnablePass::recordCurrentInto( RecordContext & context
+		, VkCommandBuffer commandBuffer )
+	{
+		auto index = m_callbacks.getPassIndex();
+		recordInto( commandBuffer
+			, index
+			, context );
+		return isEnabled() ? index : ~( 0u );
+	}
+
 	uint32_t RunnablePass::reRecordCurrent()
 	{
 		assert( m_ruConfig.resettable );
 		auto index = m_callbacks.getPassIndex();
-		auto it = m_passContexts.find( index );
+		auto & pass = m_passes[index];
 
-		if ( it != m_passContexts.end() )
+		if ( pass.commandBuffer.commandBuffer )
 		{
-			auto context = it->second;
-			auto & pass = m_passes[index];
-			recordOne( pass.commandBuffer
-				, index
-				, context );
+			auto it = m_passContexts.find( index );
+
+			if ( it != m_passContexts.end() )
+			{
+				auto context = it->second;
+				recordOne( pass.commandBuffer
+					, index
+					, context );
+			}
 		}
 
 		return isEnabled() ? index : ~( 0u );
@@ -401,9 +415,7 @@ namespace crg
 			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
 			, nullptr };
 		m_context.vkBeginCommandBuffer( enabled.commandBuffer, &beginInfo );
-		recordInto( enabled.commandBuffer
-			, index
-			, context );
+		recordInto( enabled.commandBuffer, index, context );
 		m_context.vkEndCommandBuffer( enabled.commandBuffer );
 	}
 
@@ -567,21 +579,13 @@ namespace crg
 
 		assert( m_passes.size() > passIndex );
 		auto & pass = m_passes[passIndex];
-		pass.fence.wait( 0xFFFFFFFFFFFFFFFFull );
 
 		if ( pass.commandBuffer.commandBuffer )
 		{
+			pass.fence.wait( 0xFFFFFFFFFFFFFFFFull );
 			pass.commandBuffer.recorded = false;
 			m_context.vkResetCommandBuffer( pass.commandBuffer.commandBuffer
 				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
-		}
-	}
-
-	void RunnablePass::resetCommandBuffers()
-	{
-		for ( uint32_t i = 0u; i < uint32_t( m_passes.size() ); ++i )
-		{
-			resetCommandBuffer( i );
 		}
 	}
 
