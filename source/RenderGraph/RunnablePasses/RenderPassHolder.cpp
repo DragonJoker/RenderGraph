@@ -81,6 +81,13 @@ namespace crg
 				, separateDepthStencilLayouts );
 		}
 
+		static bool operator!=( LayoutState const & lhs, LayoutState const & rhs )
+		{
+			return lhs.layout != rhs.layout
+				|| lhs.state.access != rhs.state.access
+				|| ( lhs.state.access != 0 && lhs.state.pipelineStage != rhs.state.pipelineStage );
+		}
+
 		static bool checkAttaches( RecordContext const & context
 			, std::vector< RenderPassHolder::Entry > const & attaches )
 		{
@@ -88,7 +95,7 @@ namespace crg
 				, attaches.end()
 				, [&context]( RenderPassHolder::Entry const & lookup )
 				{
-					return context.getLayoutState( lookup.view ).layout != lookup.input.layout;
+					return context.getLayoutState( lookup.view ) != lookup.input;
 				} );
 			return it == attaches.end();
 		}
@@ -155,12 +162,14 @@ namespace crg
 	{
 		using rpHolder::operator==;
 
-		auto & renderPass = m_passes[passIndex].renderPass;
+		auto & data = m_passes[passIndex];
+		auto previousState = context.getPrevPipelineState();
+		auto nextState = context.getNextPipelineState();
 
-		if ( renderPass
+		if ( data.renderPass
 			&& rpHolder::checkAttaches( context, m_passes[passIndex].attaches )
-			&& m_srcState == context.getPrevPipelineState()
-			&& m_dstState == context.getNextPipelineState() )
+			&& data.previousState == previousState
+			&& data.nextState == nextState )
 		{
 			return false;
 		}
@@ -168,8 +177,8 @@ namespace crg
 		m_passes[passIndex].cleanup( m_context );
 		doCreateRenderPass( context
 			, runnable
-			, context.getPrevPipelineState()
-			, context.getNextPipelineState()
+			, previousState
+			, nextState
 			, passIndex );
 		doInitialiseRenderArea( passIndex );
 		return true;
@@ -285,8 +294,8 @@ namespace crg
 			, depthReference.layout ? &depthReference : nullptr
 			, 0u
 			, nullptr };
-		m_srcState = previousState;
-		m_dstState = nextState;
+		data.previousState = previousState;
+		data.nextState = nextState;
 		VkSubpassDependencyArray dependencies{
 			{ VK_SUBPASS_EXTERNAL
 				, 0u

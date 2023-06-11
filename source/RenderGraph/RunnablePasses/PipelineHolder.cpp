@@ -206,10 +206,14 @@ namespace crg
 
 		if ( m_pipelines[index] )
 		{
-			crgUnregisterObject( m_context, m_pipelines[index] );
-			m_context.vkDestroyPipeline( m_context.device
-				, m_pipelines[index]
-				, m_context.allocator );
+			auto pipeline = m_pipelines[index];
+			m_context.delQueue.push( [pipeline]( GraphContext & context )
+				{
+					crgUnregisterObject( context, pipeline );
+					context.vkDestroyPipeline( context.device
+						, pipeline
+						, context.allocator );
+				} );
 			m_pipelines[index] = {};
 		}
 

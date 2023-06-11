@@ -164,7 +164,7 @@ namespace crg
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
 		, m_timerQueries{ m_context
-			, createQueryPool( m_context, m_graph.getName() + "TimerQueries", uint32_t( m_nodes.size() * 2u ) )
+			, createQueryPool( m_context, m_graph.getName() + "TimerQueries", uint32_t( ( m_nodes.size() + 1u ) * 2u ) )
 			, []( GraphContext & ctx, VkQueryPool & object )
 			{
 				crgUnregisterObject( ctx, object );
@@ -179,7 +179,43 @@ namespace crg
 				ctx.vkDestroyCommandPool( ctx.device, object, ctx.allocator );
 				object = {};
 			} }
+		, m_fence{ m_context
+			, graph.getName() + "/Graph"
+			, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
+		, m_timer{ context, graph.getName() + "/Graph", getTimerQueryPool(), getTimerQueryOffset() }
 	{
+		if ( m_context.device )
+		{
+			auto name = m_graph.getName() + "/Graph";
+			VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
+				, nullptr
+				, 0u };
+			auto res = context.vkCreateSemaphore( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, &m_semaphore );
+			checkVkResult( res, name + " - Semaphore creation" );
+			crgRegisterObject( m_context, name, m_semaphore );
+
+			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
+				, nullptr
+				, getCommandPool()
+				, VK_COMMAND_BUFFER_LEVEL_PRIMARY
+				, 1u };
+			res = m_context.vkAllocateCommandBuffers( m_context.device
+				, &allocateInfo
+				, &m_commandBuffer );
+			checkVkResult( res, name + " - CommandBuffer allocation" );
+			crgRegisterObject( m_context, name, m_commandBuffer );
+
+			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+				, nullptr
+				, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+				, nullptr };
+			m_context.vkBeginCommandBuffer( m_commandBuffer, &beginInfo );
+			m_context.vkEndCommandBuffer( m_commandBuffer );
+		}
+
 		Logger::logDebug( m_graph.getName() + " - Initialising resources" );
 
 		for ( auto & img : m_graph.m_images )
@@ -215,8 +251,32 @@ namespace crg
 		}
 	}
 
+	RunnableGraph::~RunnableGraph()noexcept
+	{
+		if ( m_context.device )
+		{
+			if ( m_semaphore )
+			{
+				crgUnregisterObject( m_context, m_semaphore );
+				m_context.vkDestroySemaphore( m_context.device
+					, m_semaphore
+					, m_context.allocator );
+			}
+
+			if ( m_commandBuffer )
+			{
+				crgUnregisterObject( m_context, m_commandBuffer );
+				m_context.vkFreeCommandBuffers( m_context.device
+					, getCommandPool()
+					, 1u
+					, &m_commandBuffer );
+			}
+		}
+	}
+
 	void RunnableGraph::record()
 	{
+		auto block( m_timer.start() );
 		m_states.clear();
 		RecordContext recordContext{ m_resources };
 
@@ -237,6 +297,14 @@ namespace crg
 			recordContext.setNextPipelineState( ( *currPass )->getPipelineState()
 				, ( *currPass )->getImageLayouts() );
 			auto nextPass = std::next( currPass );
+			m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
+			m_context.vkResetCommandBuffer( m_commandBuffer, 0u );
+			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
+				, nullptr
+				, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+				, nullptr };
+			m_context.vkBeginCommandBuffer( m_commandBuffer, &beginInfo );
+			m_timer.beginPass( m_commandBuffer );
 
 			while ( currPass != m_passes.end() )
 			{
@@ -261,9 +329,12 @@ namespace crg
 						, {} );
 				}
 
-				*it = pass->recordCurrent( recordContext );
+				*it = pass->recordCurrentInto( recordContext, m_commandBuffer );
 				++it;
 			}
+
+			m_timer.endPass( m_commandBuffer );
+			m_context.vkEndCommandBuffer( m_commandBuffer );
 		}
 
 		m_graph.registerFinalState( recordContext );
@@ -287,34 +358,28 @@ namespace crg
 	SemaphoreWaitArray RunnableGraph::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
-		RecordContext::GraphIndexMap states;
-		auto it = states.emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
-		it->second.reserve( m_passes.size() );
-
-		for ( auto & pass : m_passes )
-		{
-			it->second.push_back( pass->getIndex() );
-		}
-
-		for ( auto & dependency : m_graph.getDependencies() )
-		{
-			states.emplace( dependency
-				, dependency->getFinalStates().getIndexState() );
-		}
-
-		if ( m_states != states )
-		{
-			record();
-		}
-
-		auto result = toWait;
-
-		for ( auto & pass : m_passes )
-		{
-			result = pass->run( result, queue );
-		}
-
-		return result;
+		record();
+		std::vector< VkSemaphore > semaphores;
+		std::vector< VkPipelineStageFlags > dstStageMasks;
+		convert( toWait, semaphores, dstStageMasks );
+		m_timer.notifyPassRender();
+		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
+			, nullptr
+			, uint32_t( semaphores.size() )
+			, semaphores.data()
+			, dstStageMasks.data()
+			, 1u
+			, &m_commandBuffer
+			, 1u
+			, &m_semaphore };
+		m_fence.reset();
+		m_context.delQueue.clear( m_context );
+		m_context.vkQueueSubmit( queue
+			, 1u
+			, &submitInfo
+			, m_fence );
+		return { SemaphoreWait{ m_semaphore
+			, m_graph.getFinalStates().getCurrPipelineState().pipelineStage } };
 	}
 
 	ImageViewId RunnableGraph::createView( ImageViewData const & view )

@@ -446,6 +446,32 @@ namespace crg
 		std::array< float, 4 > colour;
 	};
 
+	struct DeletionQueue
+	{
+		using CDtorFunc = void( GraphContext & );
+		using DtorFunc = std::function< CDtorFunc >;
+		using DtorFuncArray = std::vector< DtorFunc >;
+
+	public:
+		void push( DtorFunc func )
+		{
+			m_toDelete.push_back( func );
+		}
+
+		void clear( GraphContext & context )
+		{
+			DtorFuncArray tmp{ std::move( m_toDelete ) };
+
+			for ( auto func : tmp )
+			{
+				func( context );
+			}
+		}
+
+	private:
+		DtorFuncArray m_toDelete;
+	};
+
 	struct GraphContext
 	{
 		CRG_API GraphContext( GraphContext  const & ) = delete;
@@ -468,6 +494,7 @@ namespace crg
 		VkPhysicalDeviceProperties properties{};
 		VkPhysicalDeviceFeatures features{};
 		bool separateDepthStencilLayouts;
+		DeletionQueue delQueue;
 
 #define DECL_vkFunction( name )\
 		PFN_vk##name vk##name{ nullptr }

@@ -100,27 +100,27 @@ namespace crg
 			, VkImageSubresourceRange range )const;
 		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
 
-		ResourceHandler & getHandler()
+		ResourceHandler & getHandler()noexcept
 		{
 			return m_handler;
 		}
 
-		std::string const & getName()const
+		std::string const & getName()const noexcept
 		{
 			return m_name;
 		}
 
-		FrameGraphArray const & getDependencies()const
+		FrameGraphArray const & getDependencies()const noexcept
 		{
 			return m_depends;
 		}
 
-		RecordContext const & getFinalStates()const
+		RecordContext const & getFinalStates()const noexcept
 		{
 			return m_finalState;
 		}
 
-		FramePassGroup & getDefaultGroup()const
+		FramePassGroup & getDefaultGroup()const noexcept
 		{
 			return *m_defaultGroup;
 		}

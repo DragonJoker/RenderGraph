@@ -197,23 +197,35 @@ namespace crg
 		CRG_API virtual ~RunnablePass();
 		/**
 		*\brief
-		*	Initialises the descriptor set.
+		*	Initialises the pass GPU data for given index.
+		*\param[in] passIndex
+		*	The index of the pass to initialise.
 		*/
 		CRG_API void initialise( uint32_t passIndex );
 		/**
 		*\brief
 		*	Records the pass commands into its command buffer.
-		*\param[in] index
-		*	The pass index.
+		*\param[in,out] context
+		*	Stores the states.
 		*/
 		CRG_API void recordAll( RecordContext & context );
 		/**
 		*\brief
 		*	Records the pass commands into its command buffer.
-		*\param[in] index
-		*	The pass index.
+		*\param[in,out] context
+		*	Stores the states.
 		*/
 		CRG_API uint32_t recordCurrent( RecordContext & context );
+		/**
+		*\brief
+		*	Records the pass commands into the given command buffer.
+		*\param[in,out] context
+		*	Stores the states.
+		*\param[in] commandBuffer
+		*	Receives the commands.
+		*/
+		CRG_API uint32_t recordCurrentInto( RecordContext & context
+			, VkCommandBuffer commandBuffer );
 		/**
 		*\brief
 		*	Re-records the pass commands into its command buffer.
@@ -248,7 +260,6 @@ namespace crg
 		*	Resets the command buffer to initial state.
 		*/
 		CRG_API void resetCommandBuffer( uint32_t passIndex );
-		CRG_API void resetCommandBuffers();
 		CRG_API void setToReset( uint32_t passIndex );
 
 		LayoutState getLayoutState( crg::ImageViewId view )const
