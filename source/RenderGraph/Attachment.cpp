@@ -458,7 +458,7 @@ namespace crg
 		{
 			result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 		}
-		else if ( !isTransitionView() )
+		else
 		{
 			result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		}
