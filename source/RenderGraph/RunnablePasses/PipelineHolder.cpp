@@ -197,6 +197,13 @@ namespace crg
 	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{
+		assert( m_pipelines.size() == 1u || index < m_pipelines.size() );
+
+		if ( m_pipelines.size() == 1u )
+		{
+			index = 0u;
+		}
+
 		if ( m_pipelines[index] )
 		{
 			crgUnregisterObject( m_context, m_pipelines[index] );

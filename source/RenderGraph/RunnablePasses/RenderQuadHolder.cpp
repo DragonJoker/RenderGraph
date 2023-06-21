@@ -78,7 +78,14 @@ namespace crg
 			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
 		}
 
-		doCreatePipeline( index );
+		if ( m_renderPass != renderPass )
+		{
+			resetRenderPass( renderSize, renderPass, blendState, index );
+		}
+		else
+		{
+			doCreatePipeline( index );
+		}
 	}
 
 	void RenderQuadHolder::resetRenderPass( VkExtent2D const & renderSize

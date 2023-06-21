@@ -92,6 +92,12 @@ namespace crg
 				} );
 			return it == attaches.end();
 		}
+
+		static bool operator==( PipelineState const & lhs, PipelineState const & rhs )
+		{
+			return lhs.access == rhs.access
+				&& lhs.pipelineStage == rhs.pipelineStage;
+		}
 	}
 
 	//*********************************************************************************************
@@ -147,10 +153,14 @@ namespace crg
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
+		using rpHolder::operator==;
+
 		auto & renderPass = m_passes[passIndex].renderPass;
 
 		if ( renderPass
-			&& rpHolder::checkAttaches( context, m_passes[passIndex].attaches ) )
+			&& rpHolder::checkAttaches( context, m_passes[passIndex].attaches )
+			&& m_srcState == context.getPrevPipelineState()
+			&& m_dstState == context.getNextPipelineState() )
 		{
 			return false;
 		}
@@ -275,6 +285,8 @@ namespace crg
 			, depthReference.layout ? &depthReference : nullptr
 			, 0u
 			, nullptr };
+		m_srcState = previousState;
+		m_dstState = nextState;
 		VkSubpassDependencyArray dependencies{
 			{ VK_SUBPASS_EXTERNAL
 				, 0u
@@ -304,7 +316,7 @@ namespace crg
 			, m_context.allocator
 			, &data.renderPass );
 		checkVkResult( res, m_pass.getGroupName() + " - RenderPass creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), data.renderPass );
+		crgRegisterObject( m_context, m_pass.getGroupName() + std::to_string( m_count++ ), data.renderPass );
 	}
 
 	VkPipelineColorBlendStateCreateInfo RenderPassHolder::createBlendState()

@@ -94,5 +94,8 @@ namespace crg
 		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;
 		uint32_t m_layers{};
 		uint32_t m_index{};
+		PipelineState m_srcState;
+		PipelineState m_dstState;
+		uint32_t m_count{ 1u };
 	};
 }
