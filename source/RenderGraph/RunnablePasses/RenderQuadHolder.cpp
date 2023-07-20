@@ -78,7 +78,7 @@ namespace crg
 			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
 		}
 
-		if ( m_renderPass != renderPass )
+		if ( m_renderPass && m_renderPass != renderPass )
 		{
 			resetRenderPass( renderSize, renderPass, blendState, index );
 		}
