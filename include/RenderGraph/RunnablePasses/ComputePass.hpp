@@ -169,6 +169,24 @@ namespace crg
 				m_indirectBuffer = config;
 				return *this;
 			}
+			/**
+			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRange config )
+			{
+				m_baseConfig.pushConstants( std::move( config ) );
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRangeArray config )
+			{
+				m_baseConfig.m_pushConstants( std::move( config ) );
+				return *this;
+			}
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
 			WrapperT< RunnablePass::InitialiseCallback > m_initialise{};
@@ -226,6 +244,7 @@ namespace crg
 			, cp::Config cpConfig = {} );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
 			, uint32_t index );
+		CRG_API VkPipelineLayout getPipelineLayout()const;
 
 	private:
 		void doInitialise( uint32_t index );

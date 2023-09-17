@@ -54,6 +54,11 @@ namespace crg
 		reRecordCurrent();
 	}
 
+	VkPipelineLayout ComputePass::getPipelineLayout()const
+	{
+		return m_pipeline.getPipelineLayout();
+	}
+
 	void ComputePass::doInitialise( uint32_t index )
 	{
 		m_pipeline.initialise();
