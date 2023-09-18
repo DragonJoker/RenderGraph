@@ -10,6 +10,11 @@ namespace crg
 {
 	namespace cp
 	{
+		struct GroupCountT
+		{
+		};
+		using GetGroupCountCallback = GetValueCallbackT< GroupCountT, uint32_t >;
+
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
@@ -162,6 +167,33 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The callback to retrieve the X dispatch groups count.
+			*/
+			auto & getGroupCountX( GetGroupCountCallback config )
+			{
+				m_getGroupCountX = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The callback to retrieve the Y dispatch groups count.
+			*/
+			auto & getGroupCountY( GetGroupCountCallback config )
+			{
+				m_getGroupCountY = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The callback to retrieve the Z dispatch groups count.
+			*/
+			auto & getGroupCountZ( GetGroupCountCallback config )
+			{
+				m_getGroupCountZ = config;
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	The buffer used during indirect compute.
 			*/
 			auto & indirectBuffer( IndirectBuffer config )
@@ -198,6 +230,9 @@ namespace crg
 			WrapperT< uint32_t > m_groupCountX{};
 			WrapperT< uint32_t > m_groupCountY{};
 			WrapperT< uint32_t > m_groupCountZ{};
+			WrapperT< GetGroupCountCallback > m_getGroupCountX{};
+			WrapperT< GetGroupCountCallback > m_getGroupCountY{};
+			WrapperT< GetGroupCountCallback > m_getGroupCountZ{};
 			WrapperT< IndirectBuffer > m_indirectBuffer{};
 		};
 
@@ -213,12 +248,28 @@ namespace crg
 			RawTypeT< uint32_t > groupCountX{ 1u };
 			RawTypeT< uint32_t > groupCountY{ 1u };
 			RawTypeT< uint32_t > groupCountZ{ 1u };
+			std::optional< GetGroupCountCallback > getGroupCountX{};
+			std::optional< GetGroupCountCallback > getGroupCountY{};
+			std::optional< GetGroupCountCallback > getGroupCountZ{};
 			RawTypeT< IndirectBuffer > indirectBuffer{ defaultV< IndirectBuffer > };
 		};
 
 		using Config = ConfigT< std::optional >;
 		using ConfigData = ConfigT< RawTypeT >;
 	}
+
+	template<>
+	struct DefaultValueGetterT < cp::GetGroupCountCallback >
+	{
+		static cp::GetGroupCountCallback get()
+		{
+			cp::GetGroupCountCallback const result{ []()
+				{
+					return 0u;
+				} };
+			return result;
+		}
+	};
 
 	template<>
 	struct DefaultValueGetterT< cp::Config >
