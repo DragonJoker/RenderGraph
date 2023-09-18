@@ -35,6 +35,9 @@ namespace crg
 			, cpConfig.m_groupCountX ? std::move( *cpConfig.m_groupCountX ) : 1u
 			, cpConfig.m_groupCountY ? std::move( *cpConfig.m_groupCountY ) : 1u
 			, cpConfig.m_groupCountZ ? std::move( *cpConfig.m_groupCountZ ) : 1u
+			, cpConfig.m_getGroupCountX ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountX ) ) : std::nullopt
+			, cpConfig.m_getGroupCountY ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountY ) ) : std::nullopt
+			, cpConfig.m_getGroupCountZ ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountZ ) ) : std::nullopt
 			, cpConfig.m_indirectBuffer ? *cpConfig.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
 		, m_pipeline{ pass
 			, context
@@ -93,7 +96,10 @@ namespace crg
 		}
 		else
 		{
-			m_context.vkCmdDispatch( commandBuffer, m_cpConfig.groupCountX, m_cpConfig.groupCountY, m_cpConfig.groupCountZ );
+			m_context.vkCmdDispatch( commandBuffer
+				, ( m_cpConfig.getGroupCountX ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountX )
+				, ( m_cpConfig.getGroupCountY ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountY )
+				, ( m_cpConfig.getGroupCountZ ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountZ ) );
 		}
 
 		m_cpConfig.end( context, commandBuffer, index );
