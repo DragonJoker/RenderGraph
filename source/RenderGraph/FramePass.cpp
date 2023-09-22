@@ -328,12 +328,12 @@ namespace crg
 		, VkDeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "OSB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
+		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
+				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
 			, *this
 			, binding
 			, std::move( attachName )
-			, ( BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-				| BufferAttachment::FlagKind( BufferAttachment::Flag::Clearable ) )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, buffer
 			, offset
 			, range } );
@@ -567,7 +567,7 @@ namespace crg
 	void FramePass::addInputStorageView( ImageViewIdArray views
 		, uint32_t binding )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IStr";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -587,8 +587,29 @@ namespace crg
 	void FramePass::addOutputStorageView( ImageViewIdArray views
 		, uint32_t binding )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/OStr";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, binding
+			, std::move( attachName )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
+			, std::move( views )
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
+			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, SamplerDesc{}
+			, VkClearValue{}
+			, VkPipelineColorBlendAttachmentState{}
+			, VK_IMAGE_LAYOUT_GENERAL } );
+	}
+
+	void FramePass::addClearableOutputStorageView( ImageViewIdArray views
+		, uint32_t binding )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/COStr";
+		images.push_back( { ( Attachment::FlagKind( Attachment::Flag::Output )
+				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
 			, *this
 			, binding
 			, std::move( attachName )
@@ -607,7 +628,7 @@ namespace crg
 	void FramePass::addInOutStorageView( ImageViewIdArray views
 		, uint32_t binding )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Str";
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IOStr";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::InOut )
 			, *this
 			, binding

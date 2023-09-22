@@ -21,6 +21,8 @@ namespace
 		pass.addSampledView( view, 1u );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Spl" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -31,10 +33,33 @@ namespace
 		check( attachment.image.samplerDesc == defaultSamplerDesc );
 		testEnd();
 	}
-	
-	void testStorageAttachment( test::TestCounts & testCounts )
+
+	void testInStorageAttachment( test::TestCounts & testCounts )
 	{
-		testBegin( "testStorageAttachment" );
+		testBegin( "testInStorageAttachment" );
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputStorageView( view, 1u );
+		require( pass.images.size() == 1u );
+		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
+		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IStr" );
+		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.image.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view() == view );
+		check( attachment.binding == 1u );
+		testEnd();
+	}
+
+	void testOutStorageAttachment( test::TestCounts & testCounts )
+	{
+		testBegin( "testOutStorageAttachment" );
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
@@ -43,7 +68,33 @@ namespace
 		pass.addOutputStorageView( view, 1u );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Str" );
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
+		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/OStr" );
+		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
+		check( attachment.image.stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
+		check( attachment.view() == view );
+		check( attachment.binding == 1u );
+		testEnd();
+	}
+
+	void testInOutStorageAttachment( test::TestCounts & testCounts )
+	{
+		testBegin( "testInOutStorageAttachment" );
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInOutStorageView( view, 1u );
+		require( pass.images.size() == 1u );
+		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
+		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOStr" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
 		check( attachment.image.stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
@@ -64,6 +115,8 @@ namespace
 		pass.addInputColourView( view );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ic" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -84,6 +137,8 @@ namespace
 		pass.addOutputColourView( view );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Oc" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
@@ -104,6 +159,9 @@ namespace
 		pass.addInOutColourView( view );
 		require( pass.images.size() == 1u );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOc" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
@@ -124,6 +182,8 @@ namespace
 		pass.addInputDepthView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Id" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -144,6 +204,8 @@ namespace
 		pass.addOutputDepthView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Od" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
@@ -164,6 +226,9 @@ namespace
 		pass.addInOutDepthView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOd" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
@@ -184,6 +249,8 @@ namespace
 		pass.addInputDepthStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ids" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -204,6 +271,8 @@ namespace
 		pass.addOutputDepthStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ods" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
@@ -224,6 +293,9 @@ namespace
 		pass.addInOutDepthStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOds" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_LOAD );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_STORE );
@@ -244,6 +316,8 @@ namespace
 		pass.addInputStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Is" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -264,6 +338,8 @@ namespace
 		pass.addOutputStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Os" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -284,6 +360,9 @@ namespace
 		pass.addInOutStencilView( view );
 		require( !pass.images.empty() );
 		auto & attachment = pass.images[0];
+		check( attachment.hasFlag( crg::Attachment::Flag::Image ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Input ) );
+		check( attachment.hasFlag( crg::Attachment::Flag::Output ) );
 		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOs" );
 		check( attachment.image.loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE );
 		check( attachment.image.storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE );
@@ -298,7 +377,9 @@ int main( int argc, char ** argv )
 {
 	testSuiteBegin( "TestAttachment" );
 	testSampledAttachment( testCounts );
-	testStorageAttachment( testCounts );
+	testInStorageAttachment( testCounts );
+	testOutStorageAttachment( testCounts );
+	testInOutStorageAttachment( testCounts );
 	testInColourAttachment( testCounts );
 	testOutColourAttachment( testCounts );
 	testInOutColourAttachment( testCounts );

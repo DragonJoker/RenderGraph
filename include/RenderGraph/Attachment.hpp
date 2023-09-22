@@ -68,11 +68,10 @@ namespace crg
 			Transfer = 0x01 << 2,
 			Depth = 0x01 << 3,
 			Stencil = 0x01 << 4,
-			Clearing = 0x01 << 5,
-			StencilClearing = 0x01 << 6,
-			StencilInput = 0x01 << 7,
-			StencilOutput = 0x01 << 8,
-			Transition = 0x01 << 9,
+			StencilClearing = 0x01 << 5,
+			StencilInput = 0x01 << 6,
+			StencilOutput = 0x01 << 7,
+			Transition = 0x01 << 8,
 			DepthStencil = Depth | Stencil,
 			StencilInOut = StencilInput | StencilOutput,
 		};
@@ -140,11 +139,6 @@ namespace crg
 		bool isDepthStencilAttach()const
 		{
 			return isDepthAttach() && isStencilAttach();
-		}
-
-		bool isClearingAttach()const
-		{
-			return hasFlag( Flag::Clearing );
 		}
 
 		bool isColourAttach()const
@@ -238,7 +232,6 @@ namespace crg
 			Uniform = 0x01 << 0,
 			Storage = 0x01 << 1,
 			View = 0x01 << 2,
-			Clearable = 0x01 << 4,
 			UniformView = Uniform | View,
 			StorageView = Storage | View,
 		};
@@ -279,11 +272,6 @@ namespace crg
 		bool isView()const
 		{
 			return hasFlag( Flag::View );
-		}
-
-		bool isClearable()const
-		{
-			return hasFlag( Flag::Clearable );
 		}
 
 		bool isUniformView()const
@@ -349,6 +337,7 @@ namespace crg
 			Image = 0x01 << 2,
 			Buffer = 0x01 << 3,
 			NoTransition = 0x01 << 4,
+			Clearable = 0x01 << 5,
 			InOut = Input | Output,
 		};
 		/**
@@ -400,6 +389,11 @@ namespace crg
 			return hasFlag( Flag::Buffer );
 		}
 
+		bool isClearable()const
+		{
+			return hasFlag( Flag::Clearable );
+		}
+
 		bool isUniformBuffer()const
 		{
 			return isBuffer() && buffer.isUniform();
@@ -419,7 +413,14 @@ namespace crg
 		{
 			return isBuffer()
 				&& isOutput()
-				&& buffer.isClearable();
+				&& isClearable();
+		}
+
+		bool isClearableImage()const
+		{
+			return isImage()
+				&& isOutput()
+				&& isClearable();
 		}
 
 		bool isStorageBufferView()const
@@ -462,11 +463,6 @@ namespace crg
 			return isImage() && image.isStencilAttach();
 		}
 
-		bool isClearingAttach()const
-		{
-			return isImage() && image.isClearingAttach();
-		}
-
 		bool isColourAttach()const
 		{
 			return !isSampledView()
@@ -475,11 +471,6 @@ namespace crg
 				&& !isTransferView()
 				&& !isDepthAttach()
 				&& !isStencilAttach();
-		}
-
-		bool isColourClearingAttach()const
-		{
-			return isClearingAttach() && isColourAttach();
 		}
 
 		bool isColourInputAttach()const
@@ -495,11 +486,6 @@ namespace crg
 		bool isColourInOutAttach()const
 		{
 			return isInput() && isOutput() && isColourAttach();
-		}
-
-		bool isDepthClearingAttach()const
-		{
-			return isClearingAttach() && isDepthAttach();
 		}
 
 		bool isDepthInputAttach()const
