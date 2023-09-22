@@ -211,6 +211,12 @@ namespace crg
 		*\brief
 		*	Creates a storage image attachment.
 		*/
+		CRG_API void addClearableOutputStorageView( ImageViewIdArray view
+			, uint32_t binding );
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
 		CRG_API void addInOutStorageView( ImageViewIdArray view
 			, uint32_t binding );
 		/**
@@ -304,6 +310,16 @@ namespace crg
 			, uint32_t binding )
 		{
 			addOutputStorageView( ImageViewIdArray{ view }
+				, binding );
+		}
+		/**
+		*\brief
+		*	Creates a storage image attachment.
+		*/
+		inline void addClearableOutputStorageView( ImageViewId view
+			, uint32_t binding )
+		{
+			addClearableOutputStorageView( ImageViewIdArray{ view }
 				, binding );
 		}
 		/**

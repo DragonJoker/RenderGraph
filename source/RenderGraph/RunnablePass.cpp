@@ -459,6 +459,40 @@ namespace crg
 						? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
 						: m_graph.getCurrentLayoutState( context, view ) );
 					checkUndefinedInput( "Record", attach, view, currentLayout.layout );
+
+					if ( attach.isClearableImage() )
+					{
+						context.memoryBarrier( commandBuffer
+							, view
+							, currentLayout.layout
+							, LayoutState{ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } } );
+
+						if ( isColourFormat( getFormat( view ) ) )
+						{
+							VkClearColorValue colour{};
+							m_context.vkCmdClearColorImage( commandBuffer
+								, m_graph.createImage( view.data->image )
+								, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+								, &colour
+								, 1u
+								, &view.data->info.subresourceRange );
+						}
+						else
+						{
+							VkClearDepthStencilValue depthStencil{};
+							m_context.vkCmdClearDepthStencilImage( commandBuffer
+								, m_graph.createImage( view.data->image )
+								, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+								, &depthStencil
+								, 1u
+								, &view.data->info.subresourceRange );
+						}
+
+						currentLayout.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+						currentLayout.state.access = VK_ACCESS_TRANSFER_WRITE_BIT;
+						currentLayout.state.pipelineStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+					}
+
 					context.memoryBarrier( commandBuffer
 						, view
 						, currentLayout.layout

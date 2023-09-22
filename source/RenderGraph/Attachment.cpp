@@ -221,13 +221,7 @@ namespace crg
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
 		, wantedLayout{ wantedLayout }
-		, flags{ FlagKind( flags
-			| ( loadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
-				? FlagKind( Flag::Clearing )
-				: FlagKind( Flag::None ) )
-			| ( stencilLoadOp == VK_ATTACHMENT_LOAD_OP_CLEAR
-				? FlagKind( Flag::Clearing )
-				: FlagKind( Flag::None ) ) ) }
+		, flags{ flags }
 	{
 		assert( ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
 			&& isColourFormat( view().data->info.format ) )
