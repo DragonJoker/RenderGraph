@@ -44,35 +44,29 @@ namespace crg
 	FramePassTimer::FramePassTimer( GraphContext & context
 		, std::string const & name
 		, VkQueryPool timerQueries
-		, uint32_t & baseQueryOffset
-		, uint32_t passesCount )
+		, uint32_t & baseQueryOffset )
 		: m_context{ context }
-		, m_passesCount{ passesCount }
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }
 		, m_timerQueries{ timerQueries }
-		, m_baseQueryOffset{ baseQueryOffset }
 		, m_ownPool{ false }
-		, m_startedPasses( size_t( m_passesCount ), { false, false } )
+		, m_queries{ { { baseQueryOffset, false, false }, { baseQueryOffset + 2u, false, false } } }
 	{
-		baseQueryOffset += passesCount * 2u;
+		baseQueryOffset += 4u;
 	}
 
 	FramePassTimer::FramePassTimer( GraphContext & context
-		, std::string const & name
-		, uint32_t passesCount )
+		, std::string const & name )
 		: m_context{ context }
-		, m_passesCount{ passesCount }
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }
 		, m_timerQueries{ createQueryPool( context
 			, name
-			, passesCount * 2u ) }
-		, m_baseQueryOffset{ 0u }
+			, 4u ) }
 		, m_ownPool{ true }
-		, m_startedPasses( size_t( m_passesCount ), { false, false } )
+		, m_queries{ { { 0u, false, false }, { 2u, false, false } } }
 	{
 	}
 
@@ -98,16 +92,16 @@ namespace crg
 	void FramePassTimer::notifyPassRender( uint32_t passIndex
 		, bool subtractGpuFromCpu )
 	{
-		auto & started = m_startedPasses[passIndex];
-		started.first = true;
-		started.second = subtractGpuFromCpu;
+		auto & query = m_queries.front();
+		query.started = true;
+		query.subtractGpuFromCpu = subtractGpuFromCpu;
 	}
 
 	void FramePassTimer::stop()
 	{
 		auto current = Clock::now();
 		m_cpuTime += ( current - m_cpuSaveTime );
-		m_cpuTime -= m_subtracteGpuTime;
+		m_cpuTime -= m_subtractedGpuTime;
 	}
 
 	void FramePassTimer::reset()
@@ -116,89 +110,66 @@ namespace crg
 		m_gpuTime = 0ns;
 	}
 
-	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer
-		, uint32_t passIndex )const
+	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer )
 	{
-		assert( passIndex < m_passesCount );
+		std::swap( m_queries.front(), m_queries.back() );
+		auto & query = m_queries.front();
 		m_context.vkCmdResetQueryPool( commandBuffer
 			, m_timerQueries
-			, m_baseQueryOffset + passIndex * 2u
+			, query.offset
 			, 2u );
 		m_context.vkCmdWriteTimestamp( commandBuffer
 			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 			, m_timerQueries
-			, m_baseQueryOffset + passIndex * 2u + 0u );
+			, query.offset + 0u );
 	}
 
-	void FramePassTimer::endPass( VkCommandBuffer commandBuffer
-		, uint32_t passIndex )const
+	void FramePassTimer::endPass( VkCommandBuffer commandBuffer )
 	{
-		assert( passIndex < m_passesCount );
+		auto & query = m_queries.front();
 		m_context.vkCmdWriteTimestamp( commandBuffer
 			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 			, m_timerQueries
-			, m_baseQueryOffset + passIndex * 2u + 1u );
+			, query.offset + 1u );
+		query.written = true;
 	}
 
 	void FramePassTimer::retrieveGpuTime()
 	{
 		static float const period = m_context.properties.limits.timestampPeriod;
+
 		auto before = Clock::now();
 		m_gpuTime = 0ns;
-		m_subtracteGpuTime = 0ns;
+		m_subtractedGpuTime = 0ns;
+		auto & query = m_queries.front();
 
-		for ( uint32_t i = 0; i < m_passesCount; ++i )
+		if ( query.started && query.written )
 		{
-			auto & started = m_startedPasses[i];
+			std::vector< uint64_t > values{ 0u, 0u };
+			m_context.vkGetQueryPoolResults( m_context.device
+				, m_timerQueries
+				, query.offset
+				, 2u
+				, sizeof( uint64_t ) * values.size()
+				, values.data()
+				, sizeof( uint64_t )
+				, VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT );
 
-			if ( started.first )
+			auto gpuTime = Nanoseconds{ uint64_t( float( values[1] - values[0] ) / period ) };
+			m_gpuTime += gpuTime;
+
+			if ( query.subtractGpuFromCpu )
 			{
-				std::vector< uint64_t > values{ 0u, 0u };
-				m_context.vkGetQueryPoolResults( m_context.device
-					, m_timerQueries
-					, m_baseQueryOffset + i * 2u
-					, 2u
-					, sizeof( uint64_t ) * values.size()
-					, values.data()
-					, sizeof( uint64_t )
-					, VK_QUERY_RESULT_WAIT_BIT | VK_QUERY_RESULT_64_BIT );
-
-				auto gpuTime = Nanoseconds{ uint64_t( float( values[1] - values[0] ) / period ) };
-				m_gpuTime += gpuTime;
-
-				if ( started.second )
-				{
-					m_subtracteGpuTime += gpuTime;
-				}
-
-				started.first = false;
-				started.second = false;
+				m_subtractedGpuTime += gpuTime;
 			}
+
+			query.started = false;
+			query.subtractGpuFromCpu = false;
+			query.written = false;
 		}
 
 		auto after = Clock::now();
 		m_cpuTime += ( after - before );
-	}
-
-	void FramePassTimer::updateCount( uint32_t count )
-	{
-		if ( m_passesCount != count )
-		{
-			m_passesCount = count;
-
-			if ( m_ownPool )
-			{
-				crgUnregisterObject( m_context, m_timerQueries );
-				m_context.vkDestroyQueryPool( m_context.device
-					, m_timerQueries
-					, m_context.allocator );
-				m_timerQueries = createQueryPool( m_context
-					, m_name
-					, m_passesCount );
-			}
-
-			m_startedPasses.resize( m_passesCount );
-		}
 	}
 
 	//*********************************************************************************************

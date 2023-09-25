@@ -633,6 +633,11 @@ namespace crg
 		}
 	}
 
+	void RunnablePass::notifyPassRender()
+	{
+		m_timer.notifyPassRender();
+	}
+
 	VkCommandBuffer RunnablePass::doCreateCommandBuffer( std::string const & suffix )
 	{
 		VkCommandBuffer result{};

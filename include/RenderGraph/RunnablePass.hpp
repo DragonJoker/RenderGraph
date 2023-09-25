@@ -261,6 +261,7 @@ namespace crg
 		*/
 		CRG_API void resetCommandBuffer( uint32_t passIndex );
 		CRG_API void setToReset( uint32_t passIndex );
+		CRG_API void notifyPassRender();
 
 		LayoutState getLayoutState( crg::ImageViewId view )const
 		{

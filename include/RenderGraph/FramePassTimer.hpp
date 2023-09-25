@@ -7,6 +7,7 @@ See LICENSE file in root folder
 #include "FrameGraphPrerequisites.hpp"
 #include "Signal.hpp"
 
+#include <array>
 #include <chrono>
 
 namespace crg
@@ -50,14 +51,11 @@ namespace crg
 		*	The render pass category.
 		*\param[in] name
 		*	The timer name.
-		*\param[in] passesCount
-		*	The number of render passes.
 		*/
 		CRG_API FramePassTimer( GraphContext & context
 			, std::string const & name
 			, VkQueryPool timerQueries
-			, uint32_t & baseQueryOffset
-			, uint32_t passesCount = 1u );
+			, uint32_t & baseQueryOffset );
 		/**
 		*\brief
 		*	Owns its query pool.
@@ -67,12 +65,9 @@ namespace crg
 		*	The render pass category.
 		*\param[in] name
 		*	The timer name.
-		*\param[in] passesCount
-		*	The number of render passes.
 		*/
 		CRG_API FramePassTimer( GraphContext & context
-			, std::string const & name
-			, uint32_t passesCount = 1u );
+			, std::string const & name );
 		CRG_API ~FramePassTimer();
 		/**
 		*\brief
@@ -102,8 +97,7 @@ namespace crg
 		*\param[in] passIndex
 		*	The pass index.
 		*/
-		CRG_API void beginPass( VkCommandBuffer commandBuffer
-			, uint32_t passIndex = 0u )const;
+		CRG_API void beginPass( VkCommandBuffer commandBuffer );
 		/**
 		*\brief
 		*	Writes the timestamp for the end of the pass.
@@ -112,25 +106,12 @@ namespace crg
 		*\param[in] passIndex
 		*	The pass index.
 		*/
-		CRG_API void endPass( VkCommandBuffer commandBuffer
-			, uint32_t passIndex = 0u )const;
+		CRG_API void endPass( VkCommandBuffer commandBuffer );
 		/**
 		*\brief
 		*	Retrieves GPU time from the query.
 		*/
 		CRG_API void retrieveGpuTime();
-		/**
-		*\brief
-		*	Updates the passes count to the given value.
-		*\param[in] count
-		*	The number of render passes.
-		*\~french
-		*\brief
-		*	Met à jour le nombre de passes à la valeur donnée.
-		*\param[in] count
-		*	Le nombre de passes de rendu.
-		*/
-		CRG_API void updateCount( uint32_t count );
 		/**
 		*\name
 		*	Getters.
@@ -146,11 +127,6 @@ namespace crg
 			return m_gpuTime;
 		}
 
-		uint32_t getCount()const
-		{
-			return m_passesCount;
-		}
-
 		std::string const & getName()const
 		{
 			return m_name;
@@ -164,16 +140,21 @@ namespace crg
 
 	private:
 		GraphContext & m_context;
-		uint32_t m_passesCount;
 		std::string m_name;
 		Clock::time_point m_cpuSaveTime;
 		Nanoseconds m_cpuTime;
 		Nanoseconds m_gpuTime;
-		Nanoseconds m_subtracteGpuTime;
+		Nanoseconds m_subtractedGpuTime;
 		VkQueryPool m_timerQueries;
-		uint32_t m_baseQueryOffset{};
 		bool m_ownPool{};
-		std::vector< std::pair< bool, bool > > m_startedPasses;
+		struct Query
+		{
+			uint32_t offset{};
+			bool written{};
+			bool started{};
+			bool subtractGpuFromCpu{};
+		};
+		std::array< Query, 2u > m_queries;
 	};
 }
 
