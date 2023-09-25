@@ -164,7 +164,7 @@ namespace crg
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
 		, m_timerQueries{ m_context
-			, createQueryPool( m_context, m_graph.getName() + "TimerQueries", uint32_t( ( m_nodes.size() + 1u ) * 2u ) )
+			, createQueryPool( m_context, m_graph.getName() + "TimerQueries", uint32_t( ( m_nodes.size() + 1u ) * 2u * 2u ) )
 			, []( GraphContext & ctx, VkQueryPool & object )
 			{
 				crgUnregisterObject( ctx, object );
