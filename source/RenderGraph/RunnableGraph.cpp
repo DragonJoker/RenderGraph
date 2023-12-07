@@ -313,7 +313,7 @@ namespace crg
 
 				if ( nextPass != m_passes.end() )
 				{
-					if ( pass->isEnabled() )
+					if ( ( *nextPass )->isEnabled() )
 					{
 						recordContext.setNextPipelineState( ( *nextPass )->getPipelineState()
 							, rungrf::gatherNextImageLayouts( pass->getImageLayouts()

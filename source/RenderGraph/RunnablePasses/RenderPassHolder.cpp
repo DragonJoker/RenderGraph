@@ -95,7 +95,9 @@ namespace crg
 				, attaches.end()
 				, [&context]( RenderPassHolder::Entry const & lookup )
 				{
-					return context.getLayoutState( lookup.view ) != lookup.input;
+					auto layout = context.getLayoutState( lookup.view );
+					return layout.layout != VK_IMAGE_LAYOUT_UNDEFINED
+						&& layout != lookup.input;
 				} );
 			return it == attaches.end();
 		}
