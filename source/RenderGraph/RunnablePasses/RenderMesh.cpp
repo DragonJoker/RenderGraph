@@ -21,7 +21,9 @@ namespace crg
 				, IsEnabledCallback( [this](){ return m_renderMesh.isEnabled(); } ) }
 			, { ruConfig.maxPassCount
 				, true /*resettable*/
-				, ruConfig.actions } }
+				, ruConfig.prePassActions
+				, ruConfig.postPassActions
+				, ruConfig.implicitActions } }
 		, m_renderMesh{ pass
 			, context
 			, graph
