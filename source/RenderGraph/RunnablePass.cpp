@@ -535,13 +535,23 @@ namespace crg
 				}
 			}
 
+			for ( auto & action : m_ruConfig.prePassActions )
+			{
+				action( context, commandBuffer, index );
+			}
+
 			m_callbacks.record( context, commandBuffer, index );
+
+			for ( auto & action : m_ruConfig.postPassActions )
+			{
+				action( context, commandBuffer, index );
+			}
 
 			m_timer.endPass( commandBuffer );
 			m_context.vkCmdEndDebugBlock( commandBuffer );
 		}
 
-		for ( auto & action : m_ruConfig.actions )
+		for ( auto & action : m_ruConfig.implicitActions )
 		{
 			context.registerImplicitTransition( *this
 				, action.first

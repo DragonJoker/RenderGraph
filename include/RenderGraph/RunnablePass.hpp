@@ -85,19 +85,43 @@ namespace crg
 		struct Config
 		{
 			/**
-			*\param[in] config
-			*	The callback to recording the pass.
+			*\param[in] view
+			*	The action's target viex.
+			*\param[in] action
+			*	The implicit action.
 			*/
 			auto & implicitAction( ImageViewId view
 				, RecordContext::ImplicitAction action )
 			{
-				actions.emplace( view, action );
+				implicitActions.emplace( view, action );
+				return *this;
+			}
+
+			/**
+			*\param[in] action
+			*	The action to run before the pass recording.
+			*/
+			auto & prePassAction( RecordContext::ImplicitAction action )
+			{
+				prePassActions.emplace_back( action );
+				return *this;
+			}
+
+			/**
+			*\param[in] action
+			*	The action to run after the pass recording.
+			*/
+			auto & postPassAction( RecordContext::ImplicitAction action )
+			{
+				postPassActions.emplace_back( action );
 				return *this;
 			}
 
 			uint32_t maxPassCount{ 1u };
 			bool resettable{ false };
-			std::map< ImageViewId, RecordContext::ImplicitAction > actions{};
+			std::vector< RecordContext::ImplicitAction > prePassActions{};
+			std::vector< RecordContext::ImplicitAction > postPassActions{};
+			std::map< ImageViewId, RecordContext::ImplicitAction > implicitActions{};
 		};
 	}
 
