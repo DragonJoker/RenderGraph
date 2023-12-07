@@ -185,13 +185,7 @@
 			<Item Name="graph">m_graph</Item>
 			<Item Name="callbacks">m_callbacks</Item>
 			<Item Name="ruConfig">m_ruConfig</Item>
-			<Item Name="commandPool">m_commandPool</Item>
-			<Item Name="commandBuffers">m_commandBuffers</Item>
-			<Item Name="semaphore">m_semaphore</Item>
-			<Item Name="fence">m_fence</Item>
 			<Item Name="timer">m_timer</Item>
-			<Item Name="layoutTransitions">m_layoutTransitions</Item>
-			<Item Name="accessTransitions">m_accessTransitions</Item>
 			<Item Name="passContexts">m_passContexts</Item>
 		</Expand>
 	</Type>
