@@ -182,7 +182,7 @@ namespace crg
 		, m_fence{ m_context
 			, graph.getName() + "/Graph"
 			, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
-		, m_timer{ context, graph.getName() + "/Graph", getTimerQueryPool(), getTimerQueryOffset() }
+		, m_timer{ context, graph.getName() + "/Graph", TimerScope::eGraph, getTimerQueryPool(), getTimerQueryOffset() }
 	{
 		if ( m_context.device )
 		{
@@ -363,6 +363,12 @@ namespace crg
 		std::vector< VkPipelineStageFlags > dstStageMasks;
 		convert( toWait, semaphores, dstStageMasks );
 		m_timer.notifyPassRender();
+
+		for ( auto & pass : m_passes )
+		{
+			pass->notifyPassRender();
+		}
+
 		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 			, nullptr
 			, uint32_t( semaphores.size() )
