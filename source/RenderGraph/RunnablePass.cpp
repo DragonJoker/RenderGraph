@@ -270,7 +270,7 @@ namespace crg
 		, m_callbacks{ std::move( callbacks ) }
 		, m_ruConfig{ std::move( ruConfig ) }
 		, m_pipelineState{ m_callbacks.getPipelineState() }
-		, m_timer{ context, pass.getGroupName(), graph.getTimerQueryPool(), graph.getTimerQueryOffset() }
+		, m_timer{ context, pass.getGroupName(), TimerScope::ePass, graph.getTimerQueryPool(), graph.getTimerQueryOffset() }
 	{
 		for ( uint32_t i = 0u; i < m_ruConfig.maxPassCount; ++i )
 		{
@@ -645,7 +645,10 @@ namespace crg
 
 	void RunnablePass::notifyPassRender()
 	{
-		m_timer.notifyPassRender();
+		if ( isEnabled() )
+		{
+			m_timer.notifyPassRender( getIndex() );
+		}
 	}
 
 	VkCommandBuffer RunnablePass::doCreateCommandBuffer( std::string const & suffix )

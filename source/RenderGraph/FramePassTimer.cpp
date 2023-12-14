@@ -43,9 +43,11 @@ namespace crg
 
 	FramePassTimer::FramePassTimer( GraphContext & context
 		, std::string const & name
+		, TimerScope scope
 		, VkQueryPool timerQueries
 		, uint32_t & baseQueryOffset )
 		: m_context{ context }
+		, m_scope{ scope }
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }
@@ -57,8 +59,10 @@ namespace crg
 	}
 
 	FramePassTimer::FramePassTimer( GraphContext & context
-		, std::string const & name )
+		, std::string const & name
+		, TimerScope scope )
 		: m_context{ context }
+		, m_scope{ scope }
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }

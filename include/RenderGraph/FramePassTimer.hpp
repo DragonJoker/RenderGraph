@@ -18,6 +18,13 @@ namespace crg
 	using OnFramePassDestroy = Signal< FramePassDestroyFunc >;
 	using OnFramePassDestroyConnection = SignalConnection< OnFramePassDestroy >;
 
+	enum class TimerScope
+	{
+		eGraph,
+		ePass,
+		eUpdate,
+	};
+
 	class FramePassTimerBlock
 	{
 	public:
@@ -54,6 +61,7 @@ namespace crg
 		*/
 		CRG_API FramePassTimer( GraphContext & context
 			, std::string const & name
+			, TimerScope scope
 			, VkQueryPool timerQueries
 			, uint32_t & baseQueryOffset );
 		/**
@@ -67,7 +75,8 @@ namespace crg
 		*	The timer name.
 		*/
 		CRG_API FramePassTimer( GraphContext & context
-			, std::string const & name );
+			, std::string const & name
+			, TimerScope scope );
 		CRG_API ~FramePassTimer();
 		/**
 		*\brief
@@ -117,19 +126,24 @@ namespace crg
 		*	Getters.
 		*/
 		/**@{*/
-		Nanoseconds getCpuTime()const
+		Nanoseconds getCpuTime()const noexcept
 		{
 			return m_cpuTime;
 		}
 
-		Nanoseconds getGpuTime()const
+		Nanoseconds getGpuTime()const noexcept
 		{
 			return m_gpuTime;
 		}
 
-		std::string const & getName()const
+		std::string const & getName()const noexcept
 		{
 			return m_name;
+		}
+
+		TimerScope getScope()const noexcept
+		{
+			return m_scope;
 		}
 		/**@}*/
 
@@ -140,6 +154,7 @@ namespace crg
 
 	private:
 		GraphContext & m_context;
+		TimerScope m_scope;
 		std::string m_name;
 		Clock::time_point m_cpuSaveTime;
 		Nanoseconds m_cpuTime;
