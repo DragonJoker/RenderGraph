@@ -12,96 +12,286 @@ on:
       - created
 
 jobs:
-  build:
+  build-windows:
     strategy:
       matrix:
-        os: [[ubuntu-latest,x64-linux,gcc], [ubuntu-latest,x64-linux,clang], [windows-latest,x64-windows,msvc], [macos-latest,x64-osx,clang]]
+        os: [[windows-latest,x64-windows,msvc]]
         buildType: [Release]
-
     runs-on: ${{ matrix.os[0] }}
-
     steps:
     - uses: actions/checkout@v2
-
     - name: Setup vcpkg
       uses: lukka/run-vcpkg@v10
       with:
         vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
         setupOnly: true
-
     - name: Install dependencies from vcpkg
-      run: $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
       shell: bash
-
+      run: |
+        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
     - name: Checkout submodules
       run: git submodule update --init -- "CMake"
-
     - name: Create Build Environment
-      run: cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
-
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
     - name: Configure Warnings as errors (OFF)
       if: github.event_name == 'push'
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: echo "PROJ_WAE=OFF" >> $GITHUB_ENV
-
+      run: |
+        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
     - name: Configure Warnings as errors (ON)
       if: github.event_name == 'pull_request'
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: echo "PROJ_WAE=ON" >> $GITHUB_ENV
-
-    - name: Configure GCC version (Linux)
-      if: runner.os == 'Linux' && matrix.os[2] == 'gcc'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: echo "CC=gcc-10" >> $GITHUB_ENV
-
-    - name: Configure G++ version (Linux)
-      if: runner.os == 'Linux' && matrix.os[2] == 'gcc'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: echo "CXX=g++-10" >> $GITHUB_ENV
-
-    - name: Configure Clang version (Linux)
-      if: runner.os == 'Linux' && matrix.os[2] == 'clang'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: echo "CC=clang-14" >> $GITHUB_ENV
-
-    - name: Configure Clang++ version (Linux)
-      if: runner.os == 'Linux' && matrix.os[2] == 'clang'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: echo "CXX=clang++-14" >> $GITHUB_ENV
-
+      run: |
+        echo "PROJ_WAE=ON" >> $GITHUB_ENV
     - name: Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
-
+      run: |
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
     - name: Build
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
-      run: cmake --build . --parallel 2 --config ${{ matrix.buildType }}
-
+      run: |
+        cmake --build . --parallel 2 --config ${{ matrix.buildType }}
     - name: Test
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
-      run: ctest -C ${{ matrix.buildType }}
-
+      run: |
+        ctest -C ${{ matrix.buildType }}
     - name: Prepare package
       if: github.event_name == 'push'
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
-      run: cmake --install . --config ${{ matrix.buildType }}
-
+      run: |
+        cmake --install . --config ${{ matrix.buildType }}
     - name: Zip package
       if: github.event_name == 'push'
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
-      run: 7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+      run: |
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+    - name: Upload package
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v2
+      with:
+        name: RenderGraph-${{ matrix.os[1] }}.zip
+        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}.zip
 
+  build-macos:
+    strategy:
+      matrix:
+        os: [[macos-latest,x64-osx,clang]]
+        buildType: [Release]
+    runs-on: ${{ matrix.os[0] }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v10
+      with:
+        vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
+        setupOnly: true
+    - name: Install dependencies from vcpkg
+      shell: bash
+      run: |
+        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
+    - name: Checkout submodules
+      run: |
+        git submodule update --init -- "CMake"
+    - name: Create Build Environment
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
+    - name: Configure Warnings as errors (OFF)
+      if: github.event_name == 'push'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
+    - name: Configure Warnings as errors (ON)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "PROJ_WAE=ON" >> $GITHUB_ENV
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+    - name: Build
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --build . --parallel 2 --config ${{ matrix.buildType }}
+    - name: Test
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        ctest -C ${{ matrix.buildType }}
+    - name: Prepare package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --install . --config ${{ matrix.buildType }}
+    - name: Zip package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+    - name: Upload package
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v2
+      with:
+        name: RenderGraph-${{ matrix.os[1] }}.zip
+        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}.zip
+
+  build-linux-gcc:
+    strategy:
+      matrix:
+        os: [[ubuntu-latest,x64-linux,gcc]]
+        buildType: [Release]
+    runs-on: ${{ matrix.os[0] }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v10
+      with:
+        vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
+        setupOnly: true
+    - name: Install dependencies from vcpkg
+      shell: bash
+      run: |
+        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
+    - name: Checkout submodules
+      run: |
+        git submodule update --init -- "CMake"
+    - name: Create Build Environment
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
+    - name: Configure Warnings as errors (OFF)
+      if: github.event_name == 'push'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
+    - name: Configure Warnings as errors (ON)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "PROJ_WAE=ON" >> $GITHUB_ENV
+    - name: Configure GCC version
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "CC=gcc-12" >> $GITHUB_ENV
+        echo "CXX=g++-12" >> $GITHUB_ENV
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+    - name: Build
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --build . --parallel 2 --config ${{ matrix.buildType }}
+    - name: Test
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        ctest -C ${{ matrix.buildType }}
+    - name: Prepare package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --install . --config ${{ matrix.buildType }}
+    - name: Zip package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+    - name: Upload package
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v2
+      with:
+        name: RenderGraph-${{ matrix.os[1] }}.zip
+        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}.zip
+
+  build-linux-clang:
+    strategy:
+      matrix:
+        os: [[ubuntu-latest,x64-linux,clang]]
+        buildType: [Release]
+    runs-on: ${{ matrix.os[0] }}
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v10
+      with:
+        vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
+        setupOnly: true
+    - name: Install dependencies from vcpkg
+      shell: bash
+      run: |
+        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
+    - name: Checkout submodules
+      run: |
+        git submodule update --init -- "CMake"
+    - name: Create Build Environment
+      run: |
+        cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
+    - name: Configure Warnings as errors (OFF)
+      if: github.event_name == 'push'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
+    - name: Configure Warnings as errors (ON)
+      if: github.event_name == 'pull_request'
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "PROJ_WAE=ON" >> $GITHUB_ENV
+    - name: Configure Clang version
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        echo "CC=clang-15" >> $GITHUB_ENV
+        echo "CXX=clang++-15" >> $GITHUB_ENV
+    - name: Configure CMake
+      shell: bash
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      run: |
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+    - name: Build
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --build . --parallel 2 --config ${{ matrix.buildType }}
+    - name: Test
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        ctest -C ${{ matrix.buildType }}
+    - name: Prepare package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        cmake --install . --config ${{ matrix.buildType }}
+    - name: Zip package
+      if: github.event_name == 'push'
+      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
+      shell: bash
+      run: |
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
     - name: Upload package
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v2

@@ -18,7 +18,7 @@ namespace crg
 			, RunnableGraph & graph
 			, ru::Config ruConfig
 			, rm::Config rmConfig );
-		CRG_API ~RenderMesh()override = default;
+		CRG_API ~RenderMesh()noexcept override = default;
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
 			, uint32_t index );

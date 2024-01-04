@@ -175,9 +175,14 @@ namespace crg
 	template< typename VkTypeT >
 	struct ContextObjectT
 	{
+		ContextObjectT( ContextObjectT const & rhs ) = delete;
+		ContextObjectT( ContextObjectT && rhs )noexcept = delete;
+		ContextObjectT & operator=( ContextObjectT const & rhs ) = delete;
+		ContextObjectT & operator=( ContextObjectT && rhs )noexcept = delete;
+
 		explicit ContextObjectT( GraphContext & ctx
 			, VkTypeT obj = {}
-			, std::function< void( GraphContext &, VkTypeT & ) > dtor = nullptr )
+			, void( *dtor )( GraphContext &, VkTypeT & )noexcept = nullptr )
 			: context{ ctx }
 			, object{ obj }
 			, destroy{ dtor }
@@ -194,7 +199,7 @@ namespace crg
 
 		GraphContext & context;
 		VkTypeT object;
-		std::function< void( GraphContext &, VkTypeT & ) > destroy;
+		void ( *destroy )( GraphContext &, VkTypeT & )noexcept;
 	};
 
 	struct Buffer
@@ -370,7 +375,7 @@ namespace crg
 	struct DefaultValueGetterT;
 
 	template< typename TypeT >
-	static inline TypeT defaultV = DefaultValueGetterT< TypeT >::get();
+	static inline const TypeT defaultV = DefaultValueGetterT< TypeT >::get();
 
 	template< typename TypeT >
 	static inline TypeT getDefaultV()

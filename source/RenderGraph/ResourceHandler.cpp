@@ -19,6 +19,8 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	using lock_type = std::unique_lock< std::mutex >;
+
 	//*********************************************************************************************
 
 	namespace reshdl
@@ -74,50 +76,66 @@ namespace crg
 
 	//*********************************************************************************************
 
-	ResourceHandler::~ResourceHandler()
+	ResourceHandler::~ResourceHandler()noexcept
 	{
-		for ( auto & imageView : m_imageViews )
+		try
 		{
-			std::stringstream stream;
-			stream << "Leaked [VkImageView](" << imageView.first.data->name << ")";
-			Logger::logError( stream.str() );
-		}
-
-		for ( auto & image : m_images )
-		{
-			std::stringstream stream;
-			stream << "Leaked [VkImage](" << image.first.data->name << ")";
-			Logger::logError( stream.str() );
-		}
-
-		for ( auto & vertexBuffer : m_vertexBuffers )
-		{
-			if ( vertexBuffer->memory )
 			{
-				std::stringstream stream;
-				stream << "Leaked [VkDeviceMemory](" << vertexBuffer->buffer.name << ")";
-				Logger::logError( stream.str() );
+				lock_type lock( m_viewsMutex );
+				for ( auto & imageView : m_imageViews )
+				{
+					std::stringstream stream;
+					stream << "Leaked [VkImageView](" << imageView.first.data->name << ")";
+					Logger::logError( stream.str() );
+				}
 			}
-
-			if ( vertexBuffer->buffer.buffer() )
 			{
-				std::stringstream stream;
-				stream << "Leaked [VkBuffer](" << vertexBuffer->buffer.name << ")";
-				Logger::logError( stream.str() );
+				lock_type lock( m_imagesMutex );
+				for ( auto & image : m_images )
+				{
+					std::stringstream stream;
+					stream << "Leaked [VkImage](" << image.first.data->name << ")";
+					Logger::logError( stream.str() );
+				}
+			}
+			{
+				lock_type lock( m_buffersMutex );
+				for ( auto & vertexBuffer : m_vertexBuffers )
+				{
+					if ( vertexBuffer->memory )
+					{
+						std::stringstream stream;
+						stream << "Leaked [VkDeviceMemory](" << vertexBuffer->buffer.name << ")";
+						Logger::logError( stream.str() );
+					}
+
+					if ( vertexBuffer->buffer.buffer() )
+					{
+						std::stringstream stream;
+						stream << "Leaked [VkBuffer](" << vertexBuffer->buffer.name << ")";
+						Logger::logError( stream.str() );
+					}
+				}
+			}
+			{
+				lock_type lock( m_samplersMutex );
+				for ( auto & sampler : m_samplers )
+				{
+					std::stringstream stream;
+					stream << "Leaked [VkSampler](" << sampler.second.name << ")";
+					Logger::logError( stream.str() );
+				}
 			}
 		}
-
-		for ( auto & sampler : m_samplers )
+		catch ( ... )
 		{
-			std::stringstream stream;
-			stream << "Leaked [VkSampler](" << sampler.second.name << ")";
-			Logger::logError( stream.str() );
+			// Nothing to do here
 		}
 	}
 
 	ImageId ResourceHandler::createImageId( ImageData const & img )
 	{
-		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		lock_type lock( m_imagesMutex );
 		auto data = std::make_unique< ImageData >( img );
 		ImageId result{ uint32_t( m_imageIds.size() + 1u ), data.get() };
 		m_imageIds.insert( { result, std::move( data ) } );
@@ -126,7 +144,7 @@ namespace crg
 
 	ImageViewId ResourceHandler::createViewId( ImageViewData const & view )
 	{
-		std::unique_lock< std::mutex > lock( m_viewsMutex );
+		lock_type lock( m_viewsMutex );
 		auto it = std::find_if( m_imageViewIds.begin()
 			, m_imageViewIds.end()
 			, [&view]( ImageViewIdDataOwnerCont::value_type const & lookup )
@@ -151,7 +169,7 @@ namespace crg
 
 	ImageId ResourceHandler::findImageId( uint32_t id )const
 	{
-		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		lock_type lock( m_imagesMutex );
 		auto it = std::find_if( m_imageIds.begin()
 			, m_imageIds.end()
 			, [&id]( ImageIdDataOwnerCont::value_type const & lookup )
@@ -172,7 +190,7 @@ namespace crg
 		}
 
 		bool created{};
-		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		lock_type lock( m_imagesMutex );
 		auto ires = m_images.emplace( imageId, std::pair< VkImage, VkDeviceMemory >{} );
 
 		if ( ires.second )
@@ -227,7 +245,7 @@ namespace crg
 		}
 
 		bool created{};
-		std::unique_lock< std::mutex > lock( m_viewsMutex );
+		lock_type lock( m_viewsMutex );
 		auto ires = m_imageViews.emplace( view, VkImageView{} );
 
 		if ( ires.second )
@@ -255,7 +273,7 @@ namespace crg
 			return VkSampler{};
 		}
 
-		std::unique_lock< std::mutex > lock( m_samplersMutex );
+		lock_type lock( m_samplersMutex );
 		VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
 			, nullptr
 			, 0u
@@ -291,7 +309,7 @@ namespace crg
 		, bool texCoords
 		, Texcoord const & config )
 	{
-		std::unique_lock< std::mutex > lock( m_buffersMutex );
+		lock_type lock( m_buffersMutex );
 
 		if ( !context.device )
 		{
@@ -397,7 +415,7 @@ namespace crg
 	void ResourceHandler::destroyImage( GraphContext & context
 		, ImageId imageId )
 	{
-		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		lock_type lock( m_imagesMutex );
 		auto it = m_images.find( imageId );
 
 		if ( it != m_images.end() )
@@ -415,7 +433,7 @@ namespace crg
 	void ResourceHandler::destroyImageView( GraphContext & context
 		, ImageViewId viewId )
 	{
-		std::unique_lock< std::mutex > lock( m_viewsMutex );
+		lock_type lock( m_viewsMutex );
 		auto it = m_imageViews.find( viewId );
 
 		if ( it != m_imageViews.end() )
@@ -432,7 +450,7 @@ namespace crg
 	void ResourceHandler::destroySampler( GraphContext & context
 		, VkSampler sampler )
 	{
-		std::unique_lock< std::mutex > lock( m_samplersMutex );
+		lock_type lock( m_samplersMutex );
 		auto it = m_samplers.find( sampler );
 
 		if ( it != m_samplers.end() )
@@ -452,7 +470,7 @@ namespace crg
 	void ResourceHandler::destroyVertexBuffer( GraphContext & context
 		, VertexBuffer const * buffer )
 	{
-		std::unique_lock< std::mutex > lock( m_buffersMutex );
+		lock_type lock( m_buffersMutex );
 		auto it = std::find_if( m_vertexBuffers.begin()
 			, m_vertexBuffers.end()
 			, [buffer]( VertexBufferPtr const & lookup )
@@ -489,7 +507,7 @@ namespace crg
 
 	VkImage ResourceHandler::getImage( ImageId const & image )const
 	{
-		std::unique_lock< std::mutex > lock( m_imagesMutex );
+		lock_type lock( m_imagesMutex );
 		auto it = m_images.find( image );
 
 		if ( it == m_images.end() )
@@ -502,7 +520,7 @@ namespace crg
 
 	VkImageView ResourceHandler::getImageView( ImageViewId const & view )const
 	{
-		std::unique_lock< std::mutex > lock( m_viewsMutex );
+		lock_type lock( m_viewsMutex );
 		auto it = m_imageViews.find( view );
 
 		if ( it == m_imageViews.end() )

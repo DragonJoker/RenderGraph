@@ -29,10 +29,10 @@ namespace crg
 	public:
 		CRG_API ResourceHandler() = default;
 		CRG_API ResourceHandler( ResourceHandler const & ) = delete;
-		CRG_API ResourceHandler( ResourceHandler && ) = delete;
+		CRG_API ResourceHandler( ResourceHandler && )noexcept = delete;
 		CRG_API ResourceHandler & operator=( ResourceHandler const & ) = delete;
-		CRG_API ResourceHandler & operator=( ResourceHandler && ) = delete;
-		CRG_API ~ResourceHandler();
+		CRG_API ResourceHandler & operator=( ResourceHandler && )noexcept = delete;
+		CRG_API ~ResourceHandler()noexcept;
 
 		CRG_API ImageId createImageId( ImageData const & img );
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
@@ -80,7 +80,7 @@ namespace crg
 		CRG_API ContextResourcesCache( ContextResourcesCache const & ) = delete;
 		CRG_API ContextResourcesCache & operator=( ContextResourcesCache const & ) = delete;
 		CRG_API ContextResourcesCache( ContextResourcesCache && )noexcept = default;
-		CRG_API ContextResourcesCache & operator=( ContextResourcesCache && ) = delete;
+		CRG_API ContextResourcesCache & operator=( ContextResourcesCache && )noexcept = delete;
 
 		CRG_API ContextResourcesCache( ResourceHandler & handler
 			, GraphContext & context );

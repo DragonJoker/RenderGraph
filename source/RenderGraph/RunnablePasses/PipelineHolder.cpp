@@ -39,7 +39,7 @@ namespace crg
 		m_descriptorSets.resize( maxPassCount );
 	}
 
-	PipelineHolder::~PipelineHolder()
+	PipelineHolder::~PipelineHolder()noexcept
 	{
 		cleanup();
 	}
@@ -55,7 +55,7 @@ namespace crg
 		}
 	}
 
-	void PipelineHolder::cleanup()
+	void PipelineHolder::cleanup()noexcept
 	{
 		m_descriptorBindings.clear();
 

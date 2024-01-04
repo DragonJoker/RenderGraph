@@ -23,7 +23,7 @@ namespace crg
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
 			, VkExtent2D const & size = {} );
-		CRG_API ~RenderPassHolder();
+		CRG_API ~RenderPassHolder()noexcept;
 
 		CRG_API bool initialise( RecordContext & context
 			, crg::RunnablePass const & runnable
@@ -84,7 +84,7 @@ namespace crg
 			PipelineState previousState;
 			PipelineState nextState;
 
-			void cleanup( crg::GraphContext & context );
+			void cleanup( crg::GraphContext & context )noexcept;
 		};
 
 		FramePass const & m_pass;

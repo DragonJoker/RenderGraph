@@ -44,7 +44,7 @@ namespace crg
 		{
 		}
 
-		SignalConnection( SignalConnection< SignalT > && rhs )
+		SignalConnection( SignalConnection< SignalT > && rhs )noexcept
 			: SignalConnection{ 0u, nullptr }
 		{
 			swap( *this, rhs );
@@ -56,14 +56,14 @@ namespace crg
 			signal.addConnection( *this );
 		}
 
-		SignalConnection & operator=( SignalConnection< SignalT > && rhs )
+		SignalConnection & operator=( SignalConnection< SignalT > && rhs )noexcept
 		{
 			SignalConnection tmp{ std::move( rhs ) };
 			swap( *this, tmp );
 			return *this;
 		}
 
-		~SignalConnection()
+		~SignalConnection()noexcept
 		{
 			disconnect();
 		}
@@ -72,7 +72,7 @@ namespace crg
 		*\brief
 		*	Disconnects from the signal.
 		*/
-		void disconnect()
+		void disconnect()noexcept
 		{
 			if ( m_signal && m_connection )
 			{
@@ -89,7 +89,7 @@ namespace crg
 		}
 
 	private:
-		void swap( SignalConnection & lhs, SignalConnection & rhs )
+		void swap( SignalConnection & lhs, SignalConnection & rhs )noexcept
 		{
 			if ( lhs.m_signal )
 			{
@@ -129,6 +129,7 @@ namespace crg
 		friend class SignalConnection< Signal< Function > >;
 		using my_connection = SignalConnection< Signal< Function > >;
 		using my_connection_ptr = my_connection *;
+		using lock_type = std::unique_lock< std::recursive_mutex >;
 
 	public:
 		/**
@@ -137,13 +138,13 @@ namespace crg
 		*\remarks
 		*	Disconnects all remaining connections.
 		*/
-		~Signal()
+		~Signal()noexcept
 		{
 			// SignalConnection::disconnect appelle Signal::remConnection, qui
 			// supprime la connection de m_connections, invalidant ainsi
 			// l'itérateur, donc on ne peut pas utiliser un for_each, ni
 			// un range for loop.
-			std::unique_lock< std::recursive_mutex > lock( m_mutex );
+			lock_type lock( m_mutex );
 			auto it = m_connections.begin();
 
 			while ( it != m_connections.end() )
@@ -209,7 +210,7 @@ namespace crg
 		*\param[in] index
 		*	The function index.
 		*/
-		void disconnect( uint32_t index )
+		void disconnect( uint32_t index )noexcept
 		{
 			auto it = m_slots.find( index );
 
@@ -224,10 +225,17 @@ namespace crg
 		*\param[in] connection
 		*	The connection to add.
 		*/
-		void addConnection( my_connection & connection )
+		void addConnection( my_connection & connection )noexcept
 		{
-			std::unique_lock< std::recursive_mutex > lock( m_mutex );
-			m_connections.insert( &connection );
+			try
+			{
+				lock_type lock( m_mutex );
+				m_connections.insert( &connection );
+			}
+			catch ( ... )
+			{
+				// Nothing to do here
+			}
 		}
 		/**
 		*\brief
@@ -235,11 +243,18 @@ namespace crg
 		*\param[in] connection
 		*	The connection to remove.
 		*/
-		void remConnection( my_connection & connection )
+		void remConnection( my_connection & connection )noexcept
 		{
-			std::unique_lock< std::recursive_mutex > lock( m_mutex );
-			assert( m_connections.find( &connection ) != m_connections.end() );
-			m_connections.erase( &connection );
+			try
+			{
+				lock_type lock( m_mutex );
+				assert( m_connections.find( &connection ) != m_connections.end() );
+				m_connections.erase( &connection );
+			}
+			catch ( ... )
+			{
+				// Nothing to do here
+			}
 		}
 		/**
 		*\brief
@@ -252,7 +267,7 @@ namespace crg
 		template< typename IterT >
 		void adjustSlots( size_t & size
 			, size_t & index
-			, IterT & it )const
+			, IterT & it )const noexcept
 		{
 			if ( size != m_slots.size() )
 			{

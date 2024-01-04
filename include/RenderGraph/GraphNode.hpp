@@ -1,4 +1,4 @@
-﻿/*
+/*
 This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
@@ -29,10 +29,10 @@ namespace crg
 
 		CRG_API GraphNode( GraphNode const & ) = delete;
 		CRG_API GraphNode & operator=( GraphNode const & ) = delete;
-		CRG_API GraphNode( GraphNode && rhs );
-		CRG_API GraphNode & operator=( GraphNode && rhs );
+		CRG_API GraphNode( GraphNode && rhs )noexcept;
+		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept;
 
-		CRG_API virtual ~GraphNode() = default;
+		CRG_API virtual ~GraphNode()noexcept = default;
 		CRG_API void addAttaches( GraphAdjacentNode prev
 			, AttachmentTransitions inputAttaches );
 		CRG_API void attachNode( GraphAdjacentNode next

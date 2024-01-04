@@ -33,7 +33,7 @@ namespace crg
 		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept;
 		CRG_API FramePassTimerBlock( FramePassTimerBlock const & ) = delete;
 		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock const & ) = delete;
-		CRG_API ~FramePassTimerBlock();
+		CRG_API ~FramePassTimerBlock()noexcept;
 
 		FramePassTimer * operator->()const
 		{
@@ -49,6 +49,10 @@ namespace crg
 		friend class FramePassTimerBlock;
 
 	public:
+		FramePassTimer( FramePassTimer const & rhs ) = delete;
+		FramePassTimer( FramePassTimer && rhs )noexcept = delete;
+		FramePassTimer & operator=( FramePassTimer const & rhs ) = delete;
+		FramePassTimer & operator=( FramePassTimer && rhs )noexcept = delete;
 		/**
 		*\brief
 		*	Reserves queries from given pool.
@@ -77,7 +81,7 @@ namespace crg
 		CRG_API FramePassTimer( GraphContext & context
 			, std::string const & name
 			, TimerScope scope );
-		CRG_API ~FramePassTimer();
+		CRG_API ~FramePassTimer()noexcept;
 		/**
 		*\brief
 		*	Starts the CPU timer, resets GPU time.
@@ -92,12 +96,12 @@ namespace crg
 		*	Tells if the GPU time should be subtracted from CPU time (in case of fence wait).
 		*/
 		CRG_API void notifyPassRender( uint32_t passIndex = 0u
-			, bool subtractGpuFromCpu = false );
+			, bool subtractGpuFromCpu = false )noexcept;
 		/**
 		*\brief
 		*	Reset the timer's times.
 		*/
-		CRG_API void reset();
+		CRG_API void reset()noexcept;
 		/**
 		*\brief
 		*	Writes the timestamp for the beginning of the pass.
@@ -106,7 +110,7 @@ namespace crg
 		*\param[in] passIndex
 		*	The pass index.
 		*/
-		CRG_API void beginPass( VkCommandBuffer commandBuffer );
+		CRG_API void beginPass( VkCommandBuffer commandBuffer )noexcept;
 		/**
 		*\brief
 		*	Writes the timestamp for the end of the pass.
@@ -115,12 +119,12 @@ namespace crg
 		*\param[in] passIndex
 		*	The pass index.
 		*/
-		CRG_API void endPass( VkCommandBuffer commandBuffer );
+		CRG_API void endPass( VkCommandBuffer commandBuffer )noexcept;
 		/**
 		*\brief
 		*	Retrieves GPU time from the query.
 		*/
-		CRG_API void retrieveGpuTime();
+		CRG_API void retrieveGpuTime()noexcept;
 		/**
 		*\name
 		*	Getters.
@@ -150,7 +154,7 @@ namespace crg
 		OnFramePassDestroy onDestroy;
 
 	private:
-		void stop();
+		void stop()noexcept;
 
 	private:
 		GraphContext & m_context;

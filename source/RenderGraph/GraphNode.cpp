@@ -12,7 +12,7 @@ namespace crg
 {
 	//*********************************************************************************************
 
-	GraphNode::GraphNode( GraphNode && rhs )
+	GraphNode::GraphNode( GraphNode && rhs )noexcept
 		: kind{ rhs.kind }
 		, id{ rhs.id }
 		, name{ std::move( rhs.name ) }
@@ -23,7 +23,7 @@ namespace crg
 		rhs.id = 0u;
 	}
 
-	GraphNode & GraphNode::operator=( GraphNode && rhs )
+	GraphNode & GraphNode::operator=( GraphNode && rhs )noexcept
 	{
 		kind = rhs.kind;
 		id = rhs.id;

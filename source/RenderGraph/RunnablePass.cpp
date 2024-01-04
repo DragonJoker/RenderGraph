@@ -147,7 +147,7 @@ namespace crg
 		}
 	}
 
-	Fence::Fence( Fence && rhs )
+	Fence::Fence( Fence && rhs )noexcept
 		: m_context{ rhs.m_context }
 		, m_fence{ rhs.m_fence }
 		, m_fenceWaited{ rhs.m_fenceWaited }
@@ -156,7 +156,7 @@ namespace crg
 		rhs.m_fence = {};
 	}
 
-	Fence & Fence::operator=( Fence && rhs )
+	Fence & Fence::operator=( Fence && rhs )noexcept
 	{
 		m_context = rhs.m_context;
 		m_fence = rhs.m_fence;
@@ -166,7 +166,7 @@ namespace crg
 		return *this;
 	}
 
-	Fence::~Fence()
+	Fence::~Fence()noexcept
 	{
 		if ( m_fence && m_context && m_context->device )
 		{
@@ -234,7 +234,7 @@ namespace crg
 		}
 	}
 
-	RunnablePass::PassData::~PassData()
+	RunnablePass::PassData::~PassData()noexcept
 	{
 		if ( context.device )
 		{
@@ -319,8 +319,10 @@ namespace crg
 		}
 	}
 
-	RunnablePass::~RunnablePass()
+	RunnablePass::~RunnablePass()noexcept
 	{
+		m_bufferAccesses.clear();
+		m_passContexts.clear();
 		m_passes.clear();
 	}
 

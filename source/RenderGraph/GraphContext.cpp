@@ -17,6 +17,8 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	using lock_type = std::unique_lock< std::mutex >;
+
 	GraphContext::GraphContext( VkDevice device
 		, VkPipelineCache cache
 		, VkAllocationCallbacks const * allocator
@@ -351,7 +353,7 @@ namespace crg
 			callStack << m_callstackCallback();
 		}
 
-		std::unique_lock< std::mutex > lock{ m_mutex };
+		lock_type lock{ m_mutex };
 		m_allocated.emplace( object
 			, ObjectAllocation{
 				typeName,
@@ -393,7 +395,7 @@ namespace crg
 	{
 		if ( object )
 		{
-			std::unique_lock< std::mutex > lock{ m_mutex };
+			lock_type lock{ m_mutex };
 			auto it = m_allocated.find( size_t( object ) );
 
 			if ( it != m_allocated.end() )
@@ -420,7 +422,7 @@ namespace crg
 
 	void GraphContext::doReportRegisteredObjects()
 	{
-		std::unique_lock< std::mutex > lock{ m_mutex };
+		lock_type lock{ m_mutex };
 
 		for ( auto & alloc : m_allocated )
 		{

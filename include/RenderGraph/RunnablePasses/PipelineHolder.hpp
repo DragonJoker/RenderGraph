@@ -16,10 +16,10 @@ namespace crg
 			, pp::Config config
 			, VkPipelineBindPoint bindingPoint
 			, uint32_t maxPassCount );
-		CRG_API virtual ~PipelineHolder();
+		CRG_API virtual ~PipelineHolder()noexcept;
 
 		CRG_API void initialise();
-		CRG_API void cleanup();
+		CRG_API void cleanup()noexcept;
 		CRG_API VkPipelineShaderStageCreateInfoArray const & getProgram( uint32_t index );
 		CRG_API VkPipeline & getPipeline( uint32_t index );
 		CRG_API void createPipeline( uint32_t index
