@@ -31,7 +31,7 @@ namespace crg
 		return *this;
 	}
 
-	FramePassTimerBlock::~FramePassTimerBlock()
+	FramePassTimerBlock::~FramePassTimerBlock()noexcept
 	{
 		if ( m_timer )
 		{
@@ -66,24 +66,29 @@ namespace crg
 		, m_name{ name }
 		, m_cpuTime{ 0ns }
 		, m_gpuTime{ 0ns }
-		, m_timerQueries{ createQueryPool( context
-			, name
-			, 4u ) }
+		, m_timerQueries{ createQueryPool( context, name, 4u ) }
 		, m_ownPool{ true }
 		, m_queries{ { { 0u, false, false }, { 2u, false, false } } }
 	{
 	}
 
-	FramePassTimer::~FramePassTimer()
+	FramePassTimer::~FramePassTimer()noexcept
 	{
-		onDestroy( *this );
-
-		if ( m_ownPool && m_timerQueries )
+		try
 		{
-			crgUnregisterObject( m_context, m_timerQueries );
-			m_context.vkDestroyQueryPool( m_context.device
-				, m_timerQueries
-				, m_context.allocator );
+			onDestroy( *this );
+
+			if ( m_ownPool && m_timerQueries )
+			{
+				crgUnregisterObject( m_context, m_timerQueries );
+				m_context.vkDestroyQueryPool( m_context.device
+					, m_timerQueries
+					, m_context.allocator );
+			}
+		}
+		catch ( ... )
+		{
+			// Nothing to do here
 		}
 	}
 
@@ -94,27 +99,27 @@ namespace crg
 	}
 
 	void FramePassTimer::notifyPassRender( uint32_t passIndex
-		, bool subtractGpuFromCpu )
+		, bool subtractGpuFromCpu )noexcept
 	{
 		auto & query = m_queries.front();
 		query.started = true;
 		query.subtractGpuFromCpu = subtractGpuFromCpu;
 	}
 
-	void FramePassTimer::stop()
+	void FramePassTimer::stop()noexcept
 	{
 		auto current = Clock::now();
 		m_cpuTime += ( current - m_cpuSaveTime );
 		m_cpuTime -= m_subtractedGpuTime;
 	}
 
-	void FramePassTimer::reset()
+	void FramePassTimer::reset()noexcept
 	{
 		m_cpuTime = 0ns;
 		m_gpuTime = 0ns;
 	}
 
-	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer )
+	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer )noexcept
 	{
 		std::swap( m_queries.front(), m_queries.back() );
 		auto & query = m_queries.front();
@@ -128,7 +133,7 @@ namespace crg
 			, query.offset + 0u );
 	}
 
-	void FramePassTimer::endPass( VkCommandBuffer commandBuffer )
+	void FramePassTimer::endPass( VkCommandBuffer commandBuffer )noexcept
 	{
 		auto & query = m_queries.front();
 		m_context.vkCmdWriteTimestamp( commandBuffer
@@ -138,7 +143,7 @@ namespace crg
 		query.written = true;
 	}
 
-	void FramePassTimer::retrieveGpuTime()
+	void FramePassTimer::retrieveGpuTime()noexcept
 	{
 		static float const period = m_context.properties.limits.timestampPeriod;
 
@@ -149,7 +154,7 @@ namespace crg
 
 		if ( query.started && query.written )
 		{
-			std::vector< uint64_t > values{ 0u, 0u };
+			std::array< uint64_t, 2u > values{ 0u, 0u };
 			m_context.vkGetQueryPoolResults( m_context.device
 				, m_timerQueries
 				, query.offset

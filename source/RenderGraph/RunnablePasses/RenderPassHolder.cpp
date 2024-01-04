@@ -111,7 +111,7 @@ namespace crg
 
 	//*********************************************************************************************
 
-	void RenderPassHolder::PassData::cleanup( crg::GraphContext & context )
+	void RenderPassHolder::PassData::cleanup( crg::GraphContext & context )noexcept
 	{
 		attaches.clear();
 		clearValues.clear();
@@ -150,7 +150,7 @@ namespace crg
 		m_passes.resize( maxPassCount );
 	}
 
-	RenderPassHolder::~RenderPassHolder()
+	RenderPassHolder::~RenderPassHolder()noexcept
 	{
 		for ( auto & data : m_passes )
 		{

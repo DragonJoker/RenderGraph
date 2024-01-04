@@ -282,6 +282,8 @@ namespace crg::dot
 					return { streams, false };
 				}
 
+				assert( group != nullptr );
+
 				if ( group->parent == m_group )
 				{
 					m_children.emplace_back( std::make_unique< FramePassGroupStreams >( m_config, this, group ) );

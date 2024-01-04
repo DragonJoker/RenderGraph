@@ -62,9 +62,9 @@ namespace crg
 
 		Fence( Fence const & ) = delete;
 		Fence & operator=( Fence const & ) = delete;
-		CRG_API Fence( Fence && rhs );
-		CRG_API Fence & operator=( Fence && rhs );
-		CRG_API ~Fence();
+		CRG_API Fence( Fence && rhs )noexcept;
+		CRG_API Fence & operator=( Fence && rhs )noexcept;
+		CRG_API ~Fence()noexcept;
 
 		CRG_API void reset();
 		CRG_API VkResult wait( uint64_t timeout );
@@ -218,7 +218,7 @@ namespace crg
 			, RunnableGraph & graph
 			, Callbacks callbacks
 			, ru::Config config = {} );
-		CRG_API virtual ~RunnablePass();
+		CRG_API virtual ~RunnablePass()noexcept;
 		/**
 		*\brief
 		*	Initialises the pass GPU data for given index.
@@ -378,7 +378,7 @@ namespace crg
 			PassData( RunnableGraph & graph
 				, GraphContext & context
 				, std::string const & baseName );
-			~PassData();
+			~PassData()noexcept;
 
 			RunnableGraph & graph;
 			GraphContext & context;

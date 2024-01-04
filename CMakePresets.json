@@ -35,11 +35,30 @@
 			"generator": "Visual Studio 17 2022"
 		},
 		{
-			"name": "default-ninja",
+			"name": "default-ninja-base",
+			"hidden": true,
 			"displayName": "Default Ninja Config",
 			"description": "Default build configuration using Ninja",
 			"inherits": "default-base",
 			"generator": "Ninja"
+		},
+		{
+			"name": "default-ninja-debug",
+			"displayName": "Default Ninja Config, Debug",
+			"description": "Default build configuration using Ninja, Debug",
+			"inherits": "default-ninja-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "default-ninja-release",
+			"displayName": "Default Ninja Config, Release",
+			"description": "Default build configuration using Ninja, Release",
+			"inherits": "default-ninja-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
 		},
 		{
 			"name": "dev-msvc",
@@ -49,11 +68,30 @@
 			"generator": "Visual Studio 17 2022"
 		},
 		{
-			"name": "dev-ninja",
+			"name": "dev-ninja-base",
+			"hidden": true,
 			"displayName": "Developer Ninja Config",
 			"description": "Developer build configuration using Ninja",
 			"inherits": "dev-base",
 			"generator": "Ninja"
+		},
+		{
+			"name": "dev-ninja-debug",
+			"displayName": "Developer Ninja Config, Debug",
+			"description": "Developer build configuration using Ninja, Debug",
+			"inherits": "dev-ninja-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "dev-ninja-release",
+			"displayName": "Developer Ninja Config, Release",
+			"description": "Developer build configuration using Ninja, Release",
+			"inherits": "dev-ninja-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
 		}
 	]
 }
