@@ -180,7 +180,7 @@ namespace crg
 
 	private:
 		CRG_API ImageAttachment();
-		CRG_API ImageAttachment( ImageViewId view );
+		CRG_API explicit ImageAttachment( ImageViewId view );
 		CRG_API ImageAttachment( FlagKind flags
 			, ImageViewIdArray views
 			, VkAttachmentLoadOp loadOp
@@ -290,7 +290,7 @@ namespace crg
 
 	private:
 		CRG_API BufferAttachment();
-		CRG_API BufferAttachment( Buffer buffer );
+		CRG_API explicit BufferAttachment( Buffer buffer );
 		CRG_API BufferAttachment( FlagKind flags
 			, Buffer buffer
 			, VkDeviceSize offset
@@ -564,11 +564,11 @@ namespace crg
 		*/
 		static Attachment createDefault( ImageViewId view )
 		{
-			return Attachment{ view };
+			return Attachment{ std::move( view ) };
 		}
 		static Attachment createDefault( Buffer buffer )
 		{
-			return Attachment{ buffer };
+			return Attachment{ std::move( buffer ) };
 		}
 		/**
 		*\name
@@ -586,8 +586,8 @@ namespace crg
 			, Attachment const & origin );
 
 	private:
-		CRG_API Attachment( ImageViewId view );
-		CRG_API Attachment( Buffer buffer );
+		CRG_API explicit Attachment( ImageViewId view );
+		CRG_API explicit Attachment( Buffer buffer );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding
@@ -638,9 +638,6 @@ namespace crg
 	};
 
 	CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
-	CRG_API bool operator!=( BufferAttachment const & lhs, BufferAttachment const & rhs );
 	CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
-	CRG_API bool operator!=( ImageAttachment const & lhs, ImageAttachment const & rhs );
 	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
-	CRG_API bool operator!=( Attachment const & lhs, Attachment const & rhs );
 }

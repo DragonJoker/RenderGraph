@@ -32,7 +32,6 @@ namespace crg
 		}
 
 	private:
-		void doInitialise();
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );

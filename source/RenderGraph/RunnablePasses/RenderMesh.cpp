@@ -14,7 +14,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this]( uint32_t ){ doInitialise(); }
+			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, GetPassIndexCallback( [this](){ return m_renderMesh.getPassIndex(); } )
@@ -43,10 +43,6 @@ namespace crg
 		resetCommandBuffer( index );
 		m_renderMesh.resetPipeline( std::move( config ), index );
 		reRecordCurrent();
-	}
-
-	void RenderMesh::doInitialise()
-	{
 	}
 
 	void RenderMesh::doRecordInto( RecordContext & context

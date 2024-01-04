@@ -131,7 +131,14 @@ namespace crg
 		using my_connection_ptr = my_connection *;
 		using lock_type = std::unique_lock< std::recursive_mutex >;
 
+	private:
+		Signal( Signal const & )noexcept = delete;
+		Signal & operator=( Signal const & )noexcept = delete;
+		Signal( Signal && )noexcept = delete;
+		Signal & operator=( Signal && )noexcept = delete;
+
 	public:
+		Signal()noexcept = default;
 		/**
 		*\brief
 		*	Destructor.

@@ -27,7 +27,7 @@ namespace crg
 	}
 
 	Logger::Logger()
-		: m_trace{ []( std::string const & msg, bool newLine ){} }
+		: m_trace{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::clog ); } }
 		, m_debug{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::clog ); } }
 		, m_info{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::cout ); } }
 		, m_warning{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::cout ); } }

@@ -23,7 +23,7 @@ namespace crg::dot
 		bool withGroups{};
 		bool splitGroups{};
 	};
-	using DisplayResult = std::map< std::string, std::stringstream >;
+	using DisplayResult = std::map< std::string, std::stringstream, std::less<> >;
 
 	CRG_API DisplayResult displayPasses( RunnableGraph const & value
 		, Config const & config );

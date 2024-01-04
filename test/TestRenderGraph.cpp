@@ -29,7 +29,7 @@ namespace
 			: crg::RunnablePass{ pass
 				, context
 				, graph
-				, { crg::RunnablePass::InitialiseCallback( []( uint32_t ){} )
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
 					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
 					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } ) } }
 			, m_testCounts{ testCounts }
@@ -75,6 +75,7 @@ namespace
 		, crg::RunnableGraph const & graph
 		, crg::RecordContext & context )
 	{
+		// Nothing checked yet...
 	}
 
 	crg::GraphContext & getContext()
