@@ -35,6 +35,11 @@ namespace test
 			using int_type = std::streambuf::int_type;
 			using traits_type = std::streambuf::traits_type;
 
+			LogStreambuf( LogStreambuf const & ) = delete;
+			LogStreambuf & operator=( LogStreambuf const & ) = delete;
+			LogStreambuf( LogStreambuf && ) = delete;
+			LogStreambuf & operator=( LogStreambuf && ) = delete;
+
 			explicit inline LogStreambuf( std::string const & name
 				, std::ostream & stream )
 				: m_stream{ stream }

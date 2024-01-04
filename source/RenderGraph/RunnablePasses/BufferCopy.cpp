@@ -23,7 +23,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this]( uint32_t ){ doInitialise(); }
+			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, passIndex
@@ -31,10 +31,6 @@ namespace crg
 			, std::move( ruConfig ) }
 		, m_copyOffset{ std::move( copyOffset ) }
 		, m_copyRange{ std::move( copyRange ) }
-	{
-	}
-
-	void BufferCopy::doInitialise()
 	{
 	}
 

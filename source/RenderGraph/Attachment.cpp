@@ -476,7 +476,7 @@ namespace crg
 	Attachment::Attachment( ImageViewId view )
 		: binding{}
 		, name{}
-		, image{ view }
+		, image{ std::move( view ) }
 		, flags{}
 	{
 	}
@@ -484,7 +484,7 @@ namespace crg
 	Attachment::Attachment( Buffer buffer )
 		: binding{}
 		, name{}
-		, buffer{ buffer }
+		, buffer{ std::move( buffer ) }
 		, flags{}
 	{
 	}
@@ -650,6 +650,16 @@ namespace crg
 			&& lhs.maxLod == rhs.maxLod;
 	}
 
+	bool operator==( BufferAttachment const & lhs
+		, BufferAttachment const & rhs )
+	{
+		return lhs.flags == rhs.flags
+			&& lhs.buffer == rhs.buffer
+			&& lhs.view == rhs.view
+			&& lhs.range.offset == rhs.range.offset
+			&& lhs.range.size == rhs.range.size;
+	}
+
 	bool operator==( ImageAttachment const & lhs
 		, ImageAttachment const & rhs )
 	{
@@ -664,24 +674,12 @@ namespace crg
 			&& lhs.blendState == rhs.blendState;
 	}
 
-	bool operator!=( ImageAttachment const & lhs
-		, ImageAttachment const & rhs )
-	{
-		return !( lhs == rhs );
-	}
-
 	bool operator==( Attachment const & lhs
 		, Attachment const & rhs )
 	{
 		return lhs.pass == rhs.pass
 			&& lhs.flags == rhs.flags
 			&& lhs.image == rhs.image;
-	}
-
-	bool operator!=( Attachment const & lhs
-		, Attachment const & rhs )
-	{
-		return !( lhs == rhs );
 	}
 
 	//*********************************************************************************************

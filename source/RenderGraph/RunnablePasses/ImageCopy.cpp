@@ -34,7 +34,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this]( uint32_t ){ doInitialise(); }
+			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, passIndex
@@ -63,10 +63,6 @@ namespace crg
 			, isEnabled }
 	{
 		assert( ( pass.images.size() % 2u ) == 0u );
-	}
-
-	void ImageCopy::doInitialise()
-	{
 	}
 
 	void ImageCopy::doRecordInto( RecordContext & context

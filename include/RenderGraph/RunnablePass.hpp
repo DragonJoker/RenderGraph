@@ -25,9 +25,10 @@ namespace crg
 
 		GetValueCallbackT() = default;
 		GetValueCallbackT( GetValueCallbackT const & ) = default;
-		GetValueCallbackT( GetValueCallbackT && ) = default;
+		GetValueCallbackT( GetValueCallbackT && )noexcept = default;
 		GetValueCallbackT & operator=( GetValueCallbackT const & ) = default;
-		GetValueCallbackT & operator=( GetValueCallbackT && ) = default;
+		GetValueCallbackT & operator=( GetValueCallbackT && )noexcept = default;
+		~GetValueCallbackT()noexcept = default;
 
 		/**
 		*\notes

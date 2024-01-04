@@ -31,7 +31,7 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this]( uint32_t index ){ doInitialise( index ); }
+			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, passIndex
@@ -40,10 +40,6 @@ namespace crg
 		, m_outputLayout{ outputLayout
 			, getAccessMask( outputLayout )
 			, getStageMask( outputLayout ) }
-	{
-	}
-
-	void GenerateMipmaps::doInitialise( uint32_t passIndex )
 	{
 	}
 
