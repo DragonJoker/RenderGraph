@@ -26,7 +26,6 @@ namespace crg
 			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : getDefaultV< VertexBuffer >()
 			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : getDefaultV< IndexBuffer >()
 			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV< IndirectBuffer >() }
-		, m_context{ context }
 		, m_pipeline{ pass
 			, context
 			, graph

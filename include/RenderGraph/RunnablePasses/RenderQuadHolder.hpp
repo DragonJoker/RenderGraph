@@ -63,7 +63,6 @@ namespace crg
 
 	private:
 		rq::ConfigData m_config;
-		GraphContext & m_context;
 		RunnableGraph & m_graph;
 		PipelineHolder m_pipeline;
 		bool m_useTexCoord{ true };

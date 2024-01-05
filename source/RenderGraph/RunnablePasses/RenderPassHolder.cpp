@@ -10,7 +10,6 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
-#include <format>
 
 namespace crg
 {
@@ -395,7 +394,7 @@ namespace crg
 				, &createInfo
 				, m_context.allocator
 				, frameBuffer );
-			auto name = std::format( "{}[{}]", m_pass.getGroupName(), passIndex );
+			auto name = m_pass.getGroupName() + std::string( "[" ) + std::to_string( passIndex ) + std::string( "]" );
 			checkVkResult( res, name + " - Framebuffer creation" );
 			crgRegisterObject( m_context, name, *frameBuffer );
 		}

@@ -8,7 +8,6 @@ See LICENSE file in root folder.
 
 #include <cassert>
 #include <cmath>
-#include <format>
 #include <stdexcept>
 
 #pragma warning( push )
@@ -340,9 +339,12 @@ namespace crg
 			, objectType
 			, objectName
 			, typeName );
-		Logger::logTrace( std::format( std::locale{ "C" }
-			, "Created {} [{:#08x}] - {}"
-			, typeName, object, objectName ) );
+		std::stringstream stream;
+		stream.imbue( std::locale{ "C" } );
+		stream << "Created " << typeName
+			<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
+			<< " - " << objectName;
+		Logger::logTrace( stream.str() );
 		std::stringstream callStack;
 
 		if ( m_callstackCallback )
@@ -396,16 +398,22 @@ namespace crg
 
 			if ( it != m_allocated.end() )
 			{
-				Logger::logTrace( std::format( std::locale{ "C" }
-					, "Destroyed {} [{:#08x}] - {}"
-					, it->second.type, object, it->second.name ) );
+				std::stringstream stream;
+				stream.imbue( std::locale{ "C" } );
+				stream << "Destroyed " << it->second.type
+					<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
+					<< " - " << it->second.name;
+				Logger::logTrace( stream.str() );
 				m_allocated.erase( it );
 			}
 			else
 			{
-				Logger::logTrace( std::format( std::locale{ "C" }
-					, "Destroyed Unknown [{:#08x}] - Unregistered"
-					, object ) );
+				std::stringstream stream;
+				stream.imbue( std::locale{ "C" } );
+				stream << "Destroyed Unknown"
+					<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
+					<< " - Unregistered";
+				Logger::logTrace( stream.str() );
 			}
 		}
 	}
@@ -416,9 +424,10 @@ namespace crg
 
 		for ( auto & [_, alloc] : m_allocated )
 		{
-			Logger::logError( std::format( std::locale{ "C" }
-				, "Leaked [{}]({}), allocation stack:\n{}"
-				, alloc.type, alloc.name, alloc.callstack ) );
+			std::stringstream stream;
+			stream << "Leaked [" << alloc.type << "](" << alloc.name << "), allocation stack:\n";
+			stream << alloc.callstack;
+			Logger::logError( stream.str() );
 		}
 	}
 

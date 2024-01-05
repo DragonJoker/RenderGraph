@@ -6,6 +6,8 @@ See LICENSE file in root folder.
 
 #include "ImageViewData.hpp"
 
+#include <limits>
+
 #ifdef None
 #undef None
 #endif

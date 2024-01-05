@@ -146,7 +146,7 @@ namespace crg
 		VkAccessFlags access;
 		VkPipelineStageFlags pipelineStage;
 
-		friend CRG_API bool operator==( PipelineState const & lhs, PipelineState const & rhs );
+		bool operator==( PipelineState const & rhs )const = default;
 	};
 
 	struct LayoutState

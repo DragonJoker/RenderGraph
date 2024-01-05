@@ -11,7 +11,6 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <cassert>
-#include <format>
 
 #pragma warning( push )
 #pragma warning( disable: 5262 )
@@ -85,14 +84,18 @@ namespace crg
 				lock_type lock( m_viewsMutex );
 				for ( auto & [data, _] : m_imageViews )
 				{
-					Logger::logError( std::format( "Leaked [VkImageView]({})", data.data->name ) );
+					std::stringstream stream;
+					stream << "Leaked [VkImageView](" << data.data->name << ")";
+					Logger::logError( stream.str() );
 				}
 			}
 			{
 				lock_type lock( m_imagesMutex );
 				for ( auto & [data, _] : m_images )
 				{
-					Logger::logError( std::format( "Leaked [VkImage]({})", data.data->name ) );
+					std::stringstream stream;
+					stream << "Leaked [VkImage](" << data.data->name << ")";
+					Logger::logError( stream.str() );
 				}
 			}
 			{
@@ -101,12 +104,16 @@ namespace crg
 				{
 					if ( vertexBuffer->memory )
 					{
-						Logger::logError( std::format( "Leaked [VkDeviceMemory]({})", vertexBuffer->buffer.name ) );
+						std::stringstream stream;
+						stream << "Leaked [VkDeviceMemory](" << vertexBuffer->buffer.name << ")";
+						Logger::logError( stream.str() );
 					}
 
 					if ( vertexBuffer->buffer.buffer() )
 					{
-						Logger::logError( std::format( "Leaked [VkBuffer]({})", vertexBuffer->buffer.name ) );
+						std::stringstream stream;
+						stream << "Leaked [VkBuffer](" << vertexBuffer->buffer.name << ")";
+						Logger::logError( stream.str() );
 					}
 				}
 			}
@@ -114,7 +121,9 @@ namespace crg
 				lock_type lock( m_samplersMutex );
 				for ( auto & [_, data] : m_samplers )
 				{
-					Logger::logError( std::format( "Leaked [VkSampler]({})", data.name ) );
+					std::stringstream stream;
+					stream << "Leaked [VkSampler](" << data.name << ")";
+					Logger::logError( stream.str() );
 				}
 			}
 		}

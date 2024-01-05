@@ -25,7 +25,6 @@ namespace crg
 			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
 			, config.m_instances ? *config.m_instances : 1u
 			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
-		, m_context{ context }
 		, m_graph{ graph }
 		, m_pipeline{ pass
 			, context

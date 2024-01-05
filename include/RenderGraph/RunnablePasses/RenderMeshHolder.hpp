@@ -50,7 +50,6 @@ namespace crg
 
 	private:
 		rm::ConfigData m_config;
-		GraphContext & m_context;
 		PipelineHolder m_pipeline;
 		VkRenderPass m_renderPass{};
 		VkExtent2D m_renderSize{};

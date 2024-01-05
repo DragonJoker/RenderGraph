@@ -442,9 +442,12 @@ namespace crg
 			}
 
 			auto block( m_timer.start() );
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
 			m_context.vkCmdBeginDebugBlock( commandBuffer
-				, { std::format( "[{}] {}", m_pass.id, m_pass.getGroupName() )
+				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName()
 				, m_context.getNextRainbowColour() } );
+#pragma GCC diagnostic pop
 			m_timer.beginPass( commandBuffer );
 
 			for ( auto & attach : m_pass.images )
