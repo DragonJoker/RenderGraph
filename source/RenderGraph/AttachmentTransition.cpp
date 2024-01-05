@@ -35,7 +35,8 @@ namespace crg
 		{
 			// Currently, just removes from the transitions the sampled attachments to a pass
 			// that doesn't directly need them.
-			std::erase_if( transitions
+			auto it = std::remove_if( transitions.begin()
+				, transitions.end()
 				, []( ViewTransition const & transition )
 				{
 					bool result = false;
@@ -55,6 +56,7 @@ namespace crg
 
 					return result;
 				} );
+			transitions.erase( it, transitions.end() );
 			return transitions;
 		}
 
@@ -62,7 +64,8 @@ namespace crg
 		{
 			// Currently, just removes from the transitions the sampled attachments to a pass
 			// that doesn't directly need them.
-			std::erase_if( transitions
+			auto it = std::remove_if( transitions.begin()
+				, transitions.end()
 				, []( BufferTransition const & transition )
 				{
 					bool result = false;
@@ -82,6 +85,7 @@ namespace crg
 
 					return result;
 				} );
+			transitions.erase( it, transitions.end() );
 			return transitions;
 		}
 	}
