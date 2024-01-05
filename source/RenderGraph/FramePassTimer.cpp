@@ -117,7 +117,7 @@ namespace crg
 	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer )noexcept
 	{
 		std::swap( m_queries.front(), m_queries.back() );
-		auto & query = m_queries.front();
+		auto const & query = m_queries.front();
 		m_context.vkCmdResetQueryPool( commandBuffer
 			, m_timerQueries
 			, query.offset
@@ -145,9 +145,8 @@ namespace crg
 		auto before = Clock::now();
 		m_gpuTime = 0ns;
 		m_subtractedGpuTime = 0ns;
-		auto & query = m_queries.front();
 
-		if ( query.started && query.written )
+		if ( auto & query = m_queries.front(); query.started && query.written )
 		{
 			std::array< uint64_t, 2u > values{ 0u, 0u };
 			m_context.vkGetQueryPoolResults( m_context.device

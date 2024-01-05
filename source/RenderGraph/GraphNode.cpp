@@ -47,7 +47,7 @@ namespace crg
 	{
 	}
 
-	void GraphNode::addAttaches( GraphAdjacentNode prev
+	void GraphNode::addAttaches( ConstGraphAdjacentNode prev
 		, AttachmentTransitions inAttaches )
 	{
 		bool dirty = false;
@@ -88,11 +88,9 @@ namespace crg
 	void GraphNode::attachNode( GraphAdjacentNode nextNode
 		, AttachmentTransitions nextInputAttaches )
 	{
-		auto it = std::find( next.begin()
+		if ( auto it = std::find( next.begin()
 			, next.end()
-			, nextNode );
-
-		if ( it == next.end() )
+			, nextNode ); it == next.end() )
 		{
 			this->next.push_back( nextNode );
 		}
@@ -105,7 +103,7 @@ namespace crg
 	{
 		auto it = std::find_if( next.begin()
 			, next.end()
-			, [&pass]( GraphAdjacentNode lookup )
+			, [&pass]( ConstGraphAdjacentNode lookup )
 			{
 				return getFramePass( *lookup ) == &pass;
 			} );
@@ -118,7 +116,7 @@ namespace crg
 	{
 		auto it = std::find_if( next.begin()
 			, next.end()
-			, [&node]( GraphAdjacentNode lookup )
+			, [&node]( ConstGraphAdjacentNode lookup )
 			{
 				return lookup == node;
 			} );

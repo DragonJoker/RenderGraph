@@ -151,8 +151,7 @@ namespace crg
 
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView
-			, VkExtent2D extent
-			, VkImageLayout finalLayout = VK_IMAGE_LAYOUT_UNDEFINED );
+			, VkExtent2D extent );
 		CRG_API static ImplicitAction blitImage( ImageViewId srcView
 			, ImageViewId dstView
 			, VkOffset2D srcOffset

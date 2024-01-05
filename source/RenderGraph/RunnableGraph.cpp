@@ -51,9 +51,8 @@ namespace crg
 			, LayerLayoutStatesMap::value_type const & currentLayout )
 		{
 			LayerLayoutStates result;
-			auto nextIt = nextLayouts.find( currentLayout.first );
 
-			if ( nextIt != nextLayouts.end() )
+			if ( auto nextIt = nextLayouts.find( currentLayout.first ); nextIt != nextLayouts.end() )
 			{
 				auto & nxtLayout = nextIt->second;
 
@@ -90,9 +89,7 @@ namespace crg
 			while ( !currentLayouts.empty()
 				&& endIt != nextPassIt )
 			{
-				auto & nextPass = **nextPassIt;
-
-				if ( nextPass.isEnabled() )
+				if ( auto const & nextPass = **nextPassIt; nextPass.isEnabled() )
 				{
 					auto & nextLayouts = nextPass.getImageLayouts();
 					LayerLayoutStates layoutStates;
@@ -229,11 +226,11 @@ namespace crg
 
 		Logger::logDebug( m_graph.getName() + " - Creating runnable passes" );
 
-		for ( auto & node : m_nodes )
+		for ( auto const & node : m_nodes )
 		{
 			if ( node->getKind() == GraphNode::Kind::FramePass )
 			{
-				auto & renderPassNode = nodeCast< FramePassNode >( *node );
+				auto const & renderPassNode = nodeCast< FramePassNode >( *node );
 				m_passes.push_back( renderPassNode.getFramePass().createRunnable( m_context
 					, *this ) );
 			}
@@ -241,7 +238,7 @@ namespace crg
 
 		Logger::logDebug( m_graph.getName() + " - Initialising passes" );
 
-		for ( auto & pass : m_passes )
+		for ( auto const & pass : m_passes )
 		{
 			if ( pass->isEnabled() )
 			{
@@ -296,7 +293,7 @@ namespace crg
 			recordContext.setNextPipelineState( ( *currPass )->getPipelineState()
 				, ( *currPass )->getImageLayouts() );
 			auto nextPass = std::next( currPass );
-			m_fence.wait( 0xFFFFFFFFFFFFFFFFull );
+			m_fence.wait( 0xFFFFFFFFFFFFFFFFULL );
 			m_context.vkResetCommandBuffer( m_commandBuffer, 0u );
 			VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 				, nullptr
@@ -307,7 +304,7 @@ namespace crg
 
 			while ( currPass != m_passes.end() )
 			{
-				auto & pass = *currPass;
+				auto const & pass = *currPass;
 				++currPass;
 
 				if ( nextPass != m_passes.end() )
@@ -363,7 +360,7 @@ namespace crg
 		convert( toWait, semaphores, dstStageMasks );
 		m_timer.notifyPassRender();
 
-		for ( auto & pass : m_passes )
+		for ( auto const & pass : m_passes )
 		{
 			pass->notifyPassRender();
 		}
@@ -457,7 +454,7 @@ namespace crg
 			, view.data->info.subresourceRange );
 	}
 
-	LayoutState RunnableGraph::getNextLayoutState( RecordContext & context
+	LayoutState RunnableGraph::getNextLayoutState( RecordContext const & context
 		, crg::RunnablePass const & runnable
 		, ImageViewId view )const
 	{

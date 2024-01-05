@@ -9,81 +9,78 @@ See LICENSE file in root folder.
 
 #include <algorithm>
 
-namespace crg
+namespace crg::builder
 {
-	namespace builder
+	namespace graph
 	{
-		namespace graph
+		static GraphAdjacentNode findNode( FramePass const * pass
+			, GraphNodePtrArray const & nodes )
 		{
-			static GraphAdjacentNode findNode( FramePass const * pass
-				, GraphNodePtrArray const & nodes )
+			if ( !pass )
 			{
-				if ( !pass )
+				return nullptr;
+			}
+
+			GraphAdjacentNode result{};
+			auto it = std::find_if( nodes.begin()
+				, nodes.end()
+				, [pass]( auto & lookup )
 				{
-					return nullptr;
-				}
+					return getFramePass( *lookup ) == pass;
+				} );
 
-				GraphAdjacentNode result{};
-				auto it = std::find_if( nodes.begin()
-					, nodes.end()
-					, [pass]( auto & lookup )
-					{
-						return getFramePass( *lookup ) == pass;
-					} );
+			assert( it != nodes.end() );
+			result = it->get();
+			return result;
+		}
 
-				assert( it != nodes.end() );
-				result = it->get();
-				return result;
-			}
+		static AttachmentTransitions makeTransition( ViewTransition const & transition )
+		{
+			return { { transition }, {} };
+		}
 
-			static AttachmentTransitions makeTransition( ViewTransition const & transition )
+		static AttachmentTransitions makeTransition( BufferTransition const & transition )
+		{
+			return { {}, { transition } };
+		}
+
+		template< typename DataT >
+		static void buildGraph( DataTransitionArrayT< DataT > const & transitions
+			, GraphNodePtrArray const & nodes
+			, PassDependencyCache & depsCache )
+		{
+			for ( DataTransitionT< DataT > const & transition : transitions )
 			{
-				return { { transition }, {} };
-			}
+				GraphAdjacentNode outputAdjNode = findNode( transition.outputAttach.pass
+					, nodes );
+				GraphAdjacentNode inputAdjNode = findNode( transition.inputAttach.pass
+					, nodes );
 
-			static AttachmentTransitions makeTransition( BufferTransition const & transition )
-			{
-				return { {}, { transition } };
-			}
-
-			template< typename DataT >
-			static void buildGraph( DataTransitionArrayT< DataT > const & transitions
-				, GraphNodePtrArray const & nodes
-				, PassDependencyCache & depsCache )
-			{
-				for ( DataTransitionT< DataT > const & transition : transitions )
+				if ( inputAdjNode
+					&& outputAdjNode
+					&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.data, depsCache ) )
 				{
-					GraphAdjacentNode outputAdjNode = findNode( transition.outputAttach.pass
-						, nodes );
-					GraphAdjacentNode inputAdjNode = findNode( transition.inputAttach.pass
-						, nodes );
-
-					if ( inputAdjNode
-						&& outputAdjNode
-						&& transition.inputAttach.pass->dependsOn( *transition.outputAttach.pass, transition.data, depsCache ) )
-					{
-						outputAdjNode->attachNode( inputAdjNode
-							, makeTransition( transition ) );
-					}
+					outputAdjNode->attachNode( inputAdjNode
+						, makeTransition( transition ) );
 				}
 			}
 		}
+	}
 
-		void buildGraph( RootNode & rootNode
-			, GraphNodePtrArray const & nodes
-			, PassDependencyCache & imgDepsCache
-			, PassDependencyCache & bufDepsCache
-			, AttachmentTransitions & transitions )
+	void buildGraph( RootNode & rootNode
+		, GraphNodePtrArray const & nodes
+		, PassDependencyCache & imgDepsCache
+		, PassDependencyCache & bufDepsCache
+		, AttachmentTransitions const & transitions )
+	{
+		graph::buildGraph( transitions.viewTransitions, nodes, imgDepsCache );
+		graph::buildGraph( transitions.bufferTransitions, nodes, bufDepsCache );
+
+		for ( auto & node : nodes )
 		{
-			graph::buildGraph( transitions.viewTransitions, nodes, imgDepsCache );
-			graph::buildGraph( transitions.bufferTransitions, nodes, bufDepsCache );
-
-			for ( auto & node : nodes )
+			if ( !node->hasPrev() )
 			{
-				if ( !node->hasPrev() )
-				{
-					rootNode.attachNode( node.get(), {} );
-				}
+				rootNode.attachNode( node.get(), {} );
 			}
 		}
 	}

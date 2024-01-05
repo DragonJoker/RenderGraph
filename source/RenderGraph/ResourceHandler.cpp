@@ -33,8 +33,6 @@ namespace crg
 				Data position;
 				Data texture;
 			};
-
-			Vertex vertex[6];
 		};
 
 		static VkImageCreateInfo convert( ImageData const & data )
@@ -138,7 +136,7 @@ namespace crg
 		lock_type lock( m_imagesMutex );
 		auto data = std::make_unique< ImageData >( img );
 		ImageId result{ uint32_t( m_imageIds.size() + 1u ), data.get() };
-		m_imageIds.insert( { result, std::move( data ) } );
+		m_imageIds.try_emplace( result, std::move( data ) );
 		return result;
 	}
 
@@ -157,7 +155,7 @@ namespace crg
 		{
 			auto data = std::make_unique< ImageViewData >( view );
 			result = ImageViewId{ uint32_t( m_imageViewIds.size() + 1u ), data.get() };
-			m_imageViewIds.insert( { result, std::move( data ) } );
+			m_imageViewIds.try_emplace( result, std::move( data ) );
 		}
 		else
 		{

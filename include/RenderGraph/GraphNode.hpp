@@ -4,7 +4,6 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/FramePassDependencies.hpp"
 #include "RenderGraph/AttachmentTransition.hpp"
 
 #include <cassert>
@@ -33,7 +32,7 @@ namespace crg
 		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept;
 
 		CRG_API virtual ~GraphNode()noexcept = default;
-		CRG_API void addAttaches( GraphAdjacentNode prev
+		CRG_API void addAttaches( ConstGraphAdjacentNode const prev
 			, AttachmentTransitions inputAttaches );
 		CRG_API void attachNode( GraphAdjacentNode next
 			, AttachmentTransitions inputAttaches );
@@ -77,7 +76,7 @@ namespace crg
 			return id;
 		}
 
-		auto & getNext()const
+		GraphAdjacentNodeArray const & getNext()const
 		{
 			return next;
 		}

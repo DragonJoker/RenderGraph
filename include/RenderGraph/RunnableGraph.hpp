@@ -80,7 +80,7 @@ namespace crg
 			, VkImageSubresourceRange range )const;
 		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
 			, ImageViewId view )const;
-		CRG_API LayoutState getNextLayoutState( RecordContext & context
+		CRG_API LayoutState getNextLayoutState( RecordContext const & context
 			, crg::RunnablePass const & runnable
 			, ImageViewId view )const;
 		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;

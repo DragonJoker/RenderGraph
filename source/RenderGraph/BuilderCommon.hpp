@@ -4,54 +4,51 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/FramePassDependencies.hpp"
+#include "RenderGraph/FrameGraphPrerequisites.hpp"
 
 #include <functional>
 
-namespace crg
+namespace crg::builder
 {
-	namespace builder
+	using FramePassSet = std::set< FramePass const * >;
+
+	FramePassSet retrieveRoots( FramePassDependencies const & dependencies );
+	FramePassSet retrieveLeafs( FramePassDependencies const & dependencies );
+
+	template< typename TypeT >
+	void filter( std::vector< TypeT > const & inputs
+		, std::function< bool( TypeT const & ) > filterFunc
+		, std::function< void( TypeT const & ) > trueFunc
+		, std::function< void( TypeT const & ) > falseFunc = nullptr )
 	{
-		using FramePassSet = std::set< FramePass const * >;
-
-		FramePassSet retrieveRoots( FramePassDependencies const & dependencies );
-		FramePassSet retrieveLeafs( FramePassDependencies const & dependencies );
-
-		template< typename TypeT >
-		void filter( std::vector< TypeT > const & inputs
-			, std::function< bool( TypeT const & ) > filterFunc
-			, std::function< void( TypeT const & ) > trueFunc
-			, std::function< void( TypeT const & ) > falseFunc = nullptr )
+		for ( auto & input : inputs )
 		{
-			for ( auto & input : inputs )
+			if ( filterFunc( input ) )
 			{
-				if ( filterFunc( input ) )
-				{
-					trueFunc( input );
-				}
-				else if ( falseFunc )
-				{
-					falseFunc( input );
-				}
+				trueFunc( input );
+			}
+			else if ( falseFunc )
+			{
+				falseFunc( input );
 			}
 		}
+	}
 
-		template< typename TypeT >
-		void filter( std::vector< TypeT > & inputs
-			, std::function< bool( TypeT & ) > filterFunc
-			, std::function< void( TypeT & ) > trueFunc
-			, std::function< void( TypeT & ) > falseFunc = nullptr )
+	template< typename TypeT >
+	void filter( std::vector< TypeT > & inputs
+		, std::function< bool( TypeT & ) > filterFunc
+		, std::function< void( TypeT & ) > trueFunc
+		, std::function< void( TypeT & ) > falseFunc = nullptr )
+	{
+		for ( auto & input : inputs )
 		{
-			for ( auto & input : inputs )
+			if ( filterFunc( input ) )
 			{
-				if ( filterFunc( input ) )
-				{
-					trueFunc( input );
-				}
-				else if ( falseFunc )
-				{
-					falseFunc( input );
-				}
+				trueFunc( input );
+			}
+			else if ( falseFunc )
+			{
+				falseFunc( input );
 			}
 		}
 	}
