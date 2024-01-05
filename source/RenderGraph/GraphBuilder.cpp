@@ -4,7 +4,6 @@ See LICENSE file in root folder.
 */
 #include "GraphBuilder.hpp"
 
-#include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/GraphNode.hpp"
 

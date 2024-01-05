@@ -362,7 +362,7 @@ namespace crg
 			, 0u
 			, VK_WHOLE_SIZE
 			, 0u
-			, std::bit_cast< void ** >( &buffer ) );
+			, reinterpret_cast< void ** >( &buffer ) );
 		checkVkResult( res, "Buffer memory mapping" );
 
 		if ( buffer )

@@ -542,7 +542,7 @@ namespace crg
 		if ( !m_resources )
 		{
 			assert( false );
-			Exception( "No resources available.", std::source_location::current() );
+			CRG_Exception( "No resources available." );
 		}
 
 		return *m_resources;

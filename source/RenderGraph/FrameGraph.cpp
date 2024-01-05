@@ -14,7 +14,6 @@ See LICENSE file in root folder.
 #include "ResourceOptimiser.hpp"
 
 #include <algorithm>
-#include <source_location>
 
 namespace crg
 {
@@ -111,7 +110,7 @@ namespace crg
 
 				if ( !added )
 				{
-					throw Exception{ "Couldn't sort passes:", std::source_location::current() };
+					CRG_Exception( "Couldn't sort passes:" );
 				}
 			}
 
@@ -202,7 +201,7 @@ namespace crg
 
 		if ( passes.empty() )
 		{
-			throw Exception( "No FramePass registered.", std::source_location::current() );
+			CRG_Exception( "No FramePass registered." );
 		}
 
 		passes = fgph::sortPasses( passes );

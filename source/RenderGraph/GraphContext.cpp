@@ -267,7 +267,7 @@ namespace crg
 			typeBits >>= 1;
 		}
 
-		throw Exception{ "Could not deduce memory type", std::source_location::current() };
+		CRG_Exception( "Could not deduce memory type" );
 	}
 
 #if VK_EXT_debug_utils
@@ -437,7 +437,7 @@ namespace crg
 	{
 		if ( result != VK_SUCCESS )
 		{
-			throw Exception{ stepName, std::source_location::current() };
+			CRG_Exception( stepName );
 		}
 	}
 
