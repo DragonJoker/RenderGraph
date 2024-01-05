@@ -54,7 +54,7 @@ namespace crg
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		// Copy source to target.
 		auto range = imToBuf::convert( srcAttach.data->info.subresourceRange );
-		VkBufferImageCopy copyRegion{ 0ull
+		VkBufferImageCopy copyRegion{ 0ULL
 			, 0u
 			, 0u
 			, range
