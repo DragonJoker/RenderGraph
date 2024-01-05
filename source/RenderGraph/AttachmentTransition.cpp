@@ -105,15 +105,15 @@ namespace crg
 		return lhs.m_buffers == rhs.m_buffers;
 	}
 
-	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions const & transitions )
+	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions transitions )
 	{
-		return { attTran::mergeIdenticalTransitionsT( transitions.viewTransitions )
-			, attTran::mergeIdenticalTransitionsT( transitions.bufferTransitions ) };
+		return { attTran::mergeIdenticalTransitionsT( std::move( transitions.viewTransitions ) )
+			, attTran::mergeIdenticalTransitionsT( std::move( transitions.bufferTransitions ) ) };
 	}
 
-	AttachmentTransitions reduceDirectPaths( AttachmentTransitions const & transitions )
+	AttachmentTransitions reduceDirectPaths( AttachmentTransitions transitions )
 	{
-		return { attTran::reduceDirectPathsT( transitions.viewTransitions )
-			, attTran::reduceDirectPathsT( transitions.bufferTransitions ) };
+		return { attTran::reduceDirectPathsT( std::move( transitions.viewTransitions ) )
+			, attTran::reduceDirectPathsT( std::move( transitions.bufferTransitions ) ) };
 	}
 }

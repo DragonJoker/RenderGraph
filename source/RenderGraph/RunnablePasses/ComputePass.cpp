@@ -15,7 +15,7 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, ru::Config const & ruConfig
-		, cp::Config const & cpConfig )
+		, cp::Config cpConfig )
 		: RunnablePass{ pass
 			, context
 			, graph

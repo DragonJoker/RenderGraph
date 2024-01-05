@@ -557,7 +557,7 @@ namespace crg
 			m_context.vkCmdEndDebugBlock( commandBuffer );
 		}
 
-		for ( auto & [view, action] : m_ruConfig.implicitActions )
+		for ( auto const & [view, action] : m_ruConfig.implicitActions )
 		{
 			context.registerImplicitTransition( *this, view, action );
 		}

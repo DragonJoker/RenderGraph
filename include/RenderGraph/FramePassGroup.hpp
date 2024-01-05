@@ -53,32 +53,32 @@ namespace crg
 		*/
 		/**@[*/
 		CRG_API ResourceHandler & getHandler()const;
-		CRG_API LayoutState getFinalLayoutState( ImageViewId view
+		CRG_API LayoutState const & getFinalLayoutState( ImageViewId view
 			, uint32_t passIndex = 0u )const;
-		CRG_API AccessState getFinalAccessState( Buffer const & buffer
+		CRG_API AccessState const & getFinalAccessState( Buffer const & buffer
 			, uint32_t passIndex = 0u )const;
 		CRG_API ImageId createImage( ImageData const & img )const;
 		CRG_API ImageViewId createView( ImageViewData const & view )const;
 		CRG_API void addInput( ImageId image
 			, VkImageViewType viewType
-			, VkImageSubresourceRange range
-			, LayoutState outputLayout );
+			, VkImageSubresourceRange const & range
+			, LayoutState const & outputLayout );
 		CRG_API void addInput( ImageViewId view
-			, LayoutState outputLayout );
-		CRG_API LayoutState getInputLayoutState( ImageId image
+			, LayoutState const & outputLayout );
+		CRG_API LayoutState const & getInputLayoutState( ImageId image
 			, VkImageViewType viewType
-			, VkImageSubresourceRange range )const;
-		CRG_API LayoutState getInputLayoutState( ImageViewId view )const;
+			, VkImageSubresourceRange const & range )const;
+		CRG_API LayoutState const & getInputLayoutState( ImageViewId view )const;
 		CRG_API void addOutput( ImageId image
 			, VkImageViewType viewType
-			, VkImageSubresourceRange range
-			, LayoutState outputLayout );
+			, VkImageSubresourceRange const & range
+			, LayoutState const & outputLayout );
 		CRG_API void addOutput( ImageViewId view
-			, LayoutState outputLayout );
-		CRG_API LayoutState getOutputLayoutState( ImageId image
+			, LayoutState const & outputLayout );
+		CRG_API LayoutState const & getOutputLayoutState( ImageId image
 			, VkImageViewType viewType
-			, VkImageSubresourceRange range )const;
-		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
+			, VkImageSubresourceRange const & range )const;
+		CRG_API LayoutState const & getOutputLayoutState( ImageViewId view )const;
 		/**@}*/
 
 		CRG_API std::string getFullName()const;

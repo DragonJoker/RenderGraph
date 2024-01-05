@@ -158,7 +158,7 @@ namespace crg
 	{
 		createPipeline( index
 			, m_pass.getGroupName()
-			, std::move( createInfo ) );
+			, createInfo );
 	}
 
 	void PipelineHolder::createPipeline( uint32_t index
@@ -181,7 +181,7 @@ namespace crg
 	{
 		createPipeline( index
 			, m_pass.getGroupName()
-			, std::move( createInfo ) );
+			, createInfo );
 	}
 
 	void PipelineHolder::recordInto( RecordContext & context

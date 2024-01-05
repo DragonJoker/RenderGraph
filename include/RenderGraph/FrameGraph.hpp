@@ -75,7 +75,7 @@ namespace crg
 		CRG_API LayoutState const & getFinalLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & range )const;
-		CRG_API LayoutState getFinalLayoutState( ImageViewId view
+		CRG_API LayoutState const & getFinalLayoutState( ImageViewId view
 			, uint32_t passIndex = 0u )const;
 		CRG_API AccessState const & getFinalAccessState( Buffer const & buffer
 			, uint32_t passIndex = 0u )const;

@@ -203,7 +203,7 @@ namespace crg
 		, ImageViewId const & view
 		, PassDependencyCache & cache )const
 	{
-		auto & passCache = cache.try_emplace( this, DependencyCache{} ).first->second;
+		auto & passCache = cache.try_emplace( this ).first->second;
 		auto [rit, res] = passCache.emplace( fpass::makeHash( pass, view ), false );
 
 		if ( res )
@@ -235,7 +235,7 @@ namespace crg
 		, Buffer const & buffer
 		, PassDependencyCache & cache )const
 	{
-		auto & passCache = cache.try_emplace( this, DependencyCache{} ).first->second;
+		auto & passCache = cache.try_emplace( this ).first->second;
 		auto [rit, res] = passCache.emplace( fpass::makeHash( pass, buffer ), false );
 
 		if ( res )

@@ -292,7 +292,7 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, ru::Config const & ruConfig = {}
-			, cp::Config const & cpConfig = {} );
+			, cp::Config cpConfig = {} );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
 			, uint32_t index );
 		CRG_API VkPipelineLayout getPipelineLayout()const;

@@ -135,11 +135,11 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
-		, VkExtent2D const & size )
+		, VkExtent2D size )
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
-		, m_size{ size }
+		, m_size{ std::move( size ) }
 	{
 		m_passes.resize( maxPassCount );
 	}

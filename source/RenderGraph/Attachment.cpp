@@ -73,12 +73,12 @@ namespace crg
 
 		if ( isView() )
 		{
-			result.bufferViewInfo.emplace_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
+			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
 			result.texelBufferView.push_back( view );
 		}
 		else
 		{
-			result.bufferInfo.emplace_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
+			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
 		}
 
 		return result;

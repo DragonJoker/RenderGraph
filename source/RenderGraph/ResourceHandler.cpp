@@ -82,7 +82,7 @@ namespace crg
 		{
 			{
 				lock_type lock( m_viewsMutex );
-				for ( auto & [data, _] : m_imageViews )
+				for ( auto const & [data, _] : m_imageViews )
 				{
 					std::stringstream stream;
 					stream << "Leaked [VkImageView](" << data.data->name << ")";
@@ -91,7 +91,7 @@ namespace crg
 			}
 			{
 				lock_type lock( m_imagesMutex );
-				for ( auto & [data, _] : m_images )
+				for ( auto const & [data, _] : m_images )
 				{
 					std::stringstream stream;
 					stream << "Leaked [VkImage](" << data.data->name << ")";
@@ -100,7 +100,7 @@ namespace crg
 			}
 			{
 				lock_type lock( m_buffersMutex );
-				for ( auto & vertexBuffer : m_vertexBuffers )
+				for ( auto const & vertexBuffer : m_vertexBuffers )
 				{
 					if ( vertexBuffer->memory )
 					{
@@ -119,7 +119,7 @@ namespace crg
 			}
 			{
 				lock_type lock( m_samplersMutex );
-				for ( auto & [_, data] : m_samplers )
+				for ( auto const & [_, data] : m_samplers )
 				{
 					std::stringstream stream;
 					stream << "Leaked [VkSampler](" << data.name << ")";
@@ -542,22 +542,22 @@ namespace crg
 
 	ContextResourcesCache::~ContextResourcesCache()noexcept
 	{
-		for ( auto & [imageView, _] : m_imageViews )
+		for ( auto const & [imageView, _] : m_imageViews )
 		{
 			m_handler.destroyImageView( m_context, imageView );
 		}
 
-		for ( auto & [image, _] : m_images )
+		for ( auto const & [image, _] : m_images )
 		{
 			m_handler.destroyImage( m_context, image );
 		}
 
-		for ( auto & [_, sampler] : m_samplers )
+		for ( auto const & [_, sampler] : m_samplers )
 		{
 			m_handler.destroySampler( m_context, sampler );
 		}
 
-		for ( auto & [_, buffer] : m_vertexBuffers )
+		for ( auto const & [_, buffer] : m_vertexBuffers )
 		{
 			m_handler.destroyVertexBuffer( m_context, buffer );
 		}
@@ -723,7 +723,7 @@ namespace crg
 
 		if ( it == m_caches.end() )
 		{
-			it = m_caches.try_emplace( &context, ContextResourcesCache{ m_handler, context } ).first;
+			it = m_caches.try_emplace( &context, m_handler, context ).first;
 		}
 
 		return it->second;

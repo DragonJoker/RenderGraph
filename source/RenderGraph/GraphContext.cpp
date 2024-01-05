@@ -337,8 +337,7 @@ namespace crg
 	{
 		doRegisterObjectName( object
 			, objectType
-			, objectName
-			, typeName );
+			, objectName );
 		std::stringstream stream;
 		stream.imbue( std::locale{ "C" } );
 		stream << "Created " << typeName
@@ -362,8 +361,7 @@ namespace crg
 
 	void GraphContext::doRegisterObjectName( uint64_t object
 		, uint32_t objectType
-		, std::string const & objectName
-		, [[maybe_unused]] std::string const & typeName )
+		, std::string const & objectName )
 	{
 #	if VK_EXT_debug_utils
 		if ( vkSetDebugUtilsObjectNameEXT )
@@ -422,7 +420,7 @@ namespace crg
 	{
 		lock_type lock{ m_mutex };
 
-		for ( auto & [_, alloc] : m_allocated )
+		for ( auto const & [_, alloc] : m_allocated )
 		{
 			std::stringstream stream;
 			stream << "Leaked [" << alloc.type << "](" << alloc.name << "), allocation stack:\n";

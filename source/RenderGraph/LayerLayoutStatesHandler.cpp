@@ -31,7 +31,7 @@ namespace crg
 		auto range = getVirtualRange( image
 			, viewType
 			, subresourceRange );
-		auto [it, _] = images.try_emplace( image.id, LayerLayoutStates{} );
+		auto [it, _] = images.try_emplace( image.id );
 		addSubresourceRangeLayout( it->second
 			, range
 			, layoutState );

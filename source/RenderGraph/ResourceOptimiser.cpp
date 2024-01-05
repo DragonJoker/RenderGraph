@@ -76,7 +76,7 @@ namespace crg
 			}
 		}
 
-		ImageIdAliasMap optimiseImages( ImageIdDataOwnerCont const & images
+		ImageIdAliasMap optimiseImages( [[maybe_unused]] ImageIdDataOwnerCont const & images
 			, [[maybe_unused]] FramePassDependencies const & dependencies
 			, [[maybe_unused]] RootNode const & root )
 		{

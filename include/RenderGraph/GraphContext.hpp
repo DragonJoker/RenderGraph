@@ -488,7 +488,7 @@ namespace crg
 		{
 			DtorFuncArray tmp{ std::move( m_toDelete ) };
 
-			for ( auto & func : tmp )
+			for ( DtorFunc const & func : tmp )
 			{
 				func( context );
 			}
@@ -701,8 +701,7 @@ namespace crg
 #elif VK_EXT_debug_marker
 				, uint32_t( MyTraits::ReportValue )
 #endif
-				, name
-				, MyTraits::getName() );
+				, name );
 		}
 
 		template< typename ObjectT >
@@ -765,8 +764,7 @@ namespace crg
 			, std::string const & typeName );
 		CRG_API void doRegisterObjectName( uint64_t object
 			, uint32_t objectType
-			, std::string const & name
-			, std::string const & typeName );
+			, std::string const & name );
 		CRG_API void doUnregisterObject( uint64_t object );
 		CRG_API void doReportRegisteredObjects();
 

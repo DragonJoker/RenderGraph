@@ -248,7 +248,7 @@ namespace crg
 		return m_finalState.getLayoutState( image, viewType, range );
 	}
 
-	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view
+	LayoutState const & FrameGraph::getFinalLayoutState( ImageViewId view
 		, uint32_t passIndex )const
 	{
 		if ( view.data->source.empty() )
@@ -568,7 +568,7 @@ namespace crg
 	{
 		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
 		{
-			auto & layers = ranges.try_emplace( range.baseArrayLayer + layerIdx, MipLayoutStates{} ).first->second;
+			auto & layers = ranges.try_emplace( range.baseArrayLayer + layerIdx ).first->second;
 
 			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
 			{

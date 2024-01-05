@@ -63,7 +63,7 @@ namespace crg
 
 					if ( nxtLayerIt != nxtLayout.end() )
 					{
-						auto resLayerIt = result.try_emplace( curLayout, MipLayoutStates{} ).first;
+						auto resLayerIt = result.try_emplace( curLayout ).first;
 
 						for ( auto & [curLevel, _] : curStates )
 						{
@@ -286,7 +286,7 @@ namespace crg
 				, dependency->getFinalStates().getIndexState() );
 		}
 
-		auto itGraph = m_states.try_emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
+		auto itGraph = m_states.try_emplace( &m_graph ).first;
 		itGraph->second.resize( m_passes.size() );
 
 		if ( !m_passes.empty() )
