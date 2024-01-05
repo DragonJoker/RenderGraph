@@ -53,9 +53,8 @@ namespace crg
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
 		static LayoutState const undefLayout{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } };
-		auto imageIt = images.find( image.id );
 
-		if ( imageIt != images.end() )
+		if ( auto imageIt = images.find( image.id ); imageIt != images.end() )
 		{
 			auto range = getVirtualRange( image
 				, viewType

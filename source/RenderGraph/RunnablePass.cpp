@@ -183,7 +183,7 @@ namespace crg
 		{
 			if ( !m_fenceWaited )
 			{
-				wait( 0xFFFFFFFFFFFFFFFFull );
+				wait( 0xFFFFFFFFFFFFFFFFULL );
 			}
 
 			m_context->vkResetFences( m_context->device
@@ -359,9 +359,8 @@ namespace crg
 	{
 		assert( m_ruConfig.resettable );
 		auto index = m_callbacks.getPassIndex();
-		auto & pass = m_passes[index];
 
-		if ( pass.commandBuffer.commandBuffer )
+		if ( auto & pass = m_passes[index]; pass.commandBuffer.commandBuffer )
 		{
 			auto it = m_passContexts.find( index );
 
@@ -412,7 +411,7 @@ namespace crg
 
 		assert( m_passes.size() > index );
 		auto & pass = m_passes[index];
-		pass.fence.wait( 0xFFFFFFFFFFFFFFFFull );
+		pass.fence.wait( 0xFFFFFFFFFFFFFFFFULL );
 		VkCommandBufferBeginInfo beginInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO
 			, nullptr
 			, VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT
@@ -434,9 +433,8 @@ namespace crg
 		if ( isEnabled() )
 		{
 			assert( m_passes.size() > index );
-			auto & pass = m_passes[index];
 
-			if ( !pass.initialised )
+			if ( auto & pass = m_passes[index]; !pass.initialised )
 			{
 				initialise( index );
 			}
@@ -541,14 +539,14 @@ namespace crg
 				}
 			}
 
-			for ( auto & action : m_ruConfig.prePassActions )
+			for ( auto const & action : m_ruConfig.prePassActions )
 			{
 				action( context, commandBuffer, index );
 			}
 
 			m_callbacks.record( context, commandBuffer, index );
 
-			for ( auto & action : m_ruConfig.postPassActions )
+			for ( auto const & action : m_ruConfig.postPassActions )
 			{
 				action( context, commandBuffer, index );
 			}
@@ -630,7 +628,7 @@ namespace crg
 
 		if ( pass.commandBuffer.commandBuffer )
 		{
-			pass.fence.wait( 0xFFFFFFFFFFFFFFFFull );
+			pass.fence.wait( 0xFFFFFFFFFFFFFFFFULL );
 			pass.commandBuffer.recorded = false;
 			m_context.vkResetCommandBuffer( pass.commandBuffer.commandBuffer
 				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );

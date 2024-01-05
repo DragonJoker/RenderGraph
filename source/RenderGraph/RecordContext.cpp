@@ -23,7 +23,7 @@ namespace crg
 
 	namespace recctx
 	{
-		static VkImageSubresourceRange adaptRange( GraphContext & context
+		static VkImageSubresourceRange adaptRange( GraphContext const & context
 			, VkFormat format
 			, VkImageSubresourceRange const & subresourceRange )
 		{
@@ -175,9 +175,7 @@ namespace crg
 	AccessState const & RecordContext::getAccessState( VkBuffer buffer
 		, [[maybe_unused]] BufferSubresourceRange const & subresourceRange )const
 	{
-		auto bufferIt = m_buffers.find( buffer );
-
-		if ( bufferIt != m_buffers.end() )
+		if ( auto bufferIt = m_buffers.find( buffer ); bufferIt != m_buffers.end() )
 		{
 			return bufferIt->second;
 		}
@@ -331,7 +329,7 @@ namespace crg
 		, AccessState const & wantedState
 		, bool force )
 	{
-		auto & resources = getResources();
+		auto const & resources = getResources();
 
 		if ( !resources->device )
 		{
@@ -397,8 +395,7 @@ namespace crg
 
 	RecordContext::ImplicitAction RecordContext::copyImage( ImageViewId srcView
 		, ImageViewId dstView
-		, VkExtent2D extent
-		, VkImageLayout finalLayout )
+		, VkExtent2D extent )
 	{
 		return [srcView, dstView, extent]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
@@ -554,7 +551,7 @@ namespace crg
 	{
 		return [clearValue, dstView, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
-			, uint32_t index )
+			, [[maybe_unused]] uint32_t index )
 		{
 			auto & resources = recContext.getResources();
 			recContext.memoryBarrier( commandBuffer

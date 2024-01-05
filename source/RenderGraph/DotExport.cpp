@@ -28,9 +28,9 @@ namespace crg::dot
 			: public std::basic_streambuf< char_type, traits >
 		{
 		public:
-			typedef typename traits::int_type int_type;
-			typedef typename traits::pos_type pos_type;
-			typedef typename traits::off_type off_type;
+			using int_type = typename traits::int_type;
+			using pos_type = typename traits::pos_type;
+			using off_type = typename traits::off_type;
 
 		private:
 			BasicIndentBuffer( const BasicIndentBuffer< char_type, fill_char, traits > & ) = delete;
@@ -51,7 +51,7 @@ namespace crg::dot
 			void indent( long i )
 			{
 				m_count += i;
-				m_count = std::max( 0l, m_count );
+				m_count = std::max( 0L, m_count );
 			}
 
 			std::streambuf * sbuf() const
@@ -60,7 +60,7 @@ namespace crg::dot
 			}
 
 		private:
-			virtual int_type overflow( int_type c = traits::eof() )override
+			int_type overflow( int_type c = traits::eof() )override
 			{
 				if ( traits::eq_int_type( c, traits::eof() ) )
 				{
@@ -593,15 +593,15 @@ namespace crg::dot
 				return data.data->name;
 			}
 
-			static bool isIn( FramePassGroupStreams * inner
-				, FramePassGroupStreams * outer )
+			static bool isIn( FramePassGroupStreams const * inner
+				, FramePassGroupStreams const * outer )
 			{
 				return outer == inner
 					|| ( outer && isIn( inner, outer->getParent() ) );
 			}
 
 			static FramePassGroupStreams * getCommonGroup( FramePassGroupStreams * lhs
-				, FramePassGroupStreams * rhs )
+				, FramePassGroupStreams const * rhs )
 			{
 				auto current = lhs;
 
@@ -748,7 +748,7 @@ namespace crg::dot
 					}
 				}
 
-				for ( auto & transition : transitions.viewTransitions )
+				for ( auto const & transition : transitions.viewTransitions )
 				{
 					auto attachName = transition.inputAttach.name;
 					std::string name{ "Transition to\\n" + attachName };
@@ -757,7 +757,7 @@ namespace crg::dot
 					displayEdge( *curstream, name, rhsName, transition.data.data->name, imgColour, m_config );
 				}
 
-				for ( auto & transition : transitions.bufferTransitions )
+				for ( auto const & transition : transitions.bufferTransitions )
 				{
 					auto attachName = transition.inputAttach.name;
 					std::string name{ "Transition to\\n" + attachName };
@@ -799,7 +799,7 @@ namespace crg::dot
 				{
 					printEdge( node, next );
 
-					if ( m_visited.end() == m_visited.find( next ) )
+					if ( !m_visited.contains( next ) )
 					{
 						submit( next );
 					}

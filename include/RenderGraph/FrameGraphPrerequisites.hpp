@@ -172,8 +172,6 @@ namespace crg
 	using ViewLayoutIterators = std::map< uint32_t, ViewsLayouts::iterator >;
 	using BufferLayoutIterators = std::map< uint32_t, BuffersLayouts::iterator >;
 
-	class RecordContext;
-
 	template< typename VkTypeT >
 	struct ContextObjectT
 	{

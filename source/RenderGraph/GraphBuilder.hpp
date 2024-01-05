@@ -4,14 +4,11 @@ See LICENSE file in root folder.
 */
 #include "BuilderCommon.hpp"
 
-namespace crg
+namespace crg::builder
 {
-	namespace builder
-	{
-		void buildGraph( RootNode & rootNode
-			, GraphNodePtrArray const & passes
-			, PassDependencyCache & imgDepsCache
-			, PassDependencyCache & bufDepsCache
-			, AttachmentTransitions & transitions );
-	}
+	void buildGraph( RootNode & rootNode
+		, GraphNodePtrArray const & passes
+		, PassDependencyCache & imgDepsCache
+		, PassDependencyCache & bufDepsCache
+		, AttachmentTransitions const & transitions );
 }

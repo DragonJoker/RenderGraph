@@ -14,7 +14,7 @@ namespace crg
 	namespace genMips
 	{
 		template< typename T >
-		inline constexpr T getSubresourceDimension( T const & extent
+		static constexpr T getSubresourceDimension( T const & extent
 			, uint32_t mipLevel )noexcept
 		{
 			return std::max( T( 1 ), T( extent >> mipLevel ) );

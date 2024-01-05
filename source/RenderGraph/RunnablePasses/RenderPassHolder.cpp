@@ -156,7 +156,7 @@ namespace crg
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
-		auto & data = m_passes[passIndex];
+		auto const & data = m_passes[passIndex];
 		auto previousState = context.getPrevPipelineState();
 		auto nextState = context.getNextPipelineState();
 

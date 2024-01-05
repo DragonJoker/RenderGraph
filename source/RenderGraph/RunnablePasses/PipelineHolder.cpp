@@ -271,7 +271,7 @@ namespace crg
 		checkVkResult( res, m_pass.getGroupName() + " - DescriptorSet allocation" );
 		crgRegisterObject( m_context, m_pass.getGroupName(), descriptorSet.set );
 
-		for ( auto & write : descriptorSet.writes )
+		for ( auto const & write : descriptorSet.writes )
 		{
 			write.update( descriptorSet.set );
 		}
