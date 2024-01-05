@@ -22,7 +22,7 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
-			, VkExtent2D const & size = {} );
+			, VkExtent2D size = {} );
 		CRG_API RenderPassHolder( RenderPassHolder const & )noexcept = delete;
 		CRG_API RenderPassHolder & operator=( RenderPassHolder const & )noexcept = delete;
 		CRG_API RenderPassHolder( RenderPassHolder && )noexcept = delete;
@@ -32,7 +32,7 @@ namespace crg
 		CRG_API bool initialise( RecordContext & context
 			, crg::RunnablePass const & runnable
 			, uint32_t passIndex );
-		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index );
+		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index )const;
 		CRG_API void begin( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, VkSubpassContents subpassContents

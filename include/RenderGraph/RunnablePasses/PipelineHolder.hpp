@@ -28,14 +28,14 @@ namespace crg
 		CRG_API VkPipeline & getPipeline( uint32_t index );
 		CRG_API void createPipeline( uint32_t index
 			, std::string const & name
-			, VkGraphicsPipelineCreateInfo createInfo );
+			, VkGraphicsPipelineCreateInfo const & createInfo );
 		CRG_API void createPipeline( uint32_t index
-			, VkGraphicsPipelineCreateInfo createInfo );
+			, VkGraphicsPipelineCreateInfo const & createInfo );
 		CRG_API void createPipeline( uint32_t index
 			, std::string const & name
-			, VkComputePipelineCreateInfo createInfo );
+			, VkComputePipelineCreateInfo const & createInfo );
 		CRG_API void createPipeline( uint32_t index
-			, VkComputePipelineCreateInfo createInfo );
+			, VkComputePipelineCreateInfo const & createInfo );
 		CRG_API void recordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );

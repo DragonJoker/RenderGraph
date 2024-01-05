@@ -25,7 +25,7 @@ namespace crg
 			{
 				for ( auto & view : attach.view().data->source )
 				{
-					result.push_back( Attachment{ view, attach } );
+					result.emplace_back( view, attach );
 				}
 			}
 
@@ -194,7 +194,7 @@ namespace crg
 		: group{ pgroup }
 		, graph{ pgraph }
 		, id{ pid }
-		, runnableCreator{ prunnableCreator }
+		, runnableCreator{ std::move( prunnableCreator ) }
 		, m_name{ pname }
 	{
 	}
@@ -203,10 +203,10 @@ namespace crg
 		, ImageViewId const & view
 		, PassDependencyCache & cache )const
 	{
-		auto & passCache = cache.emplace( this, DependencyCache{} ).first->second;
-		auto ires = passCache.emplace( fpass::makeHash( pass, view ), false );
+		auto & passCache = cache.try_emplace( this ).first->second;
+		auto [rit, res] = passCache.emplace( fpass::makeHash( pass, view ), false );
 
-		if ( ires.second )
+		if ( res )
 		{
 			auto it = std::find_if( passDepends.begin()
 				, passDepends.end()
@@ -225,20 +225,20 @@ namespace crg
 
 					return result;
 				} );
-			ires.first->second = it != passDepends.end();
+			rit->second = it != passDepends.end();
 		}
 
-		return ires.first->second;
+		return rit->second;
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass
 		, Buffer const & buffer
 		, PassDependencyCache & cache )const
 	{
-		auto & passCache = cache.emplace( this, DependencyCache{} ).first->second;
-		auto ires = passCache.emplace( fpass::makeHash( pass, buffer ), false );
+		auto & passCache = cache.try_emplace( this ).first->second;
+		auto [rit, res] = passCache.emplace( fpass::makeHash( pass, buffer ), false );
 
-		if ( ires.second )
+		if ( res )
 		{
 			auto it = std::find_if( passDepends.begin()
 				, passDepends.end()
@@ -257,10 +257,10 @@ namespace crg
 
 					return result;
 				} );
-			ires.first->second = it != passDepends.end();
+			rit->second = it != passDepends.end();
 		}
 
-		return ires.first->second;
+		return rit->second;
 	}
 
 	bool FramePass::dependsOn( FramePass const & pass )const
@@ -285,7 +285,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
-			, buffer
+			, std::move( buffer )
 			, offset
 			, range } );
 	}
@@ -301,7 +301,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, buffer
+			, std::move( buffer )
 			, offset
 			, range } );
 	}
@@ -317,7 +317,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, buffer
+			, std::move( buffer )
 			, offset
 			, range } );
 	}
@@ -334,7 +334,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, buffer
+			, std::move( buffer )
 			, offset
 			, range } );
 	}
@@ -350,7 +350,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, buffer
+			, std::move( buffer )
 			, offset
 			, range } );
 	}
@@ -367,7 +367,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::UniformView )
-			, buffer
+			, std::move( buffer )
 			, view
 			, offset
 			, range } );
@@ -385,7 +385,7 @@ namespace crg
 			, binding
 			, std::move( attachName )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
-			, buffer
+			, std::move( buffer )
 			, view
 			, offset
 			, range } );
@@ -508,7 +508,7 @@ namespace crg
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, ~( 0u )
+			, InvalidBindingId
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
 			, std::move( views )
@@ -528,7 +528,7 @@ namespace crg
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, ~( 0u )
+			, InvalidBindingId
 			, std::move( attachName )
 			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
 				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth ) )
@@ -549,7 +549,7 @@ namespace crg
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, ~( 0u )
+			, InvalidBindingId
 			, std::move( attachName )
 			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
 				| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )

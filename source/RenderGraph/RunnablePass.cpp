@@ -311,9 +311,9 @@ namespace crg
 
 				for ( uint32_t i = 0u; i < uint32_t( buffer.getCount() ); ++i )
 				{
-					auto bires = m_bufferAccesses.emplace( buffer.buffer( i ), AccessState{} );
-					bires.first->second = { attach.getAccessMask()
-						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) };
+					m_bufferAccesses.insert_or_assign( buffer.buffer( i )
+						, AccessState{ attach.getAccessMask()
+							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
 				}
 			}
 		}
@@ -342,7 +342,7 @@ namespace crg
 		recordOne( pass.commandBuffer
 			, index
 			, context );
-		return isEnabled() ? index : ~( 0u );
+		return isEnabled() ? index : InvalidIndex;
 	}
 
 	uint32_t RunnablePass::recordCurrentInto( RecordContext & context
@@ -352,7 +352,7 @@ namespace crg
 		recordInto( commandBuffer
 			, index
 			, context );
-		return isEnabled() ? index : ~( 0u );
+		return isEnabled() ? index : InvalidIndex;
 	}
 
 	uint32_t RunnablePass::reRecordCurrent()
@@ -374,7 +374,7 @@ namespace crg
 			}
 		}
 
-		return isEnabled() ? index : ~( 0u );
+		return isEnabled() ? index : InvalidIndex;
 	}
 
 	void RunnablePass::recordAll( RecordContext & context )
@@ -384,8 +384,9 @@ namespace crg
 		for ( auto & pass : m_passes )
 		{
 			recordOne( pass.commandBuffer
-				, index++
+				, index
 				, context );
+			++index;
 		}
 	}
 
@@ -427,8 +428,7 @@ namespace crg
 	{
 		if ( m_ruConfig.resettable )
 		{
-			auto it = m_passContexts.emplace( index, context ).first;
-			it->second = context;
+			m_passContexts.insert_or_assign( index, context );
 		}
 
 		if ( isEnabled() )
@@ -442,8 +442,12 @@ namespace crg
 			}
 
 			auto block( m_timer.start() );
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
 			m_context.vkCmdBeginDebugBlock( commandBuffer
-				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName(), m_context.getNextRainbowColour() } );
+				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName()
+				, m_context.getNextRainbowColour() } );
+#pragma GCC diagnostic pop
 			m_timer.beginPass( commandBuffer );
 
 			for ( auto & attach : m_pass.images )
@@ -520,10 +524,10 @@ namespace crg
 							, currentState.pipelineStage
 							, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
 						m_context.vkCmdFillBuffer( commandBuffer
-								, buffer.buffer.buffer( index )
-								, buffer.range.offset == 0u ? 0u : details::getAlignedSize( buffer.range.offset, 4u )
-								, buffer.range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( buffer.range.size, 4u )
-								, 0u );
+							, buffer.buffer.buffer( index )
+							, buffer.range.offset == 0u ? 0u : details::getAlignedSize( buffer.range.offset, 4u )
+							, buffer.range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( buffer.range.size, 4u )
+							, 0u );
 						currentState.access = VK_ACCESS_TRANSFER_WRITE_BIT;
 						currentState.pipelineStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 					}
@@ -553,11 +557,9 @@ namespace crg
 			m_context.vkCmdEndDebugBlock( commandBuffer );
 		}
 
-		for ( auto & action : m_ruConfig.implicitActions )
+		for ( auto const & [view, action] : m_ruConfig.implicitActions )
 		{
-			context.registerImplicitTransition( *this
-				, action.first
-				, action.second );
+			context.registerImplicitTransition( *this, view, action );
 		}
 	}
 

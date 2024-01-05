@@ -30,7 +30,7 @@ target_include_directories( ${TEST_NAME}
 )
 set_target_properties( ${TEST_NAME}
 	PROPERTIES
-		CXX_STANDARD 17
+		CXX_STANDARD 20
 		FOLDER "Tests/${MAIN_PROJECT_NAME}"
 )
 
@@ -49,7 +49,7 @@ foreach ( TEST_FILE ${TEST_FILES} )
 	)
 	set_target_properties( ${TEST_NAME}
 		PROPERTIES
-			CXX_STANDARD 17
+			CXX_STANDARD 20
 			FOLDER "Tests/${MAIN_PROJECT_NAME}"
 	)
 	target_include_directories( ${TEST_NAME}

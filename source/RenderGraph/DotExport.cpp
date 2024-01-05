@@ -38,13 +38,10 @@ namespace crg::dot
 
 		public:
 			explicit BasicIndentBuffer( std::basic_streambuf< char_type, traits > * sbuf )
-				: m_sbuf( sbuf )
-				, m_count( 0 )
-				, m_set( true )
+				: m_sbuf{ sbuf }
+				, m_set{ true }
 			{
 			}
-
-			~BasicIndentBuffer()override = default;
 
 			int indent() const
 			{
@@ -91,8 +88,8 @@ namespace crg::dot
 
 		private:
 			std::basic_streambuf< char_type, traits > * m_sbuf;
-			long m_count;
-			bool m_set;
+			long m_count{ 0 };
+			bool m_set{ false };
 		};
 
 		template< typename char_type, typename traits = std::char_traits< char_type > >
@@ -115,14 +112,20 @@ namespace crg::dot
 			BasicIndentBufferManager( BasicIndentBufferManager< char_type, traits > & obj ) = delete;
 
 		public:
-			~BasicIndentBufferManager()
+			~BasicIndentBufferManager()noexcept
 			{
-				--sm_instances;
-				lock_type lock{ m_mutex };
-
-				for ( iterator it = m_list.begin(); it != m_list.end(); ++it )
+				try
 				{
-					delete it->second;
+					--sm_instances;
+					lock_type lock{ m_mutex };
+
+					for ( iterator it = m_list.begin(); it != m_list.end(); ++it )
+					{
+						delete it->second;
+					}
+				}
+				catch ( ... )
+				{
 				}
 			}
 
@@ -214,7 +217,7 @@ namespace crg::dot
 		}
 
 		template< typename CharType >
-		inline void callback( std::ios_base::event ev, std::ios_base & ios, int x )
+		inline void callback( std::ios_base::event ev, std::ios_base & ios, int )
 		{
 			if ( BasicIndentBufferManager< CharType >::instances() )
 			{
@@ -229,7 +232,7 @@ namespace crg::dot
 #	error Known good compilers: 3.3
 #else
 
-					if ( std::basic_ostream< CharType > & o_s = dynamic_cast< std::basic_ostream< CharType > & >( ios ) )
+					if ( auto & o_s = dynamic_cast< std::basic_ostream< CharType > & >( ios ) )
 					{
 						o_s << Indent{ getIndent( ios ) };
 					}
@@ -291,8 +294,7 @@ namespace crg::dot
 				}
 				else
 				{
-					auto ires = emplace( group->parent );
-					streams = ires.first;
+					streams = emplace( group->parent ).first;
 					streams = streams->emplace( group ).first;
 				}
 
@@ -327,13 +329,13 @@ namespace crg::dot
 			}
 
 			void write( DisplayResult & streams
-				, std::stringstream const & global = std::stringstream{} )
+				, std::stringstream const & global = std::stringstream{} )const
 			{
 				if ( m_config.splitGroups )
 				{
 					if ( m_group )
 					{
-						auto & stream = streams.emplace( m_group->getName(), std::stringstream{} ).first->second;
+						auto & stream = streams.try_emplace( m_group->getName() ).first->second;
 						stream << "digraph \"" << m_group->getName() << "\" {\n";
 						stream << m_stream.str();
 						stream << "}\n";
@@ -346,7 +348,7 @@ namespace crg::dot
 				}
 				else
 				{
-					auto & stream = streams.emplace( m_group ? m_group->getName() : std::string{}, std::stringstream{} ).first->second;
+					auto & stream = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
 
 					if ( m_group )
 					{
@@ -390,7 +392,7 @@ namespace crg::dot
 						stream << streams.find( group->getName() )->second.str();
 					}
 
-					auto & stream2 = streams.emplace( m_group ? m_group->getName() : std::string{}, std::stringstream{} ).first->second;
+					auto & stream2 = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
 
 					if ( m_config.withGroups )
 					{
@@ -420,7 +422,7 @@ namespace crg::dot
 				return m_group ? m_group->getName() : dummy;
 			}
 
-			std::set< std::string > & getNodes()
+			std::set< std::string, std::less<> > & getNodes()
 			{
 				return m_nodes;
 			}
@@ -450,7 +452,7 @@ namespace crg::dot
 			FramePassGroupStreams * m_parent;
 			std::vector< FramePassGroupStreamsPtr > m_children;
 			FramePassGroup const * m_group;
-			std::set< std::string > m_nodes;
+			std::set< std::string, std::less<> > m_nodes;
 		};
 
 		class DotOutVisitor
@@ -480,12 +482,10 @@ namespace crg::dot
 				, std::string const & name
 				, std::string const & shape
 				, std::string_view const & colour
-				, std::set< std::string > & nodes
+				, std::set< std::string, std::less<> > & nodes
 				, Config const & config )
 			{
-				auto ires = nodes.insert( name );
-
-				if ( ires.second )
+				if ( nodes.insert( name ).second )
 				{
 					stream << Indent{ 2 };
 					stream << "\"" << name << "\" [ shape=" << shape;
@@ -502,29 +502,24 @@ namespace crg::dot
 				}
 			}
 
-			static FramePassGroupStreams & displayGroupNode( FramePassGroupStreams & stream
-				, FramePassGroup const * group
+			static FramePassGroupStreams & displayGroupNode( FramePassGroup const * group
 				, FramePassGroupStreams & groups
-				, Config const & config )
+				, Config const & )
 			{
-				auto ires = groups.emplace( group );
-				auto & grstream = *ires.first;
-				return grstream;
+				return *groups.emplace( group ).first;
 			}
 
-			static FramePassGroupStreams & displayPassNode( FramePassGroupStreams & pstream
-				, uint32_t id
-				, std::string name
+			static FramePassGroupStreams & displayPassNode( uint32_t id
+				, std::string const & name
 				, FramePassGroup const * group
 				, std::string_view const & colour
 				, FramePassGroupStreams & groups
 				, Config const & config )
 			{
-				auto & groupStream = displayGroupNode( pstream, group, groups, config );
+				auto & groupStream = displayGroupNode( group, groups, config );
 				auto & stream = groupStream.getStream();
-				auto ires = groupStream.getNodes().insert( name );
 
-				if ( ires.second )
+				if ( groupStream.getNodes().insert( name ).second )
 				{
 					stream << Indent{ 2 };
 					stream << "\"" << name << "\" [ shape=ellipse";
@@ -568,8 +563,7 @@ namespace crg::dot
 			}
 
 			template< typename AttachT >
-			static void displayAttachPass( FramePassGroupStreams & stream
-				, AttachT const & attach
+			static void displayAttachPass( AttachT const & attach
 				, FramePassGroupStreams & groups
 				, Config const & config )
 			{
@@ -586,7 +580,7 @@ namespace crg::dot
 					colour = passColour;
 				}
 
-				displayPassNode( stream, nodeId, node, group, colour, groups, config );
+				displayPassNode( nodeId, node, group, colour, groups, config );
 			}
 
 			static std::string const & getAttachName( crg::Buffer const & data )
@@ -677,14 +671,14 @@ namespace crg::dot
 
 				for ( auto & transition : transitions.viewTransitions )
 				{
-					displayAttachPass( groups, transition.outputAttach, groups, config );
-					displayAttachPass( groups, transition.inputAttach, groups, config );
+					displayAttachPass( transition.outputAttach, groups, config );
+					displayAttachPass( transition.inputAttach, groups, config );
 				}
 
 				for ( auto & transition : transitions.bufferTransitions )
 				{
-					displayAttachPass( groups, transition.outputAttach, groups, config );
-					displayAttachPass( groups, transition.inputAttach, groups, config );
+					displayAttachPass( transition.outputAttach, groups, config );
+					displayAttachPass( transition.inputAttach, groups, config );
 				}
 
 				std::stringstream trstream;
@@ -715,8 +709,7 @@ namespace crg::dot
 			}
 
 			void printEdge( ConstGraphAdjacentNode lhs
-				, ConstGraphAdjacentNode rhs
-				, std::stringstream & stream )
+				, ConstGraphAdjacentNode rhs )
 			{
 				std::string sep;
 				auto transitions = rhs->getInputAttaches( lhs );
@@ -733,12 +726,12 @@ namespace crg::dot
 						return ilhs.outputAttach.name < irhs.outputAttach.name;
 					} );
 
-				auto lhsStream = &displayPassNode( m_groups, lhs->getId(), lhs->getName(), &lhs->getGroup(), passColour, m_groups, m_config );
-				auto rhsStream = &displayPassNode( m_groups, rhs->getId(), rhs->getName(), &rhs->getGroup(), passColour, m_groups, m_config );
+				auto lhsStream = &displayPassNode( lhs->getId(), lhs->getName(), &lhs->getGroup(), passColour, m_groups, m_config );
+				auto rhsStream = &displayPassNode( rhs->getId(), rhs->getName(), &rhs->getGroup(), passColour, m_groups, m_config );
 				auto curStreams = &m_groups;
 				auto curstream = &m_groups.getStream();
-				auto lhsName = lhs->getName();
-				auto rhsName = rhs->getName();
+				auto & lhsName = lhs->getName();
+				auto & rhsName = rhs->getName();
 
 				if ( lhsStream != &m_groups
 					&& rhsStream != &m_groups )
@@ -800,11 +793,11 @@ namespace crg::dot
 			void visitFramePassNode( FramePassNode const * node )override
 			{
 				m_visited.insert( node );
-				auto nexts = node->getNext();
+				auto & nexts = node->getNext();
 
 				for ( auto & next : nexts )
 				{
-					printEdge( node, next, m_groups.getStream() );
+					printEdge( node, next );
 
 					if ( m_visited.end() == m_visited.find( next ) )
 					{
@@ -846,11 +839,11 @@ namespace crg::dot
 
 		if ( config.splitGroups )
 		{
-			for ( auto & it : result )
+			for ( auto const & [name, strm] : result )
 			{
-				if ( !it.first.empty() )
+				if ( !name.empty() )
 				{
-					stream << it.second.str();
+					stream << strm.str();
 				}
 			}
 		}
@@ -867,9 +860,9 @@ namespace crg::dot
 	{
 		auto result = displayTransitions( value, config );
 
-		for ( auto & it : result )
+		for ( auto const & [_, strm] : result )
 		{
-			stream << it.second.str();
+			stream << strm.str();
 		}
 	}
 }

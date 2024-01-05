@@ -101,12 +101,6 @@ namespace crg
 				} );
 			return it == attaches.end();
 		}
-
-		static bool operator==( PipelineState const & lhs, PipelineState const & rhs )
-		{
-			return lhs.access == rhs.access
-				&& lhs.pipelineStage == rhs.pipelineStage;
-		}
 	}
 
 	//*********************************************************************************************
@@ -141,11 +135,11 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
-		, VkExtent2D const & size )
+		, VkExtent2D size )
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
-		, m_size{ size }
+		, m_size{ std::move( size ) }
 	{
 		m_passes.resize( maxPassCount );
 	}
@@ -162,8 +156,6 @@ namespace crg
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
-		using rpHolder::operator==;
-
 		auto & data = m_passes[passIndex];
 		auto previousState = context.getPrevPipelineState();
 		auto nextState = context.getNextPipelineState();
@@ -186,7 +178,7 @@ namespace crg
 		return true;
 	}
 
-	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )
+	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )const
 	{
 		auto frameBuffer = getFramebuffer( index );
 		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO

@@ -9,7 +9,7 @@ namespace crg
 	RenderQuad::RenderQuad( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, ru::Config ruConfig
+		, ru::Config const & ruConfig
 		, rq::Config rqConfig )
 		: RunnablePass{ pass
 			, context
@@ -33,7 +33,7 @@ namespace crg
 			, context
 			, graph
 			, ruConfig.maxPassCount
-			, std::move( rqConfig.m_renderSize ? *rqConfig.m_renderSize : defaultV< VkExtent2D > ) }
+			, rqConfig.m_renderSize ? *rqConfig.m_renderSize : getDefaultV< VkExtent2D >() }
 	{
 	}
 
@@ -51,8 +51,7 @@ namespace crg
 	{
 		if ( m_renderPass.initialise( context, *this, index ) )
 		{
-			m_renderQuad.initialise( *this
-				, m_renderPass.getRenderSize()
+			m_renderQuad.initialise( m_renderPass.getRenderSize()
 				, m_renderPass.getRenderPass( index )
 				, m_renderPass.createBlendState()
 				, index );

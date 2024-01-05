@@ -3,6 +3,7 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Exception.hpp"
 #include "RenderGraph/Log.hpp"
 
 #include <cassert>
@@ -257,18 +258,16 @@ namespace crg
 	{
 		for ( uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i )
 		{
-			if ( ( typeBits & 1 ) == 1 )
+			if ( ( typeBits & 1 ) == 1
+				&& ( memoryProperties.memoryTypes[i].propertyFlags & requirements ) == requirements )
 			{
-				if ( ( memoryProperties.memoryTypes[i].propertyFlags & requirements ) == requirements )
-				{
-					return i;
-				}
+				return i;
 			}
 
 			typeBits >>= 1;
 		}
 
-		throw std::runtime_error{ "Could not deduce memory type" };
+		CRG_Exception( "Could not deduce memory type" );
 	}
 
 #if VK_EXT_debug_utils
@@ -338,8 +337,7 @@ namespace crg
 	{
 		doRegisterObjectName( object
 			, objectType
-			, objectName
-			, typeName );
+			, objectName );
 		std::stringstream stream;
 		stream.imbue( std::locale{ "C" } );
 		stream << "Created " << typeName
@@ -354,18 +352,16 @@ namespace crg
 		}
 
 		lock_type lock{ m_mutex };
-		m_allocated.emplace( object
+		m_allocated.insert_or_assign( object
 			, ObjectAllocation{
 				typeName,
 				objectName,
-				callStack.str()
-			} );
+				callStack.str() } );
 	}
 
 	void GraphContext::doRegisterObjectName( uint64_t object
 		, uint32_t objectType
-		, std::string const & objectName
-		, std::string const & typeName )
+		, std::string const & objectName )
 	{
 #	if VK_EXT_debug_utils
 		if ( vkSetDebugUtilsObjectNameEXT )
@@ -424,11 +420,11 @@ namespace crg
 	{
 		lock_type lock{ m_mutex };
 
-		for ( auto & alloc : m_allocated )
+		for ( auto const & [_, alloc] : m_allocated )
 		{
 			std::stringstream stream;
-			stream << "Leaked [" << alloc.second.type << "](" << alloc.second.name << "), allocation stack:\n";
-			stream << alloc.second.callstack;
+			stream << "Leaked [" << alloc.type << "](" << alloc.name << "), allocation stack:\n";
+			stream << alloc.callstack;
 			Logger::logError( stream.str() );
 		}
 	}
@@ -439,7 +435,7 @@ namespace crg
 	{
 		if ( result != VK_SUCCESS )
 		{
-			throw std::runtime_error{ stepName };
+			CRG_Exception( stepName );
 		}
 	}
 

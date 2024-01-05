@@ -115,7 +115,7 @@ namespace crg
 					{
 						for ( auto & view : attach.view().data->source )
 						{
-							result.push_back( Attachment{ view, attach } );
+							result.emplace_back( view, attach );
 						}
 					}
 
@@ -142,13 +142,13 @@ namespace crg
 				}
 
 				static Buffer getOutput( Attachment const & inputAttach
-					, Attachment const & outputAttach )
+					, Attachment const & )
 				{
 					return inputAttach.buffer.buffer;
 				}
 
 				static Buffer getInput( Attachment const & inputAttach
-					, Attachment const & outputAttach )
+					, Attachment const & )
 				{
 					return inputAttach.buffer.buffer;
 				}
@@ -275,8 +275,8 @@ namespace crg
 			}
 #endif
 
-			static void printDebug( ViewAttachesArray const & inputs
-				, ViewAttachesArray const & outputs )
+			static void printDebug( [[maybe_unused]] ViewAttachesArray const & inputs
+				, [[maybe_unused]] ViewAttachesArray const & outputs )
 			{
 #if CRG_DebugPassAttaches
 				Logger::logDebug( "Inputs" )
@@ -286,8 +286,8 @@ namespace crg
 #endif
 			}
 
-			static void printDebug( BufferAttachesArray const & inputs
-				, BufferAttachesArray const & outputs )
+			static void printDebug( [[maybe_unused]] BufferAttachesArray const & inputs
+				, [[maybe_unused]] BufferAttachesArray const & outputs )
 			{
 #if CRG_DebugPassAttaches
 				Logger::logDebug( "Inputs" );
@@ -297,8 +297,8 @@ namespace crg
 #endif
 			}
 
-			static void printDebug( FramePassDependencies const & inputTransitions
-				, FramePassDependencies const & outputTransitions )
+			static void printDebug( [[maybe_unused]] FramePassDependencies const & inputTransitions
+				, [[maybe_unused]] FramePassDependencies const & outputTransitions )
 			{
 #if CRG_DebugPassDependencies
 				Logger::logDebug( "Input Transitions" )
@@ -392,14 +392,12 @@ namespace crg
 				, DataT const & sourceView
 				, std::function< bool( DataT const &, DataT const & ) > processAttach )
 			{
-				if ( processAttach( sourceView, attachView ) )
-				{
-					if ( lookup.attaches.end() == std::find( lookup.attaches.begin()
+				if ( processAttach( sourceView, attachView )
+					&& lookup.attaches.end() == std::find( lookup.attaches.begin()
 						, lookup.attaches.end()
 						, attach ) )
-					{
-						lookup.attaches.push_back( attach );
-					}
+				{
+					lookup.attaches.push_back( attach );
 				}
 			}
 
@@ -500,7 +498,7 @@ namespace crg
 
 			template< typename DataT >
 			static bool dependsOn( DataTransitionT< DataT > const & transition
-				, DataTransitionT< DataT > const & lookup
+				, DataTransitionT< DataT > const &
 				, PassDependencyCache & cache )
 			{
 				return transition.inputAttach.pass

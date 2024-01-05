@@ -251,7 +251,7 @@ namespace crg
 		{
 			addSampledView( ImageViewIdArray{ view }
 				, binding
-				, samplerDesc );
+				, std::move( samplerDesc ) );
 		}
 		/**
 		*\brief
@@ -654,7 +654,7 @@ namespace crg
 				, storeOp
 				, wantedLayout
 				, clearValue
-				, blendState );
+				, std::move( blendState ) );
 		}
 
 		void addDepthView( std::string const & name

@@ -20,7 +20,7 @@ namespace crg
 		CRG_API RenderQuad( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, ru::Config ruConfig
+			, ru::Config const & ruConfig
 			, rq::Config rqConfig );
 
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config

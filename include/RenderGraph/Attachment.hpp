@@ -6,23 +6,27 @@ See LICENSE file in root folder.
 
 #include "ImageViewData.hpp"
 
+#include <limits>
+
 #ifdef None
 #undef None
 #endif
 
 namespace crg
 {
+	static constexpr uint32_t InvalidBindingId = std::numeric_limits< uint32_t >::max();
+
 	struct SamplerDesc
 	{
-		VkFilter magFilter;
-		VkFilter minFilter;
-		VkSamplerMipmapMode mipmapMode;
-		VkSamplerAddressMode addressModeU;
-		VkSamplerAddressMode addressModeV;
-		VkSamplerAddressMode addressModeW;
-		float mipLodBias;
-		float minLod;
-		float maxLod;
+		VkFilter magFilter{ VK_FILTER_NEAREST };
+		VkFilter minFilter{ VK_FILTER_NEAREST };
+		VkSamplerMipmapMode mipmapMode{ VK_SAMPLER_MIPMAP_MODE_NEAREST };
+		VkSamplerAddressMode addressModeU{ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE };
+		VkSamplerAddressMode addressModeV{ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE };
+		VkSamplerAddressMode addressModeW{ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE };
+		float mipLodBias{ 0.0f };
+		float minLod{ -500.0f };
+		float maxLod{ 500.0f };
 
 		explicit constexpr SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
 			, VkFilter minFilter = VK_FILTER_NEAREST
@@ -168,7 +172,7 @@ namespace crg
 		/**@}*/
 
 	public:
-		ImageViewIdArray views;
+		ImageViewIdArray views{};
 		VkAttachmentLoadOp loadOp{};
 		VkAttachmentStoreOp storeOp{};
 		VkAttachmentLoadOp stencilLoadOp{};
@@ -179,7 +183,7 @@ namespace crg
 		VkImageLayout wantedLayout{};
 
 	private:
-		CRG_API ImageAttachment();
+		CRG_API ImageAttachment() = default;
 		CRG_API explicit ImageAttachment( ImageViewId view );
 		CRG_API ImageAttachment( FlagKind flags
 			, ImageViewIdArray views
@@ -210,8 +214,8 @@ namespace crg
 	};
 	struct BufferSubresourceRange
 	{
-		VkDeviceSize offset;
-		VkDeviceSize size;
+		VkDeviceSize offset{};
+		VkDeviceSize size{};
 	};
 	/**
 	*\brief
@@ -284,12 +288,12 @@ namespace crg
 			return isStorage() && isView();
 		}
 
-		Buffer buffer;
-		VkBufferView view;
-		BufferSubresourceRange range;
+		Buffer buffer{ {}, std::string{} };
+		VkBufferView view{};
+		BufferSubresourceRange range{};
 
 	private:
-		CRG_API BufferAttachment();
+		CRG_API BufferAttachment() = default;
 		CRG_API explicit BufferAttachment( Buffer buffer );
 		CRG_API BufferAttachment( FlagKind flags
 			, Buffer buffer
@@ -578,8 +582,8 @@ namespace crg
 		FramePass * pass{};
 		uint32_t binding{};
 		std::string name{};
-		ImageAttachment image;
-		BufferAttachment buffer;
+		ImageAttachment image{};
+		BufferAttachment buffer{};
 		/**@}*/
 
 		CRG_API Attachment( ImageViewId view

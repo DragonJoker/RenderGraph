@@ -38,20 +38,17 @@ namespace test
 		int line;
 	};
 
-	inline MessageData makeMessageData( std::string const & target
+	inline MessageData makeMessageData( std::string target
 		, std::string error
 		, std::string message
 		, std::string function
 		, int line )
 	{
-		return MessageData
-		{
-			target,
-			error,
-			message,
-			function,
-			line,
-		};
+		return MessageData{ std::move( target )
+			, std::move( error )
+			, std::move( message )
+			, std::move( function )
+			, line };
 	}
 
 	class Exception

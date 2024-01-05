@@ -30,10 +30,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
 #endif
+		static inline std::string Name{ "VkBuffer" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkBuffer" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -46,10 +47,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT;
 #endif
+		static inline std::string Name{ "VkCommandBuffer" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkCommandBuffer" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -62,10 +64,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
 #endif
+		static inline std::string Name{ "VkDevice" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkDevice" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -78,10 +81,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
 #endif
+		static inline std::string Name{ "VkInstance" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkInstance" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -94,10 +98,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
 #endif
+		static inline std::string Name{ "VkPhysicalDevice" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkPhysicalDevice" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -110,10 +115,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
 #endif
+		static inline std::string Name{ "VkQueue" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkQueue" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -127,10 +133,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT;
 #endif
+		static inline std::string Name{ "VkBufferView" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkBufferView" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -143,10 +150,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT;
 #endif
+		static inline std::string Name{ "VkCommandPool" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkCommandPool" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -159,10 +167,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT;
 #endif
+		static inline std::string Name{ "VkDescriptorPool" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkDescriptorPool" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -175,10 +184,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT;
 #endif
+		static inline std::string Name{ "VkDescriptorSet" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkDescriptorSet" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -191,10 +201,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT;
 #endif
+		static inline std::string Name{ "VkDescriptorSetLayout" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkDescriptorSetLayout" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -207,10 +218,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
 #endif
+		static inline std::string Name{ "VkDeviceMemory" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkDeviceMemory" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -223,10 +235,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
 #endif
+		static inline std::string Name{ "VkEvent" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkEvent" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -239,10 +252,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT;
 #endif
+		static inline std::string Name{ "VkFence" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkFence" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -255,10 +269,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT;
 #endif
+		static inline std::string Name{ "VkFramebuffer" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkFramebuffer" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -271,10 +286,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT;
 #endif
+		static inline std::string Name{ "VkImage" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkImage" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -287,10 +303,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT;
 #endif
+		static inline std::string Name{ "VkImageView" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkImageView" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -303,10 +320,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT;
 #endif
+		static inline std::string Name{ "VkPipeline" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkPipeline" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -319,10 +337,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT;
 #endif
+		static inline std::string Name{ "VkPipelineLayout" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkPipelineLayout" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -335,10 +354,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT;
 #endif
+		static inline std::string Name{ "VkQueryPool" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkQueryPool" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -351,10 +371,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT;
 #endif
+		static inline std::string Name{ "VkRenderPass" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkRenderPass" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -367,10 +388,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT;
 #endif
+		static inline std::string Name{ "VkSampler" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkSampler" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -383,10 +405,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT;
 #endif
+		static inline std::string Name{ "VkSemaphore" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkSemaphore" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -399,10 +422,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT;
 #endif
+		static inline std::string Name{ "VkShaderModule" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkShaderModule" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -415,10 +439,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT;
 #endif
+		static inline std::string Name{ "VkSurfaceKHR" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkSurfaceKHR" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -431,10 +456,11 @@ namespace crg
 #if VK_EXT_debug_report || VK_EXT_debug_marker
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT;
 #endif
+		static inline std::string Name{ "VkSwapchainKHR" };
+
 		static std::string const & getName()
 		{
-			static std::string result{ "VkSwapchainKHR" };
-			return result;
+			return Name;
 		}
 	};
 
@@ -455,14 +481,14 @@ namespace crg
 	public:
 		void push( DtorFunc func )
 		{
-			m_toDelete.push_back( func );
+			m_toDelete.push_back( std::move( func ) );
 		}
 
 		void clear( GraphContext & context )
 		{
 			DtorFuncArray tmp{ std::move( m_toDelete ) };
 
-			for ( auto func : tmp )
+			for ( DtorFunc const & func : tmp )
 			{
 				func( context );
 			}
@@ -644,7 +670,7 @@ namespace crg
 	public:
 		void setCallstackCallback( CallstackCallback callback )
 		{
-			m_callstackCallback = callback;
+			m_callstackCallback = std::move( callback );
 		}
 
 		template< typename ObjectT >
@@ -675,8 +701,7 @@ namespace crg
 #elif VK_EXT_debug_marker
 				, uint32_t( MyTraits::ReportValue )
 #endif
-				, name
-				, MyTraits::getName() );
+				, name );
 		}
 
 		template< typename ObjectT >
@@ -739,8 +764,7 @@ namespace crg
 			, std::string const & typeName );
 		CRG_API void doRegisterObjectName( uint64_t object
 			, uint32_t objectType
-			, std::string const & name
-			, std::string const & typeName );
+			, std::string const & name );
 		CRG_API void doUnregisterObject( uint64_t object );
 		CRG_API void doReportRegisteredObjects();
 

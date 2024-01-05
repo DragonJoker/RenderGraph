@@ -119,7 +119,7 @@ namespace crg
 			*/
 			auto & getPassIndex( RunnablePass::GetPassIndexCallback config )
 			{
-				m_getPassIndex = config;
+				m_getPassIndex = std::move( config );
 				return *this;
 			}
 			/**
@@ -128,7 +128,7 @@ namespace crg
 			*/
 			auto & isEnabled( RunnablePass::IsEnabledCallback config )
 			{
-				m_isEnabled = config;
+				m_isEnabled = std::move( config );
 				return *this;
 			}
 			/**
@@ -137,7 +137,7 @@ namespace crg
 			*/
 			auto & recordInto( RunnablePass::RecordCallback config )
 			{
-				m_recordInto = config;
+				m_recordInto = std::move( config );
 				return *this;
 			}
 			/**
@@ -146,7 +146,7 @@ namespace crg
 			*/
 			auto & end( RunnablePass::RecordCallback config )
 			{
-				m_end = config;
+				m_end = std::move( config );
 				return *this;
 			}
 			/**
@@ -155,7 +155,7 @@ namespace crg
 			*/
 			auto & vertexBuffer( VertexBuffer config )
 			{
-				m_vertexBuffer = config;
+				m_vertexBuffer = std::move( config );
 				return *this;
 			}
 			/**
@@ -164,7 +164,7 @@ namespace crg
 			*/
 			auto & indexBuffer( IndexBuffer config )
 			{
-				m_indexBuffer = config;
+				m_indexBuffer = std::move( config );
 				return *this;
 			}
 			/**
@@ -173,7 +173,7 @@ namespace crg
 			*/
 			auto & indirectBuffer( IndirectBuffer config )
 			{
-				m_indirectBuffer = config;
+				m_indirectBuffer = std::move( config );
 				return *this;
 			}
 			/**
@@ -182,7 +182,7 @@ namespace crg
 			*/
 			auto & getPrimitiveCount( GetPrimitiveCountCallback config )
 			{
-				m_getPrimitiveCount = config;
+				m_getPrimitiveCount = std::move( config );
 				return *this;
 			}
 			/**
@@ -191,7 +191,7 @@ namespace crg
 			*/
 			auto & getVertexCount( GetVertexCountCallback config )
 			{
-				m_getVertexCount = config;
+				m_getVertexCount = std::move( config );
 				return *this;
 			}
 			/**
@@ -200,7 +200,7 @@ namespace crg
 			*/
 			auto & getIndexType( GetIndexTypeCallback config )
 			{
-				m_getIndexType = config;
+				m_getIndexType = std::move( config );
 				return *this;
 			}
 			/**
@@ -209,7 +209,7 @@ namespace crg
 			*/
 			auto & getCullMode( GetCullModeCallback config )
 			{
-				m_getCullMode = config;
+				m_getCullMode = std::move( config );
 				return *this;
 			}
 

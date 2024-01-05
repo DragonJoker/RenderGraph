@@ -9,7 +9,7 @@ namespace crg
 	RenderMesh::RenderMesh( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, ru::Config ruConfig
+		, ru::Config const & ruConfig
 		, rm::Config rmConfig )
 		: RunnablePass{ pass
 			, context
@@ -52,8 +52,7 @@ namespace crg
 		if ( m_renderPass.initialise( context, *this, index ) )
 		{
 			m_renderMesh.cleanup();
-			m_renderMesh.initialise( *this
-				, m_renderPass.getRenderSize()
+			m_renderMesh.initialise( m_renderPass.getRenderSize()
 				, m_renderPass.getRenderPass( index )
 				, m_renderPass.createBlendState()
 				, index );

@@ -89,7 +89,7 @@ namespace crg
 		}
 
 	private:
-		void swap( SignalConnection & lhs, SignalConnection & rhs )noexcept
+		void swap( SignalConnection & lhs, SignalConnection & rhs )const noexcept
 		{
 			if ( lhs.m_signal )
 			{

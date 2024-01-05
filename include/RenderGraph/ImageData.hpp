@@ -72,9 +72,4 @@ namespace crg
 		return lhs.name == rhs.name
 			&& lhs.info == rhs.info;
 	}
-
-	inline bool operator!=( ImageData const & lhs, ImageData const & rhs )
-	{
-		return !( lhs == rhs );
-	}
 }

@@ -145,6 +145,8 @@ namespace crg
 	{
 		VkAccessFlags access;
 		VkPipelineStageFlags pipelineStage;
+
+		bool operator==( PipelineState const & rhs )const = default;
 	};
 
 	struct LayoutState
@@ -256,7 +258,6 @@ namespace crg
 			, memory{ pmemory }
 			, vertexAttribs{ std::move( pvertexAttribs ) }
 			, vertexBindings{ std::move( pvertexBindings ) }
-			, inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} }
 		{
 			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
 			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
@@ -445,10 +446,10 @@ namespace crg
 	CRG_API PipelineState getPipelineState( VkPipelineStageFlags flags )noexcept;
 	CRG_API LayoutState makeLayoutState( VkImageLayout layout );
 	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
-	CRG_API LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
+	CRG_API LayoutState const & addSubresourceRangeLayout( LayerLayoutStates & ranges
 		, VkImageSubresourceRange const & range
 		, LayoutState const & newLayout );
-	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
+	CRG_API LayoutState const & getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range );
 	CRG_API VkImageSubresourceRange getVirtualRange( ImageId const & image
 		, VkImageViewType viewType

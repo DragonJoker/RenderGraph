@@ -158,13 +158,13 @@ namespace crg
 
 	private:
 		GraphContext & m_context;
-		TimerScope m_scope;
-		std::string m_name;
-		Clock::time_point m_cpuSaveTime;
-		Nanoseconds m_cpuTime;
-		Nanoseconds m_gpuTime;
-		Nanoseconds m_subtractedGpuTime;
-		VkQueryPool m_timerQueries;
+		TimerScope m_scope{};
+		std::string m_name{};
+		Clock::time_point m_cpuSaveTime{};
+		Nanoseconds m_cpuTime{};
+		Nanoseconds m_gpuTime{};
+		Nanoseconds m_subtractedGpuTime{};
+		VkQueryPool m_timerQueries{};
 		bool m_ownPool{};
 		struct Query
 		{

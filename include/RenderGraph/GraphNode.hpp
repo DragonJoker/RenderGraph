@@ -94,12 +94,12 @@ namespace crg
 			, FramePassGroup const & group );
 
 	protected:
-		Kind kind;
-		uint32_t id;
-		std::string name;
+		Kind kind{};
+		uint32_t id{};
+		std::string name{};
 		FramePassGroup const & group;
-		GraphAdjacentNodeArray next;
-		AttachmentsNodeMap inputAttaches;
+		GraphAdjacentNodeArray next{};
+		AttachmentsNodeMap inputAttaches{};
 	};
 	/**
 	*\brief
@@ -164,16 +164,6 @@ namespace crg
 	}
 
 	inline bool isRootNode( ConstGraphAdjacentNode node )
-	{
-		return node && isRootNode( *node );
-	}
-
-	inline bool isFramePassNode( GraphNodePtr const & node )
-	{
-		return node && isFramePassNode( *node );
-	}
-
-	inline bool isRootNode( GraphNodePtr const & node )
 	{
 		return node && isRootNode( *node );
 	}

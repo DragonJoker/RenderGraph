@@ -110,7 +110,7 @@ namespace crg
 
 				if ( !added )
 				{
-					throw std::runtime_error{ "Couldn't sort passes:" };
+					CRG_Exception( "Couldn't sort passes:" );
 				}
 			}
 
@@ -172,7 +172,7 @@ namespace crg
 	FramePass & FrameGraph::createPass( std::string const & name
 		, RunnablePassCreator runnableCreator )
 	{
-		return m_defaultGroup->createPass( name, runnableCreator );
+		return m_defaultGroup->createPass( name, std::move( runnableCreator ) );
 	}
 
 	FramePassGroup & FrameGraph::createPassGroup( std::string const & groupName )
@@ -233,7 +233,6 @@ namespace crg
 		ImageMemoryMap images;
 		ImageViewMap imageViews;
 		return std::make_unique< RunnableGraph >( *this
-			, std::move( passes )
 			, std::move( inputTransitions )
 			, std::move( outputTransitions )
 			, std::move( transitions )
@@ -242,14 +241,14 @@ namespace crg
 			, context );
 	}
 
-	LayoutState FrameGraph::getFinalLayoutState( ImageId image
+	LayoutState const & FrameGraph::getFinalLayoutState( ImageId image
 		, VkImageViewType viewType
-		, VkImageSubresourceRange range )const
+		, VkImageSubresourceRange const & range )const
 	{
 		return m_finalState.getLayoutState( image, viewType, range );
 	}
 
-	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view
+	LayoutState const & FrameGraph::getFinalLayoutState( ImageViewId view
 		, uint32_t passIndex )const
 	{
 		if ( view.data->source.empty() )
@@ -262,7 +261,7 @@ namespace crg
 		return getFinalLayoutState( view.data->source[passIndex], 0u );
 	}
 
-	AccessState FrameGraph::getFinalAccessState( Buffer const & buffer
+	AccessState const & FrameGraph::getFinalAccessState( Buffer const & buffer
 		, uint32_t passIndex )const
 	{
 		return m_finalState.getAccessState( buffer.buffer( passIndex ), { 0u, VK_WHOLE_SIZE } );
@@ -270,17 +269,17 @@ namespace crg
 
 	void FrameGraph::addInput( ImageId image
 		, VkImageViewType viewType
-		, VkImageSubresourceRange range
-		, LayoutState outputLayout )
+		, VkImageSubresourceRange const & range
+		, LayoutState const & outputLayout )
 	{
 		m_inputs.setLayoutState( image
 			, viewType
-			, std::move( range )
-			, std::move( outputLayout ) );
+			, range
+			, outputLayout );
 	}
 
 	void FrameGraph::addInput( ImageViewId view
-		, LayoutState outputLayout )
+		, LayoutState const & outputLayout )
 	{
 		addInput( view.data->image
 			, view.data->info.viewType
@@ -288,16 +287,16 @@ namespace crg
 			, outputLayout );
 	}
 
-	LayoutState FrameGraph::getInputLayoutState( ImageId image
+	LayoutState const & FrameGraph::getInputLayoutState( ImageId image
 		, VkImageViewType viewType
-		, VkImageSubresourceRange range )const
+		, VkImageSubresourceRange const & range )const
 	{
 		return m_inputs.getLayoutState( image
 			, viewType
 			, range );
 	}
 
-	LayoutState FrameGraph::getInputLayoutState( ImageViewId view )const
+	LayoutState const & FrameGraph::getInputLayoutState( ImageViewId view )const
 	{
 		return getInputLayoutState( view.data->image
 			, view.data->info.viewType
@@ -306,17 +305,17 @@ namespace crg
 
 	void FrameGraph::addOutput( ImageId image
 		, VkImageViewType viewType
-		, VkImageSubresourceRange range
-		, LayoutState outputLayout )
+		, VkImageSubresourceRange const & range
+		, LayoutState const & outputLayout )
 	{
 		m_outputs.setLayoutState( image
 			, viewType
-			, std::move( range )
-			, std::move( outputLayout ) );
+			, range
+			, outputLayout );
 	}
 
 	void FrameGraph::addOutput( ImageViewId view
-		, LayoutState outputLayout )
+		, LayoutState const & outputLayout )
 	{
 		addOutput( view.data->image
 			, view.data->info.viewType
@@ -324,16 +323,16 @@ namespace crg
 			, outputLayout );
 	}
 
-	LayoutState FrameGraph::getOutputLayoutState( ImageId image
+	LayoutState const & FrameGraph::getOutputLayoutState( ImageId image
 		, VkImageViewType viewType
-		, VkImageSubresourceRange range )const
+		, VkImageSubresourceRange const & range )const
 	{
 		return m_outputs.getLayoutState( image
 			, viewType
 			, range );
 	}
 
-	LayoutState FrameGraph::getOutputLayoutState( ImageViewId view )const
+	LayoutState const & FrameGraph::getOutputLayoutState( ImageViewId view )const
 	{
 		return getOutputLayoutState( view.data->image
 			, view.data->info.viewType
@@ -563,27 +562,24 @@ namespace crg
 					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
 	}
 
-	LayoutState addSubresourceRangeLayout( LayerLayoutStates & ranges
+	LayoutState const & addSubresourceRangeLayout( LayerLayoutStates & ranges
 		, VkImageSubresourceRange const & range
 		, LayoutState const & newLayout )
 	{
 		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
 		{
-			auto & layers = ranges.emplace( range.baseArrayLayer + layerIdx, MipLayoutStates{} ).first->second;
+			auto & layers = ranges.try_emplace( range.baseArrayLayer + layerIdx ).first->second;
 
 			for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
 			{
-				auto & level = layers.emplace( range.baseMipLevel + levelIdx, LayoutState{} ).first->second;
-				level.layout = newLayout.layout;
-				level.state.access = newLayout.state.access;
-				level.state.pipelineStage = newLayout.state.pipelineStage;
+				layers.insert_or_assign( range.baseMipLevel + levelIdx, newLayout );
 			}
 		}
 
 		return newLayout;
 	}
 
-	LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
+	LayoutState const & getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range )
 	{
 		std::map< VkImageLayout, LayoutState > states;
@@ -603,13 +599,13 @@ namespace crg
 					if ( it != layers.end() )
 					{
 						auto state = it->second;
-						auto ires = states.emplace( state.layout, state );
+						auto [rit, res] = states.emplace( state.layout, state );
 
-						if ( !ires.second )
+						if ( !res )
 						{
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wnull-dereference"
-							ires.first->second.state.access |= state.state.access;
+							rit->second.state.access |= state.state.access;
 #pragma GCC diagnostic pop
 						}
 					}
@@ -619,9 +615,10 @@ namespace crg
 
 		if ( states.empty() )
 		{
-			return { VK_IMAGE_LAYOUT_UNDEFINED
+			static const LayoutState dummy{ VK_IMAGE_LAYOUT_UNDEFINED
 				, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
 				, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
+			return dummy;
 		}
 
 		if ( states.size() == 1u )
@@ -636,7 +633,7 @@ namespace crg
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & range )noexcept
 	{
-		auto result = range;
+		VkImageSubresourceRange result = range;
 
 		if ( viewType == VK_IMAGE_VIEW_TYPE_3D
 			&& ( range.levelCount == 1u

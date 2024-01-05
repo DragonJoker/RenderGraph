@@ -49,10 +49,7 @@ namespace crg
 		: m_context{ context }
 		, m_scope{ scope }
 		, m_name{ name }
-		, m_cpuTime{ 0ns }
-		, m_gpuTime{ 0ns }
 		, m_timerQueries{ timerQueries }
-		, m_ownPool{ false }
 		, m_queries{ { { baseQueryOffset, false, false }, { baseQueryOffset + 2u, false, false } } }
 	{
 		baseQueryOffset += 4u;
@@ -64,8 +61,6 @@ namespace crg
 		: m_context{ context }
 		, m_scope{ scope }
 		, m_name{ name }
-		, m_cpuTime{ 0ns }
-		, m_gpuTime{ 0ns }
 		, m_timerQueries{ createQueryPool( context, name, 4u ) }
 		, m_ownPool{ true }
 		, m_queries{ { { 0u, false, false }, { 2u, false, false } } }
@@ -98,7 +93,7 @@ namespace crg
 		return FramePassTimerBlock{ *this };
 	}
 
-	void FramePassTimer::notifyPassRender( uint32_t passIndex
+	void FramePassTimer::notifyPassRender( [[maybe_unused]] uint32_t passIndex
 		, bool subtractGpuFromCpu )noexcept
 	{
 		auto & query = m_queries.front();
