@@ -10,6 +10,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
+#include <format>
 
 namespace crg
 {
@@ -101,12 +102,6 @@ namespace crg
 				} );
 			return it == attaches.end();
 		}
-
-		static bool operator==( PipelineState const & lhs, PipelineState const & rhs )
-		{
-			return lhs.access == rhs.access
-				&& lhs.pipelineStage == rhs.pipelineStage;
-		}
 	}
 
 	//*********************************************************************************************
@@ -162,8 +157,6 @@ namespace crg
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
-		using rpHolder::operator==;
-
 		auto & data = m_passes[passIndex];
 		auto previousState = context.getPrevPipelineState();
 		auto nextState = context.getNextPipelineState();
@@ -186,7 +179,7 @@ namespace crg
 		return true;
 	}
 
-	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )
+	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )const
 	{
 		auto frameBuffer = getFramebuffer( index );
 		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
@@ -402,7 +395,7 @@ namespace crg
 				, &createInfo
 				, m_context.allocator
 				, frameBuffer );
-			auto name = m_pass.getGroupName() + std::string( "[" ) + std::to_string( passIndex ) + std::string( "]" );
+			auto name = std::format( "{}[{}]", m_pass.getGroupName(), passIndex );
 			checkVkResult( res, name + " - Framebuffer creation" );
 			crgRegisterObject( m_context, name, *frameBuffer );
 		}

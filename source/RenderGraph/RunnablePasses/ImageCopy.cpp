@@ -37,8 +37,8 @@ namespace crg
 			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, passIndex
-				, isEnabled }
+				, std::move( passIndex )
+				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
 		, m_copySize{std::move( copySize ) }
 		, m_finalOutputLayout{ finalOutputLayout }
@@ -59,8 +59,8 @@ namespace crg
 			, copySize
 			, VK_IMAGE_LAYOUT_UNDEFINED
 			, std::move( ruConfig )
-			, passIndex
-			, isEnabled }
+			, std::move( passIndex )
+			, std::move( isEnabled ) }
 	{
 		assert( ( pass.images.size() % 2u ) == 0u );
 	}
@@ -84,7 +84,7 @@ namespace crg
 				, imgCopy::convert( dstAttach.data->info.subresourceRange )
 				, {}
 				, m_copySize };
-			m_context.vkCmdCopyImage( commandBuffer
+			context->vkCmdCopyImage( commandBuffer
 				, srcImage
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 				, dstImage

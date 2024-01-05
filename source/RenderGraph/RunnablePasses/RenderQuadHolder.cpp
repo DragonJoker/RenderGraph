@@ -15,15 +15,15 @@ namespace crg
 		, RunnableGraph & graph
 		, rq::Config config
 		, uint32_t maxPassCount )
-		: m_config{ config.m_texcoordConfig ? std::move( *config.m_texcoordConfig ) : defaultV< Texcoord >
-			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : defaultV< VkOffset2D >
-			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
-			, config.m_passIndex ? std::move( *config.m_passIndex ) : defaultV< uint32_t const * >
-			, config.m_enabled ? std::move( *config.m_enabled ) : defaultV< bool const * >
+		: m_config{ config.m_texcoordConfig ? std::move( *config.m_texcoordConfig ) : getDefaultV< Texcoord >()
+			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< VkOffset2D >()
+			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
+			, config.m_passIndex ? *config.m_passIndex : getDefaultV< uint32_t const * >()
+			, config.m_enabled ? *config.m_enabled : getDefaultV< bool const * >()
 			, config.m_isEnabled
 			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_instances ? std::move( *config.m_instances ) : 1u
+			, config.m_instances ? *config.m_instances : 1u
 			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
 		, m_context{ context }
 		, m_graph{ graph }
@@ -64,8 +64,7 @@ namespace crg
 			, 0.0f };
 	}
 
-	void RenderQuadHolder::initialise( RunnablePass const & runnable
-		, VkExtent2D const & renderSize
+	void RenderQuadHolder::initialise( VkExtent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState
 		, uint32_t index )
@@ -75,17 +74,17 @@ namespace crg
 			m_pipeline.initialise();
 			m_vertexBuffer = &m_graph.createQuadTriVertexBuffer( m_useTexCoord
 				, m_config.texcoordConfig );
-			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
+			doPreparePipelineStates( renderSize, renderPass, blendState );
 		}
 		else if ( m_renderPass != renderPass )
 		{
 			m_pipeline.resetPipeline( m_pipeline.getProgram( index ), index );
-			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
+			doPreparePipelineStates( renderSize, renderPass, blendState );
 		}
 
 		if ( m_renderPass && m_renderPass != renderPass )
 		{
-			resetRenderPass( renderSize, renderPass, blendState, index );
+			resetRenderPass( renderSize, renderPass, std::move( blendState ), index );
 		}
 		else
 		{
@@ -122,21 +121,21 @@ namespace crg
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
-		m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer( index ), &offset );
+		context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer( index ), &offset );
 
 		if ( auto indirectBuffer = m_config.indirectBuffer.buffer.buffer( index ) )
 		{
-			m_context.vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+			context->vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
 		}
 		else
 		{
-			m_context.vkCmdDraw( commandBuffer, 3u, m_config.m_instances, 0u, 0u );
+			context->vkCmdDraw( commandBuffer, 3u, m_config.m_instances, 0u, 0u );
 		}
 	}
 
 	void RenderQuadHolder::end( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		m_config.end( context, commandBuffer, index );
 	}
@@ -152,9 +151,7 @@ namespace crg
 	{
 		return ( m_config.isEnabled
 			? ( *m_config.isEnabled )()
-			: ( m_config.enabled
-				? *m_config.enabled
-				: true ) );
+			: ( m_config.enabled ? *m_config.enabled : true ) );
 	}
 
 	void RenderQuadHolder::doPreparePipelineStates( VkExtent2D const & renderSize
@@ -165,7 +162,7 @@ namespace crg
 		m_renderSize = renderSize;
 		m_renderPass = renderPass;
 		m_blendAttachs = { blendState.pAttachments, blendState.pAttachments + blendState.attachmentCount };
-		m_blendState = blendState;
+		m_blendState = std::move( blendState );
 		m_blendState.pAttachments = m_blendAttachs.data();
 	}
 
@@ -201,7 +198,7 @@ namespace crg
 
 	VkPipelineViewportStateCreateInfo RenderQuadHolder::doCreateViewportState( VkExtent2D const & renderSize
 		, VkViewport & viewport
-		, VkRect2D & scissor )
+		, VkRect2D & scissor )const
 	{
 		viewport = { float( m_config.renderPosition.x )
 			, float( m_config.renderPosition.y )

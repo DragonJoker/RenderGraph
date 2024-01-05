@@ -19,99 +19,110 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< std::vector< VkPipelineShaderStageCreateInfoArray > >
 	{
+		static inline std::vector< VkPipelineShaderStageCreateInfoArray > const value{};
+
 		static std::vector< VkPipelineShaderStageCreateInfoArray > get()
 		{
-			return std::vector< VkPipelineShaderStageCreateInfoArray >{};
+			return value;
 		}
 	};
 	
 	template<>
 	struct DefaultValueGetterT< std::vector< VkDescriptorSetLayout > >
 	{
+		static inline std::vector< VkDescriptorSetLayout > const value{};
+
 		static std::vector< VkDescriptorSetLayout > get()
 		{
-			return std::vector< VkDescriptorSetLayout >{};
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< VkExtent2D >
 	{
+		static inline VkExtent2D const value{};
+
 		static VkExtent2D get()
 		{
-			static VkExtent2D const result{};
-			return result;
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< VkOffset2D >
 	{
+		static inline VkOffset2D const value{};
+
 		static VkOffset2D get()
 		{
-			static VkOffset2D const result{};
-			return result;
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< ProgramCreator >
 	{
+		static inline ProgramCreator const value{};
+
 		static ProgramCreator get()
 		{
-			static ProgramCreator const result{};
-			return result;
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< VkPipelineDepthStencilStateCreateInfo >
 	{
+		static inline VkPipelineDepthStencilStateCreateInfo const value{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
+			, nullptr
+			, 0u
+			, VK_FALSE
+			, VK_FALSE
+			, {}
+			, {}
+			, {}
+			, {}
+			, {}
+			, {}
+			, {} };
+
 		static VkPipelineDepthStencilStateCreateInfo get()
 		{
-			static VkPipelineDepthStencilStateCreateInfo const result{ VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO
-				, nullptr
-				, 0u
-				, VK_FALSE
-				, VK_FALSE
-				, {}
-				, {}
-				, {}
-				, {}
-				, {}
-				, {}
-				, {} };
-			return result;
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< VkPushConstantRangeArray >
 	{
+		static inline VkPushConstantRangeArray const value{};
+
 		static VkPushConstantRangeArray get()
 		{
-			static VkPushConstantRangeArray const result{};
-			return result;
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< uint32_t const * >
 	{
+		static inline uint32_t const * const value{};
+
 		static uint32_t const * get()
 		{
-			static uint32_t const * const result{};
-			return result;
+			return value;
 		}
 	};
 
 	template<>
 	struct DefaultValueGetterT< bool const * >
 	{
+		static inline bool const * const value{};
+
 		static bool const * get()
 		{
-			static bool const * const result{};
-			return result;
+			return value;
 		}
 	};
 
@@ -207,13 +218,11 @@ namespace crg
 	template<>
 	struct DefaultValueGetterT< pp::Config >
 	{
+		static inline pp::Config const value{ [](){ return pp::Config{}; }() };
+
 		static pp::Config get()
 		{
-			pp::Config const result{ []()
-				{
-					return pp::Config{};
-				}() };
-			return result;
+			return value;
 		}
 	};
 }

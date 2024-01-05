@@ -14,8 +14,8 @@ namespace crg
 	ComputePass::ComputePass( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, ru::Config ruConfig
-		, cp::Config cpConfig )
+		, ru::Config const & ruConfig
+		, cp::Config const & cpConfig )
 		: RunnablePass{ pass
 			, context
 			, graph
@@ -26,15 +26,15 @@ namespace crg
 				, IsEnabledCallback( [this](){ return doIsEnabled(); } )
 				, IsComputePassCallback( [](){ return true; } ) }
 			, ruConfig }
-		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : defaultV< RunnablePass::InitialiseCallback >
-			, cpConfig.m_enabled ? std::move( *cpConfig.m_enabled ) : defaultV< bool const * >
+		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : getDefaultV< RunnablePass::InitialiseCallback >()
+			, cpConfig.m_enabled ? std::move( *cpConfig.m_enabled ) : getDefaultV< bool const * >()
 			, cpConfig.m_isEnabled
-			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
+			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
 			, cpConfig.m_recordInto ? std::move( *cpConfig.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
-			, cpConfig.m_groupCountX ? std::move( *cpConfig.m_groupCountX ) : 1u
-			, cpConfig.m_groupCountY ? std::move( *cpConfig.m_groupCountY ) : 1u
-			, cpConfig.m_groupCountZ ? std::move( *cpConfig.m_groupCountZ ) : 1u
+			, cpConfig.m_groupCountX ? *cpConfig.m_groupCountX : 1u
+			, cpConfig.m_groupCountY ? *cpConfig.m_groupCountY : 1u
+			, cpConfig.m_groupCountZ ? *cpConfig.m_groupCountZ : 1u
 			, cpConfig.m_getGroupCountX ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountX ) ) : std::nullopt
 			, cpConfig.m_getGroupCountY ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountY ) ) : std::nullopt
 			, cpConfig.m_getGroupCountZ ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountZ ) ) : std::nullopt
@@ -77,10 +77,8 @@ namespace crg
 	bool ComputePass::doIsEnabled()const
 	{
 		return ( m_cpConfig.isEnabled
-			? ( *m_cpConfig.isEnabled )( )
-			: ( m_cpConfig.enabled
-				? *m_cpConfig.enabled
-				: true ) );
+			? ( *m_cpConfig.isEnabled )()
+			: ( m_cpConfig.enabled ? *m_cpConfig.enabled : true ) );
 	}
 
 	void ComputePass::doRecordInto( RecordContext & context
@@ -92,11 +90,11 @@ namespace crg
 
 		if ( auto indirectBuffer = m_cpConfig.indirectBuffer.buffer.buffer( index ) )
 		{ 
-			m_context.vkCmdDispatchIndirect( commandBuffer, indirectBuffer, m_cpConfig.indirectBuffer.offset );
+			context->vkCmdDispatchIndirect( commandBuffer, indirectBuffer, m_cpConfig.indirectBuffer.offset );
 		}
 		else
 		{
-			m_context.vkCmdDispatch( commandBuffer
+			context->vkCmdDispatch( commandBuffer
 				, ( m_cpConfig.getGroupCountX ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountX )
 				, ( m_cpConfig.getGroupCountY ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountY )
 				, ( m_cpConfig.getGroupCountZ ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountZ ) );

@@ -35,15 +35,14 @@ namespace crg
 		{
 			// Currently, just removes from the transitions the sampled attachments to a pass
 			// that doesn't directly need them.
-			auto it = std::remove_if( transitions.begin()
-				, transitions.end()
+			std::erase_if( transitions
 				, []( ViewTransition const & transition )
 				{
 					bool result = false;
 
 					if ( transition.inputAttach.isSampledView() )
 					{
-						auto inputPass = *transition.inputAttach.pass;
+						auto & inputPass = *transition.inputAttach.pass;
 						auto pit = std::find_if( inputPass.images.begin()
 							, inputPass.images.end()
 							, [&transition]( Attachment const & lookup )
@@ -56,7 +55,6 @@ namespace crg
 
 					return result;
 				} );
-			transitions.erase( it, transitions.end() );
 			return transitions;
 		}
 
@@ -64,15 +62,14 @@ namespace crg
 		{
 			// Currently, just removes from the transitions the sampled attachments to a pass
 			// that doesn't directly need them.
-			auto it = std::remove_if( transitions.begin()
-				, transitions.end()
+			std::erase_if( transitions
 				, []( BufferTransition const & transition )
 				{
 					bool result = false;
 
 					if ( transition.inputAttach.isStorageBuffer() )
 					{
-						auto inputPass = *transition.inputAttach.pass;
+						auto & inputPass = *transition.inputAttach.pass;
 						auto pit = std::find_if( inputPass.buffers.begin()
 							, inputPass.buffers.end()
 							, [&transition]( Attachment const & lookup )
@@ -85,7 +82,6 @@ namespace crg
 
 					return result;
 				} );
-			transitions.erase( it, transitions.end() );
 			return transitions;
 		}
 	}
@@ -109,13 +105,13 @@ namespace crg
 		return lhs.m_buffers == rhs.m_buffers;
 	}
 
-	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions transitions )
+	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions const & transitions )
 	{
 		return { attTran::mergeIdenticalTransitionsT( transitions.viewTransitions )
 			, attTran::mergeIdenticalTransitionsT( transitions.bufferTransitions ) };
 	}
 
-	AttachmentTransitions reduceDirectPaths( AttachmentTransitions transitions )
+	AttachmentTransitions reduceDirectPaths( AttachmentTransitions const & transitions )
 	{
 		return { attTran::reduceDirectPathsT( transitions.viewTransitions )
 			, attTran::reduceDirectPathsT( transitions.bufferTransitions ) };

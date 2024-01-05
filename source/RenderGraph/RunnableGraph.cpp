@@ -57,17 +57,17 @@ namespace crg
 			{
 				auto & nxtLayout = nextIt->second;
 
-				for ( auto curLayerIt : currentLayout.second )
+				for ( auto & [curLayout, curStates] : currentLayout.second )
 				{
-					auto nxtLayerIt = nxtLayout.find( curLayerIt.first );
+					auto nxtLayerIt = nxtLayout.find( curLayout );
 
 					if ( nxtLayerIt != nxtLayout.end() )
 					{
-						auto resLayerIt = result.emplace( curLayerIt.first, MipLayoutStates{} ).first;
+						auto resLayerIt = result.try_emplace( curLayout, MipLayoutStates{} ).first;
 
-						for ( auto curLevelIt : curLayerIt.second )
+						for ( auto & [curLevel, _] : curStates )
 						{
-							auto nxtLevelIt = nxtLayerIt->second.find( curLevelIt.first );
+							auto nxtLevelIt = nxtLayerIt->second.find( curLevel );
 
 							if ( nxtLevelIt != nxtLayerIt->second.end() )
 							{
@@ -106,7 +106,7 @@ namespace crg
 
 					if ( currIt != currentLayouts.end() )
 					{
-						result.emplace( currIt->first, layoutStates );
+						result.try_emplace( currIt->first, layoutStates );
 						currentLayouts.erase( currIt );
 					}
 				}
@@ -148,7 +148,6 @@ namespace crg
 	//************************************************************************************************
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph
-		, FramePassArray passes
 		, FramePassDependencies inputTransitions
 		, FramePassDependencies outputTransitions
 		, AttachmentTransitions transitions
@@ -283,11 +282,11 @@ namespace crg
 		for ( auto & dependency : m_graph.getDependencies() )
 		{
 			recordContext.addStates( dependency->getFinalStates() );
-			m_states.emplace( dependency
+			m_states.try_emplace( dependency
 				, dependency->getFinalStates().getIndexState() );
 		}
 
-		auto itGraph = m_states.emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
+		auto itGraph = m_states.try_emplace( &m_graph, RecordContext::PassIndexArray{} ).first;
 		itGraph->second.resize( m_passes.size() );
 
 		if ( !m_passes.empty() )

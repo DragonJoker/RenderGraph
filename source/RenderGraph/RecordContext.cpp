@@ -85,12 +85,12 @@ namespace crg
 	}
 
 	void RecordContext::setLayoutState( crg::ImageViewId view
-		, LayoutState layoutState )
+		, LayoutState const & layoutState )
 	{
 		m_images.setLayoutState( view, layoutState );
 	}
 
-	LayoutState RecordContext::getLayoutState( ImageViewId view )const
+	LayoutState const & RecordContext::getLayoutState( ImageViewId view )const
 	{
 		return m_images.getLayoutState( view );
 	}
@@ -98,7 +98,7 @@ namespace crg
 	void RecordContext::setLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState layoutState )
+		, LayoutState const & layoutState )
 	{
 		m_images.setLayoutState( image
 			, viewType
@@ -106,7 +106,7 @@ namespace crg
 			, layoutState );
 	}
 
-	LayoutState RecordContext::getLayoutState( ImageId image
+	LayoutState const & RecordContext::getLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
@@ -115,12 +115,12 @@ namespace crg
 			, subresourceRange );
 	}
 
-	LayoutState RecordContext::getNextLayoutState( ImageViewId view )const
+	LayoutState const & RecordContext::getNextLayoutState( ImageViewId view )const
 	{
 		return m_nextImages.getLayoutState( view );
 	}
 
-	LayoutState RecordContext::getNextLayoutState( ImageId image
+	LayoutState const & RecordContext::getNextLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
@@ -133,7 +133,7 @@ namespace crg
 			, crg::ImageViewId view
 			, RecordContext::ImplicitAction action )
 	{
-		registerImplicitTransition( { &pass, view, action } );
+		registerImplicitTransition( { &pass, view, std::move( action ) } );
 	}
 
 	void RecordContext::registerImplicitTransition( ImplicitTransition transition )
@@ -166,15 +166,14 @@ namespace crg
 	}
 
 	void RecordContext::setAccessState( VkBuffer buffer
-		, BufferSubresourceRange const & subresourceRange
-		, AccessState layoutState )
+		, [[maybe_unused]] BufferSubresourceRange const & subresourceRange
+		, AccessState const & layoutState )
 	{
-		auto ires = m_buffers.emplace( buffer, AccessState{} );
-		ires.first->second = layoutState;
+		m_buffers.insert_or_assign( buffer, layoutState );
 	}
 
-	AccessState RecordContext::getAccessState( VkBuffer buffer
-		, BufferSubresourceRange const & subresourceRange )const
+	AccessState const & RecordContext::getAccessState( VkBuffer buffer
+		, [[maybe_unused]] BufferSubresourceRange const & subresourceRange )const
 	{
 		auto bufferIt = m_buffers.find( buffer );
 
@@ -183,7 +182,8 @@ namespace crg
 			return bufferIt->second;
 		}
 
-		return { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+		static AccessState const dummy{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+		return dummy;
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
@@ -542,7 +542,7 @@ namespace crg
 		if ( !m_resources )
 		{
 			assert( false );
-			CRG_Exception( "No resources available." );
+			Exception( "No resources available.", std::source_location::current() );
 		}
 
 		return *m_resources;

@@ -35,19 +35,8 @@ namespace crg
 
 	//*********************************************************************************************
 
-	BufferAttachment::BufferAttachment()
-		: buffer{ {}, std::string{} }
-		, view{}
-		, range{}
-		, flags{}
-	{
-	}
-
 	BufferAttachment::BufferAttachment( Buffer buffer )
 		: buffer{ std::move( buffer ) }
-		, view{}
-		, range{}
-		, flags{}
 	{
 	}
 
@@ -56,7 +45,6 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: buffer{ std::move( buffer ) }
-		, view{}
 		, range{ offset, range }
 		, flags{ flags }
 	{
@@ -85,12 +73,12 @@ namespace crg
 
 		if ( isView() )
 		{
-			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
+			result.bufferViewInfo.emplace_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
 			result.texelBufferView.push_back( view );
 		}
 		else
 		{
-			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
+			result.bufferInfo.emplace_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
 		}
 
 		return result;
@@ -174,31 +162,8 @@ namespace crg
 	{
 	}
 
-	ImageAttachment::ImageAttachment()
-		: views{}
-		, loadOp{}
-		, storeOp{}
-		, stencilLoadOp{}
-		, stencilStoreOp{}
-		, samplerDesc{}
-		, clearValue{}
-		, blendState{}
-		, wantedLayout{}
-		, flags{}
-	{
-	}
-
 	ImageAttachment::ImageAttachment( ImageViewId view )
 		: views{ 1u, view }
-		, loadOp{}
-		, storeOp{}
-		, stencilLoadOp{}
-		, stencilStoreOp{}
-		, samplerDesc{}
-		, clearValue{}
-		, blendState{}
-		, wantedLayout{}
-		, flags{}
 	{
 	}
 
@@ -334,22 +299,16 @@ namespace crg
 		else
 #endif
 		{
-			if ( isOutput )
+			if ( isOutput
+				&& ( isDepthAttach() || isStencilOutputAttach() ) )
 			{
-				if ( isDepthAttach()
-					|| isStencilOutputAttach() )
-				{
-					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-				}
+				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			}
 
-			if ( isInput )
+			if ( isInput
+				&& ( isDepthAttach() || isStencilInputAttach() ) )
 			{
-				if ( isDepthAttach()
-					|| isStencilInputAttach() )
-				{
-					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-				}
+				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 			}
 		}
 
@@ -474,18 +433,12 @@ namespace crg
 	}
 
 	Attachment::Attachment( ImageViewId view )
-		: binding{}
-		, name{}
-		, image{ std::move( view ) }
-		, flags{}
+		: image{ std::move( view ) }
 	{
 	}
 
 	Attachment::Attachment( Buffer buffer )
-		: binding{}
-		, name{}
-		, buffer{ std::move( buffer ) }
-		, flags{}
+		: buffer{ std::move( buffer ) }
 	{
 	}
 
@@ -560,6 +513,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 		: pass{ &pass }
+		, binding{ binding }
 		, name{ std::move( name ) }
 		, buffer{ bufferFlags, std::move( buffer ), view, offset, range }
 		, flags{ FlagKind( flags

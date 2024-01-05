@@ -23,7 +23,7 @@ namespace crg
 	private:
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
-			, uint32_t index );
+			, uint32_t index )const;
 
 	private:
 		VkOffset3D m_copyOffset;

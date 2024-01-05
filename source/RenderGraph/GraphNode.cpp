@@ -44,7 +44,6 @@ namespace crg
 		, id{ pid }
 		, name{ std::move( pname ) }
 		, group{ pgroup }
-		, next{}
 	{
 	}
 

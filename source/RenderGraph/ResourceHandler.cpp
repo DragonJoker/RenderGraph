@@ -11,6 +11,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <cassert>
+#include <format>
 
 #pragma warning( push )
 #pragma warning( disable: 5262 )
@@ -82,20 +83,16 @@ namespace crg
 		{
 			{
 				lock_type lock( m_viewsMutex );
-				for ( auto & imageView : m_imageViews )
+				for ( auto & [data, _] : m_imageViews )
 				{
-					std::stringstream stream;
-					stream << "Leaked [VkImageView](" << imageView.first.data->name << ")";
-					Logger::logError( stream.str() );
+					Logger::logError( std::format( "Leaked [VkImageView]({})", data.data->name ) );
 				}
 			}
 			{
 				lock_type lock( m_imagesMutex );
-				for ( auto & image : m_images )
+				for ( auto & [data, _] : m_images )
 				{
-					std::stringstream stream;
-					stream << "Leaked [VkImage](" << image.first.data->name << ")";
-					Logger::logError( stream.str() );
+					Logger::logError( std::format( "Leaked [VkImage]({})", data.data->name ) );
 				}
 			}
 			{
@@ -104,26 +101,20 @@ namespace crg
 				{
 					if ( vertexBuffer->memory )
 					{
-						std::stringstream stream;
-						stream << "Leaked [VkDeviceMemory](" << vertexBuffer->buffer.name << ")";
-						Logger::logError( stream.str() );
+						Logger::logError( std::format( "Leaked [VkDeviceMemory]({})", vertexBuffer->buffer.name ) );
 					}
 
 					if ( vertexBuffer->buffer.buffer() )
 					{
-						std::stringstream stream;
-						stream << "Leaked [VkBuffer](" << vertexBuffer->buffer.name << ")";
-						Logger::logError( stream.str() );
+						Logger::logError( std::format( "Leaked [VkBuffer]({})", vertexBuffer->buffer.name ) );
 					}
 				}
 			}
 			{
 				lock_type lock( m_samplersMutex );
-				for ( auto & sampler : m_samplers )
+				for ( auto & [_, data] : m_samplers )
 				{
-					std::stringstream stream;
-					stream << "Leaked [VkSampler](" << sampler.second.name << ")";
-					Logger::logError( stream.str() );
+					Logger::logError( std::format( "Leaked [VkSampler]({})", data.name ) );
 				}
 			}
 		}
@@ -191,17 +182,17 @@ namespace crg
 
 		bool created{};
 		lock_type lock( m_imagesMutex );
-		auto ires = m_images.emplace( imageId, std::pair< VkImage, VkDeviceMemory >{} );
+		auto [it, ins] = m_images.try_emplace( imageId, std::pair< VkImage, VkDeviceMemory >{} );
 
-		if ( ires.second )
+		if ( ins )
 		{
-		// Create image
+			// Create image
 			auto createInfo = reshdl::convert( *imageId.data );
 			auto res = context.vkCreateImage( context.device
 				, &createInfo
 				, context.allocator
-				, &ires.first->second.first );
-			auto image = ires.first->second.first;
+				, &it->second.first );
+			auto image = it->second.first;
 			checkVkResult( res, "Image creation" );
 			crgRegisterObjectName( context, imageId.data->name, image );
 
@@ -219,8 +210,8 @@ namespace crg
 			res = context.vkAllocateMemory( context.device
 				, &allocateInfo
 				, context.allocator
-				, &ires.first->second.second );
-			auto memory = ires.first->second.second;
+				, &it->second.second );
+			auto memory = it->second.second;
 			checkVkResult( res, "Image memory allocation" );
 			crgRegisterObjectName( context, imageId.data->name, memory );
 
@@ -233,7 +224,7 @@ namespace crg
 			created = true;
 		}
 
-		return { ires.first->second.first, created };
+		return { it->second.first, created };
 	}
 
 	ResourceHandler::CreatedT< VkImageView > ResourceHandler::createImageView( GraphContext & context
@@ -246,22 +237,22 @@ namespace crg
 
 		bool created{};
 		lock_type lock( m_viewsMutex );
-		auto ires = m_imageViews.emplace( view, VkImageView{} );
+		auto [it, ins] = m_imageViews.try_emplace( view, VkImageView{} );
 
-		if ( ires.second )
+		if ( ins )
 		{
 			auto image = createImage( context, view.data->image ).first;
 			auto createInfo = reshdl::convert( *view.data, image );
 			auto res = context.vkCreateImageView( context.device
 				, &createInfo
 				, context.allocator
-				, &ires.first->second );
+				, &it->second );
 			checkVkResult( res, "ImageView creation" );
-			crgRegisterObjectName( context, view.data->name, ires.first->second );
+			crgRegisterObjectName( context, view.data->name, it->second );
 			created = true;
 		}
 
-		return { ires.first->second, created };
+		return { it->second, created };
 	}
 
 	VkSampler ResourceHandler::createSampler( GraphContext & context
@@ -297,7 +288,7 @@ namespace crg
 			, &createInfo
 			, context.allocator
 			, &result );
-		auto & sampler = m_samplers.emplace( result, Sampler{ result, {} } ).first->second;
+		auto & sampler = m_samplers.try_emplace( result, Sampler{ result, {} } ).first->second;
 		checkVkResult( res, "Sampler creation" );
 		sampler.name = "Sampler_" + suffix;
 		crgRegisterObject( context, sampler.name, result );
@@ -362,7 +353,7 @@ namespace crg
 			, 0u
 			, VK_WHOLE_SIZE
 			, 0u
-			, reinterpret_cast< void ** >( &buffer ) );
+			, std::bit_cast< void ** >( &buffer ) );
 		checkVkResult( res, "Buffer memory mapping" );
 
 		if ( buffer )
@@ -542,24 +533,24 @@ namespace crg
 
 	ContextResourcesCache::~ContextResourcesCache()noexcept
 	{
-		for ( auto & imageViewIt : m_imageViews )
+		for ( auto & [imageView, _] : m_imageViews )
 		{
-			m_handler.destroyImageView( m_context, imageViewIt.first );
+			m_handler.destroyImageView( m_context, imageView );
 		}
 
-		for ( auto & imageIt : m_images )
+		for ( auto & [image, _] : m_images )
 		{
-			m_handler.destroyImage( m_context, imageIt.first );
+			m_handler.destroyImage( m_context, image );
 		}
 
-		for ( auto & samplerIt : m_samplers )
+		for ( auto & [_, sampler] : m_samplers )
 		{
-			m_handler.destroySampler( m_context, samplerIt.second );
+			m_handler.destroySampler( m_context, sampler );
 		}
 
-		for ( auto & bufferIt : m_vertexBuffers )
+		for ( auto & [_, buffer] : m_vertexBuffers )
 		{
-			m_handler.destroyVertexBuffer( m_context, bufferIt.second );
+			m_handler.destroyVertexBuffer( m_context, buffer );
 		}
 	}
 
@@ -616,33 +607,33 @@ namespace crg
 	VkSampler ContextResourcesCache::createSampler( SamplerDesc const & samplerDesc )
 	{
 		auto hash = reshdl::makeHash( samplerDesc );
-		auto ires = m_samplers.emplace( hash, VkSampler{} );
+		auto [it, res] = m_samplers.try_emplace( hash, VkSampler{} );
 
-		if ( ires.second && m_context.device )
+		if ( res && m_context.device )
 		{
-			ires.first->second = m_handler.createSampler( m_context
+			it->second = m_handler.createSampler( m_context
 				, std::to_string( hash )
 				, samplerDesc );
 		}
 
-		return ires.first->second;
+		return it->second;
 	}
 
 	VertexBuffer const & ContextResourcesCache::createQuadTriVertexBuffer( bool texCoords
 		, Texcoord const & config )
 	{
 		auto hash = reshdl::makeHash( texCoords, config );
-		auto ires = m_vertexBuffers.emplace( hash, nullptr );
+		auto [it, res] = m_vertexBuffers.emplace( hash, nullptr );
 
-		if ( ires.second && m_context.device )
+		if ( res && m_context.device )
 		{
-			ires.first->second = m_handler.createQuadTriVertexBuffer( m_context
+			it->second = m_handler.createQuadTriVertexBuffer( m_context
 				, std::to_string( hash )
 				, texCoords
 				, config );
 		}
 
-		return *ires.first->second;
+		return *it->second;
 	}
 
 	//*********************************************************************************************
@@ -723,7 +714,7 @@ namespace crg
 
 		if ( it == m_caches.end() )
 		{
-			it = m_caches.emplace( &context, ContextResourcesCache{ m_handler, context } ).first;
+			it = m_caches.try_emplace( &context, ContextResourcesCache{ m_handler, context } ).first;
 		}
 
 		return it->second;

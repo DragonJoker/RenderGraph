@@ -140,7 +140,7 @@ namespace crg
 
 	void PipelineHolder::createPipeline( uint32_t index
 		, std::string const & name
-		, VkGraphicsPipelineCreateInfo createInfo )
+		, VkGraphicsPipelineCreateInfo const & createInfo )
 	{
 		auto & pipeline = getPipeline( index );
 		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
@@ -154,7 +154,7 @@ namespace crg
 	}
 
 	void PipelineHolder::createPipeline( uint32_t index
-		, VkGraphicsPipelineCreateInfo createInfo )
+		, VkGraphicsPipelineCreateInfo const & createInfo )
 	{
 		createPipeline( index
 			, m_pass.getGroupName()
@@ -163,7 +163,7 @@ namespace crg
 
 	void PipelineHolder::createPipeline( uint32_t index
 		, std::string const & name
-		, VkComputePipelineCreateInfo createInfo )
+		, VkComputePipelineCreateInfo const & createInfo )
 	{
 		auto & pipeline = getPipeline( index );
 		auto res = m_context.vkCreateComputePipelines( m_context.device
@@ -177,7 +177,7 @@ namespace crg
 	}
 
 	void PipelineHolder::createPipeline( uint32_t index
-		, VkComputePipelineCreateInfo createInfo )
+		, VkComputePipelineCreateInfo const & createInfo )
 	{
 		createPipeline( index
 			, m_pass.getGroupName()
@@ -190,8 +190,8 @@ namespace crg
 	{
 		createDescriptorSet( index );
 		auto & pipeline = getPipeline( index );
-		m_context.vkCmdBindPipeline( commandBuffer, m_bindingPoint, pipeline );
-		m_context.vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
+		context->vkCmdBindPipeline( commandBuffer, m_bindingPoint, pipeline );
+		context->vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
 	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
@@ -237,21 +237,21 @@ namespace crg
 		{
 			if ( attach.isSampledView() )
 			{
-				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+				descriptorSet.writes.emplace_back( attach.binding
 					, 0u
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
 					, VkDescriptorImageInfo{ m_graph.createSampler( attach.image.samplerDesc )
 						, m_graph.createImageView( attach.view( index ) )
-						, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } } );
+						, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
 			}
 			else if ( attach.isStorageView() )
 			{
-				descriptorSet.writes.push_back( WriteDescriptorSet{ attach.binding
+				descriptorSet.writes.emplace_back( attach.binding
 					, 0u
 					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
 					, VkDescriptorImageInfo{ VkSampler{}
 						, m_graph.createImageView( attach.view( index ) )
-						, VK_IMAGE_LAYOUT_GENERAL } } );
+						, VK_IMAGE_LAYOUT_GENERAL } );
 			}
 		}
 

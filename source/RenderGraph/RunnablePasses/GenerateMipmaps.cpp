@@ -34,8 +34,8 @@ namespace crg
 			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, passIndex
-				, isEnabled }
+				, std::move( passIndex )
+				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
 		, m_outputLayout{ outputLayout
 			, getAccessMask( outputLayout )

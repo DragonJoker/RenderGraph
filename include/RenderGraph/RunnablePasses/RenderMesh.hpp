@@ -16,7 +16,7 @@ namespace crg
 		CRG_API RenderMesh( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, ru::Config ruConfig
+			, ru::Config const & ruConfig
 			, rm::Config rmConfig );
 		CRG_API ~RenderMesh()noexcept override = default;
 

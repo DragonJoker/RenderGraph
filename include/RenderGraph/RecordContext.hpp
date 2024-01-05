@@ -47,19 +47,19 @@ namespace crg
 		*/
 		//@{
 		CRG_API void setLayoutState( crg::ImageViewId view
-			, LayoutState layoutState );
-		CRG_API LayoutState getLayoutState( ImageViewId view )const;
+			, LayoutState const & layoutState );
+		CRG_API LayoutState const & getLayoutState( ImageViewId view )const;
 
 		CRG_API void setLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange
-			, LayoutState layoutState );
-		CRG_API LayoutState getLayoutState( ImageId image
+			, LayoutState const & layoutState );
+		CRG_API LayoutState const & getLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange )const;
 
-		CRG_API LayoutState getNextLayoutState( ImageViewId view )const;
-		CRG_API LayoutState getNextLayoutState( ImageId image
+		CRG_API LayoutState const & getNextLayoutState( ImageViewId view )const;
+		CRG_API LayoutState const & getNextLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange )const;
 
@@ -77,8 +77,8 @@ namespace crg
 		//@{
 		CRG_API void setAccessState( VkBuffer buffer
 			, BufferSubresourceRange const & subresourceRange
-			, AccessState layoutState );
-		CRG_API AccessState getAccessState( VkBuffer buffer
+			, AccessState const & layoutState );
+		CRG_API AccessState const & getAccessState( VkBuffer buffer
 			, BufferSubresourceRange const & subresourceRange )const;
 		//@}
 		//@}
@@ -143,6 +143,11 @@ namespace crg
 		//@}
 		//@}
 		CRG_API GraphContext & getContext()const;
+
+		GraphContext * operator->()const
+		{
+			return &getContext();
+		}
 
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView

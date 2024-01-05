@@ -26,19 +26,19 @@ namespace crg
 	void LayerLayoutStatesHandler::setLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
-		, LayoutState layoutState )
+		, LayoutState const & layoutState )
 	{
 		auto range = getVirtualRange( image
 			, viewType
 			, subresourceRange );
-		auto ires = images.emplace( image.id, LayerLayoutStates{} );
-		addSubresourceRangeLayout( ires.first->second
+		auto [it, _] = images.try_emplace( image.id, LayerLayoutStates{} );
+		addSubresourceRangeLayout( it->second
 			, range
 			, layoutState );
 	}
 
 	void LayerLayoutStatesHandler::setLayoutState( crg::ImageViewId view
-		, LayoutState layoutState )
+		, LayoutState const & layoutState )
 	{
 		assert( view.data->source.empty()
 			&& "Merged image views must be resolved before setting their layout state" );
@@ -48,7 +48,7 @@ namespace crg
 			, layoutState );
 	}
 
-	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageId image
+	LayoutState const & LayerLayoutStatesHandler::getLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
@@ -67,7 +67,7 @@ namespace crg
 		return undefLayout;
 	}
 
-	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
+	LayoutState const & LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
 	{
 		assert( view.data->source.empty()
 			&& "Merged image views must be resolved before finding their layout state" );

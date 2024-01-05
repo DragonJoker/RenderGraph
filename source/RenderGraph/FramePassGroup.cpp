@@ -71,7 +71,7 @@ namespace crg
 	{
 		if ( hasPass( passName ) )
 		{
-			CRG_Exception( "Duplicate FramePass name detected." );
+			throw Exception( "Duplicate FramePass name detected.", std::source_location::current() );
 		}
 
 		auto count = group::countPasses( group::getOutermost( this ) );
@@ -79,7 +79,7 @@ namespace crg
 			, m_graph
 			, count + 1u
 			, passName
-			, runnableCreator } );
+			, std::move( runnableCreator ) } );
 		return *passes.back();
 	}
 

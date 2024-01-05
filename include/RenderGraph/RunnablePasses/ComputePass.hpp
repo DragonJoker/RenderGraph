@@ -99,7 +99,7 @@ namespace crg
 			*/
 			auto & getPassIndex( RunnablePass::GetPassIndexCallback config )
 			{
-				m_getPassIndex = config;
+				m_getPassIndex = std::move( config );
 				return *this;
 			}
 			/**
@@ -108,7 +108,7 @@ namespace crg
 			*/
 			auto & isEnabled( RunnablePass::IsEnabledCallback config )
 			{
-				m_isEnabled = config;
+				m_isEnabled = std::move( config );
 				return *this;
 			}
 			/**
@@ -117,7 +117,7 @@ namespace crg
 			*/
 			auto & recordInto( RunnablePass::RecordCallback config )
 			{
-				m_recordInto = config;
+				m_recordInto = std::move( config );
 				return *this;
 			}
 			/**
@@ -126,7 +126,7 @@ namespace crg
 			*/
 			auto & initialise( RunnablePass::InitialiseCallback config )
 			{
-				m_initialise = config;
+				m_initialise = std::move( config );
 				return *this;
 			}
 			/**
@@ -135,7 +135,7 @@ namespace crg
 			*/
 			auto & end( RunnablePass::RecordCallback config )
 			{
-				m_end = config;
+				m_end = std::move( config );
 				return *this;
 			}
 			/**
@@ -171,7 +171,7 @@ namespace crg
 			*/
 			auto & getGroupCountX( GetGroupCountCallback config )
 			{
-				m_getGroupCountX = config;
+				m_getGroupCountX = std::move( config );
 				return *this;
 			}
 			/**
@@ -180,7 +180,7 @@ namespace crg
 			*/
 			auto & getGroupCountY( GetGroupCountCallback config )
 			{
-				m_getGroupCountY = config;
+				m_getGroupCountY = std::move( config );
 				return *this;
 			}
 			/**
@@ -189,7 +189,7 @@ namespace crg
 			*/
 			auto & getGroupCountZ( GetGroupCountCallback config )
 			{
-				m_getGroupCountZ = config;
+				m_getGroupCountZ = std::move( config );
 				return *this;
 			}
 			/**
@@ -198,7 +198,7 @@ namespace crg
 			*/
 			auto & indirectBuffer( IndirectBuffer config )
 			{
-				m_indirectBuffer = config;
+				m_indirectBuffer = std::move( config );
 				return *this;
 			}
 			/**
@@ -291,8 +291,8 @@ namespace crg
 		CRG_API ComputePass( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, ru::Config ruConfig = {}
-			, cp::Config cpConfig = {} );
+			, ru::Config const & ruConfig = {}
+			, cp::Config const & cpConfig = {} );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
 			, uint32_t index );
 		CRG_API VkPipelineLayout getPipelineLayout()const;

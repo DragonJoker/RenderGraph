@@ -7,6 +7,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/FrameGraphPrerequisites.hpp"
 
 #include <exception>
+#include <source_location>
 
 namespace crg
 {
@@ -16,8 +17,14 @@ namespace crg
 	public:
 		Exception( std::string const & text
 			, std::string const & file
-			, int line )
+			, uint32_t line )
 			: text{ file + ":" + std::to_string( line ) + " - " + text }
+		{
+		}
+
+		Exception( std::string const & text
+			, std::source_location const & loc )
+			: Exception{ text, loc.file_name(), loc.line() }
 		{
 		}
 
@@ -29,7 +36,4 @@ namespace crg
 	private:
 		std::string text;
 	};
-
-#define CRG_Exception( text )\
-	throw crg::Exception{ text, __FILE__, __LINE__ }
 }

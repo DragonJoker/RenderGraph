@@ -13,9 +13,9 @@ namespace crg
 		, RunnableGraph & graph
 		, rm::Config config
 		, uint32_t maxPassCount )
-		: m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : defaultV< VkOffset2D >
-			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
-			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
+		: m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< VkOffset2D >()
+			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
+			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
 			, config.m_isEnabled ? std::move( *config.m_isEnabled ) : getDefaultV< RunnablePass::IsEnabledCallback >()
 			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
@@ -64,8 +64,7 @@ namespace crg
 			, 0.0f };
 	}
 
-	void RenderMeshHolder::initialise( RunnablePass const & runnable
-		, VkExtent2D const & renderSize
+	void RenderMeshHolder::initialise( VkExtent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState
 		, uint32_t index )
@@ -112,35 +111,35 @@ namespace crg
 
 		if ( m_config.vertexBuffer.buffer.buffer( index ) )
 		{
-			m_context.vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_config.vertexBuffer.buffer.buffer( index ), &offset );
+			context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_config.vertexBuffer.buffer.buffer( index ), &offset );
 		}
 
 		if ( auto indirectBuffer = m_config.indirectBuffer.buffer.buffer( index ) )
 		{
 			if ( auto indexBuffer = m_config.indexBuffer.buffer.buffer( index ) )
 			{
-				m_context.vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
-				m_context.vkCmdDrawIndexedIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+				context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
+				context->vkCmdDrawIndexedIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
 			}
 			else
 			{
-				m_context.vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+				context->vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
 			}
 		}
 		else if ( auto indexBuffer = m_config.indexBuffer.buffer.buffer( index ) )
 		{
-			m_context.vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
-			m_context.vkCmdDrawIndexed( commandBuffer, m_config.getPrimitiveCount(), 1u, 0u, 0u, 0u );
+			context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
+			context->vkCmdDrawIndexed( commandBuffer, m_config.getPrimitiveCount(), 1u, 0u, 0u, 0u );
 		}
 		else
 		{
-			m_context.vkCmdDraw( commandBuffer, m_config.getVertexCount(), 1u, 0u, 0u );
+			context->vkCmdDraw( commandBuffer, m_config.getVertexCount(), 1u, 0u, 0u );
 		}
 	}
 
 	void RenderMeshHolder::end( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		m_config.end( context, commandBuffer, index );
 	}
@@ -168,7 +167,7 @@ namespace crg
 		m_renderSize = renderSize;
 		m_renderPass = renderPass;
 		m_blendAttachs = { blendState.pAttachments, blendState.pAttachments + blendState.attachmentCount };
-		m_blendState = blendState;
+		m_blendState = std::move( blendState );
 		m_blendState.pAttachments = m_blendAttachs.data();
 	}
 
@@ -205,7 +204,7 @@ namespace crg
 
 	VkPipelineViewportStateCreateInfo RenderMeshHolder::doCreateViewportState( VkExtent2D const & renderSize
 		, VkViewport & viewport
-		, VkRect2D & scissor )
+		, VkRect2D & scissor )const
 	{
 		viewport = { float( m_config.renderPosition.x )
 			, float( m_config.renderPosition.y )

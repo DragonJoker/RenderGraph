@@ -128,7 +128,7 @@ namespace crg
 			*/
 			auto & isEnabled( RunnablePass::IsEnabledCallback config )
 			{
-				m_isEnabled = config;
+				m_isEnabled = std::move( config );
 				return *this;
 			}
 			/**
@@ -137,7 +137,7 @@ namespace crg
 			*/
 			auto & recordInto( RunnablePass::RecordCallback config )
 			{
-				m_recordInto = config;
+				m_recordInto = std::move( config );
 				return *this;
 			}
 			/**
@@ -146,7 +146,7 @@ namespace crg
 			*/
 			auto & end( RunnablePass::RecordCallback config )
 			{
-				m_end = config;
+				m_end = std::move( config );
 				return *this;
 			}
 			/**
@@ -164,7 +164,7 @@ namespace crg
 			*/
 			auto & indirectBuffer( IndirectBuffer config )
 			{
-				m_indirectBuffer = config;
+				m_indirectBuffer = std::move( config );
 				return *this;
 			}
 

@@ -32,7 +32,7 @@ namespace crg
 		CRG_API bool initialise( RecordContext & context
 			, crg::RunnablePass const & runnable
 			, uint32_t passIndex );
-		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index );
+		CRG_API VkRenderPassBeginInfo getBeginInfo( uint32_t index )const;
 		CRG_API void begin( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, VkSubpassContents subpassContents

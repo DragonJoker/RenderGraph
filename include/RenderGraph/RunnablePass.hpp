@@ -94,7 +94,7 @@ namespace crg
 			auto & implicitAction( ImageViewId view
 				, RecordContext::ImplicitAction action )
 			{
-				implicitActions.emplace( view, action );
+				implicitActions.try_emplace( view, action );
 				return *this;
 			}
 
@@ -213,6 +213,8 @@ namespace crg
 			IsComputePassCallback isComputePass;
 		};
 
+		static constexpr uint32_t InvalidIndex = ~0u;
+
 	public:
 		CRG_API RunnablePass( FramePass const & pass
 			, GraphContext & context
@@ -300,7 +302,7 @@ namespace crg
 
 		uint32_t getIndex()const
 		{
-			return isEnabled() ? m_callbacks.getPassIndex() : ~( 0u );
+			return isEnabled() ? m_callbacks.getPassIndex() : InvalidIndex;
 		}
 
 		FramePass const & getPass()const
@@ -368,7 +370,7 @@ namespace crg
 				, fence{ std::move( rhs.fence ) }
 				, layoutTransitions{ std::move( rhs.layoutTransitions ) }
 				, accessTransitions{ std::move( rhs.accessTransitions ) }
-				, initialised{ std::move( rhs.initialised ) }
+				, initialised{ rhs.initialised }
 			{
 				rhs.commandBuffer.commandBuffer = {};
 				rhs.commandBuffer.recorded = {};

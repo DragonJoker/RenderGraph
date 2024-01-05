@@ -40,8 +40,8 @@ namespace crg
 			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, passIndex
-				, isEnabled }
+				, std::move( passIndex )
+				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
 		, m_srcOffset{ std::move( blitSrcOffset ) }
 		, m_srcSize{ std::move( blitSrcSize ) }
@@ -64,7 +64,7 @@ namespace crg
 			, { m_srcOffset, VkOffset3D{ int32_t( m_srcSize.width ), int32_t( m_srcSize.height ), int32_t( m_srcSize.depth ) } }
 			, imgBlit::convert( dstAttach.data->info.subresourceRange )
 			, { m_dstOffset, VkOffset3D{ int32_t( m_dstSize.width ), int32_t( m_dstSize.height ), int32_t( m_dstSize.depth ) } } };
-		m_context.vkCmdBlitImage( commandBuffer
+		context->vkCmdBlitImage( commandBuffer
 			, srcImage
 			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 			, dstImage

@@ -27,8 +27,8 @@ namespace crg
 		BufferTransitionArray bufferTransitions;
 	};
 
-	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions value );
-	AttachmentTransitions reduceDirectPaths( AttachmentTransitions value );
+	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions const & value );
+	AttachmentTransitions reduceDirectPaths( AttachmentTransitions const & value );
 
 	struct FramePassTransitions
 	{

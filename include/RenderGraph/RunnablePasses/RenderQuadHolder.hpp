@@ -18,8 +18,7 @@ namespace crg
 			, rq::Config config
 			, uint32_t maxPassCount );
 
-		CRG_API void initialise( RunnablePass const & runnable
-			, VkExtent2D const & renderSize
+		CRG_API void initialise( VkExtent2D const & renderSize
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState
 			, uint32_t index );
@@ -34,7 +33,7 @@ namespace crg
 			, uint32_t index );
 		CRG_API void end( RecordContext & context
 			, VkCommandBuffer commandBuffer
-			, uint32_t index );
+			, uint32_t index )const;
 		CRG_API uint32_t getPassIndex()const;
 		CRG_API bool isEnabled()const;
 
@@ -60,7 +59,7 @@ namespace crg
 		void doCreatePipeline( uint32_t passIndex );
 		VkPipelineViewportStateCreateInfo doCreateViewportState( VkExtent2D const & renderSize
 			, VkViewport & viewport
-			, VkRect2D & scissor );
+			, VkRect2D & scissor )const;
 
 	private:
 		rq::ConfigData m_config;

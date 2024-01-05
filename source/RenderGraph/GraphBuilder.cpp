@@ -48,8 +48,7 @@ namespace crg
 			}
 
 			template< typename DataT >
-			static void buildGraph( RootNode & rootNode
-				, DataTransitionArrayT< DataT > const & transitions
+			static void buildGraph( DataTransitionArrayT< DataT > const & transitions
 				, GraphNodePtrArray const & nodes
 				, PassDependencyCache & depsCache )
 			{
@@ -77,8 +76,8 @@ namespace crg
 			, PassDependencyCache & bufDepsCache
 			, AttachmentTransitions & transitions )
 		{
-			graph::buildGraph( rootNode, transitions.viewTransitions, nodes, imgDepsCache );
-			graph::buildGraph( rootNode, transitions.bufferTransitions, nodes, bufDepsCache );
+			graph::buildGraph( transitions.viewTransitions, nodes, imgDepsCache );
+			graph::buildGraph( transitions.bufferTransitions, nodes, bufDepsCache );
 
 			for ( auto & node : nodes )
 			{

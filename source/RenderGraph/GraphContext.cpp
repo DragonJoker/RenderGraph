@@ -3,10 +3,12 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Exception.hpp"
 #include "RenderGraph/Log.hpp"
 
 #include <cassert>
 #include <cmath>
+#include <format>
 #include <stdexcept>
 
 #pragma warning( push )
@@ -257,18 +259,16 @@ namespace crg
 	{
 		for ( uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i )
 		{
-			if ( ( typeBits & 1 ) == 1 )
+			if ( ( typeBits & 1 ) == 1
+				&& ( memoryProperties.memoryTypes[i].propertyFlags & requirements ) == requirements )
 			{
-				if ( ( memoryProperties.memoryTypes[i].propertyFlags & requirements ) == requirements )
-				{
-					return i;
-				}
+				return i;
 			}
 
 			typeBits >>= 1;
 		}
 
-		throw std::runtime_error{ "Could not deduce memory type" };
+		throw Exception{ "Could not deduce memory type", std::source_location::current() };
 	}
 
 #if VK_EXT_debug_utils
@@ -340,12 +340,9 @@ namespace crg
 			, objectType
 			, objectName
 			, typeName );
-		std::stringstream stream;
-		stream.imbue( std::locale{ "C" } );
-		stream << "Created " << typeName
-			<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
-			<< " - " << objectName;
-		Logger::logTrace( stream.str() );
+		Logger::logTrace( std::format( std::locale{ "C" }
+			, "Created {} [{:#08x}] - {}"
+			, typeName, object, objectName ) );
 		std::stringstream callStack;
 
 		if ( m_callstackCallback )
@@ -354,18 +351,17 @@ namespace crg
 		}
 
 		lock_type lock{ m_mutex };
-		m_allocated.emplace( object
+		m_allocated.insert_or_assign( object
 			, ObjectAllocation{
 				typeName,
 				objectName,
-				callStack.str()
-			} );
+				callStack.str() } );
 	}
 
 	void GraphContext::doRegisterObjectName( uint64_t object
 		, uint32_t objectType
 		, std::string const & objectName
-		, std::string const & typeName )
+		, [[maybe_unused]] std::string const & typeName )
 	{
 #	if VK_EXT_debug_utils
 		if ( vkSetDebugUtilsObjectNameEXT )
@@ -400,22 +396,16 @@ namespace crg
 
 			if ( it != m_allocated.end() )
 			{
-				std::stringstream stream;
-				stream.imbue( std::locale{ "C" } );
-				stream << "Destroyed " << it->second.type
-					<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
-					<< " - " << it->second.name;
-				Logger::logTrace( stream.str() );
+				Logger::logTrace( std::format( std::locale{ "C" }
+					, "Destroyed {} [{:#08x}] - {}"
+					, it->second.type, object, it->second.name ) );
 				m_allocated.erase( it );
 			}
 			else
 			{
-				std::stringstream stream;
-				stream.imbue( std::locale{ "C" } );
-				stream << "Destroyed Unknown"
-					<< " [0x" << std::hex << std::setw( 8u ) << std::setfill( '0' ) << object << "]"
-					<< " - Unregistered";
-				Logger::logTrace( stream.str() );
+				Logger::logTrace( std::format( std::locale{ "C" }
+					, "Destroyed Unknown [{:#08x}] - Unregistered"
+					, object ) );
 			}
 		}
 	}
@@ -424,12 +414,11 @@ namespace crg
 	{
 		lock_type lock{ m_mutex };
 
-		for ( auto & alloc : m_allocated )
+		for ( auto & [_, alloc] : m_allocated )
 		{
-			std::stringstream stream;
-			stream << "Leaked [" << alloc.second.type << "](" << alloc.second.name << "), allocation stack:\n";
-			stream << alloc.second.callstack;
-			Logger::logError( stream.str() );
+			Logger::logError( std::format( std::locale{ "C" }
+				, "Leaked [{}]({}), allocation stack:\n{}"
+				, alloc.type, alloc.name, alloc.callstack ) );
 		}
 	}
 
@@ -439,7 +428,7 @@ namespace crg
 	{
 		if ( result != VK_SUCCESS )
 		{
-			throw std::runtime_error{ stepName };
+			throw Exception{ stepName, std::source_location::current() };
 		}
 	}
 
