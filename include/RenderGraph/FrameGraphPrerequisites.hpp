@@ -145,8 +145,6 @@ namespace crg
 	{
 		VkAccessFlags access;
 		VkPipelineStageFlags pipelineStage;
-
-		bool operator==( PipelineState const & rhs )const = default;
 	};
 
 	struct LayoutState

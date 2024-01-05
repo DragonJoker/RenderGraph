@@ -799,7 +799,7 @@ namespace crg::dot
 				{
 					printEdge( node, next );
 
-					if ( !m_visited.contains( next ) )
+					if ( m_visited.end() == m_visited.find( next ) )
 					{
 						submit( next );
 					}

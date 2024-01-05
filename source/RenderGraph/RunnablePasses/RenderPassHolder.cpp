@@ -81,6 +81,12 @@ namespace crg
 				, separateDepthStencilLayouts );
 		}
 
+		static bool operator==( PipelineState const & lhs, PipelineState const & rhs )
+		{
+			return lhs.access == rhs.access
+				&& lhs.pipelineStage == rhs.pipelineStage;
+		}
+
 		static bool operator!=( LayoutState const & lhs, LayoutState const & rhs )
 		{
 			return lhs.layout != rhs.layout
@@ -156,6 +162,8 @@ namespace crg
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
+		using rpHolder::operator==;
+
 		auto const & data = m_passes[passIndex];
 		auto previousState = context.getPrevPipelineState();
 		auto nextState = context.getNextPipelineState();
