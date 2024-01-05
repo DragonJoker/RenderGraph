@@ -9,9 +9,9 @@ set( MAIN_PROJECT_NAME "RenderGraph" )
 
 # Set project version numbers
 set( VERSION_MAJOR 1 )
-set( VERSION_MINOR 3 )
+set( VERSION_MINOR 4 )
 set( VERSION_BUILD 0 )
-set( VERSION_YEAR 2023 )
+set( VERSION_YEAR 2024 )
 
 set( _PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}" )
 set( _PROJECT_SOVERSION "${VERSION_BUILD}" )
