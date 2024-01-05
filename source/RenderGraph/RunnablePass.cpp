@@ -434,7 +434,7 @@ namespace crg
 		{
 			assert( m_passes.size() > index );
 
-			if ( auto & pass = m_passes[index]; !pass.initialised )
+			if ( auto const & pass = m_passes[index]; !pass.initialised )
 			{
 				initialise( index );
 			}
