@@ -90,7 +90,7 @@ namespace crg
 		m_images.setLayoutState( view, layoutState );
 	}
 
-	LayoutState const & RecordContext::getLayoutState( ImageViewId view )const
+	LayoutState RecordContext::getLayoutState( ImageViewId view )const
 	{
 		return m_images.getLayoutState( view );
 	}
@@ -106,7 +106,7 @@ namespace crg
 			, layoutState );
 	}
 
-	LayoutState const & RecordContext::getLayoutState( ImageId image
+	LayoutState RecordContext::getLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
@@ -115,12 +115,12 @@ namespace crg
 			, subresourceRange );
 	}
 
-	LayoutState const & RecordContext::getNextLayoutState( ImageViewId view )const
+	LayoutState RecordContext::getNextLayoutState( ImageViewId view )const
 	{
 		return m_nextImages.getLayoutState( view );
 	}
 
-	LayoutState const & RecordContext::getNextLayoutState( ImageId image
+	LayoutState RecordContext::getNextLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{

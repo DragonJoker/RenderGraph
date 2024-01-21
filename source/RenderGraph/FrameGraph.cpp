@@ -241,14 +241,14 @@ namespace crg
 			, context );
 	}
 
-	LayoutState const & FrameGraph::getFinalLayoutState( ImageId image
+	LayoutState FrameGraph::getFinalLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & range )const
 	{
 		return m_finalState.getLayoutState( image, viewType, range );
 	}
 
-	LayoutState const & FrameGraph::getFinalLayoutState( ImageViewId view
+	LayoutState FrameGraph::getFinalLayoutState( ImageViewId view
 		, uint32_t passIndex )const
 	{
 		if ( view.data->source.empty() )
@@ -287,7 +287,7 @@ namespace crg
 			, outputLayout );
 	}
 
-	LayoutState const & FrameGraph::getInputLayoutState( ImageId image
+	LayoutState FrameGraph::getInputLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & range )const
 	{
@@ -296,7 +296,7 @@ namespace crg
 			, range );
 	}
 
-	LayoutState const & FrameGraph::getInputLayoutState( ImageViewId view )const
+	LayoutState FrameGraph::getInputLayoutState( ImageViewId view )const
 	{
 		return getInputLayoutState( view.data->image
 			, view.data->info.viewType
@@ -323,7 +323,7 @@ namespace crg
 			, outputLayout );
 	}
 
-	LayoutState const & FrameGraph::getOutputLayoutState( ImageId image
+	LayoutState FrameGraph::getOutputLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & range )const
 	{
@@ -332,7 +332,7 @@ namespace crg
 			, range );
 	}
 
-	LayoutState const & FrameGraph::getOutputLayoutState( ImageViewId view )const
+	LayoutState FrameGraph::getOutputLayoutState( ImageViewId view )const
 	{
 		return getOutputLayoutState( view.data->image
 			, view.data->info.viewType
@@ -579,7 +579,7 @@ namespace crg
 		return newLayout;
 	}
 
-	LayoutState const & getSubresourceRangeLayout( LayerLayoutStates const & ranges
+	LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range )
 	{
 		std::map< VkImageLayout, LayoutState > states;
@@ -615,10 +615,9 @@ namespace crg
 
 		if ( states.empty() )
 		{
-			static const LayoutState dummy{ VK_IMAGE_LAYOUT_UNDEFINED
+			return { VK_IMAGE_LAYOUT_UNDEFINED
 				, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
 				, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
-			return dummy;
 		}
 
 		if ( states.size() == 1u )

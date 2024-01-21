@@ -72,10 +72,10 @@ namespace crg
 		*	Getters.
 		*/
 		/**@{*/
-		CRG_API LayoutState const & getFinalLayoutState( ImageId image
+		CRG_API LayoutState getFinalLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & range )const;
-		CRG_API LayoutState const & getFinalLayoutState( ImageViewId view
+		CRG_API LayoutState getFinalLayoutState( ImageViewId view
 			, uint32_t passIndex = 0u )const;
 		CRG_API AccessState const & getFinalAccessState( Buffer const & buffer
 			, uint32_t passIndex = 0u )const;
@@ -85,20 +85,20 @@ namespace crg
 			, LayoutState const & outputLayout );
 		CRG_API void addInput( ImageViewId view
 			, LayoutState const & outputLayout );
-		CRG_API LayoutState const & getInputLayoutState( ImageId image
+		CRG_API LayoutState getInputLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & range )const;
-		CRG_API LayoutState const & getInputLayoutState( ImageViewId view )const;
+		CRG_API LayoutState getInputLayoutState( ImageViewId view )const;
 		CRG_API void addOutput( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & range
 			, LayoutState const & outputLayout );
 		CRG_API void addOutput( ImageViewId view
 			, LayoutState const & outputLayout );
-		CRG_API LayoutState const & getOutputLayoutState( ImageId image
+		CRG_API LayoutState getOutputLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & range )const;
-		CRG_API LayoutState const & getOutputLayoutState( ImageViewId view )const;
+		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
 
 		ResourceHandler & getHandler()noexcept
 		{
