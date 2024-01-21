@@ -48,12 +48,10 @@ namespace crg
 			, layoutState );
 	}
 
-	LayoutState const & LayerLayoutStatesHandler::getLayoutState( ImageId image
+	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
-		static LayoutState const undefLayout{ VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } };
-
 		if ( auto imageIt = images.find( image.id ); imageIt != images.end() )
 		{
 			auto range = getVirtualRange( image
@@ -63,10 +61,10 @@ namespace crg
 				, range );
 		}
 
-		return undefLayout;
+		return { VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } };
 	}
 
-	LayoutState const & LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
+	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
 	{
 		assert( view.data->source.empty()
 			&& "Merged image views must be resolved before finding their layout state" );

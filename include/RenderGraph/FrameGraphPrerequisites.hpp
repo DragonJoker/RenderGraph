@@ -445,7 +445,7 @@ namespace crg
 	CRG_API LayoutState const & addSubresourceRangeLayout( LayerLayoutStates & ranges
 		, VkImageSubresourceRange const & range
 		, LayoutState const & newLayout );
-	CRG_API LayoutState const & getSubresourceRangeLayout( LayerLayoutStates const & ranges
+	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range );
 	CRG_API VkImageSubresourceRange getVirtualRange( ImageId const & image
 		, VkImageViewType viewType

@@ -20,10 +20,10 @@ namespace crg
 			, LayoutState const & layoutState );
 		CRG_API void setLayoutState( crg::ImageViewId view
 			, LayoutState const & layoutState );
-		CRG_API LayoutState const & getLayoutState( ImageId image
+		CRG_API LayoutState getLayoutState( ImageId image
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange )const;
-		CRG_API LayoutState const & getLayoutState( ImageViewId view )const;
+		CRG_API LayoutState getLayoutState( ImageViewId view )const;
 
 		LayerLayoutStatesMap images;
 	};
