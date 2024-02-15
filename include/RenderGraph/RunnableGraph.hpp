@@ -51,8 +51,6 @@ namespace crg
 		*	All transitions.
 		*/
 		CRG_API RunnableGraph( FrameGraph & graph
-			, FramePassDependencies inputTransitions
-			, FramePassDependencies outputTransitions
 			, AttachmentTransitions transitions
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
@@ -144,8 +142,6 @@ namespace crg
 		FrameGraph & m_graph;
 		GraphContext & m_context;
 		ContextResourcesCache m_resources;
-		FramePassDependencies m_inputTransitions;
-		FramePassDependencies m_outputTransitions;
 		AttachmentTransitions m_transitions;
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;

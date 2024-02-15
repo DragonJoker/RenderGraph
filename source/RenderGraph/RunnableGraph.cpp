@@ -52,7 +52,8 @@ namespace crg
 		{
 			LayerLayoutStates result;
 
-			if ( auto nextIt = nextLayouts.find( currentLayout.first ); nextIt != nextLayouts.end() )
+			if ( auto nextIt = nextLayouts.find( currentLayout.first );
+				nextIt != nextLayouts.end() )
 			{
 				auto & nxtLayout = nextIt->second;
 
@@ -89,7 +90,8 @@ namespace crg
 			while ( !currentLayouts.empty()
 				&& endIt != nextPassIt )
 			{
-				if ( auto const & nextPass = **nextPassIt; nextPass.isEnabled() )
+				if ( auto const & nextPass = **nextPassIt;
+					nextPass.isEnabled() )
 				{
 					auto & nextLayouts = nextPass.getImageLayouts();
 					LayerLayoutStates layoutStates;
@@ -112,6 +114,21 @@ namespace crg
 			}
 
 			return result;
+		}
+
+		static PipelineState getNextState( PipelineState currentState
+			, std::vector< RunnablePassPtr >::iterator nextPassIt
+			, std::vector< RunnablePassPtr >::iterator endIt )
+		{
+			while ( endIt != nextPassIt
+				&& !( *nextPassIt )->isEnabled() )
+			{	
+				++nextPassIt;
+			}
+
+			return ( endIt != nextPassIt && ( *nextPassIt )->isEnabled() )
+				? ( *nextPassIt )->getPipelineState()
+				: currentState;
 		}
 	}
 
@@ -145,8 +162,6 @@ namespace crg
 	//************************************************************************************************
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph
-		, FramePassDependencies inputTransitions
-		, FramePassDependencies outputTransitions
 		, AttachmentTransitions transitions
 		, GraphNodePtrArray nodes
 		, RootNode rootNode
@@ -154,8 +169,6 @@ namespace crg
 		: m_graph{ graph }
 		, m_context{ context }
 		, m_resources{ m_graph.getHandler(), m_context }
-		, m_inputTransitions{ std::move( inputTransitions ) }
-		, m_outputTransitions{ std::move( outputTransitions ) }
 		, m_transitions{ std::move( transitions ) }
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
@@ -309,20 +322,14 @@ namespace crg
 
 				if ( nextPass != m_passes.end() )
 				{
-					if ( ( *nextPass )->isEnabled() )
-					{
-						recordContext.setNextPipelineState( ( *nextPass )->getPipelineState()
-							, rungrf::gatherNextImageLayouts( pass->getImageLayouts()
-								, nextPass
-								, m_passes.end() ) );
-					}
-
+					recordContext.setNextPipelineState( rungrf::getNextState( pass->getPipelineState(), nextPass, m_passes.end() )
+						, rungrf::gatherNextImageLayouts( pass->getImageLayouts(), nextPass, m_passes.end() ) );
 					++nextPass;
 				}
 				else
 				{
 					recordContext.setNextPipelineState( pass->getPipelineState()
-						, {} );
+						, m_graph.getOutputLayoutStates() );
 				}
 
 				*it = pass->recordCurrentInto( recordContext, m_commandBuffer );

@@ -233,8 +233,6 @@ namespace crg
 		ImageMemoryMap images;
 		ImageViewMap imageViews;
 		return std::make_unique< RunnableGraph >( *this
-			, std::move( inputTransitions )
-			, std::move( outputTransitions )
 			, std::move( transitions )
 			, std::move( nodes )
 			, std::move( root )
@@ -337,6 +335,11 @@ namespace crg
 		return getOutputLayoutState( view.data->image
 			, view.data->info.viewType
 			, view.data->info.subresourceRange );
+	}
+
+	LayerLayoutStatesMap const & FrameGraph::getOutputLayoutStates()const
+	{
+		return m_outputs.images;
 	}
 
 	void FrameGraph::registerFinalState( RecordContext const & context )
