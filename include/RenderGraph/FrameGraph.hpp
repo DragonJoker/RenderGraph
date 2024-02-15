@@ -99,6 +99,7 @@ namespace crg
 			, VkImageViewType viewType
 			, VkImageSubresourceRange const & range )const;
 		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
+		CRG_API LayerLayoutStatesMap const & getOutputLayoutStates()const;
 
 		ResourceHandler & getHandler()noexcept
 		{
