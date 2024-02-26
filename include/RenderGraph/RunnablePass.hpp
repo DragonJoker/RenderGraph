@@ -260,30 +260,6 @@ namespace crg
 		CRG_API uint32_t reRecordCurrent();
 		/**
 		*\brief
-		*	Submits this pass' command buffer to the given queue.
-		*\param[in] toWait
-		*	The semaphore to wait for.
-		*\param[out] queue
-		*	The queue to submit to.
-		*\return
-		*	This pass' semaphore.
-		*/
-		CRG_API SemaphoreWaitArray run( SemaphoreWait toWait
-			, VkQueue queue );
-		/**
-		*\brief
-		*	Submits this pass' command buffer to the given queue.
-		*\param[in] toWait
-		*	The semaphores to wait for.
-		*\param[out] queue
-		*	The queue to submit to.
-		*\return
-		*	This pass' semaphore.
-		*/
-		CRG_API SemaphoreWaitArray run( SemaphoreWaitArray const & toWait
-			, VkQueue queue );
-		/**
-		*\brief
 		*	Resets the command buffer to initial state.
 		*/
 		CRG_API void resetCommandBuffer( uint32_t passIndex );

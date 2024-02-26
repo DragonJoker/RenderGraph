@@ -10,7 +10,7 @@ set( MAIN_PROJECT_NAME "RenderGraph" )
 # Set project version numbers
 set( VERSION_MAJOR 1 )
 set( VERSION_MINOR 4 )
-set( VERSION_BUILD 0 )
+set( VERSION_BUILD 1 )
 set( VERSION_YEAR 2024 )
 
 set( _PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}" )
@@ -96,15 +96,12 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Signal.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/WriteDescriptorSet.hpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.hpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.hpp
 	)
 	set( ${PROJECT_NAME}_SRC_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/Attachment.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/BuilderCommon.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/DotExport.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePass.cpp
@@ -118,7 +115,6 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/Log.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RecordContext.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceHandler.cpp
-		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/ResourceOptimiser.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnableGraph.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/RunnablePass.cpp
 	)

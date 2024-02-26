@@ -30,64 +30,6 @@ namespace crg
 
 			return result;
 		}
-
-		static ViewTransitionArray reduceDirectPathsT( ViewTransitionArray transitions )
-		{
-			// Currently, just removes from the transitions the sampled attachments to a pass
-			// that doesn't directly need them.
-			auto it = std::remove_if( transitions.begin()
-				, transitions.end()
-				, []( ViewTransition const & transition )
-				{
-					bool result = false;
-
-					if ( transition.inputAttach.isSampledView() )
-					{
-						auto & inputPass = *transition.inputAttach.pass;
-						auto pit = std::find_if( inputPass.images.begin()
-							, inputPass.images.end()
-							, [&transition]( Attachment const & lookup )
-							{
-								return lookup.isSampledView()
-									&& lookup == transition.inputAttach;
-							} );
-						result = pit == inputPass.images.end();
-					}
-
-					return result;
-				} );
-			transitions.erase( it, transitions.end() );
-			return transitions;
-		}
-
-		static BufferTransitionArray reduceDirectPathsT( BufferTransitionArray transitions )
-		{
-			// Currently, just removes from the transitions the sampled attachments to a pass
-			// that doesn't directly need them.
-			auto it = std::remove_if( transitions.begin()
-				, transitions.end()
-				, []( BufferTransition const & transition )
-				{
-					bool result = false;
-
-					if ( transition.inputAttach.isStorageBuffer() )
-					{
-						auto & inputPass = *transition.inputAttach.pass;
-						auto pit = std::find_if( inputPass.buffers.begin()
-							, inputPass.buffers.end()
-							, [&transition]( Attachment const & lookup )
-							{
-								return lookup.isStorageBuffer()
-									&& lookup == transition.inputAttach;
-							} );
-						result = pit == inputPass.buffers.end();
-					}
-
-					return result;
-				} );
-			transitions.erase( it, transitions.end() );
-			return transitions;
-		}
 	}
 
 	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs )
@@ -113,11 +55,5 @@ namespace crg
 	{
 		return { attTran::mergeIdenticalTransitionsT( std::move( transitions.viewTransitions ) )
 			, attTran::mergeIdenticalTransitionsT( std::move( transitions.bufferTransitions ) ) };
-	}
-
-	AttachmentTransitions reduceDirectPaths( AttachmentTransitions transitions )
-	{
-		return { attTran::reduceDirectPathsT( std::move( transitions.viewTransitions ) )
-			, attTran::reduceDirectPathsT( std::move( transitions.bufferTransitions ) ) };
 	}
 }

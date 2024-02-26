@@ -80,14 +80,7 @@ namespace
 
 	crg::GraphContext & getContext()
 	{
-		static crg::GraphContext context{ nullptr
-			, nullptr
-			, nullptr
-			, VkPhysicalDeviceMemoryProperties{}
-			, VkPhysicalDeviceProperties{}
-			, false
-			, nullptr };
-		return context;
+		return test::getDummyContext();
 	}
 
 	void checkOutputColourIsShaderReadOnly( test::TestCounts & testCounts
@@ -2050,23 +2043,24 @@ namespace
 		backgroundPass.addInOutDepthView( depthv );
 		backgroundPass.addOutputColourView( colourv );
 
-		auto dirShadowMap = graph.createImage( test::createImage( "dirShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 4u ) );
-		auto dirVarianceMap = graph.createImage( test::createImage( "dirVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 4u ) );
-		auto dirShadowMapv = graph.createView( test::createView( "dirShadowMapv", dirShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 4u ) );
-		auto dirVarianceMapv = graph.createView( test::createView( "dirVarianceMapv", dirVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 4u ) );
+		auto & dirGroup = graph.createPassGroup( "Directional" );
+		auto dirShadowMap = dirGroup.createImage( test::createImage( "dirShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 4u ) );
+		auto dirVarianceMap = dirGroup.createImage( test::createImage( "dirVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 4u ) );
+		auto dirShadowMapv = dirGroup.createView( test::createView( "dirShadowMapv", dirShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 4u ) );
+		auto dirVarianceMapv = dirGroup.createView( test::createView( "dirVarianceMapv", dirVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 4u ) );
 		crg::ImageViewIdArray dirShadows;
 		crg::ImageViewIdArray dirVariances;
 		{
-			auto dirIntermediate = graph.createImage( test::createImage( "dirIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
-			auto dirIntermediatev = graph.createView( test::createView( "dirIntermediatev", dirIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
+			auto dirIntermediate = dirGroup.createImage( test::createImage( "dirIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
+			auto dirIntermediatev = dirGroup.createView( test::createView( "dirIntermediatev", dirIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
 
 			for ( uint32_t index = 0u; index < 4u; ++index )
 			{
-				auto shadowMapv = graph.createView( test::createView( "dirShadowMapv" + std::to_string( index ), dirShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
+				auto shadowMapv = dirGroup.createView( test::createView( "dirShadowMapv" + std::to_string( index ), dirShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
 				dirShadows.push_back( shadowMapv );
-				auto varianceMapv = graph.createView( test::createView( "dirVarianceMapv" + std::to_string( index ), dirVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
+				auto varianceMapv = dirGroup.createView( test::createView( "dirVarianceMapv" + std::to_string( index ), dirVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
 				dirVariances.push_back( varianceMapv );
-				auto & shadowPass = graph.createPass( "dirShadowPass" + std::to_string( index )
+				auto & shadowPass = dirGroup.createPass( "dirShadowPass" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2080,7 +2074,7 @@ namespace
 				shadowPass.addOutputDepthView( shadowMapv );
 				shadowPass.addOutputColourView( varianceMapv );
 
-				auto & blurPassX = graph.createPass( "dirBlurPassX" + std::to_string( index )
+				auto & blurPassX = dirGroup.createPass( "dirBlurPassX" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2094,7 +2088,7 @@ namespace
 				blurPassX.addSampledView( varianceMapv, 0u );
 				blurPassX.addOutputColourView( dirIntermediatev );
 
-				auto & blurPassY = graph.createPass( "dirBlurPassY" + std::to_string( index )
+				auto & blurPassY = dirGroup.createPass( "dirBlurPassY" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2107,25 +2101,27 @@ namespace
 				previous = &blurPassY;
 				blurPassY.addSampledView( dirIntermediatev, 0u );
 				blurPassY.addOutputColourView( varianceMapv );
+				dirGroup.addGroupOutput( varianceMapv );
 			}
 		}
-		auto pntShadowMap = graph.createImage( test::createImage( "pntShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 36u ) );
-		auto pntVarianceMap = graph.createImage( test::createImage( "pntVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 36u ) );
-		auto pntShadowMapv = graph.createView( test::createView( "pntShadowMapv", pntShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 36u ) );
-		auto pntVarianceMapv = graph.createView( test::createView( "pntVarianceMapv", pntVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 36u ) );
+		auto & pntGroup = graph.createPassGroup( "Point" );
+		auto pntShadowMap = pntGroup.createImage( test::createImage( "pntShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 36u ) );
+		auto pntVarianceMap = pntGroup.createImage( test::createImage( "pntVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 36u ) );
+		auto pntShadowMapv = pntGroup.createView( test::createView( "pntShadowMapv", pntShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 36u ) );
+		auto pntVarianceMapv = pntGroup.createView( test::createView( "pntVarianceMapv", pntVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 36u ) );
 		crg::ImageViewIdArray pntShadows;
 		crg::ImageViewIdArray pntVariances;
 		{
-			auto pntIntermediate = graph.createImage( test::createImage( "pntIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
-			auto pntIntermediatev = graph.createView( test::createView( "pntIntermediatev", pntIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
+			auto pntIntermediate = pntGroup.createImage( test::createImage( "pntIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
+			auto pntIntermediatev = pntGroup.createView( test::createView( "pntIntermediatev", pntIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
 
 			for ( uint32_t index = 0u; index < 36u; ++index )
 			{
-				auto shadowMapv = graph.createView( test::createView( "pntShadowMapv" + std::to_string( index ), pntShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
+				auto shadowMapv = pntGroup.createView( test::createView( "pntShadowMapv" + std::to_string( index ), pntShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
 				pntShadows.push_back( shadowMapv );
-				auto varianceMapv = graph.createView( test::createView( "pntVarianceMapv" + std::to_string( index ), pntVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
+				auto varianceMapv = pntGroup.createView( test::createView( "pntVarianceMapv" + std::to_string( index ), pntVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
 				pntVariances.push_back( varianceMapv );
-				auto & shadowPass = graph.createPass( "pntShadowPass" + std::to_string( index )
+				auto & shadowPass = pntGroup.createPass( "pntShadowPass" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2139,7 +2135,7 @@ namespace
 				shadowPass.addOutputDepthView( shadowMapv );
 				shadowPass.addOutputColourView( varianceMapv );
 
-				auto & blurPassX = graph.createPass( "pntBlurPassX" + std::to_string( index )
+				auto & blurPassX = pntGroup.createPass( "pntBlurPassX" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2153,7 +2149,7 @@ namespace
 				blurPassX.addSampledView( varianceMapv, 0u );
 				blurPassX.addOutputColourView( pntIntermediatev );
 
-				auto & blurPassY = graph.createPass( "pntBlurPassY" + std::to_string( index )
+				auto & blurPassY = pntGroup.createPass( "pntBlurPassY" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2166,25 +2162,27 @@ namespace
 				previous = &blurPassY;
 				blurPassY.addSampledView( pntIntermediatev, 0u );
 				blurPassY.addOutputColourView( varianceMapv );
+				pntGroup.addGroupOutput( varianceMapv );
 			}
 		}
-		auto sptShadowMap = graph.createImage( test::createImage( "sptShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 10u ) );
-		auto sptVarianceMap = graph.createImage( test::createImage( "pntVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 10u ) );
-		auto sptShadowMapv = graph.createView( test::createView( "sptShadowMapv", sptShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 10u ) );
-		auto sptVarianceMapv = graph.createView( test::createView( "sptVarianceMapv", sptVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 10u ) );
+		auto & sptGroup = graph.createPassGroup( "Spot" );
+		auto sptShadowMap = sptGroup.createImage( test::createImage( "sptShadowMap", VK_FORMAT_X8_D24_UNORM_PACK32, 1u, 10u ) );
+		auto sptVarianceMap = sptGroup.createImage( test::createImage( "pntVarianceMap", VK_FORMAT_R32G32_SFLOAT, 1u, 10u ) );
+		auto sptShadowMapv = sptGroup.createView( test::createView( "sptShadowMapv", sptShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, 0u, 10u ) );
+		auto sptVarianceMapv = sptGroup.createView( test::createView( "sptVarianceMapv", sptVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, 0u, 10u ) );
 		crg::ImageViewIdArray sptShadows;
 		crg::ImageViewIdArray sptVariances;
 		{
-			auto sptIntermediate = graph.createImage( test::createImage( "sptIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
-			auto sptIntermediatev = graph.createView( test::createView( "sptIntermediatev", sptIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
+			auto sptIntermediate = sptGroup.createImage( test::createImage( "sptIntermediate", VK_FORMAT_R32G32_SFLOAT ) );
+			auto sptIntermediatev = sptGroup.createView( test::createView( "sptIntermediatev", sptIntermediate, VK_FORMAT_R32G32_SFLOAT ) );
 
 			for ( uint32_t index = 0u; index < 10u; ++index )
 			{
-				auto shadowMapv = graph.createView( test::createView( "sptShadowMapv" + std::to_string( index ), sptShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
+				auto shadowMapv = sptGroup.createView( test::createView( "sptShadowMapv" + std::to_string( index ), sptShadowMap, VK_FORMAT_X8_D24_UNORM_PACK32, 0u, 1u, index ) );
 				sptShadows.push_back( shadowMapv );
-				auto varianceMapv = graph.createView( test::createView( "sptVarianceMapv" + std::to_string( index ), sptVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
+				auto varianceMapv = sptGroup.createView( test::createView( "sptVarianceMapv" + std::to_string( index ), sptVarianceMap, VK_FORMAT_R32G32_SFLOAT, 0u, 1u, index ) );
 				sptVariances.push_back( varianceMapv );
-				auto & shadowPass = graph.createPass( "sptShadowPass" + std::to_string( index )
+				auto & shadowPass = sptGroup.createPass( "sptShadowPass" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2198,7 +2196,7 @@ namespace
 				shadowPass.addOutputDepthView( shadowMapv );
 				shadowPass.addOutputColourView( varianceMapv );
 
-				auto & blurPassX = graph.createPass( "sptBlurPassX" + std::to_string( index )
+				auto & blurPassX = sptGroup.createPass( "sptBlurPassX" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2212,7 +2210,7 @@ namespace
 				blurPassX.addSampledView( varianceMapv, 0u );
 				blurPassX.addOutputColourView( sptIntermediatev );
 
-				auto & blurPassY = graph.createPass( "sptBlurPassY" + std::to_string( index )
+				auto & blurPassY = sptGroup.createPass( "sptBlurPassY" + std::to_string( index )
 					, [&testCounts]( crg::FramePass const & pass
 						, crg::GraphContext & context
 						, crg::RunnableGraph & graph )
@@ -2225,10 +2223,15 @@ namespace
 				previous = &blurPassY;
 				blurPassY.addSampledView( sptIntermediatev, 0u );
 				blurPassY.addOutputColourView( varianceMapv );
+				sptGroup.addGroupOutput( varianceMapv );
 			}
 		}
 
-		auto & opaquePass = graph.createPass( "opaquePass"
+		auto & objGroup = graph.createPassGroup( "Objects" );
+		objGroup.addOutput( colourv
+			, crg::makeLayoutState( VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL ) );
+
+		auto & opaquePass = objGroup.createPass( "opaquePass"
 			, [&testCounts]( crg::FramePass const & pass
 				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
@@ -2254,7 +2257,7 @@ namespace
 		opaquePass.addInOutDepthView( depthv );
 		opaquePass.addInOutColourView( colourv );
 
-		auto & transparentPass = graph.createPass( "transparentPass"
+		auto & transparentPass = objGroup.createPass( "transparentPass"
 			, [&testCounts]( crg::FramePass const & pass
 				, crg::GraphContext & context
 				, crg::RunnableGraph & graph )
@@ -2346,6 +2349,9 @@ namespace
 		mipsGen.addTransferOutputView( colourv );
 
 		auto runnable = graph.compile( getContext() );
+		require( runnable );
+		checkNoThrow( runnable->record() )
+		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd();
 	}
 }
