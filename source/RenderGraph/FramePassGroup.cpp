@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/FramePassGroup.hpp"
 
 #include "RenderGraph/Exception.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/FrameGraph.hpp"
 
 #include <numeric>
@@ -71,6 +72,7 @@ namespace crg
 	{
 		if ( hasPass( passName ) )
 		{
+			Logger::logWarning( "Duplicate FramePass name detected." );
 			CRG_Exception( "Duplicate FramePass name detected." );
 		}
 

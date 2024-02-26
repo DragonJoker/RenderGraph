@@ -30,14 +30,12 @@ namespace crg
 		CRG_API GraphNode & operator=( GraphNode const & ) = delete;
 		CRG_API GraphNode( GraphNode && rhs )noexcept;
 		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept;
-
 		CRG_API virtual ~GraphNode()noexcept = default;
+
 		CRG_API void addAttaches( ConstGraphAdjacentNode const prev
 			, AttachmentTransitions inputAttaches );
 		CRG_API void attachNode( GraphAdjacentNode next
 			, AttachmentTransitions inputAttaches );
-		CRG_API GraphAdjacentNode findInNext( FramePass const & pass )const;
-		CRG_API bool hasInNext( ConstGraphAdjacentNode const & node )const;
 		CRG_API AttachmentTransitions const & getInputAttaches( ConstGraphAdjacentNode pred = nullptr )const;
 
 		CRG_API virtual void accept( GraphVisitor * vis )const = 0;

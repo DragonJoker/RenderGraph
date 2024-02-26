@@ -99,30 +99,6 @@ namespace crg
 			, std::move( nextInputAttaches ) );
 	}
 
-	GraphAdjacentNode GraphNode::findInNext( FramePass const & pass )const
-	{
-		auto it = std::find_if( next.begin()
-			, next.end()
-			, [&pass]( ConstGraphAdjacentNode lookup )
-			{
-				return getFramePass( *lookup ) == &pass;
-			} );
-		return ( next.end() != it )
-			? *it
-			: nullptr;
-	}
-
-	bool GraphNode::hasInNext( ConstGraphAdjacentNode const & node )const
-	{
-		auto it = std::find_if( next.begin()
-			, next.end()
-			, [&node]( ConstGraphAdjacentNode lookup )
-			{
-				return lookup == node;
-			} );
-		return it != next.end();
-	}
-
 	AttachmentTransitions const & GraphNode::getInputAttaches( ConstGraphAdjacentNode const pred )const
 	{
 		auto it = inputAttaches.find( pred );

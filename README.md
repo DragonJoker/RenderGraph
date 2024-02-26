@@ -1,5 +1,6 @@
 <p align="center">
   <a href="https://github.com/DragonJoker/RenderGraph/actions?query=workflow%3ABuild+event%3Apush"><img alt="Build status" src="https://github.com/DragonJoker/RenderGraph/workflows/Build/badge.svg?event=push"></a>
+  <a href="https://codecov.io/gh/DragonJoker/RenderGraph" ><img src="https://codecov.io/gh/DragonJoker/RenderGraph/graph/badge.svg?token=E0IGAPHLJO"/></a>
 </p>
 
 

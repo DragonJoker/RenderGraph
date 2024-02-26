@@ -28,7 +28,6 @@ namespace crg
 	};
 
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions value );
-	AttachmentTransitions reduceDirectPaths( AttachmentTransitions value );
 
 	struct FramePassTransitions
 	{

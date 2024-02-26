@@ -7,11 +7,11 @@ See LICENSE file in root folder.
 #include "RenderGraph/Exception.hpp"
 #include "RenderGraph/FramePass.hpp"
 #include "RenderGraph/FramePassGroup.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/ResourceHandler.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 #include "FramePassDependenciesBuilder.hpp"
 #include "GraphBuilder.hpp"
-#include "ResourceOptimiser.hpp"
 
 #include <algorithm>
 
@@ -110,7 +110,8 @@ namespace crg
 
 				if ( !added )
 				{
-					CRG_Exception( "Couldn't sort passes:" );
+					Logger::logError( "Couldn't sort passes" );
+					CRG_Exception( "Couldn't sort passes" );
 				}
 			}
 
@@ -201,6 +202,7 @@ namespace crg
 
 		if ( passes.empty() )
 		{
+			Logger::logWarning( "No FramePass registered." );
 			CRG_Exception( "No FramePass registered." );
 		}
 

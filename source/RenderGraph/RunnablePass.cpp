@@ -561,61 +561,6 @@ namespace crg
 		}
 	}
 
-	SemaphoreWaitArray RunnablePass::run( SemaphoreWait toWait
-		, VkQueue queue )
-	{
-		return run( ( toWait.semaphore
-				? SemaphoreWaitArray{ 1u, toWait }
-				: SemaphoreWaitArray{} )
-			, queue );
-	}
-
-	SemaphoreWaitArray RunnablePass::run( SemaphoreWaitArray const & toWait
-		, VkQueue queue )
-	{
-		if ( !m_callbacks.isEnabled() )
-		{
-			return toWait;
-		}
-
-		auto index = m_callbacks.getPassIndex();
-		assert( m_passes.size() > index );
-		auto & pass = m_passes[index];
-
-		if ( pass.toReset )
-		{
-			crg::RunnablePass::resetCommandBuffer( index );
-			crg::RunnablePass::reRecordCurrent();
-		}
-
-		if ( m_context.device )
-		{
-			std::vector< VkSemaphore > semaphores;
-			std::vector< VkPipelineStageFlags > dstStageMasks;
-			convert( toWait, semaphores, dstStageMasks );
-			auto & cb = pass.commandBuffer;
-			m_timer.notifyPassRender();
-			VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
-				, nullptr
-				, uint32_t( semaphores.size() )
-				, semaphores.data()
-				, dstStageMasks.data()
-				, 1u
-				, &cb.commandBuffer
-				, 1u
-				, &pass.semaphore };
-			pass.fence.reset();
-			m_context.vkQueueSubmit( queue
-				, 1u
-				, &submitInfo
-				, pass.fence );
-		}
-
-		return { 1u
-			, { pass.semaphore
-				, m_callbacks.getPipelineState().pipelineStage } };
-	}
-
 	void RunnablePass::resetCommandBuffer( uint32_t passIndex )
 	{
 		if ( !m_context.device )

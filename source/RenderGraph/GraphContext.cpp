@@ -267,6 +267,7 @@ namespace crg
 			typeBits >>= 1;
 		}
 
+		Logger::logError( "Could not deduce memory type" );
 		CRG_Exception( "Could not deduce memory type" );
 	}
 
@@ -435,6 +436,7 @@ namespace crg
 	{
 		if ( result != VK_SUCCESS )
 		{
+			Logger::logError( stepName );
 			CRG_Exception( stepName );
 		}
 	}

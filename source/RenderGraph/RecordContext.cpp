@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RecordContext.hpp"
 
 #include "RenderGraph/Exception.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/ResourceHandler.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
@@ -539,6 +540,7 @@ namespace crg
 		if ( !m_resources )
 		{
 			assert( false );
+			Logger::logError( "No resources available." );
 			CRG_Exception( "No resources available." );
 		}
 

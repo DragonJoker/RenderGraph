@@ -12,9 +12,6 @@ namespace crg::builder
 {
 	using FramePassSet = std::set< FramePass const * >;
 
-	FramePassSet retrieveRoots( FramePassDependencies const & dependencies );
-	FramePassSet retrieveLeafs( FramePassDependencies const & dependencies );
-
 	template< typename TypeT >
 	void filter( std::vector< TypeT > const & inputs
 		, std::function< bool( TypeT const & ) > filterFunc

@@ -120,7 +120,12 @@ namespace crg
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
 		VkDeviceSize offset{};
-		context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer( index ), &offset );
+
+		if ( m_vertexBuffer
+			&& m_vertexBuffer->buffer.buffer( index ) )
+		{
+			context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_vertexBuffer->buffer.buffer( index ), &offset );
+		}
 
 		if ( auto indirectBuffer = m_config.indirectBuffer.buffer.buffer( index ) )
 		{

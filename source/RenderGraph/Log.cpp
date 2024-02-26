@@ -60,46 +60,6 @@ namespace crg
 		doGetInstance().m_error( message, newLine );
 	}
 
-	void Logger::logTrace( std::ostream const & message, bool newLine )
-	{
-		auto sbuf = message.rdbuf();
-		std::stringstream ss;
-		ss << sbuf;
-		doGetInstance().m_trace( ss.str(), newLine );
-	}
-
-	void Logger::logDebug( std::ostream const & message, bool newLine )
-	{
-		auto sbuf = message.rdbuf();
-		std::stringstream ss;
-		ss << sbuf;
-		doGetInstance().m_debug( ss.str(), newLine );
-	}
-
-	void Logger::logInfo( std::ostream const & message, bool newLine )
-	{
-		auto sbuf = message.rdbuf();
-		std::stringstream ss;
-		ss << sbuf;
-		doGetInstance().m_info( ss.str(), newLine );
-	}
-
-	void Logger::logWarning( std::ostream const & message, bool newLine )
-	{
-		auto sbuf = message.rdbuf();
-		std::stringstream ss;
-		ss << sbuf;
-		doGetInstance().m_warning( ss.str(), newLine );
-	}
-
-	void Logger::logError( std::ostream const & message, bool newLine )
-	{
-		auto sbuf = message.rdbuf();
-		std::stringstream ss;
-		ss << sbuf;
-		doGetInstance().m_error( ss.str(), newLine );
-	}
-
 	void Logger::setTraceCallback( LogCallback callback )
 	{
 		doGetInstance().m_trace = std::move( callback );

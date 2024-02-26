@@ -23,6 +23,7 @@ namespace test
 		, uint32_t levelCount = 1u
 		, uint32_t baseArrayLayer = 0u
 		, uint32_t layerCount = 1u );
+	crg::GraphContext & getDummyContext();
 
 	void display( TestCounts & testCounts
 		, std::ostream & stream
