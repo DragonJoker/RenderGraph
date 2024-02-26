@@ -20,6 +20,10 @@ add_library( crg::${TEST_NAME}
 	ALIAS
 		${TEST_NAME}
 )
+target_sources( ${TEST_NAME} 
+	PRIVATE
+		${CRG_EDITORCONFIG_FILE}
+)
 target_link_libraries( ${TEST_NAME}
 	PUBLIC
 		crg::RenderGraph
@@ -42,6 +46,10 @@ foreach ( TEST_FILE ${TEST_FILES} )
 	get_filename_component( TEST_NAME ${TEST_FILE} NAME_WE )
 	add_executable( ${TEST_NAME}
 		${TEST_FILE}
+	)
+	target_sources( ${TEST_NAME} 
+		PRIVATE
+			${CRG_EDITORCONFIG_FILE}
 	)
 	target_link_libraries( ${TEST_NAME}
 		PRIVATE

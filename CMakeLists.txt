@@ -52,6 +52,8 @@ set_property( GLOBAL PROPERTY USE_FOLDERS ON )
 set( CRG_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} )
 set( CRG_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} )
 
+set( CRG_EDITORCONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/.editorconfig )
+
 if ( NOT DEFINED CRG_BUILD_STATIC )
 	option( CRG_BUILD_STATIC "Build as a static library" ON )
 endif ()
@@ -213,6 +215,10 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	add_library( crg::${PROJECT_NAME}
 		ALIAS
 			${PROJECT_NAME}
+	)
+	target_sources( ${PROJECT_NAME} 
+		PRIVATE
+			${CRG_EDITORCONFIG_FILE}
 	)
 	target_add_compilation_flags( ${PROJECT_NAME} )
 	target_compile_options( ${PROJECT_NAME}

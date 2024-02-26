@@ -30,6 +30,17 @@ namespace crg
 
 	//*********************************************************************************************
 
+	void checkUndefinedInput( std::string const & stepName
+		, Attachment const & attach
+		, ImageViewId const & view
+		, VkImageLayout currentLayout )
+	{
+		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == VK_IMAGE_LAYOUT_UNDEFINED )
+		{
+			Logger::logWarning( stepName + " - [" + attach.pass->getFullName() + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
+		}
+	}
+
 	void convert( SemaphoreWaitArray const & toWait
 		, std::vector< VkSemaphore > & semaphores
 		, std::vector< VkPipelineStageFlags > & dstStageMasks )
@@ -386,17 +397,6 @@ namespace crg
 				, index
 				, context );
 			++index;
-		}
-	}
-
-	void checkUndefinedInput( std::string const & stepName
-		, Attachment const & attach
-		, ImageViewId const & view
-		, VkImageLayout currentLayout )
-	{
-		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == VK_IMAGE_LAYOUT_UNDEFINED )
-		{
-			Logger::logWarning( stepName + " - [" + attach.pass->getFullName() + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
 		}
 	}
 
