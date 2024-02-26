@@ -152,11 +152,11 @@ endforeach ()
 if ( PROJECTS_COVERAGE )
 	if ( PROJECTS_COVERAGE_HTML_RESULTS )
 		OpenCppCoverage_add_merge_target( RenderGraphCoverage
-			${PROJECTS_DOCUMENTATION_OUTPUT_DIR}/RenderGraphCoverage
+			${CRG_SOURCE_DIR}/doc/RenderGraphCoverage
 			FORMAT html )
 	else ()
 		OpenCppCoverage_add_merge_target( RenderGraphCoverage
-			${PROJECTS_DOCUMENTATION_OUTPUT_DIR}/RenderGraphCoverage.xml
+			${CRG_SOURCE_DIR}/doc/RenderGraphCoverage.xml
 			FORMAT cobertura )
 	endif ()
 endif ()
