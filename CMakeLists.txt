@@ -42,6 +42,7 @@ include( UnitTest )
 include( CompilationFlags )
 include( AStyleUtils )
 include( ExternalDependencies )
+include( Coverage )
 
 # Organize projects into folders
 set_property( GLOBAL PROPERTY USE_FOLDERS ON )
@@ -212,6 +213,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		ALIAS
 			${PROJECT_NAME}
 	)
+	target_add_coverage_flags( ${PROJECT_NAME} )
 	target_sources( ${PROJECT_NAME} 
 		PRIVATE
 			${CRG_EDITORCONFIG_FILE}
