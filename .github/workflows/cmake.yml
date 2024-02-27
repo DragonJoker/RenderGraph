@@ -72,16 +72,19 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
         file: ${{ github.workspace }}/doc/RenderGraphCoverage.xml
     - name: Prepare package
+      if: github.event_name == 'push'
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
       run: |
         cmake --install . --config ${{ matrix.buildType }}
     - name: Zip package
+      if: github.event_name == 'push'
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
       run: |
         7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
     - name: Upload package
+      if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
       with:
         name: RenderGraph-${{ matrix.os[1] }}.zip
@@ -227,7 +230,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: RenderGraph-${{ matrix.os[1] }}.zip
-        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}.zip
+        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}-gcc.zip
 
   build-linux-clang:
     strategy:
@@ -301,4 +304,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: RenderGraph-${{ matrix.os[1] }}.zip
-        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}.zip
+        path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}-clang.zip
