@@ -246,6 +246,10 @@ namespace crg
 
 	struct VertexBuffer
 	{
+		VertexBuffer( VertexBuffer const & rhs ) = delete;
+		VertexBuffer & operator=( VertexBuffer const & rhs ) = delete;
+		~VertexBuffer()noexcept = default;
+
 		explicit VertexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
 			, VkDeviceMemory pmemory = VkDeviceMemory{}
 			, VkVertexInputAttributeDescriptionArray pvertexAttribs = {}
@@ -254,19 +258,6 @@ namespace crg
 			, memory{ pmemory }
 			, vertexAttribs{ std::move( pvertexAttribs ) }
 			, vertexBindings{ std::move( pvertexBindings ) }
-		{
-			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
-			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
-			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
-			inputState.pVertexBindingDescriptions = vertexBindings.data();
-		}
-
-		VertexBuffer( VertexBuffer const & rhs )
-			: buffer{ rhs.buffer }
-			, memory{ rhs.memory }
-			, vertexAttribs{ rhs.vertexAttribs }
-			, vertexBindings{ rhs.vertexBindings }
-			, inputState{ rhs.inputState }
 		{
 			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
 			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
@@ -287,22 +278,6 @@ namespace crg
 			inputState.pVertexBindingDescriptions = vertexBindings.data();
 		}
 
-		VertexBuffer & operator=( VertexBuffer const & rhs )
-		{
-			buffer = rhs.buffer;
-			memory = rhs.memory;
-			vertexAttribs = rhs.vertexAttribs;
-			vertexBindings = rhs.vertexBindings;
-			inputState = rhs.inputState;
-
-			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
-			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
-			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
-			inputState.pVertexBindingDescriptions = vertexBindings.data();
-
-			return *this;
-		}
-
 		VertexBuffer & operator=( VertexBuffer && rhs )noexcept
 		{
 			buffer = rhs.buffer;
@@ -318,8 +293,6 @@ namespace crg
 
 			return *this;
 		}
-
-		~VertexBuffer()noexcept = default;
 
 		Buffer buffer{ VkBuffer{}, std::string{} };
 		VkDeviceMemory memory{};
@@ -457,33 +430,6 @@ namespace crg
 	CRG_API bool isDepthStencilFormat( VkFormat fmt )noexcept;
 	CRG_API ImageViewId const & resolveView( ImageViewId const & view
 		, uint32_t passIndex );
-
-	template< typename T >
-	static size_t hashCombine( size_t hash
-		, T const & rhs )
-	{
-		const uint64_t kMul = 0x9ddfea08eb382d69ULL;
-		auto seed = hash;
-
-		std::hash< T > hasher;
-		uint64_t a = ( hasher( rhs ) ^ seed ) * kMul;
-		a ^= ( a >> 47 );
-
-		uint64_t b = ( seed ^ a ) * kMul;
-		b ^= ( b >> 47 );
-
-#pragma warning( push )
-#pragma warning( disable: 4068 )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunknown-warning-option"
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wuseless-cast"
-		hash = static_cast< std::size_t >( b * kMul );
-#pragma GCC diagnostic pop
-#pragma clang diagnostic pop
-#pragma warning( pop )
-		return hash;
-	}
 
 	CRG_API void convert( SemaphoreWaitArray const & toWait
 		, std::vector< VkSemaphore > & semaphores

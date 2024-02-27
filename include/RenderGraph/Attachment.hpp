@@ -196,18 +196,6 @@ namespace crg
 			, VkPipelineColorBlendAttachmentState blendState
 			, VkImageLayout wantedLayout );
 
-		void setFlag( Flag flag, bool set )
-		{
-			if ( set )
-			{
-				flags |= FlagKind( flag );
-			}
-			else
-			{
-				flags &= FlagKind( ~FlagKind( flag ) );
-			}
-		}
-
 		FlagKind flags{};
 
 		friend CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
@@ -305,18 +293,6 @@ namespace crg
 			, VkDeviceSize offset
 			, VkDeviceSize range );
 
-		void setFlag( Flag flag, bool set )
-		{
-			if ( set )
-			{
-				flags |= FlagKind( flag );
-			}
-			else
-			{
-				flags &= FlagKind( ~FlagKind( flag ) );
-			}
-		}
-
 		FlagKind flags{};
 
 		friend CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
@@ -352,6 +328,7 @@ namespace crg
 		CRG_API uint32_t getViewCount()const;
 		CRG_API uint32_t getBufferCount()const;
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
+		CRG_API VkBuffer buffer( uint32_t index = 0u )const;
 		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		CRG_API VkDescriptorType getDescriptorType()const;
 		CRG_API WriteDescriptorSet getBufferWrite( uint32_t index = 0u )const;
@@ -400,17 +377,17 @@ namespace crg
 
 		bool isUniformBuffer()const
 		{
-			return isBuffer() && buffer.isUniform();
+			return isBuffer() && bufferAttach.isUniform();
 		}
 
 		bool isUniformBufferView()const
 		{
-			return isBuffer() && buffer.isUniformView();
+			return isBuffer() && bufferAttach.isUniformView();
 		}
 
 		bool isStorageBuffer()const
 		{
-			return isBuffer() && buffer.isStorage();
+			return isBuffer() && bufferAttach.isStorage();
 		}
 
 		bool isClearableBuffer()const
@@ -429,42 +406,42 @@ namespace crg
 
 		bool isStorageBufferView()const
 		{
-			return isBuffer() && buffer.isStorageView();
+			return isBuffer() && bufferAttach.isStorageView();
 		}
 
 		bool isBufferView()const
 		{
-			return isBuffer() && buffer.isView();
+			return isBuffer() && bufferAttach.isView();
 		}
 
 		bool isSampledView()const
 		{
-			return isImage() && image.isSampledView();
+			return isImage() && imageAttach.isSampledView();
 		}
 
 		bool isStorageView()const
 		{
-			return isImage() && image.isStorageView();
+			return isImage() && imageAttach.isStorageView();
 		}
 
 		bool isTransferView()const
 		{
-			return isImage() && image.isTransferView();
+			return isImage() && imageAttach.isTransferView();
 		}
 
 		bool isTransitionView()const
 		{
-			return isImage() && image.isTransitionView();
+			return isImage() && imageAttach.isTransitionView();
 		}
 
 		bool isDepthAttach()const
 		{
-			return isImage() && image.isDepthAttach();
+			return isImage() && imageAttach.isDepthAttach();
 		}
 
 		bool isStencilAttach()const
 		{
-			return isImage() && image.isStencilAttach();
+			return isImage() && imageAttach.isStencilAttach();
 		}
 
 		bool isColourAttach()const
@@ -509,17 +486,17 @@ namespace crg
 
 		bool isStencilClearingAttach()const
 		{
-			return isImage() && image.isStencilClearingAttach();
+			return isImage() && imageAttach.isStencilClearingAttach();
 		}
 
 		bool isStencilInputAttach()const
 		{
-			return isImage() && image.isStencilInputAttach();
+			return isImage() && imageAttach.isStencilInputAttach();
 		}
 
 		bool isStencilOutputAttach()const
 		{
-			return isImage() && image.isStencilOutputAttach();
+			return isImage() && imageAttach.isStencilOutputAttach();
 		}
 
 		bool isStencilInOutAttach()const
@@ -561,6 +538,46 @@ namespace crg
 		{
 			return isOutput() && isStorageView();
 		}
+
+		BufferSubresourceRange const & getBufferRange()const
+		{
+			return bufferAttach.range;
+		}
+
+		SamplerDesc const & getSamplerDesc()const
+		{
+			return imageAttach.samplerDesc;
+		}
+
+		VkClearValue const & getClearValue()const
+		{
+			return imageAttach.clearValue;
+		}
+
+		VkAttachmentLoadOp getLoadOp()const
+		{
+			return imageAttach.loadOp;
+		}
+
+		VkAttachmentLoadOp getStencilLoadOp()const
+		{
+			return imageAttach.stencilLoadOp;
+		}
+
+		VkAttachmentStoreOp getStoreOp()const
+		{
+			return imageAttach.storeOp;
+		}
+
+		VkAttachmentStoreOp getStencilStoreOp()const
+		{
+			return imageAttach.stencilStoreOp;
+		}
+
+		VkPipelineColorBlendAttachmentState getBlendState()const
+		{
+			return imageAttach.blendState;
+		}
 		/**@}*/
 		/**
 		*\brief
@@ -582,8 +599,8 @@ namespace crg
 		FramePass * pass{};
 		uint32_t binding{};
 		std::string name{};
-		ImageAttachment image{};
-		BufferAttachment buffer{};
+		ImageAttachment imageAttach{};
+		BufferAttachment bufferAttach{};
 		/**@}*/
 
 		CRG_API Attachment( ImageViewId view
@@ -623,18 +640,6 @@ namespace crg
 			, VkBufferView view
 			, VkDeviceSize offset
 			, VkDeviceSize range );
-
-		CRG_API void setFlag( Flag flag, bool set )
-		{
-			if ( set )
-			{
-				flags |= FlagKind( flag );
-			}
-			else
-			{
-				flags &= FlagKind( ~FlagKind( flag ) );
-			}
-		}
 
 		FlagKind flags{};
 

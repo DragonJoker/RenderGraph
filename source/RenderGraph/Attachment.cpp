@@ -426,19 +426,19 @@ namespace crg
 		: pass{ origin.pass }
 		, binding{ origin.binding }
 		, name{ origin.name + view.data->name }
-		, image{ origin.image }
-		, buffer{ origin.buffer }
+		, imageAttach{ origin.imageAttach }
+		, bufferAttach{ origin.bufferAttach }
 		, flags{ origin.flags }
 	{
 	}
 
 	Attachment::Attachment( ImageViewId view )
-		: image{ std::move( view ) }
+		: imageAttach{ std::move( view ) }
 	{
 	}
 
 	Attachment::Attachment( Buffer buffer )
-		: buffer{ std::move( buffer ) }
+		: bufferAttach{ std::move( buffer ) }
 	{
 	}
 
@@ -459,7 +459,7 @@ namespace crg
 		: pass{ &pass }
 		, binding{ binding }
 		, name{ std::move( name ) }
-		, image{ imageFlags
+		, imageAttach{ imageFlags
 			, std::move( views )
 			, loadOp
 			, storeOp
@@ -497,7 +497,7 @@ namespace crg
 		: pass{ &pass }
 		, binding{ binding }
 		, name{ std::move( name ) }
-		, buffer{ bufferFlags, std::move( buffer ), offset, range }
+		, bufferAttach{ bufferFlags, std::move( buffer ), offset, range }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{
@@ -515,7 +515,7 @@ namespace crg
 		: pass{ &pass }
 		, binding{ binding }
 		, name{ std::move( name ) }
-		, buffer{ bufferFlags, std::move( buffer ), view, offset, range }
+		, bufferAttach{ bufferFlags, std::move( buffer ), view, offset, range }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{
@@ -524,28 +524,35 @@ namespace crg
 	uint32_t Attachment::getViewCount()const
 	{
 		return isImage()
-			? image.getViewCount()
+			? imageAttach.getViewCount()
 			: uint32_t{};
 	}
 
 	uint32_t Attachment::getBufferCount()const
 	{
 		return isBuffer()
-			? buffer.getBufferCount()
+			? bufferAttach.getBufferCount()
 			: uint32_t{};
 	}
 
 	ImageViewId Attachment::view( uint32_t index )const
 	{
 		return isImage()
-			? image.view( index )
+			? imageAttach.view( index )
 			: ImageViewId{};
+	}
+
+	VkBuffer Attachment::buffer( uint32_t index )const
+	{
+		return isBuffer()
+			? bufferAttach.buffer.buffer( index )
+			: VkBuffer{};
 	}
 
 	VkImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
 	{
 		assert( isImage() );
-		return image.getImageLayout( separateDepthStencilLayouts
+		return imageAttach.getImageLayout( separateDepthStencilLayouts
 			, isInput()
 			, isOutput() );
 	}
@@ -554,27 +561,27 @@ namespace crg
 	{
 		if ( isImage() )
 		{
-			return image.getDescriptorType();
+			return imageAttach.getDescriptorType();
 		}
 
-		return buffer.getDescriptorType();
+		return bufferAttach.getDescriptorType();
 	}
 
 	WriteDescriptorSet Attachment::getBufferWrite( uint32_t index )const
 	{
 		assert( isBuffer() );
-		return buffer.getWrite( binding, 1u, index );
+		return bufferAttach.getWrite( binding, 1u, index );
 	}
 
 	VkAccessFlags Attachment::getAccessMask()const
 	{
 		if ( isImage() )
 		{
-			return image.getAccessMask( isInput()
+			return imageAttach.getAccessMask( isInput()
 				, isOutput() );
 		}
 
-		return buffer.getAccessMask( isInput()
+		return bufferAttach.getAccessMask( isInput()
 			, isOutput() );
 	}
 
@@ -582,10 +589,10 @@ namespace crg
 	{
 		if ( isImage() )
 		{
-			return image.getPipelineStageFlags( isCompute );
+			return imageAttach.getPipelineStageFlags( isCompute );
 		}
 
-		return buffer.getPipelineStageFlags( isCompute );
+		return bufferAttach.getPipelineStageFlags( isCompute );
 	}
 
 	//*********************************************************************************************
@@ -633,7 +640,8 @@ namespace crg
 	{
 		return lhs.pass == rhs.pass
 			&& lhs.flags == rhs.flags
-			&& lhs.image == rhs.image;
+			&& lhs.imageAttach == rhs.imageAttach
+			&& lhs.bufferAttach == rhs.bufferAttach;
 	}
 
 	//*********************************************************************************************

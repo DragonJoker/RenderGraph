@@ -5,6 +5,8 @@
 #include <memory>
 #include <stdexcept>
 
+#include <RenderGraph/Exception.hpp>
+
 namespace test
 {
 	std::string getExecutableDirectory();
@@ -69,6 +71,7 @@ namespace test
 	};
 
 	int reportTestSuite( TestCounts const & testCounts );
+	void reportSuccess( TestCounts & testCounts, MessageData const & data );
 	void reportFailure( TestCounts & testCounts, MessageData const & data );
 	void reportUnhandled( TestCounts & testCounts, MessageData const & data );
 	std::string sortLines( std::string const & value );
@@ -103,7 +106,7 @@ namespace test
 
 #define testSuiteEnd()\
 		}\
-		catch ( std::exception & exc )\
+		catch ( crg::Exception & exc )\
 		{\
 			test::reportUnhandled( testCounts\
 				, test::makeMessageData( testCounts.suiteName\
@@ -137,7 +140,7 @@ namespace test
 
 #define testEnd()\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -209,7 +212,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -245,7 +248,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -281,7 +284,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -318,7 +321,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -355,7 +358,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -391,7 +394,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -427,7 +430,7 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportUnhandled( testCounts\
 			, test::makeMessageData( testCounts.testName\
@@ -461,8 +464,14 @@ namespace test
 	{\
 		test::reportFailure( testCounts, exc.data );\
 	}\
-	catch ( std::exception & )\
+	catch ( crg::Exception & exc )\
 	{\
+		test::reportSuccess( testCounts\
+			, test::makeMessageData( testCounts.testName\
+				, "THROW"\
+				, std::string{ #x } + " " + std::string{ exc.what() }\
+				, __FUNCTION__\
+				, __LINE__ ) );\
 	}\
 	catch ( ... )\
 	{\
@@ -480,12 +489,12 @@ namespace test
 		++testCounts.totalCount;\
 		( x ); \
 	}\
-	catch ( std::exception & exc )\
+	catch ( crg::Exception & exc )\
 	{\
 		test::reportFailure( testCounts\
 			, test::makeMessageData( testCounts.testName\
-				, "NOTHROW"\
-				, std::string{ #x } + " " + exc.what()\
+				, "THROW"\
+				, std::string{ #x } + " " + std::string{ exc.what() }\
 				, __FUNCTION__\
 				, __LINE__ ) );\
 	}\

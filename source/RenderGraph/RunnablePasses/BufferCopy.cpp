@@ -38,10 +38,10 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )const
 	{
-		auto srcBufferRange{ m_pass.buffers.front().buffer.range };
-		auto dstBufferRange{ m_pass.buffers.back().buffer.range };
-		auto srcBuffer{ m_pass.buffers.front().buffer.buffer.buffer( index ) };
-		auto dstBuffer{ m_pass.buffers.back().buffer.buffer.buffer( index ) };
+		auto srcBufferRange{ m_pass.buffers.front().getBufferRange() };
+		auto dstBufferRange{ m_pass.buffers.back().getBufferRange() };
+		auto srcBuffer{ m_pass.buffers.front().buffer( index ) };
+		auto dstBuffer{ m_pass.buffers.back().buffer( index ) };
 		// Copy source to target.
 		VkBufferCopy copyRegion{ srcBufferRange.offset + m_copyOffset
 			, dstBufferRange.offset + m_copyOffset

@@ -34,14 +34,14 @@ namespace crg
 				, view.data->image.data->info.samples
 				, ( initialLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED
 					? VK_ATTACHMENT_LOAD_OP_CLEAR
-					: attach.image.loadOp )
-				, attach.image.storeOp
-				, attach.image.stencilLoadOp
-				, attach.image.stencilStoreOp
+					: attach.getLoadOp() )
+				, attach.getStoreOp()
+				, attach.getStencilLoadOp()
+				, attach.getStencilStoreOp()
 				, initialLayout.layout
 				, finalLayout.layout } );
 			viewAttaches.push_back( { view, initialLayout, finalLayout } );
-			clearValues.push_back( attach.image.clearValue );
+			clearValues.push_back( attach.getClearValue() );
 
 			if ( view.data->source.empty() )
 			{
@@ -69,7 +69,7 @@ namespace crg
 			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
 		{
-			blendAttachs.push_back( attach.image.blendState );
+			blendAttachs.push_back( attach.getBlendState() );
 			return addAttach( context
 				, attach
 				, view
@@ -102,8 +102,8 @@ namespace crg
 				, [&context]( RenderPassHolder::Entry const & lookup )
 				{
 					auto layout = context.getLayoutState( lookup.view );
-					return layout.layout != VK_IMAGE_LAYOUT_UNDEFINED
-						&& layout != lookup.input;
+					return layout != lookup.input
+						&& layout.layout != VK_IMAGE_LAYOUT_UNDEFINED;
 				} );
 			return it == attaches.end();
 		}

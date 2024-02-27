@@ -82,6 +82,7 @@ foreach ( TEST_FILE ${TEST_FILES} )
 		coverage_add_target( ${TEST_NAME}
 			MODULES
 				$<TARGET_FILE_NAME:RenderGraph>
+				$<TARGET_FILE_NAME:${TEST_NAME}>
 			SOURCES
 				${CRG_SOURCE_DIR}/include
 				${CRG_SOURCE_DIR}/source

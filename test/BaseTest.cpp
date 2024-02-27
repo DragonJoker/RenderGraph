@@ -12,6 +12,7 @@
 #	include <pwd.h>
 #endif
 
+#include <array>
 #include <functional>
 #include <iomanip>
 #include <map>
@@ -167,14 +168,14 @@ namespace test
 	std::string getExecutableDirectory()
 	{
 		std::string result;
-		char path[FILENAME_MAX];
+		std::array< char, FILENAME_MAX > path{};
 		DWORD res = ::GetModuleFileNameA( nullptr
-			, path
+			, path.data()
 			, sizeof( path ) );
 
 		if ( res != 0 )
 		{
-			result = path;
+			result = path.data();
 		}
 
 		result = getPath( result ) + PathSeparator;
@@ -186,13 +187,13 @@ namespace test
 	std::string getExecutableDirectory()
 	{
 		std::string result;
-		char path[FILENAME_MAX]{};
+		std::array< char, FILENAME_MAX > path{};
 		uint32_t size = FILENAME_MAX;
 
-		if ( _NSGetExecutablePath( &path[0], &size ) == 0 )
+		if ( _NSGetExecutablePath( path.data(), &size ) == 0 )
 		{
 			char realPath[FILENAME_MAX]{};
-			realpath( path, realPath );
+			realpath( path.data(), realPath );
 			result = std::string{ realPath };
 		}
 
@@ -205,18 +206,18 @@ namespace test
 	std::string getExecutableDirectory()
 	{
 		std::string result;
-		char path[FILENAME_MAX];
+		std::array< char, FILENAME_MAX > path{};
 		char buffer[32];
 		sprintf( buffer, "/proc/%d/exe", getpid() );
 		int bytes = std::min< std::size_t >( readlink( buffer
-			, path
-			, sizeof( path ) )
-			, sizeof( path ) - 1 );
+			, path.data()
+			, path.size() )
+			, path.size() - 1 );
 
 		if ( bytes > 0 )
 		{
 			path[bytes] = '\0';
-			result = path;
+			result = path.data();
 		}
 
 		result = getPath( result ) + PathSeparator;
@@ -242,10 +243,11 @@ namespace test
 		tcerr.reset();
 	}
 
-	void TestCounts::updateName( std::string const & testName )
+	void TestCounts::updateName( std::string const & name )
 	{
 		std::stringstream stream;
-		stream << "test" << std::setw( 3 ) << std::setfill( '0' ) << ++testId << "-" << testName;
+		++testId;
+		stream << "test" << std::setw( 3 ) << std::setfill( '0' ) << testId << "-" << name;
 		this->testName = stream.str();
 	}
 
@@ -333,6 +335,13 @@ namespace test
 		}
 
 		return result;
+	}
+
+	void reportSuccess( TestCounts & testCounts
+		, MessageData const & data )
+	{
+		std::cout << "In " << data.function << ":" << data.line << ":" << std::endl;
+		std::cout << "Success for " << data.target << "( " << data.message << " )" << std::endl;
 	}
 
 	void reportFailure( TestCounts & testCounts

@@ -142,15 +142,18 @@ namespace crg
 		, std::string const & name
 		, VkGraphicsPipelineCreateInfo const & createInfo )
 	{
-		auto & pipeline = getPipeline( index );
-		auto res = m_context.vkCreateGraphicsPipelines( m_context.device
-			, m_context.cache
-			, 1u
-			, &createInfo
-			, m_context.allocator
-			, &pipeline );
-		crg::checkVkResult( res, name + " - Pipeline creation" );
-		crgRegisterObject( m_context, name, pipeline );
+		if ( m_context.vkCreateGraphicsPipelines )
+		{
+			auto & pipeline = getPipeline( index );
+			auto res = m_context.vkCreateGraphicsPipelines( m_context.device
+				, m_context.cache
+				, 1u
+				, &createInfo
+				, m_context.allocator
+				, &pipeline );
+			crg::checkVkResult( res, name + " - Pipeline creation" );
+			crgRegisterObject( m_context, name, pipeline );
+		}
 	}
 
 	void PipelineHolder::createPipeline( uint32_t index
@@ -165,15 +168,18 @@ namespace crg
 		, std::string const & name
 		, VkComputePipelineCreateInfo const & createInfo )
 	{
-		auto & pipeline = getPipeline( index );
-		auto res = m_context.vkCreateComputePipelines( m_context.device
-			, m_context.cache
-			, 1u
-			, &createInfo
-			, m_context.allocator
-			, &pipeline );
-		checkVkResult( res, name + " - Pipeline creation" );
-		crgRegisterObject( m_context, name, pipeline );
+		if ( m_context.vkCreateComputePipelines )
+		{
+			auto & pipeline = getPipeline( index );
+			auto res = m_context.vkCreateComputePipelines( m_context.device
+				, m_context.cache
+				, 1u
+				, &createInfo
+				, m_context.allocator
+				, &pipeline );
+			checkVkResult( res, name + " - Pipeline creation" );
+			crgRegisterObject( m_context, name, pipeline );
+		}
 	}
 
 	void PipelineHolder::createPipeline( uint32_t index
@@ -240,7 +246,7 @@ namespace crg
 				descriptorSet.writes.emplace_back( attach.binding
 					, 0u
 					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, VkDescriptorImageInfo{ m_graph.createSampler( attach.image.samplerDesc )
+					, VkDescriptorImageInfo{ m_graph.createSampler( attach.getSamplerDesc() )
 						, m_graph.createImageView( attach.view( index ) )
 						, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
 			}
@@ -327,56 +333,65 @@ namespace crg
 
 	void PipelineHolder::doCreateDescriptorSetLayout()
 	{
-		VkDescriptorSetLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
-			, nullptr
-			, 0u
-			, static_cast< uint32_t >( m_descriptorBindings.size() )
-			, m_descriptorBindings.data() };
-		auto res = m_context.vkCreateDescriptorSetLayout( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_descriptorSetLayout );
-		checkVkResult( res, m_pass.getGroupName() + " - DescriptorSetLayout creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_descriptorSetLayout );
+		if ( m_context.vkCreateDescriptorSetLayout )
+		{
+			VkDescriptorSetLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO
+				, nullptr
+				, 0u
+				, static_cast< uint32_t >( m_descriptorBindings.size() )
+				, m_descriptorBindings.data() };
+			auto res = m_context.vkCreateDescriptorSetLayout( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, &m_descriptorSetLayout );
+			checkVkResult( res, m_pass.getGroupName() + " - DescriptorSetLayout creation" );
+			crgRegisterObject( m_context, m_pass.getGroupName(), m_descriptorSetLayout );
+		}
 	}
 
 	void PipelineHolder::doCreatePipelineLayout()
 	{
-		std::vector< VkDescriptorSetLayout > layouts;
-		layouts.push_back( m_descriptorSetLayout );
-		layouts.insert( layouts.end()
-			, m_baseConfig.m_layouts.begin()
-			, m_baseConfig.m_layouts.end() );
-		VkPipelineLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
-			, nullptr
-			, 0u
-			, uint32_t( layouts.size() )
-			, layouts.data()
-			, uint32_t( m_baseConfig.m_pushConstants.size() )
-			, m_baseConfig.m_pushConstants.data() };
-		auto res = m_context.vkCreatePipelineLayout( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_pipelineLayout );
-		checkVkResult( res, m_pass.getGroupName() + " - PipeliineLayout creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_pipelineLayout );
+		if ( m_context.vkCreatePipelineLayout )
+		{
+			std::vector< VkDescriptorSetLayout > layouts;
+			layouts.push_back( m_descriptorSetLayout );
+			layouts.insert( layouts.end()
+				, m_baseConfig.m_layouts.begin()
+				, m_baseConfig.m_layouts.end() );
+			VkPipelineLayoutCreateInfo createInfo{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO
+				, nullptr
+				, 0u
+				, uint32_t( layouts.size() )
+				, layouts.data()
+				, uint32_t( m_baseConfig.m_pushConstants.size() )
+				, m_baseConfig.m_pushConstants.data() };
+			auto res = m_context.vkCreatePipelineLayout( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, &m_pipelineLayout );
+			checkVkResult( res, m_pass.getGroupName() + " - PipeliineLayout creation" );
+			crgRegisterObject( m_context, m_pass.getGroupName(), m_pipelineLayout );
+		}
 	}
 
 	void PipelineHolder::doCreateDescriptorPool()
 	{
-		assert( m_descriptorSetLayout );
-		auto sizes = getBindingsSizes( m_descriptorBindings, uint32_t( m_descriptorSets.size() ) );
-		VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
-			, nullptr
-			, 0u
-			, uint32_t( m_descriptorSets.size() )
-			, uint32_t( sizes.size() )
-			, sizes.data() };
-		auto res = m_context.vkCreateDescriptorPool( m_context.device
-			, &createInfo
-			, m_context.allocator
-			, &m_descriptorSetPool );
-		checkVkResult( res, m_pass.getGroupName() + " - DescriptorPool creation" );
-		crgRegisterObject( m_context, m_pass.getGroupName(), m_descriptorSetPool );
+		if ( m_context.vkCreateDescriptorPool )
+		{
+			assert( m_descriptorSetLayout );
+			auto sizes = getBindingsSizes( m_descriptorBindings, uint32_t( m_descriptorSets.size() ) );
+			VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
+				, nullptr
+				, 0u
+				, uint32_t( m_descriptorSets.size() )
+				, uint32_t( sizes.size() )
+				, sizes.data() };
+			auto res = m_context.vkCreateDescriptorPool( m_context.device
+				, &createInfo
+				, m_context.allocator
+				, &m_descriptorSetPool );
+			checkVkResult( res, m_pass.getGroupName() + " - DescriptorPool creation" );
+			crgRegisterObject( m_context, m_pass.getGroupName(), m_descriptorSetPool );
+		}
 	}
 }

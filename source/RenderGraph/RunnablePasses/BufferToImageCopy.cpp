@@ -50,7 +50,7 @@ namespace crg
 		, uint32_t index )const
 	{
 		auto dstAttach{ m_pass.images.back().view( index ) };
-		auto srcBuffer{ m_pass.buffers.front().buffer.buffer.buffer( index ) };
+		auto srcBuffer{ m_pass.buffers.front().buffer( index ) };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
 		// Copy source to target.
 		auto range = bufToImg::convert( dstAttach.data->info.subresourceRange );

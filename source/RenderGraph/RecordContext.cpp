@@ -505,7 +505,7 @@ namespace crg
 
 			if ( isColourFormat( getFormat( dstView ) ) )
 			{
-				auto colour = attach.image.clearValue.color;
+				auto colour = attach.getClearValue().color;
 				resources->vkCmdClearColorImage( commandBuffer
 					, resources.createImage( dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
@@ -515,7 +515,7 @@ namespace crg
 			}
 			else
 			{
-				auto depthStencil = attach.image.clearValue.depthStencil;
+				auto depthStencil = attach.getClearValue().depthStencil;
 				resources->vkCmdClearDepthStencilImage( commandBuffer
 					, resources.createImage( dstView.data->image )
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL

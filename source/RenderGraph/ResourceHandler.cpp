@@ -48,6 +48,33 @@ namespace crg
 			return result;
 		}
 
+		template< typename T >
+		static size_t hashCombine( size_t hash
+			, T const & rhs )
+		{
+			const uint64_t kMul = 0x9ddfea08eb382d69ULL;
+			auto seed = hash;
+
+			std::hash< T > hasher;
+			uint64_t a = ( hasher( rhs ) ^ seed ) * kMul;
+			a ^= ( a >> 47 );
+
+			uint64_t b = ( seed ^ a ) * kMul;
+			b ^= ( b >> 47 );
+
+#pragma warning( push )
+#pragma warning( disable: 4068 )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuseless-cast"
+			hash = static_cast< std::size_t >( b * kMul );
+#pragma GCC diagnostic pop
+#pragma clang diagnostic pop
+#pragma warning( pop )
+			return hash;
+		}
+
 		static size_t makeHash( SamplerDesc const & samplerDesc )
 		{
 			auto result = std::hash< uint32_t >{}( samplerDesc.magFilter );
@@ -182,7 +209,7 @@ namespace crg
 	ResourceHandler::CreatedT< VkImage > ResourceHandler::createImage( GraphContext & context
 		, ImageId imageId )
 	{
-		if ( !context.device )
+		if ( !context.vkCreateImage )
 		{
 			return {};
 		}
@@ -202,6 +229,11 @@ namespace crg
 			auto image = it->second.first;
 			checkVkResult( res, "Image creation" );
 			crgRegisterObjectName( context, imageId.data->name, image );
+
+			if ( !context.device )
+			{
+				return {};
+			}
 
 			// Create Image memory
 			VkMemoryRequirements requirements{};
@@ -237,7 +269,7 @@ namespace crg
 	ResourceHandler::CreatedT< VkImageView > ResourceHandler::createImageView( GraphContext & context
 		, ImageViewId view )
 	{
-		if ( !context.device )
+		if ( !context.vkCreateImageView )
 		{
 			return {};
 		}
@@ -266,39 +298,39 @@ namespace crg
 		, std::string const & suffix
 		, SamplerDesc const & samplerDesc )
 	{
-		if ( !context.device )
+		VkSampler result{};
+
+		if ( !context.vkCreateSampler )
 		{
-			return VkSampler{};
+			lock_type lock( m_samplersMutex );
+			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
+				, nullptr
+				, 0u
+				, samplerDesc.magFilter
+				, samplerDesc.minFilter
+				, samplerDesc.mipmapMode
+				, samplerDesc.addressModeU
+				, samplerDesc.addressModeV
+				, samplerDesc.addressModeW
+				, samplerDesc.mipLodBias // mipLodBias
+				, VK_FALSE // anisotropyEnable
+				, 0.0f // maxAnisotropy
+				, VK_FALSE // compareEnable
+				, VK_COMPARE_OP_ALWAYS // compareOp
+				, samplerDesc.minLod
+				, samplerDesc.maxLod
+				, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
+				, VK_FALSE };
+			auto res = context.vkCreateSampler( context.device
+				, &createInfo
+				, context.allocator
+				, &result );
+			auto & sampler = m_samplers.try_emplace( result, Sampler{ result, {} } ).first->second;
+			checkVkResult( res, "Sampler creation" );
+			sampler.name = "Sampler_" + suffix;
+			crgRegisterObject( context, sampler.name, result );
 		}
 
-		lock_type lock( m_samplersMutex );
-		VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
-			, nullptr
-			, 0u
-			, samplerDesc.magFilter
-			, samplerDesc.minFilter
-			, samplerDesc.mipmapMode
-			, samplerDesc.addressModeU
-			, samplerDesc.addressModeV
-			, samplerDesc.addressModeW
-			, samplerDesc.mipLodBias // mipLodBias
-			, VK_FALSE // anisotropyEnable
-			, 0.0f // maxAnisotropy
-			, VK_FALSE // compareEnable
-			, VK_COMPARE_OP_ALWAYS // compareOp
-			, samplerDesc.minLod
-			, samplerDesc.maxLod
-			, VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK
-			, VK_FALSE };
-		VkSampler result;
-		auto res = context.vkCreateSampler( context.device
-			, &createInfo
-			, context.allocator
-			, &result );
-		auto & sampler = m_samplers.try_emplace( result, Sampler{ result, {} } ).first->second;
-		checkVkResult( res, "Sampler creation" );
-		sampler.name = "Sampler_" + suffix;
-		crgRegisterObject( context, sampler.name, result );
 		return result;
 	}
 
@@ -309,7 +341,7 @@ namespace crg
 	{
 		lock_type lock( m_buffersMutex );
 
-		if ( !context.device )
+		if ( !context.vkCreateBuffer )
 		{
 			return nullptr;
 		}
@@ -330,6 +362,11 @@ namespace crg
 			, &vertexBuffer->buffer.buffer() );
 		checkVkResult( res, "Vertex buffer creation" );
 		crgRegisterObject( context, "QuadVertexBuffer_" + suffix, vertexBuffer->buffer.buffer() );
+
+		if ( !context.device )
+		{
+			return nullptr;
+		}
 
 		VkMemoryRequirements requirements{};
 		context.vkGetBufferMemoryRequirements( context.device
@@ -418,9 +455,13 @@ namespace crg
 
 		if ( it != m_images.end() )
 		{
-			if ( context.device )
+			if ( context.vkFreeMemory && it->second.second )
 			{
 				context.vkFreeMemory( context.device, it->second.second, context.allocator );
+			}
+
+			if ( context.vkDestroyImage && it->second.first )
+			{
 				context.vkDestroyImage( context.device, it->second.first, context.allocator );
 			}
 
@@ -436,7 +477,7 @@ namespace crg
 
 		if ( it != m_imageViews.end() )
 		{
-			if ( context.device )
+			if ( context.vkDestroyImageView && it->second )
 			{
 				context.vkDestroyImageView( context.device, it->second, context.allocator );
 			}
@@ -453,7 +494,7 @@ namespace crg
 
 		if ( it != m_samplers.end() )
 		{
-			if ( context.device )
+			if ( context.vkDestroySampler && it->first )
 			{
 				crgUnregisterObject( context, it->first );
 				context.vkDestroySampler( context.device
@@ -478,25 +519,22 @@ namespace crg
 
 		if ( it != m_vertexBuffers.end() )
 		{
-			if ( context.device )
+			auto & vertexBuffer = **it;
+
+			if ( context.vkFreeMemory && vertexBuffer.memory )
 			{
-				auto & vertexBuffer = **it;
+				crgUnregisterObject( context, vertexBuffer.memory );
+				context.vkFreeMemory( context.device
+					, vertexBuffer.memory
+					, context.allocator );
+			}
 
-				if ( vertexBuffer.memory )
-				{
-					crgUnregisterObject( context, vertexBuffer.memory );
-					context.vkFreeMemory( context.device
-						, vertexBuffer.memory
-						, context.allocator );
-				}
-
-				if ( vertexBuffer.buffer.buffer() )
-				{
-					crgUnregisterObject( context, vertexBuffer.buffer.buffer() );
-					context.vkDestroyBuffer( context.device
-						, vertexBuffer.buffer.buffer()
-						, context.allocator );
-				}
+			if ( context.vkDestroyBuffer && vertexBuffer.buffer.buffer() )
+			{
+				crgUnregisterObject( context, vertexBuffer.buffer.buffer() );
+				context.vkDestroyBuffer( context.device
+					, vertexBuffer.buffer.buffer()
+					, context.allocator );
 			}
 
 			m_vertexBuffers.erase( it );

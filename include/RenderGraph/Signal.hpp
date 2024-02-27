@@ -83,13 +83,13 @@ namespace crg
 			}
 		}
 
-		operator bool()const
+		bool isValid()const noexcept
 		{
 			return m_signal && m_connection;
 		}
 
 	private:
-		void swap( SignalConnection & lhs, SignalConnection & rhs )const noexcept
+		static void swap( SignalConnection & lhs, SignalConnection & rhs )
 		{
 			if ( lhs.m_signal )
 			{
@@ -232,17 +232,10 @@ namespace crg
 		*\param[in] connection
 		*	The connection to add.
 		*/
-		void addConnection( my_connection & connection )noexcept
+		void addConnection( my_connection & connection )
 		{
-			try
-			{
-				lock_type lock( m_mutex );
-				m_connections.insert( &connection );
-			}
-			catch ( ... )
-			{
-				// Nothing to do here
-			}
+			lock_type lock( m_mutex );
+			m_connections.insert( &connection );
 		}
 		/**
 		*\brief
@@ -252,16 +245,9 @@ namespace crg
 		*/
 		void remConnection( my_connection & connection )noexcept
 		{
-			try
-			{
-				lock_type lock( m_mutex );
-				assert( m_connections.find( &connection ) != m_connections.end() );
-				m_connections.erase( &connection );
-			}
-			catch ( ... )
-			{
-				// Nothing to do here
-			}
+			lock_type lock( m_mutex );
+			assert( m_connections.find( &connection ) != m_connections.end() );
+			m_connections.erase( &connection );
 		}
 		/**
 		*\brief

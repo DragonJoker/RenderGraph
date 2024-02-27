@@ -31,11 +31,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT;
 #endif
 		static inline std::string Name{ "VkBuffer" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -48,11 +43,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_BUFFER_EXT;
 #endif
 		static inline std::string Name{ "VkCommandBuffer" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -65,11 +55,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
 #endif
 		static inline std::string Name{ "VkDevice" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -82,11 +67,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_INSTANCE_EXT;
 #endif
 		static inline std::string Name{ "VkInstance" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -99,11 +79,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PHYSICAL_DEVICE_EXT;
 #endif
 		static inline std::string Name{ "VkPhysicalDevice" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -116,11 +91,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_QUEUE_EXT;
 #endif
 		static inline std::string Name{ "VkQueue" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 #if ( VK_USE_64_BIT_PTR_DEFINES == 1 )
@@ -134,11 +104,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT;
 #endif
 		static inline std::string Name{ "VkBufferView" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -151,11 +116,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_COMMAND_POOL_EXT;
 #endif
 		static inline std::string Name{ "VkCommandPool" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -168,11 +128,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_POOL_EXT;
 #endif
 		static inline std::string Name{ "VkDescriptorPool" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -185,11 +140,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_EXT;
 #endif
 		static inline std::string Name{ "VkDescriptorSet" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -202,11 +152,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT_EXT;
 #endif
 		static inline std::string Name{ "VkDescriptorSetLayout" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -219,11 +164,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT;
 #endif
 		static inline std::string Name{ "VkDeviceMemory" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -236,11 +176,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_EVENT_EXT;
 #endif
 		static inline std::string Name{ "VkEvent" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -253,11 +188,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_FENCE_EXT;
 #endif
 		static inline std::string Name{ "VkFence" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -270,11 +200,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_FRAMEBUFFER_EXT;
 #endif
 		static inline std::string Name{ "VkFramebuffer" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -287,11 +212,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_EXT;
 #endif
 		static inline std::string Name{ "VkImage" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -304,11 +224,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_IMAGE_VIEW_EXT;
 #endif
 		static inline std::string Name{ "VkImageView" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -321,11 +236,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_EXT;
 #endif
 		static inline std::string Name{ "VkPipeline" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -338,11 +248,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_PIPELINE_LAYOUT_EXT;
 #endif
 		static inline std::string Name{ "VkPipelineLayout" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -355,11 +260,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_QUERY_POOL_EXT;
 #endif
 		static inline std::string Name{ "VkQueryPool" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -372,11 +272,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_RENDER_PASS_EXT;
 #endif
 		static inline std::string Name{ "VkRenderPass" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -389,11 +284,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SAMPLER_EXT;
 #endif
 		static inline std::string Name{ "VkSampler" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -406,11 +296,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SEMAPHORE_EXT;
 #endif
 		static inline std::string Name{ "VkSemaphore" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -423,11 +308,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SHADER_MODULE_EXT;
 #endif
 		static inline std::string Name{ "VkShaderModule" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -440,11 +320,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SURFACE_KHR_EXT;
 #endif
 		static inline std::string Name{ "VkSurfaceKHR" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 	template<>
@@ -457,11 +332,6 @@ namespace crg
 		static VkDebugReportObjectTypeEXT constexpr ReportValue = VK_DEBUG_REPORT_OBJECT_TYPE_SWAPCHAIN_KHR_EXT;
 #endif
 		static inline std::string Name{ "VkSwapchainKHR" };
-
-		static std::string const & getName()
-		{
-			return Name;
-		}
 	};
 
 #endif // ( VK_USE_64_BIT_PTR_DEFINES == 1 )
@@ -686,7 +556,7 @@ namespace crg
 				, uint32_t( MyTraits::ReportValue )
 #endif
 				, name
-				, MyTraits::getName() );
+				, MyTraits::Name );
 		}
 
 		template< typename ObjectT >

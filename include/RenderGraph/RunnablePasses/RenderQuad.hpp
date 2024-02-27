@@ -52,7 +52,6 @@ namespace crg
 			, "RenderQuadBuilderT::ConfigT must derive from crg::rq::Config" );
 
 	public:
-		CRG_API RenderQuadBuilderT() = default;
 		/**
 		*\param[in] config
 		*	The texture coordinates configuration.
