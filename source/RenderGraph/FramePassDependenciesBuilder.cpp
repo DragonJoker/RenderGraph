@@ -136,19 +136,19 @@ namespace crg::builder
 		{
 			static Buffer get( Attachment const & attach )
 			{
-				return attach.buffer.buffer;
+				return attach.bufferAttach.buffer;
 			}
 
 			static Buffer getOutput( Attachment const & inputAttach
 				, Attachment const & )
 			{
-				return inputAttach.buffer.buffer;
+				return inputAttach.bufferAttach.buffer;
 			}
 
 			static Buffer getInput( Attachment const & inputAttach
 				, Attachment const & )
 			{
-				return inputAttach.buffer.buffer;
+				return inputAttach.bufferAttach.buffer;
 			}
 
 			static DataTransitionArrayT< Buffer > & getTransitions( AttachmentTransitions & transitions )
@@ -581,18 +581,18 @@ namespace crg::builder
 
 			if ( attach.isColourInOutAttach() )
 			{
-				BufferTransition transition{ attach.buffer.buffer, attach, attach };
+				BufferTransition transition{ attach.bufferAttach.buffer, attach, attach };
 				insertTransition( transition, cache, transitions.bufferTransitions );
 			}
 			else if ( attach.isColourInputAttach()
 				|| attach.isSampledView() )
 			{
-				BufferTransition transition{ attach.buffer.buffer, Attachment::createDefault( attach.buffer.buffer ), attach };
+				BufferTransition transition{ attach.bufferAttach.buffer, Attachment::createDefault( attach.bufferAttach.buffer ), attach };
 				insertTransition( transition, cache, transitions.bufferTransitions );
 			}
 			else
 			{
-				BufferTransition transition{ attach.buffer.buffer, attach, Attachment::createDefault( attach.buffer.buffer ) };
+				BufferTransition transition{ attach.bufferAttach.buffer, attach, Attachment::createDefault( attach.bufferAttach.buffer ) };
 				insertTransition( transition, cache, transitions.bufferTransitions );
 			}
 

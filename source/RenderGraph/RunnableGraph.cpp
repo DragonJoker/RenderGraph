@@ -30,7 +30,7 @@ namespace crg
 		{
 			VkCommandPool result{};
 
-			if ( context.device )
+			if ( context.vkCreateCommandPool )
 			{
 				VkCommandPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO
 					, nullptr
@@ -140,7 +140,7 @@ namespace crg
 	{
 		VkQueryPool result{};
 
-		if ( context.device )
+		if ( context.vkCreateQueryPool )
 		{
 			VkQueryPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO
 				, nullptr
@@ -193,9 +193,10 @@ namespace crg
 			, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
 		, m_timer{ context, graph.getName() + "/Graph", TimerScope::eGraph, getTimerQueryPool(), getTimerQueryOffset() }
 	{
-		if ( m_context.device )
+		auto name = m_graph.getName() + "/Graph";
+
+		if ( m_context.vkCreateSemaphore )
 		{
-			auto name = m_graph.getName() + "/Graph";
 			VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 				, nullptr
 				, 0u };
@@ -205,13 +206,16 @@ namespace crg
 				, &m_semaphore );
 			checkVkResult( res, name + " - Semaphore creation" );
 			crgRegisterObject( m_context, name, m_semaphore );
+		}
 
+		if ( m_context.vkAllocateCommandBuffers )
+		{
 			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
 				, nullptr
 				, getCommandPool()
 				, VK_COMMAND_BUFFER_LEVEL_PRIMARY
 				, 1u };
-			res = m_context.vkAllocateCommandBuffers( m_context.device
+			auto res = m_context.vkAllocateCommandBuffers( m_context.device
 				, &allocateInfo
 				, &m_commandBuffer );
 			checkVkResult( res, name + " - CommandBuffer allocation" );
@@ -262,24 +266,21 @@ namespace crg
 
 	RunnableGraph::~RunnableGraph()noexcept
 	{
-		if ( m_context.device )
+		if ( m_context.vkDestroySemaphore && m_semaphore )
 		{
-			if ( m_semaphore )
-			{
-				crgUnregisterObject( m_context, m_semaphore );
-				m_context.vkDestroySemaphore( m_context.device
-					, m_semaphore
-					, m_context.allocator );
-			}
+			crgUnregisterObject( m_context, m_semaphore );
+			m_context.vkDestroySemaphore( m_context.device
+				, m_semaphore
+				, m_context.allocator );
+		}
 
-			if ( m_commandBuffer )
-			{
-				crgUnregisterObject( m_context, m_commandBuffer );
-				m_context.vkFreeCommandBuffers( m_context.device
-					, getCommandPool()
-					, 1u
-					, &m_commandBuffer );
-			}
+		if ( m_context.vkFreeCommandBuffers && m_commandBuffer )
+		{
+			crgUnregisterObject( m_context, m_commandBuffer );
+			m_context.vkFreeCommandBuffers( m_context.device
+				, getCommandPool()
+				, 1u
+				, &m_commandBuffer );
 		}
 	}
 

@@ -23,18 +23,7 @@ namespace crg
 	{
 		using CallbackT = std::function< ValueT() >;
 
-		GetValueCallbackT() = default;
-		GetValueCallbackT( GetValueCallbackT const & ) = default;
-		GetValueCallbackT( GetValueCallbackT && )noexcept = default;
-		GetValueCallbackT & operator=( GetValueCallbackT const & ) = default;
-		GetValueCallbackT & operator=( GetValueCallbackT && )noexcept = default;
-		~GetValueCallbackT()noexcept = default;
-
-		/**
-		*\notes
-		*	Intentionnally non explicit
-		*/
-		explicit GetValueCallbackT( CallbackT callback )
+		explicit GetValueCallbackT( CallbackT callback = {} )
 			: m_callback{ std::move( callback ) }
 		{
 		}
@@ -337,7 +326,6 @@ namespace crg
 			PassData( PassData const & ) = delete;
 			PassData & operator=( PassData const & ) = delete;
 			PassData & operator=( PassData && )noexcept = delete;
-
 			PassData( PassData && rhs )noexcept
 				: graph{ rhs.graph }
 				, context{ rhs.context }

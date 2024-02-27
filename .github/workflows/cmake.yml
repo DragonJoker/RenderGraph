@@ -224,7 +224,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
       run: |
-        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}-gcc.zip $GITHUB_WORKSPACE/package/rendergraph/
     - name: Upload package
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
@@ -298,7 +298,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
       run: |
-        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}.zip $GITHUB_WORKSPACE/package/rendergraph/
+        7z a $GITHUB_WORKSPACE/RenderGraph-${{ matrix.os[1] }}-clang.zip $GITHUB_WORKSPACE/package/rendergraph/
     - name: Upload package
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4

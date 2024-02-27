@@ -121,7 +121,7 @@ namespace crg
 				, [&buffer]( Attachment const & lookup )
 				{
 					return lookup.isStorageBuffer()
-						&& lookup.buffer.buffer == buffer;
+						&& lookup.bufferAttach.buffer == buffer;
 				} );
 
 			return it != pass.buffers.end();
@@ -135,7 +135,7 @@ namespace crg
 				, [&buffer]( Attachment const & lookup )
 				{
 					return lookup.isStorageBuffer()
-						&& lookup.buffer.buffer == buffer;
+						&& lookup.bufferAttach.buffer == buffer;
 				} );
 
 			return it != pass.buffers.end();

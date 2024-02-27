@@ -40,7 +40,7 @@ namespace
 		testPass.addOutputStorageBuffer( crg::Buffer{ nullptr, "outBuffer" }, 1u, 0u, 1024u );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -65,7 +65,7 @@ namespace
 		testPass.addTransferOutputView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -88,7 +88,7 @@ namespace
 		testPass.addTransferInOutView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -117,7 +117,7 @@ namespace
 		testPass.addTransferOutputView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -145,7 +145,7 @@ namespace
 			testPass.addTransferOutputView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -169,7 +169,7 @@ namespace
 			testPass.addTransferOutputView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -195,7 +195,7 @@ namespace
 			testPass.addTransferOutputView( inputv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -221,7 +221,7 @@ namespace
 		testPass.addOutputStorageBuffer( crg::Buffer{ nullptr, "outBuffer" }, 1u, 0u, 1024u );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -236,8 +236,9 @@ namespace
 		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		auto depth = graph.createImage( test::createImage( "result", VK_FORMAT_D32_SFLOAT ) );
 		auto depthv = graph.createView( test::createView( "resultv", depth, VK_FORMAT_D32_SFLOAT, 0u, 1u, 0u, 1u ) );
+		crg::ComputePass * computePass{};
 		auto & testPass = graph.createPass( "Pass"
-			, []( crg::FramePass const & pass
+			, [&computePass]( crg::FramePass const & pass
 				, crg::GraphContext & context
 				, crg::RunnableGraph & runGraph )
 			{
@@ -248,8 +249,10 @@ namespace
 						{
 							return crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} };
 						} } ) );
-				return std::make_unique< crg::ComputePass >( pass, context, runGraph
-					, crg::ru::Config{}, cfg );
+				auto res = std::make_unique< crg::ComputePass >( pass, context, runGraph
+					, crg::ru::Config{ 1u, true }, std::move( cfg ) );
+				computePass = res.get();
+				return res;
 			} );
 		testPass.addInOutStorageBuffer( crg::Buffer{ nullptr, "buffer1" }, 0u, 0u, 1024u );
 		testPass.addClearableOutputStorageBuffer( crg::Buffer{ nullptr, "buffer2" }, 1u, 0u, 1024u );
@@ -257,7 +260,11 @@ namespace
 		testPass.addClearableOutputStorageView( depthv, 3u );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
+		require( computePass )
+		checkNoThrow( runnable->record() )
+		checkNoThrow( runnable->run( VkQueue{} ) )
+		checkNoThrow( computePass->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -283,7 +290,7 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -304,7 +311,7 @@ namespace
 			testPass.addOutputDepthView( depthv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -328,7 +335,7 @@ namespace
 			testPass.addOutputDepthView( depthv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -350,7 +357,7 @@ namespace
 			testPass.addOutputColourView( testPass.mergeViews( { result1v, result2v } ) );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable );
+			require( runnable )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
 		}
@@ -364,8 +371,9 @@ namespace
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		crg::RenderQuad * renderQuad{};
 		auto & testPass = graph.createPass( "Pass"
-			, []( crg::FramePass const & pass
+			, [&renderQuad]( crg::FramePass const & pass
 				, crg::GraphContext & context
 				, crg::RunnableGraph & runGraph )
 			{
@@ -376,13 +384,19 @@ namespace
 						{
 							return crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} };
 						} } ) );
-				return std::make_unique< crg::RenderQuad >( pass, context, runGraph
-					, crg::ru::Config{}, cfg );
+				auto res = std::make_unique< crg::RenderQuad >( pass, context, runGraph
+					, crg::ru::Config{ 2u, true }, std::move( cfg ) );
+				renderQuad = res.get();
+				return res;
 			} );
 		testPass.addOutputColourView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
+		require( renderQuad )
+		checkNoThrow( runnable->record() )
+		checkNoThrow( runnable->run( VkQueue{} ) )
+		checkNoThrow( renderQuad->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -395,8 +409,9 @@ namespace
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
 		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		crg::RenderMesh * renderMesh{};
 		auto & testPass = graph.createPass( "Pass"
-			, []( crg::FramePass const & pass
+			, [&renderMesh]( crg::FramePass const & pass
 				, crg::GraphContext & context
 				, crg::RunnableGraph & runGraph )
 			{
@@ -407,13 +422,19 @@ namespace
 						{
 							return crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} };
 						} } ) );
-				return std::make_unique< crg::RenderMesh >( pass, context, runGraph
-					, crg::ru::Config{}, cfg );
+				auto res = std::make_unique< crg::RenderMesh >( pass, context, runGraph
+					, crg::ru::Config{ 1u, true }, std::move( cfg ) );
+				renderMesh = res.get();
+				return res;
 			} );
 		testPass.addOutputColourView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable );
+		require( runnable )
+		require( renderMesh )
+		checkNoThrow( runnable->record() )
+		checkNoThrow( runnable->run( VkQueue{} ) )
+		checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
 		testEnd()
@@ -422,7 +443,7 @@ namespace
 
 int main( int argc, char ** argv )
 {
-	testSuiteBegin( "TestRunnablePass" );
+	testSuiteBegin( "TestRunnablePass" )
 	testBufferCopy( testCounts );
 	testBufferToImageCopy( testCounts );
 	testGenerateMipmaps( testCounts );
@@ -433,5 +454,5 @@ int main( int argc, char ** argv )
 	testRenderPass( testCounts );
 	testRenderQuad( testCounts );
 	testRenderMesh( testCounts );
-	testSuiteEnd();
+	testSuiteEnd()
 }

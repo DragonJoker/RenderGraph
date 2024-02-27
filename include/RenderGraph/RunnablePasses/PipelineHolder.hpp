@@ -97,7 +97,6 @@ namespace crg
 	class PipelinePassBuilderT
 	{
 	public:
-		CRG_API PipelinePassBuilderT() = default;
 		/**
 		*\param[in] config
 		*	The pipeline program.

@@ -147,7 +147,7 @@ namespace crg
 		, VkFenceCreateInfo createInfo )
 		: m_context{ &context }
 	{
-		if ( m_context->device )
+		if ( m_context->vkCreateFence )
 		{
 			auto res = m_context->vkCreateFence( m_context->device
 				, &createInfo
@@ -179,7 +179,7 @@ namespace crg
 
 	Fence::~Fence()noexcept
 	{
-		if ( m_fence && m_context && m_context->device )
+		if ( m_fence && m_context && m_context->vkDestroyFence )
 		{
 			crgUnregisterObject( *m_context, m_fence );
 			m_context->vkDestroyFence( m_context->device
@@ -231,7 +231,7 @@ namespace crg
 		, context{ ctx }
 		, fence{ context, baseName, { VK_STRUCTURE_TYPE_FENCE_CREATE_INFO, nullptr, VK_FENCE_CREATE_SIGNALED_BIT } }
 	{
-		if ( context.device )
+		if ( context.vkCreateSemaphore )
 		{
 			VkSemaphoreCreateInfo createInfo{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO
 				, nullptr
@@ -247,24 +247,21 @@ namespace crg
 
 	RunnablePass::PassData::~PassData()noexcept
 	{
-		if ( context.device )
+		if ( context.vkDestroySemaphore && semaphore )
 		{
-			if ( semaphore )
-			{
-				crgUnregisterObject( context, semaphore );
-				context.vkDestroySemaphore( context.device
-					, semaphore
-					, context.allocator );
-			}
+			crgUnregisterObject( context, semaphore );
+			context.vkDestroySemaphore( context.device
+				, semaphore
+				, context.allocator );
+		}
 
-			if ( commandBuffer.commandBuffer )
-			{
-				crgUnregisterObject( context, commandBuffer.commandBuffer );
-				context.vkFreeCommandBuffers( context.device
-					, graph.getCommandPool()
-					, 1u
-					, &commandBuffer.commandBuffer );
-			}
+		if ( context.vkFreeCommandBuffers && commandBuffer.commandBuffer )
+		{
+			crgUnregisterObject( context, commandBuffer.commandBuffer );
+			context.vkFreeCommandBuffers( context.device
+				, graph.getCommandPool()
+				, 1u
+				, &commandBuffer.commandBuffer );
 		}
 	}
 
@@ -318,11 +315,9 @@ namespace crg
 		{
 			if ( attach.isStorageBuffer() )
 			{
-				auto & buffer = attach.buffer.buffer;
-
-				for ( uint32_t i = 0u; i < uint32_t( buffer.getCount() ); ++i )
+				for ( uint32_t i = 0u; i < attach.getBufferCount(); ++i )
 				{
-					m_bufferAccesses.insert_or_assign( buffer.buffer( i )
+					m_bufferAccesses.insert_or_assign( attach.buffer( i )
 						, AccessState{ attach.getAccessMask()
 							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
 				}
@@ -509,30 +504,30 @@ namespace crg
 				if ( !attach.isNoTransition()
 					&& attach.isStorageBuffer() )
 				{
-					auto buffer = attach.buffer;
-					auto currentState = context.getAccessState( buffer.buffer.buffer( index )
-						, buffer.range );
+					auto & range = attach.getBufferRange();
+					auto buffer = attach.buffer( index );
+					auto currentState = context.getAccessState( buffer, range );
 
 					if ( attach.isClearableBuffer() )
 					{
 						context.memoryBarrier( commandBuffer
-							, buffer.buffer.buffer( index )
-							, buffer.range
+							, buffer
+							, range
 							, currentState.access
 							, currentState.pipelineStage
 							, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
 						m_context.vkCmdFillBuffer( commandBuffer
-							, buffer.buffer.buffer( index )
-							, buffer.range.offset == 0u ? 0u : details::getAlignedSize( buffer.range.offset, 4u )
-							, buffer.range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( buffer.range.size, 4u )
+							, buffer
+							, range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u )
+							, range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u )
 							, 0u );
 						currentState.access = VK_ACCESS_TRANSFER_WRITE_BIT;
 						currentState.pipelineStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 					}
 
 					context.memoryBarrier( commandBuffer
-						, buffer.buffer.buffer( index )
-						, buffer.range
+						, buffer
+						, range
 						, currentState.access
 						, currentState.pipelineStage
 						, { attach.getAccessMask(), attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
@@ -602,21 +597,20 @@ namespace crg
 	{
 		VkCommandBuffer result{};
 
-		if ( !m_context.device )
+		if ( m_context.vkAllocateCommandBuffers )
 		{
-			return result;
+			VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
+				, nullptr
+				, m_graph.getCommandPool()
+				, VK_COMMAND_BUFFER_LEVEL_PRIMARY
+				, 1u };
+			auto res = m_context.vkAllocateCommandBuffers( m_context.device
+				, &allocateInfo
+				, &result );
+			checkVkResult( res, m_pass.getGroupName() + suffix + " - CommandBuffer allocation" );
+			crgRegisterObject( m_context, m_pass.getGroupName() + suffix, result );
 		}
 
-		VkCommandBufferAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO
-			, nullptr
-			, m_graph.getCommandPool()
-			, VK_COMMAND_BUFFER_LEVEL_PRIMARY
-			, 1u };
-		auto res = m_context.vkAllocateCommandBuffers( m_context.device
-			, &allocateInfo
-			, &result );
-		checkVkResult( res, m_pass.getGroupName() + suffix + " - CommandBuffer allocation" );
-		crgRegisterObject( m_context, m_pass.getGroupName() + suffix, result );
 		return result;
 	}
 }

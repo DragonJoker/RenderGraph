@@ -10,7 +10,7 @@ namespace
 {
 	void testRenderPass_1C( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_1C" );
+		testBegin( "testRenderPass_1C" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C", crg::RunnablePassCreator{} );
@@ -18,15 +18,15 @@ namespace
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		check( pass.getName() == "1C" );
-		check( pass.images.size() == 1u );
-		check( pass.images[0].view() == rtv );
-		testEnd();
+		check( pass.getName() == "1C" )
+		check( pass.images.size() == 1u )
+		check( pass.images[0].view() == rtv )
+		testEnd()
 	}
 
 	void testRenderPass_2C( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_2C" );
+		testBegin( "testRenderPass_2C" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C", crg::RunnablePassCreator{} );
@@ -38,16 +38,16 @@ namespace
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		check( pass.getName() == "2C" );
-		check( pass.images.size() == 2u );
-		check( pass.images[0].view() == rtv1 );
-		check( pass.images[1].view() == rtv2 );
-		testEnd();
+		check( pass.getName() == "2C" )
+		check( pass.images.size() == 2u )
+		check( pass.images[0].view() == rtv1 )
+		check( pass.images[1].view() == rtv2 )
+		testEnd()
 	}
 
 	void testRenderPass_0C_1I( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_0C_1I" );
+		testBegin( "testRenderPass_0C_1I" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_1I", crg::RunnablePassCreator{} );
@@ -55,15 +55,15 @@ namespace
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		check( pass.getName() == "0C_1I" );
-		check( pass.images.size() == 1u );
-		check( pass.images[0].view() == inv );
-		testEnd();
+		check( pass.getName() == "0C_1I" )
+		check( pass.images.size() == 1u )
+		check( pass.images[0].view() == inv )
+		testEnd()
 	}
 
 	void testRenderPass_0C_2I( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_0C_2I" );
+		testBegin( "testRenderPass_0C_2I" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_2I", crg::RunnablePassCreator{} );
@@ -75,16 +75,16 @@ namespace
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		check( pass.getName() == "0C_2I" );
-		check( pass.images.size() == 2u );
-		check( pass.images[0].view() == inv1 );
-		check( pass.images[1].view() == inv2 );
-		testEnd();
+		check( pass.getName() == "0C_2I" )
+		check( pass.images.size() == 2u )
+		check( pass.images[0].view() == inv1 )
+		check( pass.images[1].view() == inv2 )
+		testEnd()
 	}
 
 	void testRenderPass_1C_1I( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_1C_1I" );
+		testBegin( "testRenderPass_1C_1I" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_1I", crg::RunnablePassCreator{} );
@@ -96,16 +96,16 @@ namespace
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		check( pass.getName() == "1C_1I" );
-		check( pass.images.size() == 2u );
-		check( pass.images[0].view() == rtv );
-		check( pass.images[1].view() == inv );
-		testEnd();
+		check( pass.getName() == "1C_1I" )
+		check( pass.images.size() == 2u )
+		check( pass.images[0].view() == rtv )
+		check( pass.images[1].view() == inv )
+		testEnd()
 	}
 
 	void testRenderPass_1C_2I( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_1C_2I" );
+		testBegin( "testRenderPass_1C_2I" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_2I", crg::RunnablePassCreator{} );
@@ -121,17 +121,17 @@ namespace
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		check( pass.getName() == "1C_2I" );
-		check( pass.images.size() == 3u );
-		check( pass.images[0].view() == rtv );
-		check( pass.images[1].view() == inv1 );
-		check( pass.images[2].view() == inv2 );
-		testEnd();
+		check( pass.getName() == "1C_2I" )
+		check( pass.images.size() == 3u )
+		check( pass.images[0].view() == rtv )
+		check( pass.images[1].view() == inv1 )
+		check( pass.images[2].view() == inv2 )
+		testEnd()
 	}
 
 	void testRenderPass_2C_1I( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_2C_1I" );
+		testBegin( "testRenderPass_2C_1I" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_1I", crg::RunnablePassCreator{} );
@@ -147,17 +147,17 @@ namespace
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		check( pass.getName() == "2C_1I" );
-		check( pass.images.size() == 3u );
-		check( pass.images[0].view() == rtv1 );
-		check( pass.images[1].view() == rtv2 );
-		check( pass.images[2].view() == inv );
-		testEnd();
+		check( pass.getName() == "2C_1I" )
+		check( pass.images.size() == 3u )
+		check( pass.images[0].view() == rtv1 )
+		check( pass.images[1].view() == rtv2 )
+		check( pass.images[2].view() == inv )
+		testEnd()
 	}
 
 	void testRenderPass_2C_2I( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_2C_2I" );
+		testBegin( "testRenderPass_2C_2I" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_2I", crg::RunnablePassCreator{} );
@@ -177,18 +177,18 @@ namespace
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		check( pass.getName() == "2C_2I" );
-		check( pass.images.size() == 4u );
-		check( pass.images[0].view() == rtv1 );
-		check( pass.images[1].view() == rtv2 );
-		check( pass.images[2].view() == inv1 );
-		check( pass.images[3].view() == inv2 );
-		testEnd();
+		check( pass.getName() == "2C_2I" )
+		check( pass.images.size() == 4u )
+		check( pass.images[0].view() == rtv1 )
+		check( pass.images[1].view() == rtv2 )
+		check( pass.images[2].view() == inv1 )
+		check( pass.images[3].view() == inv2 )
+		testEnd()
 	}
 	
 	void testRenderPass_0C_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_0C_DS" );
+		testBegin( "testRenderPass_0C_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_DS", crg::RunnablePassCreator{} );
@@ -196,15 +196,15 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "0C_DS" );
-		check( pass.images.size() == 1u );
-		check( pass.images[0].view() == dsv );
-		testEnd();
+		check( pass.getName() == "0C_DS" )
+		check( pass.images.size() == 1u )
+		check( pass.images[0].view() == dsv )
+		testEnd()
 	}
 
 	void testRenderPass_1C_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_1C_DS" );
+		testBegin( "testRenderPass_1C_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_DS", crg::RunnablePassCreator{} );
@@ -216,16 +216,16 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "1C_DS" );
-		check( pass.images.size() == 2u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == rtv );
-		testEnd();
+		check( pass.getName() == "1C_DS" )
+		check( pass.images.size() == 2u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == rtv )
+		testEnd()
 	}
 
 	void testRenderPass_2C_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_2C_DS" );
+		testBegin( "testRenderPass_2C_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_DS", crg::RunnablePassCreator{} );
@@ -241,17 +241,17 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "2C_DS" );
-		check( pass.images.size() == 3u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == rtv1 );
-		check( pass.images[2].view() == rtv2 );
-		testEnd();
+		check( pass.getName() == "2C_DS" )
+		check( pass.images.size() == 3u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == rtv1 )
+		check( pass.images[2].view() == rtv2 )
+		testEnd()
 	}
 	
 	void testRenderPass_0C_1I_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_0C_1I_DS" );
+		testBegin( "testRenderPass_0C_1I_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_1I_DS", crg::RunnablePassCreator{} );
@@ -263,16 +263,16 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "0C_1I_DS" );
-		check( pass.images.size() == 2u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == inv );
-		testEnd();
+		check( pass.getName() == "0C_1I_DS" )
+		check( pass.images.size() == 2u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == inv )
+		testEnd()
 	}
 
 	void testRenderPass_0C_2I_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_0C_2I_DS" );
+		testBegin( "testRenderPass_0C_2I_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_2I_DS", crg::RunnablePassCreator{} );
@@ -288,17 +288,17 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "0C_2I_DS" );
-		check( pass.images.size() == 3u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == inv1 );
-		check( pass.images[2].view() == inv2 );
-		testEnd();
+		check( pass.getName() == "0C_2I_DS" )
+		check( pass.images.size() == 3u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == inv1 )
+		check( pass.images[2].view() == inv2 )
+		testEnd()
 	}
 
 	void testRenderPass_1C_1I_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_1C_1I_DS" );
+		testBegin( "testRenderPass_1C_1I_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_1I_DS", crg::RunnablePassCreator{} );
@@ -314,17 +314,17 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "1C_1I_DS" );
-		check( pass.images.size() == 3u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == rtv );
-		check( pass.images[2].view() == inv );
-		testEnd();
+		check( pass.getName() == "1C_1I_DS" )
+		check( pass.images.size() == 3u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == rtv )
+		check( pass.images[2].view() == inv )
+		testEnd()
 	}
 
 	void testRenderPass_1C_2I_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_1C_2I_DS" );
+		testBegin( "testRenderPass_1C_2I_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_2I_DS", crg::RunnablePassCreator{} );
@@ -344,18 +344,18 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "1C_2I_DS" );
-		check( pass.images.size() == 4u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == rtv );
-		check( pass.images[2].view() == inv1 );
-		check( pass.images[3].view() == inv2 );
-		testEnd();
+		check( pass.getName() == "1C_2I_DS" )
+		check( pass.images.size() == 4u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == rtv )
+		check( pass.images[2].view() == inv1 )
+		check( pass.images[3].view() == inv2 )
+		testEnd()
 	}
 
 	void testRenderPass_2C_1I_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_2C_1I_DS" );
+		testBegin( "testRenderPass_2C_1I_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_1I_DS", crg::RunnablePassCreator{} );
@@ -375,18 +375,18 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "2C_1I_DS" );
-		check( pass.images.size() == 4u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == rtv1 );
-		check( pass.images[2].view() == rtv2 );
-		check( pass.images[3].view() == inv );
-		testEnd();
+		check( pass.getName() == "2C_1I_DS" )
+		check( pass.images.size() == 4u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == rtv1 )
+		check( pass.images[2].view() == rtv2 )
+		check( pass.images[3].view() == inv )
+		testEnd()
 	}
 
 	void testRenderPass_2C_2I_DS( test::TestCounts & testCounts )
 	{
-		testBegin( "testRenderPass_2C_2I_DS" );
+		testBegin( "testRenderPass_2C_2I_DS" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_2I_DS", crg::RunnablePassCreator{} );
@@ -410,20 +410,20 @@ namespace
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
-		check( pass.getName() == "2C_2I_DS" );
-		check( pass.images.size() == 5u );
-		check( pass.images[0].view() == dsv );
-		check( pass.images[1].view() == rtv1 );
-		check( pass.images[2].view() == rtv2 );
-		check( pass.images[3].view() == inv1 );
-		check( pass.images[4].view() == inv2 );
-		testEnd();
+		check( pass.getName() == "2C_2I_DS" )
+		check( pass.images.size() == 5u )
+		check( pass.images[0].view() == dsv )
+		check( pass.images[1].view() == rtv1 )
+		check( pass.images[2].view() == rtv2 )
+		check( pass.images[3].view() == inv1 )
+		check( pass.images[4].view() == inv2 )
+		testEnd()
 	}
 }
 
 int main( int argc, char ** argv )
 {
-	testSuiteBegin( "TestRenderPass" );
+	testSuiteBegin( "TestRenderPass" )
 	testRenderPass_1C( testCounts );
 	testRenderPass_2C( testCounts );
 	testRenderPass_0C_1I( testCounts );
@@ -441,5 +441,5 @@ int main( int argc, char ** argv )
 	testRenderPass_1C_2I_DS( testCounts );
 	testRenderPass_2C_1I_DS( testCounts );
 	testRenderPass_2C_2I_DS( testCounts );
-	testSuiteEnd();
+	testSuiteEnd()
 }
