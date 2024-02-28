@@ -229,7 +229,7 @@ jobs:
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
       with:
-        name: RenderGraph-${{ matrix.os[1] }}.zip
+        name: RenderGraph-${{ matrix.os[1] }}-gcc.zip
         path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}-gcc.zip
 
   build-linux-clang:
@@ -303,5 +303,5 @@ jobs:
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v4
       with:
-        name: RenderGraph-${{ matrix.os[1] }}.zip
+        name: RenderGraph-${{ matrix.os[1] }}-clang.zip
         path: ${{ github.workspace }}/RenderGraph-${{ matrix.os[1] }}-clang.zip
