@@ -7,9 +7,11 @@
 #include <RenderGraph/ImageViewData.hpp>
 #include <RenderGraph/FrameGraph.hpp>
 
+#include <atomic>
 #include <functional>
 #include <map>
 #include <sstream>
+#include <cstring>
 
 namespace test
 {
@@ -36,9 +38,9 @@ namespace test
 			return stream;
 		}
 
-		void displayPasses( TestCounts & testCounts
+		void displayPasses( TestCounts const & testCounts
 			, std::ostream & stream
-			, crg::RunnableGraph & value
+			, crg::RunnableGraph const & value
 			, crg::dot::Config const & cfg )
 		{
 			crg::dot::displayPasses( stream, value, cfg );
@@ -46,9 +48,9 @@ namespace test
 			crg::dot::displayPasses( file, value, { true, true, true, false } );
 		}
 
-		void displayTransitions( TestCounts & testCounts
+		void displayTransitions( TestCounts const & testCounts
 			, std::ostream & stream
-			, crg::RunnableGraph & value
+			, crg::RunnableGraph const & value
 			, crg::dot::Config const & cfg )
 		{
 			crg::dot::displayTransitions( stream, value, cfg );
@@ -142,230 +144,653 @@ namespace test
 
 	crg::GraphContext & getDummyContext()
 	{
+		static VkPhysicalDeviceMemoryProperties const MemoryProperties = []()
+			{
+				VkPhysicalDeviceMemoryProperties result{};
+
+				// Emulate one device local heap
+				result.memoryHeaps[result.memoryHeapCount++] = { ~0ULL, VK_MEMORY_HEAP_DEVICE_LOCAL_BIT };
+				// and one host visible heap
+				result.memoryHeaps[result.memoryHeapCount++] = { ~0ULL, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT };
+
+				// Emulate few combinations of device local memory types
+				result.memoryTypes[result.memoryTypeCount++] = { VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0u };
+				result.memoryTypes[result.memoryTypeCount++] = { VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, 1u };
+				result.memoryTypes[result.memoryTypeCount++] = { VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT, 1u };
+
+				return result;
+			}();
+		static VkPhysicalDeviceProperties const Properties = []()
+			{
+				std::string_view name{ "Test" };
+
+				VkPhysicalDeviceProperties result{};
+#if defined( _MSC_VER )
+				strncpy_s( result.deviceName
+					, name.data()
+					, std::min( name.size() + 1u, size_t( VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1u ) ) );
+#else
+				strncpy( result.deviceName
+					, name.data()
+					, std::min( name.size() + 1u, size_t( VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1u ) ) );
+#endif
+				result.deviceID = 0u;
+				result.vendorID = 0u;
+				result.driverVersion = VK_MAKE_VERSION( 1, 0, 0 );
+				result.apiVersion = VK_MAKE_VERSION( 1, 0, 0 );
+				result.deviceType = VK_PHYSICAL_DEVICE_TYPE_CPU;
+
+				result.limits.maxImageDimension1D = 16384u;
+				result.limits.maxImageDimension2D = 16384u;
+				result.limits.maxImageDimension3D = 2048u;
+				result.limits.maxImageDimensionCube = 16384u;
+				result.limits.maxImageArrayLayers = 2048u;
+				result.limits.maxTexelBufferElements = 134217728u;
+				result.limits.maxUniformBufferRange = 65536u;
+				result.limits.maxStorageBufferRange = 4294967295u;
+				result.limits.maxPushConstantsSize = 256u;
+				result.limits.maxMemoryAllocationCount = 4096u;
+				result.limits.maxSamplerAllocationCount = 4000u;
+				result.limits.bufferImageGranularity = 1024u;
+				result.limits.sparseAddressSpaceSize = 18446744073709551615u;
+				result.limits.maxBoundDescriptorSets = 8u;
+				result.limits.maxPerStageDescriptorSamplers = 1048576u;
+				result.limits.maxPerStageDescriptorUniformBuffers = 15u;
+				result.limits.maxPerStageDescriptorStorageBuffers = 1048576u;
+				result.limits.maxPerStageDescriptorSampledImages = 1048576u;
+				result.limits.maxPerStageDescriptorStorageImages = 1048576u;
+				result.limits.maxPerStageDescriptorInputAttachments = 1048576u;
+				result.limits.maxPerStageResources = 4294967295u;
+				result.limits.maxDescriptorSetSamplers = 1048576u;
+				result.limits.maxDescriptorSetUniformBuffers = 90u;
+				result.limits.maxDescriptorSetUniformBuffersDynamic = 15u;
+				result.limits.maxDescriptorSetStorageBuffers = 1048576u;
+				result.limits.maxDescriptorSetStorageBuffersDynamic = 16u;
+				result.limits.maxDescriptorSetSampledImages = 1048576u;
+				result.limits.maxDescriptorSetStorageImages = 1048576u;
+				result.limits.maxDescriptorSetInputAttachments = 1048576u;
+				result.limits.maxVertexInputAttributes = 32u;
+				result.limits.maxVertexInputBindings = 32u;
+				result.limits.maxVertexInputAttributeOffset = 2047u;
+				result.limits.maxVertexInputBindingStride = 2048u;
+				result.limits.maxVertexOutputComponents = 128u;
+				result.limits.maxTessellationGenerationLevel = 64u;
+				result.limits.maxTessellationPatchSize = 32u;
+				result.limits.maxTessellationControlPerVertexInputComponents = 128u;
+				result.limits.maxTessellationControlPerVertexOutputComponents = 128u;
+				result.limits.maxTessellationControlPerPatchOutputComponents = 120u;
+				result.limits.maxTessellationControlTotalOutputComponents = 4216u;
+				result.limits.maxTessellationEvaluationInputComponents = 128u;
+				result.limits.maxTessellationEvaluationOutputComponents = 128u;
+				result.limits.maxGeometryShaderInvocations = 32u;
+				result.limits.maxGeometryInputComponents = 128u;
+				result.limits.maxGeometryOutputComponents = 128u;
+				result.limits.maxGeometryOutputVertices = 1024u;
+				result.limits.maxGeometryTotalOutputComponents = 1024u;
+				result.limits.maxFragmentInputComponents = 128u;
+				result.limits.maxFragmentOutputAttachments = 8u;
+				result.limits.maxFragmentDualSrcAttachments = 1u;
+				result.limits.maxFragmentCombinedOutputResources = 16u;
+				result.limits.maxComputeSharedMemorySize = 49152u;
+				result.limits.maxComputeWorkGroupCount[0] = 2147483647u;
+				result.limits.maxComputeWorkGroupCount[1] = 65535u;
+				result.limits.maxComputeWorkGroupCount[2] = 65535u;
+				result.limits.maxComputeWorkGroupInvocations = 1536u;
+				result.limits.maxComputeWorkGroupSize[0] = 1536u;
+				result.limits.maxComputeWorkGroupSize[1] = 1024u;
+				result.limits.maxComputeWorkGroupSize[2] = 64u;
+				result.limits.subPixelPrecisionBits = 8u;
+				result.limits.subTexelPrecisionBits = 8u;
+				result.limits.mipmapPrecisionBits = 8u;
+				result.limits.maxDrawIndexedIndexValue = 4294967295u;
+				result.limits.maxDrawIndirectCount = 4294967295u;
+				result.limits.maxSamplerLodBias = 15.0f;
+				result.limits.maxSamplerAnisotropy = 16.0f;
+				result.limits.maxViewports = 16u;
+				result.limits.maxViewportDimensions[0] = 16384u;
+				result.limits.maxViewportDimensions[1] = 16384u;
+				result.limits.viewportBoundsRange[0] = -32768.0f;
+				result.limits.viewportBoundsRange[1] = 32768.0f;
+				result.limits.viewportSubPixelBits = 8u;
+				result.limits.minMemoryMapAlignment = 64u;
+				result.limits.minTexelBufferOffsetAlignment = 16u;
+				result.limits.minUniformBufferOffsetAlignment = 256u;
+				result.limits.minStorageBufferOffsetAlignment = 32u;
+				result.limits.minTexelOffset = -8;
+				result.limits.maxTexelOffset = 7u;
+				result.limits.minTexelGatherOffset = -32;
+				result.limits.maxTexelGatherOffset = 31u;
+				result.limits.minInterpolationOffset = -0.5f;
+				result.limits.maxInterpolationOffset = 0.4375f;
+				result.limits.subPixelInterpolationOffsetBits = 4u;
+				result.limits.maxFramebufferWidth = 16384u;
+				result.limits.maxFramebufferHeight = 16384u;
+				result.limits.maxFramebufferLayers = 2048u;
+				result.limits.framebufferColorSampleCounts = 15u;
+				result.limits.framebufferDepthSampleCounts = 15u;
+				result.limits.framebufferStencilSampleCounts = 31u;
+				result.limits.framebufferNoAttachmentsSampleCounts = 31u;
+				result.limits.maxColorAttachments = 8u;
+				result.limits.sampledImageColorSampleCounts = 15u;
+				result.limits.sampledImageIntegerSampleCounts = 15u;
+				result.limits.sampledImageDepthSampleCounts = 15u;
+				result.limits.sampledImageStencilSampleCounts = 31u;
+				result.limits.storageImageSampleCounts = 15u;
+				result.limits.maxSampleMaskWords = 1u;
+				result.limits.timestampComputeAndGraphics = true;
+				result.limits.timestampPeriod = 1.0f;
+				result.limits.maxClipDistances = 8u;
+				result.limits.maxCullDistances = 8u;
+				result.limits.maxCombinedClipAndCullDistances = 8u;
+				result.limits.discreteQueuePriorities = 2u;
+				result.limits.pointSizeRange[0] = 1.0f;
+				result.limits.pointSizeRange[1] = 189.875f;
+				result.limits.lineWidthRange[0] = 0.5f;
+				result.limits.lineWidthRange[1] = 10.0f;
+				result.limits.pointSizeGranularity = 0.125f;
+				result.limits.lineWidthGranularity = 0.125f;
+				result.limits.strictLines = true;
+				result.limits.standardSampleLocations = true;
+				result.limits.optimalBufferCopyOffsetAlignment = 1u;
+				result.limits.optimalBufferCopyRowPitchAlignment = 1u;
+				result.limits.nonCoherentAtomSize = 64ULL;
+
+				result.sparseProperties.residencyAlignedMipSize = true;
+				result.sparseProperties.residencyNonResidentStrict = true;
+				result.sparseProperties.residencyStandard2DBlockShape = true;
+				result.sparseProperties.residencyStandard2DMultisampleBlockShape = true;
+				result.sparseProperties.residencyStandard3DBlockShape = true;
+
+				return result;
+			}();
 		static crg::GraphContext context{ nullptr
 			, nullptr
 			, nullptr
-			, VkPhysicalDeviceMemoryProperties{}
-			, VkPhysicalDeviceProperties{}
+			, MemoryProperties
+			, Properties
 			, false
 			, nullptr };
-		context.vkCreateGraphicsPipelines = PFN_vkCreateGraphicsPipelines( []( VkDevice, VkPipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo * pCreateInfos, const VkAllocationCallbacks *, VkPipeline * pPipelines )
+		static std::atomic< uintptr_t > counter{};
+		context.device = VkDevice( counter.load() );
+		++counter;
+		context.vkCreateGraphicsPipelines = PFN_vkCreateGraphicsPipelines( []( VkDevice, VkPipelineCache, uint32_t createInfoCount, const VkGraphicsPipelineCreateInfo *, const VkAllocationCallbacks *, VkPipeline * pPipelines )
 			{
 				for ( uint32_t i = 0u; i < createInfoCount; ++i )
 				{
-					pPipelines[i] = ( VkPipeline )uintptr_t( i + 1u );
+					pPipelines[i] = VkPipeline( counter.load() );
+					++counter;
 				}
 				return VK_SUCCESS;
 			} );
-		context.vkCreateComputePipelines = PFN_vkCreateComputePipelines( []( VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo * pCreateInfos, const VkAllocationCallbacks * pAllocator, VkPipeline * pPipelines )
+		context.vkCreateComputePipelines = PFN_vkCreateComputePipelines( []( VkDevice, VkPipelineCache, uint32_t createInfoCount, const VkComputePipelineCreateInfo *, const VkAllocationCallbacks *, VkPipeline * pPipelines )
 			{
 				for ( uint32_t i = 0u; i < createInfoCount; ++i )
 				{
-					pPipelines[i] = ( VkPipeline )uintptr_t( i + 1u );
+					pPipelines[i] = VkPipeline( counter.load() );
+					++counter;
 				}
 				return VK_SUCCESS;
 			} );
-		context.vkCreatePipelineLayout = PFN_vkCreatePipelineLayout( []( VkDevice device, const VkPipelineLayoutCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkPipelineLayout * pPipelineLayout )
+		context.vkCreatePipelineLayout = PFN_vkCreatePipelineLayout( []( VkDevice, const VkPipelineLayoutCreateInfo *, const VkAllocationCallbacks *, VkPipelineLayout * pPipelineLayout )
 			{
-				*pPipelineLayout = ( VkPipelineLayout )1u;
+				*pPipelineLayout = VkPipelineLayout( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateDescriptorSetLayout = PFN_vkCreateDescriptorSetLayout( []( VkDevice device, const VkDescriptorSetLayoutCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkDescriptorSetLayout * pSetLayout )
+		context.vkCreateDescriptorSetLayout = PFN_vkCreateDescriptorSetLayout( []( VkDevice, const VkDescriptorSetLayoutCreateInfo *, const VkAllocationCallbacks *, VkDescriptorSetLayout * pSetLayout )
 			{
-				*pSetLayout = ( VkDescriptorSetLayout )1u;
+				*pSetLayout = VkDescriptorSetLayout( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateDescriptorPool = PFN_vkCreateDescriptorPool( []( VkDevice device, const VkDescriptorPoolCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkDescriptorPool * pDescriptorPool )
+		context.vkCreateDescriptorPool = PFN_vkCreateDescriptorPool( []( VkDevice, const VkDescriptorPoolCreateInfo *, const VkAllocationCallbacks *, VkDescriptorPool * pDescriptorPool )
 			{
-				*pDescriptorPool = ( VkDescriptorPool )1u;
+				*pDescriptorPool = VkDescriptorPool( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkAllocateDescriptorSets = PFN_vkAllocateDescriptorSets( []( VkDevice device, const VkDescriptorSetAllocateInfo * pAllocateInfo, VkDescriptorSet * pDescriptorSets )
+		context.vkAllocateDescriptorSets = PFN_vkAllocateDescriptorSets( []( VkDevice, const VkDescriptorSetAllocateInfo * pAllocateInfo, VkDescriptorSet * pDescriptorSets )
 			{
 				if ( !pAllocateInfo )
 					return VK_ERROR_UNKNOWN;
 
 				for ( uint32_t i = 0u; i < pAllocateInfo->descriptorSetCount; ++i )
 				{
-					pDescriptorSets[i] = ( VkDescriptorSet )uintptr_t( i + 1u );
+					pDescriptorSets[i] = VkDescriptorSet( counter.load() );
+					++counter;
 				}
 				return VK_SUCCESS;
 			} );
-		context.vkCreateBuffer = PFN_vkCreateBuffer( []( VkDevice device, const VkBufferCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkBuffer * pBuffer )
+		context.vkCreateBuffer = PFN_vkCreateBuffer( []( VkDevice, const VkBufferCreateInfo *, const VkAllocationCallbacks *, VkBuffer * pBuffer )
 			{
-				*pBuffer = ( VkBuffer )1u;
+				*pBuffer = VkBuffer( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkAllocateMemory = PFN_vkAllocateMemory( []( VkDevice device, const VkMemoryAllocateInfo * pAllocateInfo, const VkAllocationCallbacks * pAllocator, VkDeviceMemory * pMemory )
+		context.vkAllocateMemory = PFN_vkAllocateMemory( []( VkDevice, const VkMemoryAllocateInfo *, const VkAllocationCallbacks *, VkDeviceMemory * pMemory )
 			{
-				*pMemory = ( VkDeviceMemory )1u;
+				*pMemory = VkDeviceMemory( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateRenderPass = PFN_vkCreateRenderPass( []( VkDevice device, const VkRenderPassCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkRenderPass * pRenderPass )
+		context.vkCreateRenderPass = PFN_vkCreateRenderPass( []( VkDevice, const VkRenderPassCreateInfo *, const VkAllocationCallbacks *, VkRenderPass * pRenderPass )
 			{
-				*pRenderPass = ( VkRenderPass )1u;
+				*pRenderPass = VkRenderPass( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateFramebuffer = PFN_vkCreateFramebuffer( []( VkDevice device, const VkFramebufferCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkFramebuffer * pFramebuffer )
+		context.vkCreateFramebuffer = PFN_vkCreateFramebuffer( []( VkDevice, const VkFramebufferCreateInfo *, const VkAllocationCallbacks *, VkFramebuffer * pFramebuffer )
 			{
-				*pFramebuffer = ( VkFramebuffer )1u;
+				*pFramebuffer = VkFramebuffer( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateImage = PFN_vkCreateImage( []( VkDevice device, const VkImageCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkImage * pImage )
+		context.vkCreateImage = PFN_vkCreateImage( []( VkDevice, const VkImageCreateInfo *, const VkAllocationCallbacks *, VkImage * pImage )
 			{
-				*pImage = ( VkImage )1u;
+				*pImage = VkImage( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateImageView = PFN_vkCreateImageView( []( VkDevice device, const VkImageViewCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkImageView * pView )
+		context.vkCreateImageView = PFN_vkCreateImageView( []( VkDevice, const VkImageViewCreateInfo *, const VkAllocationCallbacks *, VkImageView * pView )
 			{
-				*pView = ( VkImageView )1u;
+				*pView = VkImageView( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateSampler = PFN_vkCreateSampler( []( VkDevice device, const VkSamplerCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkSampler * pSampler )
+		context.vkCreateSampler = PFN_vkCreateSampler( []( VkDevice, const VkSamplerCreateInfo *, const VkAllocationCallbacks *, VkSampler * pSampler )
 			{
-				*pSampler = ( VkSampler )1u;
+				*pSampler = VkSampler( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateCommandPool = PFN_vkCreateCommandPool( []( VkDevice device, const VkCommandPoolCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkCommandPool * pCommandPool )
+		context.vkCreateCommandPool = PFN_vkCreateCommandPool( []( VkDevice, const VkCommandPoolCreateInfo *, const VkAllocationCallbacks *, VkCommandPool * pCommandPool )
 			{
-				*pCommandPool = ( VkCommandPool )1u;
+				*pCommandPool = VkCommandPool( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkAllocateCommandBuffers = PFN_vkAllocateCommandBuffers( []( VkDevice device, const VkCommandBufferAllocateInfo * pAllocateInfo, VkCommandBuffer * pCommandBuffers )
+		context.vkAllocateCommandBuffers = PFN_vkAllocateCommandBuffers( []( VkDevice, const VkCommandBufferAllocateInfo * pAllocateInfo, VkCommandBuffer * pCommandBuffers )
 			{
 				if ( !pAllocateInfo )
 					return VK_ERROR_UNKNOWN;
 
 				for ( uint32_t i = 0u; i < pAllocateInfo->commandBufferCount; ++i )
 				{
-					pCommandBuffers[i] = ( VkCommandBuffer )uintptr_t( i + 1u );
+					pCommandBuffers[i] = VkCommandBuffer( counter.load() );
+					++counter;
 				}
 				return VK_SUCCESS;
 			} );
-		context.vkCreateSemaphore = PFN_vkCreateSemaphore( []( VkDevice device, const VkSemaphoreCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkSemaphore * pSemaphore )
+		context.vkCreateSemaphore = PFN_vkCreateSemaphore( []( VkDevice, const VkSemaphoreCreateInfo *, const VkAllocationCallbacks *, VkSemaphore * pSemaphore )
 			{
-				*pSemaphore = ( VkSemaphore )1u;
+				*pSemaphore = VkSemaphore( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateQueryPool = PFN_vkCreateQueryPool( []( VkDevice device, const VkQueryPoolCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkQueryPool * pQueryPool )
+		context.vkCreateQueryPool = PFN_vkCreateQueryPool( []( VkDevice, const VkQueryPoolCreateInfo *, const VkAllocationCallbacks *, VkQueryPool * pQueryPool )
 			{
-				*pQueryPool = ( VkQueryPool )1u;
+				*pQueryPool = VkQueryPool( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateEvent = PFN_vkCreateEvent( []( VkDevice device, const VkEventCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkEvent * pEvent )
+		context.vkCreateEvent = PFN_vkCreateEvent( []( VkDevice, const VkEventCreateInfo *, const VkAllocationCallbacks *, VkEvent * pEvent )
 			{
-				*pEvent = ( VkEvent )1u;
+				*pEvent = VkEvent( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
-		context.vkCreateFence = PFN_vkCreateFence( []( VkDevice device, const VkFenceCreateInfo * pCreateInfo, const VkAllocationCallbacks * pAllocator, VkFence * pFence )
+		context.vkCreateFence = PFN_vkCreateFence( []( VkDevice, const VkFenceCreateInfo *, const VkAllocationCallbacks *, VkFence * pFence )
 			{
-				*pFence = ( VkFence )1u;
+				*pFence = VkFence( counter.load() );
+				++counter;
 				return VK_SUCCESS;
 			} );
 
-		context.vkDestroyPipeline = PFN_vkDestroyPipeline( []( VkDevice device, VkPipeline pipeline, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyPipelineLayout = PFN_vkDestroyPipelineLayout( []( VkDevice device, VkPipelineLayout pipelineLayout, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyDescriptorSetLayout = PFN_vkDestroyDescriptorSetLayout( []( VkDevice device, VkDescriptorSetLayout descriptorSetLayout, const VkAllocationCallbacks* pAllocator ){} );
-		context.vkDestroyDescriptorPool = PFN_vkDestroyDescriptorPool( []( VkDevice device, VkDescriptorPool descriptorPool, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkFreeDescriptorSets = PFN_vkFreeDescriptorSets( []( VkDevice device, VkDescriptorPool descriptorPool, uint32_t descriptorSetCount, const VkDescriptorSet * pDescriptorSets ){ return VK_SUCCESS; } );
-		context.vkDestroyBuffer = PFN_vkDestroyBuffer( []( VkDevice device, VkBuffer buffer, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkFreeMemory = PFN_vkFreeMemory( []( VkDevice device, VkDeviceMemory memory, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyRenderPass = PFN_vkDestroyRenderPass( []( VkDevice device, VkRenderPass renderPass, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyFramebuffer = PFN_vkDestroyFramebuffer( []( VkDevice device, VkFramebuffer framebuffer, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyImage = PFN_vkDestroyImage( []( VkDevice device, VkImage image, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyImageView = PFN_vkDestroyImageView( []( VkDevice device, VkImageView imageView, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroySampler = PFN_vkDestroySampler( []( VkDevice device, VkSampler sampler, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyCommandPool = PFN_vkDestroyCommandPool( []( VkDevice device, VkCommandPool commandPool, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkFreeCommandBuffers = PFN_vkFreeCommandBuffers( []( VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount, const VkCommandBuffer * pCommandBuffers ){} );
-		context.vkDestroySemaphore = PFN_vkDestroySemaphore( []( VkDevice device, VkSemaphore semaphore, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyQueryPool = PFN_vkDestroyQueryPool( []( VkDevice device, VkQueryPool queryPool, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyEvent = PFN_vkDestroyEvent( []( VkDevice device, VkEvent event, const VkAllocationCallbacks * pAllocator ){} );
-		context.vkDestroyFence = PFN_vkDestroyFence( []( VkDevice device, VkFence fence, const VkAllocationCallbacks * pAllocator ){} );
+		context.vkDestroyPipeline = PFN_vkDestroyPipeline( []( VkDevice, VkPipeline, const VkAllocationCallbacks * ){} );
+		context.vkDestroyPipelineLayout = PFN_vkDestroyPipelineLayout( []( VkDevice, VkPipelineLayout, const VkAllocationCallbacks * ){} );
+		context.vkDestroyDescriptorSetLayout = PFN_vkDestroyDescriptorSetLayout( []( VkDevice, VkDescriptorSetLayout, const VkAllocationCallbacks* ){} );
+		context.vkDestroyDescriptorPool = PFN_vkDestroyDescriptorPool( []( VkDevice, VkDescriptorPool, const VkAllocationCallbacks * ){} );
+		context.vkFreeDescriptorSets = PFN_vkFreeDescriptorSets( []( VkDevice, VkDescriptorPool, uint32_t, const VkDescriptorSet * ){ return VK_SUCCESS; } );
+		context.vkDestroyBuffer = PFN_vkDestroyBuffer( []( VkDevice, VkBuffer, const VkAllocationCallbacks * ){} );
+		context.vkFreeMemory = PFN_vkFreeMemory( []( VkDevice, VkDeviceMemory, const VkAllocationCallbacks * ){} );
+		context.vkDestroyRenderPass = PFN_vkDestroyRenderPass( []( VkDevice, VkRenderPass, const VkAllocationCallbacks * ){} );
+		context.vkDestroyFramebuffer = PFN_vkDestroyFramebuffer( []( VkDevice, VkFramebuffer, const VkAllocationCallbacks * ){} );
+		context.vkDestroyImage = PFN_vkDestroyImage( []( VkDevice, VkImage, const VkAllocationCallbacks * ){} );
+		context.vkDestroyImageView = PFN_vkDestroyImageView( []( VkDevice, VkImageView, const VkAllocationCallbacks * ){} );
+		context.vkDestroySampler = PFN_vkDestroySampler( []( VkDevice, VkSampler, const VkAllocationCallbacks * ){} );
+		context.vkDestroyCommandPool = PFN_vkDestroyCommandPool( []( VkDevice, VkCommandPool, const VkAllocationCallbacks * ){} );
+		context.vkFreeCommandBuffers = PFN_vkFreeCommandBuffers( []( VkDevice, VkCommandPool, uint32_t, const VkCommandBuffer * ){} );
+		context.vkDestroySemaphore = PFN_vkDestroySemaphore( []( VkDevice, VkSemaphore, const VkAllocationCallbacks * ){} );
+		context.vkDestroyQueryPool = PFN_vkDestroyQueryPool( []( VkDevice, VkQueryPool, const VkAllocationCallbacks * ){} );
+		context.vkDestroyEvent = PFN_vkDestroyEvent( []( VkDevice, VkEvent, const VkAllocationCallbacks * ){} );
+		context.vkDestroyFence = PFN_vkDestroyFence( []( VkDevice, VkFence, const VkAllocationCallbacks * ){} );
 
-		context.vkGetBufferMemoryRequirements = PFN_vkGetBufferMemoryRequirements( []( VkDevice device, VkBuffer buffer, VkMemoryRequirements * pMemoryRequirements ){} );
-		context.vkGetImageMemoryRequirements = PFN_vkGetImageMemoryRequirements( []( VkDevice device, VkImage image, VkMemoryRequirements * pMemoryRequirements ){} );
-		context.vkBindBufferMemory = PFN_vkBindBufferMemory( []( VkDevice device, VkBuffer buffer, VkDeviceMemory memory, VkDeviceSize memoryOffset ){ return VK_SUCCESS; } );
-		context.vkBindImageMemory = PFN_vkBindImageMemory( []( VkDevice device, VkImage image, VkDeviceMemory memory, VkDeviceSize memoryOffset ){ return VK_SUCCESS; } );
-		context.vkMapMemory = PFN_vkMapMemory( []( VkDevice device, VkDeviceMemory memory, VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags, void ** ppData ){ return VK_SUCCESS; } );
-		context.vkUnmapMemory = PFN_vkUnmapMemory( []( VkDevice device, VkDeviceMemory memory ){} );
-		context.vkFlushMappedMemoryRanges = PFN_vkFlushMappedMemoryRanges( []( VkDevice device, uint32_t memoryRangeCount, const VkMappedMemoryRange * pMemoryRanges ){ return VK_SUCCESS; } );
-		context.vkInvalidateMappedMemoryRanges = PFN_vkInvalidateMappedMemoryRanges( []( VkDevice device, uint32_t memoryRangeCount, const VkMappedMemoryRange * pMemoryRanges ){ return VK_SUCCESS; } );
-		context.vkUpdateDescriptorSets = PFN_vkUpdateDescriptorSets( []( VkDevice device, uint32_t descriptorWriteCount, const VkWriteDescriptorSet * pDescriptorWrites, uint32_t descriptorCopyCount, const VkCopyDescriptorSet * pDescriptorCopies ){} );
-		context.vkBeginCommandBuffer = PFN_vkBeginCommandBuffer( []( VkCommandBuffer commandBuffer, const VkCommandBufferBeginInfo * pBeginInfo ){ return VK_SUCCESS; } );
-		context.vkEndCommandBuffer = PFN_vkEndCommandBuffer( []( VkCommandBuffer commandBuffer ){ return VK_SUCCESS; } );
-		context.vkQueueSubmit = PFN_vkQueueSubmit( []( VkQueue queue, uint32_t submitCount, const VkSubmitInfo * pSubmits, VkFence fence ){ return VK_SUCCESS; } );
-		context.vkGetQueryPoolResults = PFN_vkGetQueryPoolResults( []( VkDevice device, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount, size_t dataSize, void * pData, VkDeviceSize stride, VkQueryResultFlags flags ){ return VK_SUCCESS; } );
-		context.vkResetCommandBuffer = PFN_vkResetCommandBuffer( []( VkCommandBuffer commandBuffer, VkCommandBufferResetFlags flags ){ return VK_SUCCESS; } );
-		context.vkResetEvent = PFN_vkResetEvent( []( VkDevice device, VkEvent event ){ return VK_SUCCESS; } );
-		context.vkSetEvent = PFN_vkSetEvent( []( VkDevice device, VkEvent event ){ return VK_SUCCESS; } );
-		context.vkGetEventStatus = PFN_vkGetEventStatus( []( VkDevice device, VkEvent event ){ return VK_SUCCESS; } );
-		context.vkGetFenceStatus = PFN_vkGetFenceStatus( []( VkDevice device, VkFence fence ){ return VK_SUCCESS; } );
-		context.vkWaitForFences = PFN_vkWaitForFences( []( VkDevice device, uint32_t fenceCount, const VkFence * pFences, VkBool32 waitAll, uint64_t timeout ){ return VK_SUCCESS; } );
-		context.vkResetFences = PFN_vkResetFences( []( VkDevice device, uint32_t fenceCount, const VkFence * pFences ){ return VK_SUCCESS; } );
+		context.vkGetBufferMemoryRequirements = PFN_vkGetBufferMemoryRequirements( []( VkDevice, VkBuffer, VkMemoryRequirements * pMemoryRequirements )
+			{
+				pMemoryRequirements->memoryTypeBits = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+				pMemoryRequirements->size = 1024u;
+				pMemoryRequirements->alignment = 1u;
+			} );
+		context.vkGetImageMemoryRequirements = PFN_vkGetImageMemoryRequirements( []( VkDevice, VkImage, VkMemoryRequirements * pMemoryRequirements )
+			{
+				pMemoryRequirements->memoryTypeBits = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+				pMemoryRequirements->size = 1024u * 1024 * 64;
+				pMemoryRequirements->alignment = 4u;
+			} );
+		context.vkBindBufferMemory = PFN_vkBindBufferMemory( []( VkDevice, VkBuffer, VkDeviceMemory, VkDeviceSize ){ return VK_SUCCESS; } );
+		context.vkBindImageMemory = PFN_vkBindImageMemory( []( VkDevice, VkImage, VkDeviceMemory, VkDeviceSize ){ return VK_SUCCESS; } );
+		context.vkMapMemory = PFN_vkMapMemory( []( VkDevice, VkDeviceMemory, VkDeviceSize, VkDeviceSize, VkMemoryMapFlags, void ** ppData )
+			{
+				thread_local std::vector< uint8_t > data( 1024u * 1024u * 64u );
+				*ppData = data.data();
+				return VK_SUCCESS;
+			} );
+		context.vkUnmapMemory = PFN_vkUnmapMemory( []( VkDevice, VkDeviceMemory ){} );
+		context.vkFlushMappedMemoryRanges = PFN_vkFlushMappedMemoryRanges( []( VkDevice, uint32_t , const VkMappedMemoryRange * ){ return VK_SUCCESS; } );
+		context.vkInvalidateMappedMemoryRanges = PFN_vkInvalidateMappedMemoryRanges( []( VkDevice, uint32_t , const VkMappedMemoryRange * ){ return VK_SUCCESS; } );
+		context.vkUpdateDescriptorSets = PFN_vkUpdateDescriptorSets( []( VkDevice, uint32_t, const VkWriteDescriptorSet *, uint32_t, const VkCopyDescriptorSet * ){} );
+		context.vkBeginCommandBuffer = PFN_vkBeginCommandBuffer( []( VkCommandBuffer, const VkCommandBufferBeginInfo * ){ return VK_SUCCESS; } );
+		context.vkEndCommandBuffer = PFN_vkEndCommandBuffer( []( VkCommandBuffer ){ return VK_SUCCESS; } );
+		context.vkQueueSubmit = PFN_vkQueueSubmit( []( VkQueue, uint32_t, const VkSubmitInfo *, VkFence ){ return VK_SUCCESS; } );
+		context.vkGetQueryPoolResults = PFN_vkGetQueryPoolResults( []( VkDevice, VkQueryPool, uint32_t, uint32_t, size_t, void *, VkDeviceSize, VkQueryResultFlags ){ return VK_SUCCESS; } );
+		context.vkResetCommandBuffer = PFN_vkResetCommandBuffer( []( VkCommandBuffer, VkCommandBufferResetFlags ){ return VK_SUCCESS; } );
+		context.vkResetEvent = PFN_vkResetEvent( []( VkDevice, VkEvent ){ return VK_SUCCESS; } );
+		context.vkSetEvent = PFN_vkSetEvent( []( VkDevice, VkEvent ){ return VK_SUCCESS; } );
+		context.vkGetEventStatus = PFN_vkGetEventStatus( []( VkDevice, VkEvent ){ return VK_SUCCESS; } );
+		context.vkGetFenceStatus = PFN_vkGetFenceStatus( []( VkDevice, VkFence ){ return VK_SUCCESS; } );
+		context.vkWaitForFences = PFN_vkWaitForFences( []( VkDevice, uint32_t, const VkFence *, VkBool32, uint64_t ){ return VK_SUCCESS; } );
+		context.vkResetFences = PFN_vkResetFences( []( VkDevice, uint32_t, const VkFence * ){ return VK_SUCCESS; } );
 
-		context.vkCmdBindPipeline = PFN_vkCmdBindPipeline( []( VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipeline pipeline ){} );
-		context.vkCmdBindDescriptorSets = PFN_vkCmdBindDescriptorSets( []( VkCommandBuffer commandBuffer, VkPipelineBindPoint pipelineBindPoint, VkPipelineLayout layout, uint32_t firstSet, uint32_t descriptorSetCount, const VkDescriptorSet * pDescriptorSets, uint32_t dynamicOffsetCount, const uint32_t * pDynamicOffsets ){} );
-		context.vkCmdBindVertexBuffers = PFN_vkCmdBindVertexBuffers( []( VkCommandBuffer commandBuffer, uint32_t firstBinding, uint32_t bindingCount, const VkBuffer * pBuffers, const VkDeviceSize * pOffsets ){} );
-		context.vkCmdBindIndexBuffer = PFN_vkCmdBindIndexBuffer( []( VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, VkIndexType indexType ){} );
-		context.vkCmdClearColorImage = PFN_vkCmdClearColorImage( []( VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, const VkClearColorValue * pColor, uint32_t rangeCount, const VkImageSubresourceRange * pRanges ){} );
-		context.vkCmdClearDepthStencilImage = PFN_vkCmdClearDepthStencilImage( []( VkCommandBuffer commandBuffer, VkImage image, VkImageLayout imageLayout, const VkClearDepthStencilValue * pDepthStencil, uint32_t rangeCount, const VkImageSubresourceRange * pRanges ){} );
-		context.vkCmdDispatch = PFN_vkCmdDispatch( []( VkCommandBuffer commandBuffer, uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ ){} );
-		context.vkCmdDispatchIndirect = PFN_vkCmdDispatchIndirect( []( VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset ){} );
-		context.vkCmdDraw = PFN_vkCmdDraw( []( VkCommandBuffer commandBuffer, uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance ){} );
-		context.vkCmdDrawIndexed = PFN_vkCmdDrawIndexed( []( VkCommandBuffer commandBuffer, uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, int32_t vertexOffset, uint32_t firstInstance ){} );
-		context.vkCmdDrawIndexedIndirect = PFN_vkCmdDrawIndexedIndirect( []( VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride ){} );
-		context.vkCmdDrawIndirect = PFN_vkCmdDrawIndirect( []( VkCommandBuffer commandBuffer, VkBuffer buffer, VkDeviceSize offset, uint32_t drawCount, uint32_t stride ){} );
-		context.vkCmdBeginRenderPass = PFN_vkCmdBeginRenderPass( []( VkCommandBuffer commandBuffer, const VkRenderPassBeginInfo * pRenderPassBegin, VkSubpassContents contents ){} );
-		context.vkCmdEndRenderPass = PFN_vkCmdEndRenderPass( []( VkCommandBuffer commandBuffer ){} );
-		context.vkCmdPushConstants = PFN_vkCmdPushConstants( []( VkCommandBuffer commandBuffer, VkPipelineLayout layout, VkShaderStageFlags stageFlags, uint32_t offset, uint32_t size, const void * pValues ){} );
-		context.vkCmdResetQueryPool = PFN_vkCmdResetQueryPool( []( VkCommandBuffer commandBuffer, VkQueryPool queryPool, uint32_t firstQuery, uint32_t queryCount ){} );
-		context.vkCmdWriteTimestamp = PFN_vkCmdWriteTimestamp( []( VkCommandBuffer commandBuffer, VkPipelineStageFlagBits pipelineStage, VkQueryPool queryPool, uint32_t query ){} );
-		context.vkCmdPipelineBarrier = PFN_vkCmdPipelineBarrier( []( VkCommandBuffer commandBuffer, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, VkDependencyFlags dependencyFlags, uint32_t memoryBarrierCount, const VkMemoryBarrier * pMemoryBarriers, uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier * pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier * pImageMemoryBarriers ){} );
-		context.vkCmdBlitImage = PFN_vkCmdBlitImage( []( VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageBlit * pRegions, VkFilter filter ){} );
-		context.vkCmdCopyBuffer = PFN_vkCmdCopyBuffer( []( VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferCopy * pRegions ){} );
-		context.vkCmdCopyBufferToImage = PFN_vkCmdCopyBufferToImage( []( VkCommandBuffer commandBuffer, VkBuffer srcBuffer, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkBufferImageCopy * pRegions ){} );
-		context.vkCmdCopyImage = PFN_vkCmdCopyImage( []( VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkImage dstImage, VkImageLayout dstImageLayout, uint32_t regionCount, const VkImageCopy * pRegions ){} );
-		context.vkCmdCopyImageToBuffer = PFN_vkCmdCopyImageToBuffer( []( VkCommandBuffer commandBuffer, VkImage srcImage, VkImageLayout srcImageLayout, VkBuffer dstBuffer, uint32_t regionCount, const VkBufferImageCopy * pRegions ){} );
-		context.vkCmdExecuteCommands = PFN_vkCmdExecuteCommands( []( VkCommandBuffer commandBuffer, uint32_t commandBufferCount, const VkCommandBuffer * pCommandBuffers ){} );
-		context.vkCmdResetEvent = PFN_vkCmdResetEvent( []( VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask ){} );
-		context.vkCmdSetEvent = PFN_vkCmdSetEvent( []( VkCommandBuffer commandBuffer, VkEvent event, VkPipelineStageFlags stageMask ){} );
-		context.vkCmdWaitEvents = PFN_vkCmdWaitEvents( []( VkCommandBuffer commandBuffer, uint32_t eventCount, const VkEvent * pEvents, VkPipelineStageFlags srcStageMask, VkPipelineStageFlags dstStageMask, uint32_t memoryBarrierCount, const VkMemoryBarrier * pMemoryBarriers, uint32_t bufferMemoryBarrierCount, const VkBufferMemoryBarrier * pBufferMemoryBarriers, uint32_t imageMemoryBarrierCount, const VkImageMemoryBarrier * pImageMemoryBarriers ){} );
-		context.vkCmdFillBuffer = PFN_vkCmdFillBuffer( []( VkCommandBuffer commandBuffer, VkBuffer dstBuffer, VkDeviceSize dstOffset, VkDeviceSize size, uint32_t data ){} );
+		context.vkCmdBindPipeline = PFN_vkCmdBindPipeline( []( VkCommandBuffer, VkPipelineBindPoint, VkPipeline ){} );
+		context.vkCmdBindDescriptorSets = PFN_vkCmdBindDescriptorSets( []( VkCommandBuffer, VkPipelineBindPoint, VkPipelineLayout, uint32_t, uint32_t, const VkDescriptorSet *, uint32_t, const uint32_t * ){} );
+		context.vkCmdBindVertexBuffers = PFN_vkCmdBindVertexBuffers( []( VkCommandBuffer, uint32_t, uint32_t, const VkBuffer *, const VkDeviceSize * ){} );
+		context.vkCmdBindIndexBuffer = PFN_vkCmdBindIndexBuffer( []( VkCommandBuffer, VkBuffer, VkDeviceSize, VkIndexType ){} );
+		context.vkCmdClearColorImage = PFN_vkCmdClearColorImage( []( VkCommandBuffer, VkImage, VkImageLayout, const VkClearColorValue *, uint32_t, const VkImageSubresourceRange * ){} );
+		context.vkCmdClearDepthStencilImage = PFN_vkCmdClearDepthStencilImage( []( VkCommandBuffer, VkImage, VkImageLayout, const VkClearDepthStencilValue *, uint32_t, const VkImageSubresourceRange * ){} );
+		context.vkCmdDispatch = PFN_vkCmdDispatch( []( VkCommandBuffer, uint32_t, uint32_t, uint32_t ){} );
+		context.vkCmdDispatchIndirect = PFN_vkCmdDispatchIndirect( []( VkCommandBuffer, VkBuffer, VkDeviceSize ){} );
+		context.vkCmdDraw = PFN_vkCmdDraw( []( VkCommandBuffer, uint32_t, uint32_t, uint32_t, uint32_t ){} );
+		context.vkCmdDrawIndexed = PFN_vkCmdDrawIndexed( []( VkCommandBuffer, uint32_t, uint32_t, uint32_t, int32_t, uint32_t ){} );
+		context.vkCmdDrawIndexedIndirect = PFN_vkCmdDrawIndexedIndirect( []( VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t ){} );
+		context.vkCmdDrawIndirect = PFN_vkCmdDrawIndirect( []( VkCommandBuffer, VkBuffer, VkDeviceSize, uint32_t, uint32_t ){} );
+		context.vkCmdBeginRenderPass = PFN_vkCmdBeginRenderPass( []( VkCommandBuffer, const VkRenderPassBeginInfo *, VkSubpassContents ){} );
+		context.vkCmdEndRenderPass = PFN_vkCmdEndRenderPass( []( VkCommandBuffer ){} );
+		context.vkCmdPushConstants = PFN_vkCmdPushConstants( []( VkCommandBuffer, VkPipelineLayout, VkShaderStageFlags, uint32_t, uint32_t, const void * ){} );
+		context.vkCmdResetQueryPool = PFN_vkCmdResetQueryPool( []( VkCommandBuffer, VkQueryPool, uint32_t, uint32_t ){} );
+		context.vkCmdWriteTimestamp = PFN_vkCmdWriteTimestamp( []( VkCommandBuffer, VkPipelineStageFlagBits, VkQueryPool, uint32_t ){} );
+		context.vkCmdPipelineBarrier = PFN_vkCmdPipelineBarrier( []( VkCommandBuffer, VkPipelineStageFlags, VkPipelineStageFlags, VkDependencyFlags, uint32_t, const VkMemoryBarrier *, uint32_t, const VkBufferMemoryBarrier *, uint32_t, const VkImageMemoryBarrier * ){} );
+		context.vkCmdBlitImage = PFN_vkCmdBlitImage( []( VkCommandBuffer, VkImage, VkImageLayout, VkImage, VkImageLayout, uint32_t, const VkImageBlit *, VkFilter ){} );
+		context.vkCmdCopyBuffer = PFN_vkCmdCopyBuffer( []( VkCommandBuffer, VkBuffer, VkBuffer, uint32_t, const VkBufferCopy * ){} );
+		context.vkCmdCopyBufferToImage = PFN_vkCmdCopyBufferToImage( []( VkCommandBuffer, VkBuffer, VkImage, VkImageLayout, uint32_t, const VkBufferImageCopy * ){} );
+		context.vkCmdCopyImage = PFN_vkCmdCopyImage( []( VkCommandBuffer, VkImage, VkImageLayout, VkImage, VkImageLayout, uint32_t, const VkImageCopy * ){} );
+		context.vkCmdCopyImageToBuffer = PFN_vkCmdCopyImageToBuffer( []( VkCommandBuffer, VkImage, VkImageLayout, VkBuffer, uint32_t, const VkBufferImageCopy * ){} );
+		context.vkCmdExecuteCommands = PFN_vkCmdExecuteCommands( []( VkCommandBuffer, uint32_t, const VkCommandBuffer * ){} );
+		context.vkCmdResetEvent = PFN_vkCmdResetEvent( []( VkCommandBuffer, VkEvent, VkPipelineStageFlags ){} );
+		context.vkCmdSetEvent = PFN_vkCmdSetEvent( []( VkCommandBuffer, VkEvent, VkPipelineStageFlags ){} );
+		context.vkCmdWaitEvents = PFN_vkCmdWaitEvents( []( VkCommandBuffer, uint32_t, const VkEvent *, VkPipelineStageFlags, VkPipelineStageFlags, uint32_t, const VkMemoryBarrier *, uint32_t, const VkBufferMemoryBarrier *, uint32_t, const VkImageMemoryBarrier * ){} );
+		context.vkCmdFillBuffer = PFN_vkCmdFillBuffer( []( VkCommandBuffer, VkBuffer, VkDeviceSize, VkDeviceSize, uint32_t ){} );
 
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
 #	if VK_EXT_debug_utils
-		context.vkSetDebugUtilsObjectNameEXT = PFN_vkSetDebugUtilsObjectNameEXT();
-		context.vkCmdBeginDebugUtilsLabelEXT = PFN_vkCmdBeginDebugUtilsLabelEXT();
-		context.vkCmdEndDebugUtilsLabelEXT = PFN_vkCmdEndDebugUtilsLabelEXT();
+		context.vkSetDebugUtilsObjectNameEXT = PFN_vkSetDebugUtilsObjectNameEXT( []( VkDevice, const VkDebugUtilsObjectNameInfoEXT* ){ return VK_SUCCESS; } );
+		context.vkCmdBeginDebugUtilsLabelEXT = PFN_vkCmdBeginDebugUtilsLabelEXT( []( VkCommandBuffer, const VkDebugUtilsLabelEXT * ){} );
+		context.vkCmdEndDebugUtilsLabelEXT = PFN_vkCmdEndDebugUtilsLabelEXT( []( VkCommandBuffer ){} );
 #	endif
 #	if VK_EXT_debug_marker
-		context.vkDebugMarkerSetObjectNameEXT = PFN_vkDebugMarkerSetObjectNameEXT();
-		context.vkCmdDebugMarkerBeginEXT = PFN_vkCmdDebugMarkerBeginEXT();
-		context.vkCmdDebugMarkerEndEXT = PFN_vkCmdDebugMarkerEndEXT();
-		context.vkCmdDebugMarkerInsertEXT = PFN_vkCmdDebugMarkerInsertEXT();
+		context.vkDebugMarkerSetObjectNameEXT = PFN_vkDebugMarkerSetObjectNameEXT( []( VkDevice, const VkDebugMarkerObjectNameInfoEXT * ){ return VK_SUCCESS; } );
+		context.vkCmdDebugMarkerBeginEXT = PFN_vkCmdDebugMarkerBeginEXT( []( VkCommandBuffer, const VkDebugMarkerMarkerInfoEXT * ){} );
+		context.vkCmdDebugMarkerEndEXT = PFN_vkCmdDebugMarkerEndEXT( []( VkCommandBuffer ){} );
 #	endif
 #endif
+		context.setCallstackCallback( []()
+			{
+				return "coin !!";
+			} );
 		return context;
 	}
 
-	void display( TestCounts & testCounts
+	void display( TestCounts const & testCounts
 		, std::ostream & stream
-		, crg::RunnableGraph & value
+		, crg::RunnableGraph const & value
 		, bool withColours
 		, bool withIds
 		, bool withGroups )
 	{
-		std::stringstream trans;
-		displayTransitions( testCounts, trans, value, { withColours, withIds, withGroups } );
+		std::stringstream tmp;
+		crg::dot::displayTransitions( tmp, value, { true, true, true, true } );
+		crg::dot::displayTransitions( tmp, value, { true, true, true, false } );
+		crg::dot::displayTransitions( tmp, value, { true, true, false, true } );
+		crg::dot::displayTransitions( tmp, value, { true, true, false, false } );
+		crg::dot::displayTransitions( tmp, value, { true, false, true, true } );
+		crg::dot::displayTransitions( tmp, value, { true, false, true, false } );
+		crg::dot::displayTransitions( tmp, value, { true, false, false, true } );
+		crg::dot::displayTransitions( tmp, value, { true, false, false, false } );
+		crg::dot::displayTransitions( tmp, value, { false, true, true, true } );
+		crg::dot::displayTransitions( tmp, value, { false, true, true, false } );
+		crg::dot::displayTransitions( tmp, value, { false, true, false, true } );
+		crg::dot::displayTransitions( tmp, value, { false, true, false, false } );
+		crg::dot::displayTransitions( tmp, value, { false, false, true, true } );
+		crg::dot::displayTransitions( tmp, value, { false, false, true, false } );
+		crg::dot::displayTransitions( tmp, value, { false, false, false, true } );
+		crg::dot::displayTransitions( tmp, value, { false, false, false, false } );
+		crg::dot::displayPasses( tmp, value, { true, true, true, true } );
+		crg::dot::displayPasses( tmp, value, { true, true, true, false } );
+		crg::dot::displayPasses( tmp, value, { true, true, false, true } );
+		crg::dot::displayPasses( tmp, value, { true, true, false, false } );
+		crg::dot::displayPasses( tmp, value, { true, false, true, true } );
+		crg::dot::displayPasses( tmp, value, { true, false, true, false } );
+		crg::dot::displayPasses( tmp, value, { true, false, false, true } );
+		crg::dot::displayPasses( tmp, value, { true, false, false, false } );
+		crg::dot::displayPasses( tmp, value, { false, true, true, true } );
+		crg::dot::displayPasses( tmp, value, { false, true, true, false } );
+		crg::dot::displayPasses( tmp, value, { false, true, false, true } );
+		crg::dot::displayPasses( tmp, value, { false, true, false, false } );
+		crg::dot::displayPasses( tmp, value, { false, false, true, true } );
+		crg::dot::displayPasses( tmp, value, { false, false, true, false } );
+		crg::dot::displayPasses( tmp, value, { false, false, false, true } );
+		crg::dot::displayPasses( tmp, value, { false, false, false, false } );
+
+		displayTransitions( testCounts, tmp, value, { withColours, withIds, withGroups } );
 		displayPasses( testCounts, stream, value, { withColours, withIds, withGroups } );
 	}
 
-	void display( TestCounts & testCounts
-		, crg::RunnableGraph & value
+	void display( TestCounts const & testCounts
+		, crg::RunnableGraph const & value
 		, bool withColours
 		, bool withIds
 		, bool withGroups )
 	{
 		display( testCounts, std::cout, value, withColours, withIds, withGroups );
+	}
+
+	class DummyRunnable
+		: public crg::RunnablePass
+	{
+	public:
+		DummyRunnable( crg::FramePass const & framePass
+			, crg::GraphContext & context
+			, crg::RunnableGraph & runGraph
+			, test::TestCounts & testCounts
+			, VkPipelineStageFlags pipelineStageFlags
+			, CheckViews checkViews
+			, uint32_t index
+			, bool enabled
+			, crg::ru::Config config )
+			: crg::RunnablePass{ framePass
+				, context
+				, runGraph
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer, uint32_t i ){ doRecordInto( ctx, i ); } )
+					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } )
+					, crg::RunnablePass::IsEnabledCallback( [enabled](){ return enabled; } ) }
+				, std::move( config ) }
+			, m_testCounts{ testCounts }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+			, m_checkViews{ std::move( checkViews ) }
+		{
+		}
+
+		DummyRunnable( crg::FramePass const & framePass
+			, crg::GraphContext & context
+			, crg::RunnableGraph & runGraph
+			, test::TestCounts & testCounts
+			, VkPipelineStageFlags pipelineStageFlags
+			, CheckViews checkViews
+			, uint32_t index
+			, crg::ru::Config config )
+			: crg::RunnablePass{ framePass
+				, context
+				, runGraph
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer, uint32_t i ){ doRecordInto( ctx, i ); } )
+					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } ) }
+				, std::move( config ) }
+			, m_testCounts{ testCounts }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+			, m_checkViews{ std::move( checkViews ) }
+		{
+		}
+
+		DummyRunnable( crg::FramePass const & framePass
+			, crg::GraphContext & context
+			, crg::RunnableGraph & runGraph
+			, test::TestCounts & testCounts
+			, VkPipelineStageFlags pipelineStageFlags
+			, CheckViews checkViews
+			, crg::ru::Config config )
+			: crg::RunnablePass{ framePass
+				, context
+				, runGraph
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer, uint32_t i ){ doRecordInto( ctx, i ); } ) }
+				, std::move( config ) }
+			, m_testCounts{ testCounts }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+			, m_checkViews{ std::move( checkViews ) }
+		{
+		}
+
+		DummyRunnable( crg::FramePass const & framePass
+			, crg::GraphContext & context
+			, crg::RunnableGraph & runGraph
+			, test::TestCounts & testCounts
+			, VkPipelineStageFlags pipelineStageFlags
+			, crg::ru::Config config )
+			: crg::RunnablePass{ framePass
+				, context
+				, runGraph
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) }
+				, std::move( config ) }
+			, m_testCounts{ testCounts }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+		{
+		}
+
+	private:
+		void doRecordInto( crg::RecordContext & context
+			, uint32_t index )
+		{
+			for ( auto & attach : m_pass.images )
+			{
+				auto view = attach.view( index );
+				context.setLayoutState( crg::resolveView( view, index )
+					, crg::makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+			}
+
+			m_checkViews( m_testCounts
+				, m_pass
+				, m_graph
+				, context
+				, index );
+		}
+
+		test::TestCounts & m_testCounts;
+		VkPipelineStageFlags m_pipelineStageFlags;
+		CheckViews m_checkViews;
+	};
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, uint32_t index
+		, bool enabled
+		, crg::ru::Config config )
+	{
+		return std::make_unique< DummyRunnable >( framePass
+			, context
+			, runGraph
+			, testCounts
+			, pipelineStageFlags
+			, checkViews
+			, index
+			, enabled
+			, std::move( config ) );
+	}
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, uint32_t index
+		, crg::ru::Config config )
+	{
+		return std::make_unique< DummyRunnable >( framePass
+			, context
+			, runGraph
+			, testCounts
+			, pipelineStageFlags
+			, checkViews
+			, index
+			, std::move( config ) );
+	}
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, crg::ru::Config config )
+	{
+		return std::make_unique< DummyRunnable >( framePass
+			, context
+			, runGraph
+			, testCounts
+			, pipelineStageFlags
+			, std::move( checkViews )
+			, std::move( config ) );
+	}
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, crg::ru::Config config )
+	{
+		return std::make_unique< DummyRunnable >( framePass
+			, context
+			, runGraph
+			, testCounts
+			, pipelineStageFlags
+			, std::move( config ) );
+	}
+
+	void checkDummy( [[maybe_unused]] test::TestCounts & testCounts
+		, [[maybe_unused]] crg::FramePass const & framePass
+		, [[maybe_unused]] crg::RunnableGraph const & graph
+		, [[maybe_unused]] crg::RecordContext const & context
+		, [[maybe_unused]] uint32_t index )
+	{
+		// Nothing checked yet...
 	}
 }

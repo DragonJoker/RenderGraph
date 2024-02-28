@@ -14,21 +14,10 @@ namespace crg
 	{
 	}
 
-	FramePassTimerBlock::FramePassTimerBlock( FramePassTimerBlock && rhs )noexcept
-		: m_timer{ rhs.m_timer }
+	FramePassTimerBlock::FramePassTimerBlock( FramePassTimerBlock && block )noexcept
+		: m_timer{ block.m_timer }
 	{
-		rhs.m_timer = nullptr;
-	}
-
-	FramePassTimerBlock & FramePassTimerBlock::operator=( FramePassTimerBlock && rhs )noexcept
-	{
-		if ( this != &rhs )
-		{
-			m_timer = rhs.m_timer;
-			rhs.m_timer = nullptr;
-		}
-
-		return *this;
+		block.m_timer = {};
 	}
 
 	FramePassTimerBlock::~FramePassTimerBlock()noexcept
@@ -93,19 +82,16 @@ namespace crg
 		return FramePassTimerBlock{ *this };
 	}
 
-	void FramePassTimer::notifyPassRender( [[maybe_unused]] uint32_t passIndex
-		, bool subtractGpuFromCpu )noexcept
+	void FramePassTimer::notifyPassRender( [[maybe_unused]] uint32_t passIndex )noexcept
 	{
 		auto & query = m_queries.front();
 		query.started = true;
-		query.subtractGpuFromCpu = subtractGpuFromCpu;
 	}
 
 	void FramePassTimer::stop()noexcept
 	{
 		auto current = Clock::now();
 		m_cpuTime += ( current - m_cpuSaveTime );
-		m_cpuTime -= m_subtractedGpuTime;
 	}
 
 	void FramePassTimer::reset()noexcept
@@ -144,7 +130,6 @@ namespace crg
 
 		auto before = Clock::now();
 		m_gpuTime = 0ns;
-		m_subtractedGpuTime = 0ns;
 
 		if ( auto & query = m_queries.front(); query.started && query.written )
 		{
@@ -161,13 +146,7 @@ namespace crg
 			auto gpuTime = Nanoseconds{ uint64_t( float( values[1] - values[0] ) / period ) };
 			m_gpuTime += gpuTime;
 
-			if ( query.subtractGpuFromCpu )
-			{
-				m_subtractedGpuTime += gpuTime;
-			}
-
 			query.started = false;
-			query.subtractGpuFromCpu = false;
 			query.written = false;
 		}
 

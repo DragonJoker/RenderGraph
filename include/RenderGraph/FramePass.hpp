@@ -94,7 +94,7 @@ namespace crg
 			, VkDeviceSize range );
 		/**
 		*\brief
-		*	Creates a storage buffer attachment.
+		*	Creates an input storage buffer attachment.
 		*/
 		CRG_API void addInputStorageBuffer( Buffer buffer
 			, uint32_t binding
@@ -102,7 +102,7 @@ namespace crg
 			, VkDeviceSize range );
 		/**
 		*\brief
-		*	Creates a storage buffer attachment.
+		*	Creates an output storage buffer attachment.
 		*/
 		CRG_API void addOutputStorageBuffer( Buffer buffer
 			, uint32_t binding
@@ -118,7 +118,7 @@ namespace crg
 			, VkDeviceSize range );
 		/**
 		*\brief
-		*	Creates a storage buffer attachment.
+		*	Creates an input/output storage buffer attachment.
 		*/
 		CRG_API void addInOutStorageBuffer( Buffer buffer
 			, uint32_t binding
@@ -135,13 +135,62 @@ namespace crg
 			, VkDeviceSize range );
 		/**
 		*\brief
-		*	Creates a storage texel buffer view attachment.
+		*	Creates an input  storage texel buffer view attachment.
 		*/
-		CRG_API void addStorageBufferView( Buffer buffer
+		CRG_API void addInputStorageBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates an output storage texel buffer view attachment.
+		*/
+		CRG_API void addOutputStorageBufferView( Buffer buffer
+			, VkBufferView view
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a storage texel buffer attachment that will be cleared a the beginning of the pass.
+		*/
+		CRG_API void addClearableOutputStorageBufferView( Buffer buffer
+			, VkBufferView view
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates an input/output storage texel buffer view attachment.
+		*/
+		CRG_API void addInOutStorageBufferView( Buffer buffer
+			, VkBufferView view
+			, uint32_t binding
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a transfer input buffer attachment.
+		*/
+		CRG_API void addTransferInputBuffer( Buffer buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a transfer output buffer attachment.
+		*/
+		CRG_API void addTransferOutputBuffer( Buffer buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates a transfer input/output buffer attachment.
+		*/
+		CRG_API void addTransferInOutBuffer( Buffer buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range
+			, Attachment::Flag flag = {} );
 		/**@}*/
 		/**
 		*\name

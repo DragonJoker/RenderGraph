@@ -121,6 +121,18 @@ namespace crg
 				result |= VK_ACCESS_SHADER_WRITE_BIT;
 			}
 		}
+		else if ( isTransfer() )
+		{
+			if ( isInput )
+			{
+				result |= VK_ACCESS_TRANSFER_READ_BIT;
+			}
+
+			if ( isOutput )
+			{
+				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+			}
+		}
 		else
 		{
 			result |= VK_ACCESS_SHADER_READ_BIT;
@@ -133,7 +145,11 @@ namespace crg
 	{
 		VkPipelineStageFlags result{ 0u };
 
-		if ( isCompute )
+		if ( isTransfer() )
+		{
+			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+		}
+		else if ( isCompute )
 		{
 			result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		}
@@ -146,21 +162,6 @@ namespace crg
 	}
 
 	//*********************************************************************************************
-
-	ImageAttachment::ImageAttachment( ImageViewId view
-		, ImageAttachment const & origin )
-		: views{ { view } }
-		, loadOp{ origin.loadOp }
-		, storeOp{ origin.storeOp }
-		, stencilLoadOp{ origin.stencilLoadOp }
-		, stencilStoreOp{ origin.stencilStoreOp }
-		, samplerDesc{ origin.samplerDesc }
-		, clearValue{ origin.clearValue }
-		, blendState{ origin.blendState }
-		, wantedLayout{ origin.wantedLayout }
-		, flags{ origin.flags }
-	{
-	}
 
 	ImageAttachment::ImageAttachment( ImageViewId view )
 		: views{ 1u, view }
@@ -224,76 +225,70 @@ namespace crg
 		, bool isInput
 		, bool isOutput )const
 	{
+		auto result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
 		if ( isSampledView() )
 		{
-			return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
-
-		if ( isTransitionView() )
+		else if ( isTransitionView() )
 		{
-			return wantedLayout;
+			result = wantedLayout;
 		}
-
-		if ( isStorageView() )
+		else if ( isStorageView() )
 		{
-			return VK_IMAGE_LAYOUT_GENERAL;
+			result = VK_IMAGE_LAYOUT_GENERAL;
 		}
-
-		if ( isTransferView() )
+		else if ( isTransferView() )
 		{
-			if ( isInput )
-			{
-				return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-			}
-
 			if ( isOutput )
 			{
-				return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+				result = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			}
+			else if ( isInput )
+			{
+				result = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 			}
 		}
-
-		if ( isColourAttach() )
+		else if ( isColourAttach() )
 		{
-			return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			result = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 		}
-
 #if VK_KHR_separate_depth_stencil_layouts
-		if ( separateDepthStencilLayouts )
+		else if ( separateDepthStencilLayouts )
 		{
-			if ( isOutput )
+			if ( isDepthStencilAttach() )
 			{
-				if ( isDepthStencilAttach() )
+				if ( isOutput )
 				{
-					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+					result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 				}
-
-				if ( isDepthAttach() )
+				else if ( isInput )
 				{
-					return VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-				}
-			}
-
-			if ( isInput )
-			{
-				if ( isDepthAttach() )
-				{
-					return VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
-				}
-
-				if ( isDepthStencilAttach() )
-				{
-					return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+					result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 				}
 			}
-
-			if ( isStencilOutputAttach() )
+			else if ( isStencilAttach() )
 			{
-				return VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+				if ( isOutput && isStencilOutputAttach() )
+				{
+					result = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+				}
+				else if ( isInput && isStencilInputAttach() )
+				{
+					result = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+				}
 			}
-
-			if ( isStencilInputAttach() )
+			else if ( isDepthAttach() )
 			{
-				return VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+				if ( isOutput )
+				{
+					result = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+				}
+				else if ( isInput )
+				{
+					result = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+				}
 			}
 		}
 		else
@@ -302,17 +297,16 @@ namespace crg
 			if ( isOutput
 				&& ( isDepthAttach() || isStencilOutputAttach() ) )
 			{
-				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			}
-
-			if ( isInput
+			else if ( isInput
 				&& ( isDepthAttach() || isStencilInputAttach() ) )
 			{
-				return VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+				result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 			}
 		}
 
-		return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		return result;
 	}
 
 	VkAccessFlags ImageAttachment::getAccessMask( bool isInput
@@ -434,11 +428,13 @@ namespace crg
 
 	Attachment::Attachment( ImageViewId view )
 		: imageAttach{ std::move( view ) }
+		, flags{ FlagKind( Attachment::Flag::Image ) }
 	{
 	}
 
 	Attachment::Attachment( Buffer buffer )
 		: bufferAttach{ std::move( buffer ) }
+		, flags{ FlagKind( Attachment::Flag::Buffer ) }
 	{
 	}
 

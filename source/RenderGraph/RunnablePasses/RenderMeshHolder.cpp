@@ -69,7 +69,16 @@ namespace crg
 		, uint32_t index )
 	{
 		m_pipeline.initialise();
-		doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
+
+		if ( !m_renderPass )
+		{
+			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
+		}
+		else if ( m_renderPass != renderPass )
+		{
+			resetRenderPass( renderSize, renderPass, std::move( blendState ), index );
+		}
+
 		doCreatePipeline( index );
 	}
 

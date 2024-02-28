@@ -51,6 +51,7 @@
 	<Type Name="crg::BufferAttachment">
 		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Uniform) != 0">Uniform {buffer}</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Storage) != 0">Storage {buffer}</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transfer) != 0">Transfer {buffer}</DisplayString>
 		<Expand>
 			<Item Name="buffer">buffer</Item>
 			<Item Condition="(flags &amp; crg::BufferAttachment::Flag::View)" Name="view">view</Item>
@@ -63,28 +64,31 @@
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Sampled) != 0">Sampled {views[0]}"</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Storage) != 0">Storage {views[0]}"</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Transfer) != 0">Transfer {views[0]}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Transition) != 0">Transition {views[0]}"</DisplayString>
 		<Expand>
 			<Item Name="views">views</Item>
-			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="loadOp">loadOp</Item>
-			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="storeOp">storeOp</Item>
-			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="stencilLoadOp">stencilLoadOp</Item>
-			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer)" Name="stencilStoreOp">stencilStoreOp</Item>
-			<Item Name="initialLayout">initialLayout</Item>
-			<Item Name="finalLayout">finalLayout</Item>
+			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="loadOp">loadOp</Item>
+			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="storeOp">storeOp</Item>
+			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="stencilLoadOp">stencilLoadOp</Item>
+			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="stencilStoreOp">stencilStoreOp</Item>
+			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="blendState">blendState</Item>
+			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="clearValue">clearValue</Item>
+			<Item Condition="(flags &amp; crg::ImageAttachment::Flag::Sampled)" Name="samplerDesc">samplerDesc</Item>
+			<Item Name="wantedLayout">wantedLayout</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::Attachment">
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {image} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {image} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {image} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {buffer} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {buffer} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {buffer} {*pass}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {imageAttach} {*pass}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {imageAttach} {*pass}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {imageAttach} {*pass}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {bufferAttach} {*pass}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {bufferAttach} {*pass}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {bufferAttach} {*pass}"</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
-			<Item Condition="(flags &amp; crg::Attachment::Flag::Image)" Name="image">image</Item>
-			<Item Condition="(flags &amp; crg::Attachment::Flag::Buffer)" Name="buffer">buffer</Item>
+			<Item Condition="(flags &amp; crg::Attachment::Flag::Image)" Name="image">imageAttach</Item>
+			<Item Condition="(flags &amp; crg::Attachment::Flag::Buffer)" Name="buffer">bufferAttach</Item>
 			<Item Name="pass">*pass</Item>
 		</Expand>
 	</Type>

@@ -95,13 +95,14 @@ namespace crg
 		}
 
 		static bool checkAttaches( RecordContext const & context
-			, std::vector< RenderPassHolder::Entry > const & attaches )
+			, std::vector< RenderPassHolder::Entry > const & attaches
+			, uint32_t passIndex )
 		{
 			auto it = std::find_if( attaches.begin()
 				, attaches.end()
-				, [&context]( RenderPassHolder::Entry const & lookup )
+				, [&context, passIndex]( RenderPassHolder::Entry const & lookup )
 				{
-					auto layout = context.getLayoutState( lookup.view );
+					auto layout = context.getLayoutState( resolveView( lookup.view, passIndex ) );
 					return layout != lookup.input
 						&& layout.layout != VK_IMAGE_LAYOUT_UNDEFINED;
 				} );
@@ -164,19 +165,19 @@ namespace crg
 	{
 		using rpHolder::operator==;
 
-		auto const & data = m_passes[passIndex];
+		auto & data = m_passes[passIndex];
 		auto previousState = context.getPrevPipelineState();
 		auto nextState = context.getNextPipelineState();
 
 		if ( data.renderPass
-			&& rpHolder::checkAttaches( context, m_passes[passIndex].attaches )
+			&& rpHolder::checkAttaches( context, data.attaches, passIndex )
 			&& data.previousState == previousState
 			&& data.nextState == nextState )
 		{
 			return false;
 		}
 
-		m_passes[passIndex].cleanup( m_context );
+		data.cleanup( m_context );
 		doCreateRenderPass( context
 			, runnable
 			, previousState
@@ -251,12 +252,13 @@ namespace crg
 				|| attach.isColourAttach() )
 			{
 				auto view = attach.view( passIndex );
-				auto currentLayout = m_graph.getCurrentLayoutState( context, view );
-				auto nextLayout = m_graph.getNextLayoutState( context, runnable, view );
+				auto resolved = resolveView( view, passIndex );
+				auto currentLayout = m_graph.getCurrentLayoutState( context, resolved );
+				auto nextLayout = m_graph.getNextLayoutState( context, runnable, resolved );
 				auto from = ( !attach.isInput()
 					? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
 					: currentLayout );
-				checkUndefinedInput( "RenderPass", attach, view, from.layout );
+				checkUndefinedInput( "RenderPass", attach, resolved, from.layout );
 
 				if ( attach.isDepthAttach() || attach.isStencilAttach() )
 				{

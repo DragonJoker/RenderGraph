@@ -58,21 +58,6 @@ namespace crg
 		}
 	}
 
-	void convert( SemaphoreWaitArray const & toWait
-		, std::vector< VkSemaphore > & semaphores )
-	{
-		for ( auto & wait : toWait )
-		{
-			if ( wait.semaphore
-				&& semaphores.end() == std::find( semaphores.begin()
-					, semaphores.end()
-					, wait.semaphore ) )
-			{
-				semaphores.push_back( wait.semaphore );
-			}
-		}
-	}
-
 	//*********************************************************************************************
 
 	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
@@ -165,16 +150,6 @@ namespace crg
 	{
 		rhs.m_context = {};
 		rhs.m_fence = {};
-	}
-
-	Fence & Fence::operator=( Fence && rhs )noexcept
-	{
-		m_context = rhs.m_context;
-		m_fence = rhs.m_fence;
-		m_fenceWaited = rhs.m_fenceWaited;
-		rhs.m_context = {};
-		rhs.m_fence = {};
-		return *this;
 	}
 
 	Fence::~Fence()noexcept
@@ -313,14 +288,11 @@ namespace crg
 
 		for ( auto & attach : m_pass.buffers )
 		{
-			if ( attach.isStorageBuffer() )
+			for ( uint32_t i = 0u; i < attach.getBufferCount(); ++i )
 			{
-				for ( uint32_t i = 0u; i < attach.getBufferCount(); ++i )
-				{
-					m_bufferAccesses.insert_or_assign( attach.buffer( i )
-						, AccessState{ attach.getAccessMask()
-							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
-				}
+				m_bufferAccesses.insert_or_assign( attach.buffer( i )
+					, AccessState{ attach.getAccessMask()
+						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
 			}
 		}
 	}
@@ -340,17 +312,6 @@ namespace crg
 		pass.initialised = true;
 	}
 
-	uint32_t RunnablePass::recordCurrent( RecordContext & context )
-	{
-		auto index = m_callbacks.getPassIndex();
-		assert( m_passes.size() > index );
-		auto & pass = m_passes[index];
-		recordOne( pass.commandBuffer
-			, index
-			, context );
-		return isEnabled() ? index : InvalidIndex;
-	}
-
 	uint32_t RunnablePass::recordCurrentInto( RecordContext & context
 		, VkCommandBuffer commandBuffer )
 	{
@@ -366,33 +327,16 @@ namespace crg
 		assert( m_ruConfig.resettable );
 		auto index = m_callbacks.getPassIndex();
 
-		if ( auto & pass = m_passes[index]; pass.commandBuffer.commandBuffer )
+		if ( auto it = m_passContexts.find( index );
+			it != m_passContexts.end() )
 		{
-			auto it = m_passContexts.find( index );
-
-			if ( it != m_passContexts.end() )
-			{
-				auto context = it->second;
-				recordOne( pass.commandBuffer
-					, index
-					, context );
-			}
+			auto context = it->second;
+			recordOne( m_passes[index].commandBuffer
+				, index
+				, context );
 		}
 
 		return isEnabled() ? index : InvalidIndex;
-	}
-
-	void RunnablePass::recordAll( RecordContext & context )
-	{
-		uint32_t index{};
-
-		for ( auto & pass : m_passes )
-		{
-			recordOne( pass.commandBuffer
-				, index
-				, context );
-			++index;
-		}
 	}
 
 	void RunnablePass::recordOne( CommandBuffer & enabled
@@ -502,7 +446,7 @@ namespace crg
 			for ( auto & attach : m_pass.buffers )
 			{
 				if ( !attach.isNoTransition()
-					&& attach.isStorageBuffer() )
+					&& ( attach.isStorageBuffer() || attach.isTransferBuffer() ) )
 				{
 					auto & range = attach.getBufferRange();
 					auto buffer = attach.buffer( index );
@@ -558,30 +502,18 @@ namespace crg
 
 	void RunnablePass::resetCommandBuffer( uint32_t passIndex )
 	{
-		if ( !m_context.device )
-		{
-			return;
-		}
-
-		assert( m_passes.size() > passIndex );
-		auto & pass = m_passes[passIndex];
-
-		if ( pass.commandBuffer.commandBuffer )
-		{
-			pass.fence.wait( 0xFFFFFFFFFFFFFFFFULL );
-			pass.commandBuffer.recorded = false;
-			m_context.vkResetCommandBuffer( pass.commandBuffer.commandBuffer
-				, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
-		}
-	}
-
-	void RunnablePass::setToReset( uint32_t passIndex )
-	{
-		if ( m_ruConfig.resettable )
+		if ( m_context.device )
 		{
 			assert( m_passes.size() > passIndex );
 			auto & pass = m_passes[passIndex];
-			pass.toReset = true;
+
+			if ( pass.commandBuffer.commandBuffer )
+			{
+				pass.fence.wait( 0xFFFFFFFFFFFFFFFFULL );
+				pass.commandBuffer.recorded = false;
+				m_context.vkResetCommandBuffer( pass.commandBuffer.commandBuffer
+					, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
+			}
 		}
 	}
 

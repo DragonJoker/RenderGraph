@@ -382,6 +382,7 @@ namespace crg
 			, VkPhysicalDeviceProperties properties
 			, bool separateDepthStencilLayouts
 			, PFN_vkGetDeviceProcAddr vkGetDeviceProcAddr );
+		CRG_API ~GraphContext()noexcept;
 
 		VkDevice device{};
 		VkPipelineCache cache{};
@@ -492,7 +493,6 @@ namespace crg
 		DECL_vkFunction( DebugMarkerSetObjectNameEXT );
 		DECL_vkFunction( CmdDebugMarkerBeginEXT );
 		DECL_vkFunction( CmdDebugMarkerEndEXT );
-		DECL_vkFunction( CmdDebugMarkerInsertEXT );
 #	endif
 #undef DECL_vkFunction
 
@@ -510,14 +510,6 @@ namespace crg
 		*	Ends the command label.
 		*/
 		CRG_API void vkCmdEndDebugBlock( VkCommandBuffer commandBuffer )const;
-		/**
-		*\brief
-		*	Inserts a command label.
-		*\param[in] labelInfo
-		*	The parameters of the label to begin.
-		*/
-		CRG_API void vkCmdInsertDebugBlock( VkCommandBuffer commandBuffer
-			, DebugBlockInfo const & labelInfo )const;
 #endif
 		CRG_API std::array< float, 4u > getNextRainbowColour()const;
 		CRG_API uint32_t deduceMemoryType( uint32_t typeBits
@@ -595,14 +587,6 @@ namespace crg
 		*	Ends the command label.
 		*/
 		void doEndDebugUtilsLabel( VkCommandBuffer commandBuffer )const;
-		/**
-		*\brief
-		*	Inserts a command label.
-		*\param[in] labelInfo
-		*	The parameters of the label to begin.
-		*/
-		void doInsertDebugUtilsLabel( VkCommandBuffer commandBuffer
-			, VkDebugUtilsLabelEXT const & labelInfo )const;
 #endif
 #if VK_EXT_debug_marker
 		/**
@@ -618,14 +602,6 @@ namespace crg
 		*	Ends the command label.
 		*/
 		void doDebugMarkerEnd( VkCommandBuffer commandBuffer )const;
-		/**
-		*\brief
-		*	Inserts a command label.
-		*\param[in] labelInfo
-		*	The parameters of the label to begin.
-		*/
-		void doDebugMarkerInsert( VkCommandBuffer commandBuffer
-			, VkDebugMarkerMarkerInfoEXT const & labelInfo )const;
 #endif
 
 		CRG_API void doRegisterObject( uint64_t object
@@ -636,7 +612,7 @@ namespace crg
 			, uint32_t objectType
 			, std::string const & name );
 		CRG_API void doUnregisterObject( uint64_t object );
-		CRG_API void doReportRegisteredObjects();
+		CRG_API void doReportRegisteredObjects()noexcept;
 
 #	define crgRegisterObject( Cont, TypeName, Object )\
 		crg::GraphContext::stRegisterObject( Cont, TypeName, Object )

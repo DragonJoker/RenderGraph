@@ -116,7 +116,6 @@ namespace crg
 				context.memoryBarrier( commandBuffer
 					, imageId
 					, mipSubRange
-					, VK_IMAGE_LAYOUT_UNDEFINED
 					, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 						, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
 						, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) } );

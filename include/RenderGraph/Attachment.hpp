@@ -79,8 +79,6 @@ namespace crg
 			DepthStencil = Depth | Stencil,
 			StencilInOut = StencilInput | StencilOutput,
 		};
-		CRG_API ImageAttachment( ImageViewId view
-			, ImageAttachment const & origin );
 		/**
 		*\name
 		*	Getters.
@@ -223,7 +221,8 @@ namespace crg
 			None = 0x00,
 			Uniform = 0x01 << 0,
 			Storage = 0x01 << 1,
-			View = 0x01 << 2,
+			Transfer = 0x01 << 2,
+			View = 0x01 << 3,
 			UniformView = Uniform | View,
 			StorageView = Storage | View,
 		};
@@ -259,6 +258,11 @@ namespace crg
 		bool isStorage()const
 		{
 			return hasFlag( Flag::Storage );
+		}
+
+		bool isTransfer()const
+		{
+			return hasFlag( Flag::Transfer );
 		}
 
 		bool isView()const
@@ -388,6 +392,21 @@ namespace crg
 		bool isStorageBuffer()const
 		{
 			return isBuffer() && bufferAttach.isStorage();
+		}
+
+		bool isTransferBuffer()const
+		{
+			return isBuffer() && bufferAttach.isTransfer();
+		}
+
+		bool isTransferInputBuffer()const
+		{
+			return isInput() && isTransferBuffer();
+		}
+
+		bool isTransferOutputBuffer()const
+		{
+			return isOutput() && isTransferBuffer();
 		}
 
 		bool isClearableBuffer()const

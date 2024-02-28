@@ -73,22 +73,14 @@ namespace crg
 			m_pipeline.initialise();
 			m_vertexBuffer = &m_graph.createQuadTriVertexBuffer( m_useTexCoord
 				, m_config.texcoordConfig );
-			doPreparePipelineStates( renderSize, renderPass, blendState );
+			doPreparePipelineStates( renderSize, renderPass, std::move( blendState ) );
 		}
 		else if ( m_renderPass != renderPass )
 		{
-			m_pipeline.resetPipeline( m_pipeline.getProgram( index ), index );
-			doPreparePipelineStates( renderSize, renderPass, blendState );
-		}
-
-		if ( m_renderPass && m_renderPass != renderPass )
-		{
 			resetRenderPass( renderSize, renderPass, std::move( blendState ), index );
 		}
-		else
-		{
-			doCreatePipeline( index );
-		}
+
+		doCreatePipeline( index );
 	}
 
 	void RenderQuadHolder::resetRenderPass( VkExtent2D const & renderSize

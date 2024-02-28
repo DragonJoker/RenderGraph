@@ -303,18 +303,10 @@ namespace crg
 
 		for ( auto & attach : m_pass.images )
 		{
-			if ( attach.isSampledView() )
+			if ( attach.isSampledView() || attach.isStorageView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
-					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, 1u
-					, shaderStage
-					, nullptr } );
-			}
-			else if ( attach.isStorageView() )
-			{
-				m_descriptorBindings.push_back( { attach.binding
-					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
+					, attach.getDescriptorType()
 					, 1u
 					, shaderStage
 					, nullptr } );
