@@ -110,7 +110,7 @@ namespace crg
 			, nullptr
 			, 0u
 			, program.front()
-			, m_pipeline.getPipelineLayout()
+			, getPipelineLayout()
 			, VkPipeline{}
 			, 0u };
 		m_pipeline.createPipeline( index, createInfo );

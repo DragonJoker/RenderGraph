@@ -539,7 +539,6 @@ namespace crg
 	{
 		if ( !m_resources )
 		{
-			assert( false );
 			Logger::logError( "No resources available." );
 			CRG_Exception( "No resources available." );
 		}

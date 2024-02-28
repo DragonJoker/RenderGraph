@@ -145,13 +145,14 @@ namespace crg::dot
 			{
 				lock_type lock{ m_mutex };
 				const_iterator cb_iter( m_list.find( &io_s ) );
+				bsb * result{};
 
-				if ( cb_iter == m_list.end() )
+				if ( cb_iter != m_list.end() )
 				{
-					return nullptr;
+					result = cb_iter->second;
 				}
 
-				return cb_iter->second;
+				return result;
 			}
 
 			bool erase( std::ios_base & io_s )
@@ -224,20 +225,6 @@ namespace crg::dot
 				if ( ev == std::ios_base::erase_event )
 				{
 					BasicIndentBufferManager< CharType >::instance()->erase( ios );
-				}
-				else if ( ev == std::ios_base::copyfmt_event )
-				{
-#if __GNUC__ && ( __GNUC__ < 3 || (__GNUC__ == 3 && __GNUC_MINOR__ < 3 ) )
-#	error Your compiler is too buggy; it is known to miscompile.
-#	error Known good compilers: 3.3
-#else
-
-					if ( auto & o_s = dynamic_cast< std::basic_ostream< CharType > & >( ios ) )
-					{
-						o_s << Indent{ getIndent( ios ) };
-					}
-
-#endif
 				}
 			}
 		}

@@ -30,7 +30,7 @@ namespace crg
 	public:
 		CRG_API explicit FramePassTimerBlock( FramePassTimer & timer );
 		CRG_API FramePassTimerBlock( FramePassTimerBlock && rhs )noexcept;
-		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept;
+		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept = delete;
 		CRG_API FramePassTimerBlock( FramePassTimerBlock const & ) = delete;
 		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock const & ) = delete;
 		CRG_API ~FramePassTimerBlock()noexcept;
@@ -92,11 +92,8 @@ namespace crg
 		*	Notifies the given pass render.
 		*\param[in] passIndex
 		*	The pass index.
-		*\param[in] subtractGpuFromCpu
-		*	Tells if the GPU time should be subtracted from CPU time (in case of fence wait).
 		*/
-		CRG_API void notifyPassRender( uint32_t passIndex = 0u
-			, bool subtractGpuFromCpu = false )noexcept;
+		CRG_API void notifyPassRender( uint32_t passIndex = 0u )noexcept;
 		/**
 		*\brief
 		*	Reset the timer's times.
@@ -163,7 +160,6 @@ namespace crg
 		Clock::time_point m_cpuSaveTime{};
 		Nanoseconds m_cpuTime{};
 		Nanoseconds m_gpuTime{};
-		Nanoseconds m_subtractedGpuTime{};
 		VkQueryPool m_timerQueries{};
 		bool m_ownPool{};
 		struct Query
@@ -171,7 +167,6 @@ namespace crg
 			uint32_t offset{};
 			bool written{};
 			bool started{};
-			bool subtractGpuFromCpu{};
 		};
 		std::array< Query, 2u > m_queries;
 	};

@@ -137,21 +137,10 @@ namespace crg
 		m_outputs.emplace( view.id );
 	}
 
-	ResourceHandler & FramePassGroup::getHandler()const
-	{
-		return m_graph.getHandler();
-	}
-
 	LayoutState FramePassGroup::getFinalLayoutState( ImageViewId view
 		, uint32_t passIndex )const
 	{
 		return m_graph.getFinalLayoutState( view, passIndex );
-	}
-
-	AccessState const & FramePassGroup::getFinalAccessState( Buffer const & buffer
-		, uint32_t passIndex )const
-	{
-		return m_graph.getFinalAccessState( buffer, passIndex );
 	}
 
 	ImageId FramePassGroup::createImage( ImageData const & img )const
@@ -184,22 +173,6 @@ namespace crg
 			, outputLayout );
 	}
 
-	LayoutState FramePassGroup::getInputLayoutState( ImageId image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & range )const
-	{
-		return m_graph.getInputLayoutState( image
-			, viewType
-			, range );
-	}
-
-	LayoutState FramePassGroup::getInputLayoutState( ImageViewId view )const
-	{
-		return getInputLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
-	}
-
 	void FramePassGroup::addOutput( ImageId image
 		, VkImageViewType viewType
 		, VkImageSubresourceRange const & range
@@ -218,22 +191,6 @@ namespace crg
 			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, outputLayout );
-	}
-
-	LayoutState FramePassGroup::getOutputLayoutState( ImageId image
-		, VkImageViewType viewType
-		, VkImageSubresourceRange const & range )const
-	{
-		return m_graph.getOutputLayoutState( image
-			, viewType
-			, range );
-	}
-
-	LayoutState FramePassGroup::getOutputLayoutState( ImageViewId view )const
-	{
-		return getOutputLayoutState( view.data->image
-			, view.data->info.viewType
-			, view.data->info.subresourceRange );
 	}
 
 	std::string FramePassGroup::getFullName()const

@@ -36,7 +36,6 @@ namespace crg
 
 		CRG_API ImageId createImageId( ImageData const & img );
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
-		CRG_API ImageId findImageId( uint32_t id )const;
 
 		CRG_API CreatedT< VkImage > createImage( GraphContext & context
 			, ImageId imageId );
@@ -58,9 +57,6 @@ namespace crg
 		CRG_API void destroyVertexBuffer( GraphContext & context
 			, VertexBuffer const * buffer );
 
-		CRG_API VkImage getImage( ImageId const & image )const;
-		CRG_API VkImageView getImageView( ImageViewId const & imageView )const;
-
 	private:
 		mutable std::mutex m_imagesMutex;
 		ImageIdDataOwnerCont m_imageIds;
@@ -79,7 +75,7 @@ namespace crg
 	public:
 		CRG_API ContextResourcesCache( ContextResourcesCache const & ) = delete;
 		CRG_API ContextResourcesCache & operator=( ContextResourcesCache const & ) = delete;
-		CRG_API ContextResourcesCache( ContextResourcesCache && )noexcept = default;
+		CRG_API ContextResourcesCache( ContextResourcesCache && )noexcept = delete;
 		CRG_API ContextResourcesCache & operator=( ContextResourcesCache && )noexcept = delete;
 
 		CRG_API ContextResourcesCache( ResourceHandler & handler

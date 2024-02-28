@@ -136,11 +136,15 @@ namespace crg
 		DECL_vkFunction( DebugMarkerSetObjectNameEXT );
 		DECL_vkFunction( CmdDebugMarkerBeginEXT );
 		DECL_vkFunction( CmdDebugMarkerEndEXT );
-		DECL_vkFunction( CmdDebugMarkerInsertEXT );
 #endif
 
 #undef DECL_vkFunction
 #pragma warning( pop )
+	}
+
+	GraphContext::~GraphContext()noexcept
+	{
+		doReportRegisteredObjects();
 	}
 
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
@@ -177,31 +181,6 @@ namespace crg
 #endif
 #if VK_EXT_debug_marker
 		doDebugMarkerEnd( commandBuffer );
-#endif
-	}
-
-	void GraphContext::vkCmdInsertDebugBlock( VkCommandBuffer commandBuffer
-		, DebugBlockInfo const & labelInfo )const
-	{
-#if VK_EXT_debug_utils
-		doInsertDebugUtilsLabel( commandBuffer
-			, { VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT
-				, nullptr
-				, labelInfo.markerName.c_str()
-				, { labelInfo.colour[0]
-					, labelInfo.colour[1]
-					, labelInfo.colour[2]
-					, labelInfo.colour[3] } } );
-#endif
-#if VK_EXT_debug_marker
-		doDebugMarkerInsert( commandBuffer
-			, { VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT
-				, nullptr
-				, labelInfo.markerName.c_str()
-				, { labelInfo.colour[0]
-					, labelInfo.colour[1]
-					, labelInfo.colour[2]
-					, labelInfo.colour[3] } } );
 #endif
 	}
 
@@ -290,15 +269,6 @@ namespace crg
 		}
 	}
 
-	void GraphContext::doInsertDebugUtilsLabel( VkCommandBuffer commandBuffer
-		, VkDebugUtilsLabelEXT const & labelInfo )const
-	{
-		if ( vkCmdBeginDebugUtilsLabelEXT )
-		{
-			vkCmdBeginDebugUtilsLabelEXT( commandBuffer, &labelInfo );
-		}
-	}
-
 #endif
 #if VK_EXT_debug_marker
 
@@ -316,15 +286,6 @@ namespace crg
 		if ( vkCmdDebugMarkerEndEXT )
 		{
 			vkCmdDebugMarkerEndEXT( commandBuffer );
-		}
-	}
-
-	void GraphContext::doDebugMarkerInsert( VkCommandBuffer commandBuffer
-		, VkDebugMarkerMarkerInfoEXT const & labelInfo )const
-	{
-		if ( vkCmdDebugMarkerInsertEXT )
-		{
-			vkCmdDebugMarkerInsertEXT( commandBuffer, &labelInfo );
 		}
 	}
 
@@ -417,7 +378,7 @@ namespace crg
 		}
 	}
 
-	void GraphContext::doReportRegisteredObjects()
+	void GraphContext::doReportRegisteredObjects()noexcept
 	{
 		lock_type lock{ m_mutex };
 

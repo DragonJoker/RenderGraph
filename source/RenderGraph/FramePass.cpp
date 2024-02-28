@@ -279,7 +279,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "UB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/UB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -295,7 +295,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "ISB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ISB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -311,7 +311,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "OSB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
 			, binding
@@ -327,7 +327,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "OSB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSB";
 		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
 				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
 			, *this
@@ -344,7 +344,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "IOSB";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOSB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
 			, *this
 			, binding
@@ -361,7 +361,7 @@ namespace crg
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "UBV";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/UBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -373,13 +373,13 @@ namespace crg
 			, range } );
 	}
 
-	void FramePass::addStorageBufferView( Buffer buffer
+	void FramePass::addInputStorageBufferView( Buffer buffer
 		, VkBufferView view
 		, uint32_t binding
 		, VkDeviceSize offset
 		, VkDeviceSize range )
 	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "SBV";
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ISBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
 			, binding
@@ -387,6 +387,107 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
 			, std::move( buffer )
 			, view
+			, offset
+			, range } );
+	}
+
+	void FramePass::addOutputStorageBufferView( Buffer buffer
+		, VkBufferView view
+		, uint32_t binding
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSBV";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, binding
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
+			, std::move( buffer )
+			, view
+			, offset
+			, range } );
+	}
+
+	void FramePass::addClearableOutputStorageBufferView( Buffer buffer
+		, VkBufferView view
+		, uint32_t binding
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSBV";
+		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
+				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
+			, *this
+			, binding
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
+			, std::move( buffer )
+			, view
+			, offset
+			, range } );
+	}
+
+	void FramePass::addInOutStorageBufferView( Buffer buffer
+		, VkBufferView view
+		, uint32_t binding
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOSBV";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
+			, *this
+			, binding
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
+			, std::move( buffer )
+			, view
+			, offset
+			, range } );
+	}
+
+	void FramePass::addTransferInputBuffer( Buffer buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ITB";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, InvalidBindingId
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+			, std::move( buffer )
+			, offset
+			, range } );
+	}
+
+	void FramePass::addTransferOutputBuffer( Buffer buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OTB";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
+			, *this
+			, InvalidBindingId
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+			, std::move( buffer )
+			, offset
+			, range } );
+	}
+
+	void FramePass::addTransferInOutBuffer( Buffer buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range
+		, Attachment::Flag flag )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOTB";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
+			, *this
+			, InvalidBindingId
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+			, std::move( buffer )
 			, offset
 			, range } );
 	}
@@ -650,7 +751,7 @@ namespace crg
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/It";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
 			, *this
-			, uint32_t{}
+			, InvalidBindingId
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
@@ -669,7 +770,7 @@ namespace crg
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Ot";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
 			, *this
-			, uint32_t{}
+			, InvalidBindingId
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
@@ -689,7 +790,7 @@ namespace crg
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IOt";
 		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
 			, *this
-			, uint32_t{}
+			, InvalidBindingId
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )

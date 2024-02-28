@@ -4,10 +4,47 @@
 #include <RenderGraph/FramePass.hpp>
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/ImageData.hpp>
+#include <RenderGraph/Log.hpp>
 #include <RenderGraph/ResourceHandler.hpp>
 
 namespace
 {
+	void testLog( test::TestCounts & testCounts )
+	{
+		testBegin( "testLog" )
+		auto callback = []( std::string const & msg, bool newLine )
+		{
+			std::cout << msg << "Callback";
+
+			if ( newLine )
+			{
+				std::cout << "\n";
+			}
+			else
+			{
+				std::cout << " ";
+			}
+		};
+
+		crg::Logger::setTraceCallback( callback );
+		crg::Logger::setDebugCallback( callback );
+		crg::Logger::setInfoCallback( callback );
+		crg::Logger::setWarningCallback( callback );
+		crg::Logger::setErrorCallback( callback );
+
+		crg::Logger::logTrace( "traceCoinNoNL ", false );
+		crg::Logger::logTrace( "traceCoinNL" );
+		crg::Logger::logDebug( "debugCoinNoNL ", false );
+		crg::Logger::logDebug( "debugCoinNL" );
+		crg::Logger::logInfo( "infoCoinNoNL ", false );
+		crg::Logger::logInfo( "infoCoinNL" );
+		crg::Logger::logWarning( "warningCoinNoNL ", false );
+		crg::Logger::logWarning( "warningCoinNL" );
+		crg::Logger::logError( "errorCoinNoNL ", false );
+		crg::Logger::logError( "errorCoinNL" );
+		testEnd()
+	}
+
 	void testRenderPass_1C( test::TestCounts & testCounts )
 	{
 		testBegin( "testRenderPass_1C" )
@@ -424,6 +461,7 @@ namespace
 int main( int argc, char ** argv )
 {
 	testSuiteBegin( "TestRenderPass" )
+	testLog( testCounts );
 	testRenderPass_1C( testCounts );
 	testRenderPass_2C( testCounts );
 	testRenderPass_0C_1I( testCounts );

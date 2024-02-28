@@ -1,6 +1,7 @@
 #pragma once
 
 #include <RenderGraph/FrameGraphPrerequisites.hpp>
+#include <RenderGraph/RunnablePass.hpp>
 
 #include "BaseTest.hpp"
 
@@ -25,14 +26,14 @@ namespace test
 		, uint32_t layerCount = 1u );
 	crg::GraphContext & getDummyContext();
 
-	void display( TestCounts & testCounts
+	void display( TestCounts const & testCounts
 		, std::ostream & stream
-		, crg::RunnableGraph & value
+		, crg::RunnableGraph const & value
 		, bool withColours = {}
 		, bool withIds = {}
 		, bool withGroups = {} );
-	void display( TestCounts & testCounts
-		, crg::RunnableGraph & value
+	void display( TestCounts const & testCounts
+		, crg::RunnableGraph const & value
 		, bool withColours = {}
 		, bool withIds = {}
 		, bool withGroups = {} );
@@ -42,4 +43,46 @@ namespace test
 	{
 		return { 0u, nullptr };
 	}
+
+	using CheckViews = std::function< void( test::TestCounts &
+		, crg::FramePass const &
+		, crg::RunnableGraph const &
+		, crg::RecordContext &
+		, uint32_t ) >;
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, uint32_t index
+		, bool enabled
+		, crg::ru::Config config = {} );
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, uint32_t index
+		, crg::ru::Config config = {} );
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, crg::ru::Config config = {} );
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, VkPipelineStageFlags pipelineStageFlags
+		, crg::ru::Config config = {} );
+	void checkDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::RunnableGraph const & graph
+		, crg::RecordContext const & context
+		, uint32_t index );
 }

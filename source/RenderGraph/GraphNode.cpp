@@ -23,19 +23,6 @@ namespace crg
 		rhs.id = 0u;
 	}
 
-	GraphNode & GraphNode::operator=( GraphNode && rhs )noexcept
-	{
-		kind = rhs.kind;
-		id = rhs.id;
-		name = std::move( rhs.name );
-		next = std::move( rhs.next );
-
-		rhs.kind = Kind::Undefined;
-		rhs.id = 0u;
-
-		return *this;
-	}
-
 	GraphNode::GraphNode( Kind pkind
 		, uint32_t pid
 		, std::string pname

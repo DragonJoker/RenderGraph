@@ -19,17 +19,6 @@ namespace crg
 {
 	namespace fgph
 	{
-		static bool dependsOn( FramePass const & pass
-			, FramePass const * lookup )
-		{
-			return pass.passDepends.end() != std::find_if( pass.passDepends.begin()
-				, pass.passDepends.end()
-				, [lookup]( FramePass const * depLookup )
-				{
-					return depLookup == lookup;
-				} );
-		}
-
 		static FramePassArray sortPasses( FramePassArray const & passes )
 		{
 			FramePassArray sortedPasses;
@@ -79,7 +68,7 @@ namespace crg
 						, sortedPasses.end()
 						, [&pass]( FramePass const * lookup )
 						{
-							return dependsOn( *lookup, pass );
+							return lookup->dependsOn( *pass );
 						} );
 
 					if ( it != sortedPasses.end() )
@@ -93,7 +82,7 @@ namespace crg
 							, sortedPasses.rend()
 							, [&pass]( FramePass const * lookup )
 							{
-								return dependsOn( *pass, lookup );
+								return pass->dependsOn( *lookup );
 							} );
 
 						if ( rit != sortedPasses.rend() )
@@ -623,11 +612,6 @@ namespace crg
 			return { VK_IMAGE_LAYOUT_UNDEFINED
 				, getAccessMask( VK_IMAGE_LAYOUT_UNDEFINED )
 				, getStageMask( VK_IMAGE_LAYOUT_UNDEFINED ) };
-		}
-
-		if ( states.size() == 1u )
-		{
-			return states.begin()->second;
 		}
 
 		return states.begin()->second;

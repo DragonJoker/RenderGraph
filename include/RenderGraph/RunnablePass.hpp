@@ -52,8 +52,8 @@ namespace crg
 
 		Fence( Fence const & ) = delete;
 		Fence & operator=( Fence const & ) = delete;
+		CRG_API Fence & operator=( Fence && rhs )noexcept = delete;
 		CRG_API Fence( Fence && rhs )noexcept;
-		CRG_API Fence & operator=( Fence && rhs )noexcept;
 		CRG_API ~Fence()noexcept;
 
 		CRG_API void reset();
@@ -220,20 +220,6 @@ namespace crg
 		CRG_API void initialise( uint32_t passIndex );
 		/**
 		*\brief
-		*	Records the pass commands into its command buffer.
-		*\param[in,out] context
-		*	Stores the states.
-		*/
-		CRG_API void recordAll( RecordContext & context );
-		/**
-		*\brief
-		*	Records the pass commands into its command buffer.
-		*\param[in,out] context
-		*	Stores the states.
-		*/
-		CRG_API uint32_t recordCurrent( RecordContext & context );
-		/**
-		*\brief
 		*	Records the pass commands into the given command buffer.
 		*\param[in,out] context
 		*	Stores the states.
@@ -252,7 +238,6 @@ namespace crg
 		*	Resets the command buffer to initial state.
 		*/
 		CRG_API void resetCommandBuffer( uint32_t passIndex );
-		CRG_API void setToReset( uint32_t passIndex );
 		CRG_API void notifyPassRender();
 
 		LayoutState getLayoutState( crg::ImageViewId view )const
@@ -355,7 +340,6 @@ namespace crg
 			LayoutTransitionMap layoutTransitions;
 			AccessTransitionMap accessTransitions;
 			bool initialised{};
-			bool toReset{};
 		};
 
 	protected:

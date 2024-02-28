@@ -28,9 +28,10 @@ namespace crg
 
 		CRG_API GraphNode( GraphNode const & ) = delete;
 		CRG_API GraphNode & operator=( GraphNode const & ) = delete;
-		CRG_API GraphNode( GraphNode && rhs )noexcept;
-		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept;
+		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept = delete;
 		CRG_API virtual ~GraphNode()noexcept = default;
+
+		CRG_API GraphNode( GraphNode && rhs )noexcept;
 
 		CRG_API void addAttaches( ConstGraphAdjacentNode const prev
 			, AttachmentTransitions inputAttaches );

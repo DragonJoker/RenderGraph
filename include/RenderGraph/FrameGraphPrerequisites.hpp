@@ -434,8 +434,6 @@ namespace crg
 	CRG_API void convert( SemaphoreWaitArray const & toWait
 		, std::vector< VkSemaphore > & semaphores
 		, std::vector< VkPipelineStageFlags > & dstStageMasks );
-	CRG_API void convert( SemaphoreWaitArray const & toWait
-		, std::vector< VkSemaphore > & semaphores );
 	CRG_API VkQueryPool createQueryPool( GraphContext & context
 		, std::string const & name
 		, uint32_t passesCount );

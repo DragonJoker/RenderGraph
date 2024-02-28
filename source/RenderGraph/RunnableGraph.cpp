@@ -392,13 +392,6 @@ namespace crg
 			, m_graph.getFinalStates().getCurrPipelineState().pipelineStage } };
 	}
 
-	ImageViewId RunnableGraph::createView( ImageViewData const & view )
-	{
-		auto result = m_graph.createView( view );
-		createImageView( result );
-		return result;
-	}
-
 	VkImage RunnableGraph::createImage( ImageId const & image )
 	{
 		return m_resources.createImage( image );
@@ -471,7 +464,7 @@ namespace crg
 		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
 		{
 			// Next layout undefined means that there is no pass after this one in the graph.
-			result = m_graph.getOutputLayoutState( view );
+			result = getOutputLayoutState( view );
 		}
 
 		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
