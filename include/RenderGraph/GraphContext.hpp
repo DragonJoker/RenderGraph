@@ -612,7 +612,6 @@ namespace crg
 			, uint32_t objectType
 			, std::string const & name );
 		CRG_API void doUnregisterObject( uint64_t object );
-		CRG_API void doReportRegisteredObjects()noexcept;
 
 #	define crgRegisterObject( Cont, TypeName, Object )\
 		crg::GraphContext::stRegisterObject( Cont, TypeName, Object )
@@ -621,17 +620,10 @@ namespace crg
 
 #	define crgRegisterObjectName( Cont, TypeName, Object )\
 		crg::GraphContext::stRegisterObjectName( Cont, TypeName, Object )
-
-#	ifndef NDEBUG
-#		define crgReportRegisteredObjects()\
-		doReportRegisteredObjects()
-#	else
-#		define reportRegisteredObjects()
-#	endif
 #else
-#	define registerObject( Dev, TypeName, Object )
-#	define unregisterObject( Dev, Object )
-#	define reportRegisteredObjects()
+#	define crgRegisterObject( Cont, TypeName, Object )
+#	define crgUnregisterObject( Cont, Object )
+#	define crgRegisterObjectName( Cont, TypeName, Object )
 #endif
 	};
 
