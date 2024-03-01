@@ -204,7 +204,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			)
 		else ()
 			target_link_libraries( ${PROJECT_NAME}
-				PUBLIC
+				PRIVATE
 					dl
 			)
 		endif ()
@@ -222,6 +222,8 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	target_compile_options( ${PROJECT_NAME}
 		PUBLIC
 			$<$<CXX_COMPILER_ID:MSVC>:/Zm300>
+			$<$<CXX_COMPILER_ID:AppleClang>:-Wno-poison-system-directories>
+			$<$<CXX_COMPILER_ID:Clang>:-Wno-poison-system-directories>
 	)
 	target_compile_definitions( ${PROJECT_NAME}
 		PUBLIC
