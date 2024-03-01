@@ -103,58 +103,39 @@ namespace crg
 
 	ResourceHandler::~ResourceHandler()noexcept
 	{
-		try
-		{
-			{
-				lock_type lock( m_viewsMutex );
-				for ( auto const & [data, _] : m_imageViews )
-				{
-					std::stringstream stream;
-					stream << "Leaked [VkImageView](" << data.data->name << ")";
-					Logger::logError( stream.str() );
-				}
-			}
-			{
-				lock_type lock( m_imagesMutex );
-				for ( auto const & [data, _] : m_images )
-				{
-					std::stringstream stream;
-					stream << "Leaked [VkImage](" << data.data->name << ")";
-					Logger::logError( stream.str() );
-				}
-			}
-			{
-				lock_type lock( m_buffersMutex );
-				for ( auto const & vertexBuffer : m_vertexBuffers )
-				{
-					if ( vertexBuffer->memory )
-					{
-						std::stringstream stream;
-						stream << "Leaked [VkDeviceMemory](" << vertexBuffer->buffer.name << ")";
-						Logger::logError( stream.str() );
-					}
+		std::array< char, 1024u > buffer;
 
-					if ( vertexBuffer->buffer.buffer() )
-					{
-						std::stringstream stream;
-						stream << "Leaked [VkBuffer](" << vertexBuffer->buffer.name << ")";
-						Logger::logError( stream.str() );
-					}
-				}
-			}
+		for ( auto const & [data, _] : m_imageViews )
+		{
+			snprintf( buffer.data(), buffer.size(), "Leaked [VkImageView](%.900s)", data.data->name.c_str() );
+			Logger::logError( buffer.data() );
+		}
+
+		for ( auto const & [data, _] : m_images )
+		{
+			snprintf( buffer.data(), buffer.size(), "Leaked [VkImage](%.900s)", data.data->name.c_str() );
+			Logger::logError( buffer.data() );
+		}
+
+		for ( auto const & vertexBuffer : m_vertexBuffers )
+		{
+			if ( vertexBuffer->memory )
 			{
-				lock_type lock( m_samplersMutex );
-				for ( auto const & [_, data] : m_samplers )
-				{
-					std::stringstream stream;
-					stream << "Leaked [VkSampler](" << data.name << ")";
-					Logger::logError( stream.str() );
-				}
+				snprintf( buffer.data(), buffer.size(), "Leaked [VkDeviceMemory](%.900s)", vertexBuffer->buffer.name.c_str() );
+				Logger::logError( buffer.data() );
+			}
+
+			if ( vertexBuffer->buffer.buffer() )
+			{
+				snprintf( buffer.data(), buffer.size(), "Leaked [VkBuffer](%.900s)", vertexBuffer->buffer.name.c_str() );
+				Logger::logError( buffer.data() );
 			}
 		}
-		catch ( ... )
+
+		for ( auto const & [_, data] : m_samplers )
 		{
-			// Nothing to do here
+			snprintf( buffer.data(), buffer.size(), "Leaked [VkSampler](%.900s)", data.name.c_str() );
+			Logger::logError( buffer.data() );
 		}
 	}
 

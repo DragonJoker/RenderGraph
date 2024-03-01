@@ -446,7 +446,7 @@ namespace crg
 			for ( auto & attach : m_pass.buffers )
 			{
 				if ( !attach.isNoTransition()
-					&& ( attach.isStorageBuffer() || attach.isTransferBuffer() ) )
+					&& ( attach.isStorageBuffer() || attach.isTransferBuffer() || attach.isTransitionBuffer() ) )
 				{
 					auto & range = attach.getBufferRange();
 					auto buffer = attach.buffer( index );

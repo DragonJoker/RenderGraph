@@ -1,4 +1,5 @@
 #include "Common.hpp"
+#include "BaseTest.hpp"
 
 #include <RenderGraph/DotExport.hpp>
 #include <RenderGraph/GraphContext.hpp>
@@ -6,6 +7,7 @@
 #include <RenderGraph/ImageData.hpp>
 #include <RenderGraph/ImageViewData.hpp>
 #include <RenderGraph/FrameGraph.hpp>
+#include <RenderGraph/RunnableGraph.hpp>
 
 #include <atomic>
 #include <functional>
@@ -85,6 +87,39 @@ namespace test
 		{
 			return isDepthFormat( fmt ) && isStencilFormat( fmt );
 		}
+
+		VkImageViewType getViewType( VkImageType type
+			, VkImageCreateFlags flags
+			, uint32_t layerCount )
+		{
+			switch ( type )
+			{
+			case VK_IMAGE_TYPE_1D:
+				return layerCount > 1u
+					? VK_IMAGE_VIEW_TYPE_1D_ARRAY
+					: VK_IMAGE_VIEW_TYPE_1D;
+			case VK_IMAGE_TYPE_3D:
+				return VK_IMAGE_VIEW_TYPE_3D;
+			default:
+				if ( layerCount > 1u )
+				{
+					if ( ( ( layerCount % 6u ) == 0u ) && ( flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT ) )
+					{
+						return ( layerCount > 6u )
+							? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
+							: VK_IMAGE_VIEW_TYPE_CUBE;
+					}
+					else
+					{
+						return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+					}
+				}
+				else
+				{
+					return VK_IMAGE_VIEW_TYPE_2D;
+				}
+			}
+		}
 	}
 
 	crg::ImageData createImage( std::string name
@@ -101,6 +136,38 @@ namespace test
 				| VK_IMAGE_USAGE_SAMPLED_BIT )
 			, mipLevels
 			, arrayLayers };
+	}
+
+	crg::ImageData createImage1D( std::string name
+		, VkFormat format
+		, uint32_t mipLevels
+		, uint32_t arrayLayers )
+	{
+		return crg::ImageData{ std::move( name )
+			, 0u
+			, VK_IMAGE_TYPE_1D
+			, format
+			, { 1024 }
+			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+				| VK_IMAGE_USAGE_SAMPLED_BIT )
+			, mipLevels
+			, arrayLayers };
+	}
+
+	crg::ImageData createImageCube( std::string name
+		, VkFormat format
+		, uint32_t mipLevels
+		, uint32_t arrayLayers )
+	{
+		return crg::ImageData{ std::move( name )
+			, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
+			, VK_IMAGE_TYPE_2D
+			, format
+			, { 1024, 1024u }
+			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
+				| VK_IMAGE_USAGE_SAMPLED_BIT )
+			, mipLevels
+			, arrayLayers * 6u };
 	}
 
 	crg::ImageViewData createView( std::string name
@@ -137,7 +204,7 @@ namespace test
 		return crg::ImageViewData{ std::move( name )
 			, image
 			, 0u
-			, VK_IMAGE_VIEW_TYPE_2D
+			, getViewType( image.data->info.imageType, image.data->info.flags, layerCount )
 			, format
 			, { aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount } };
 	}
@@ -547,6 +614,17 @@ namespace test
 				return "coin !!";
 			} );
 		return context;
+	}
+
+	std::stringstream checkRunnable( TestCounts & testCounts
+		, crg::RunnableGraph * runnable )
+	{
+		require( runnable )
+		std::stringstream stream;
+		test::display( testCounts, stream, *runnable );
+		checkNoThrow( runnable->record() )
+		checkNoThrow( runnable->run( VkQueue{} ) )
+		return stream;
 	}
 
 	void display( TestCounts const & testCounts

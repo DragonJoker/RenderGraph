@@ -43,10 +43,12 @@ namespace crg
 	BufferAttachment::BufferAttachment( FlagKind flags
 		, Buffer buffer
 		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, VkDeviceSize range
+		, AccessState access )
 		: buffer{ std::move( buffer ) }
 		, range{ offset, range }
 		, flags{ flags }
+		, wantedAccess{ std::move( access ) }
 	{
 	}
 
@@ -54,11 +56,13 @@ namespace crg
 		, Buffer buffer
 		, VkBufferView view
 		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, VkDeviceSize range
+		, AccessState access )
 		: buffer{ std::move( buffer ) }
 		, view{ view }
 		, range{ offset, range }
 		, flags{ flags }
+		, wantedAccess{ std::move( access ) }
 	{
 	}
 
@@ -109,7 +113,11 @@ namespace crg
 	{
 		VkAccessFlags result{ 0u };
 
-		if ( isStorage() )
+		if ( isTransition() )
+		{
+			result = wantedAccess.access;
+		}
+		else if ( isStorage() )
 		{
 			if ( isInput )
 			{
@@ -145,7 +153,11 @@ namespace crg
 	{
 		VkPipelineStageFlags result{ 0u };
 
-		if ( isTransfer() )
+		if ( isTransition() )
+		{
+			result = wantedAccess.pipelineStage;
+		}
+		else if ( isTransfer() )
 		{
 			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
 		}
@@ -489,11 +501,12 @@ namespace crg
 		, BufferAttachment::FlagKind bufferFlags
 		, Buffer buffer
 		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, VkDeviceSize range
+		, AccessState wantedAccess )
 		: pass{ &pass }
 		, binding{ binding }
 		, name{ std::move( name ) }
-		, bufferAttach{ bufferFlags, std::move( buffer ), offset, range }
+		, bufferAttach{ bufferFlags, std::move( buffer ), offset, range, std::move( wantedAccess ) }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{
@@ -507,11 +520,12 @@ namespace crg
 		, Buffer buffer
 		, VkBufferView view
 		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, VkDeviceSize range
+		, AccessState wantedAccess )
 		: pass{ &pass }
 		, binding{ binding }
 		, name{ std::move( name ) }
-		, bufferAttach{ bufferFlags, std::move( buffer ), view, offset, range }
+		, bufferAttach{ bufferFlags, std::move( buffer ), view, offset, range, std::move( wantedAccess ) }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{

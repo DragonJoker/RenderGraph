@@ -50,6 +50,9 @@ namespace crg
 
 				for ( auto & pass : currentPasses )
 				{
+#if !defined( NDEBUG )
+					bool processed = false;
+#endif
 					// Only process this pass if all its dependencies have been processed.
 					if ( !std::all_of( pass->passDepends.begin()
 						, pass->passDepends.end()
@@ -61,40 +64,38 @@ namespace crg
 						} ) )
 					{
 						unsortedPasses.push_back( pass );
-						continue;
+						processed = true;
 					}
-
-					auto it = std::find_if( sortedPasses.begin()
+					else if ( auto it = std::find_if( sortedPasses.begin()
 						, sortedPasses.end()
 						, [&pass]( FramePass const * lookup )
 						{
 							return lookup->dependsOn( *pass );
 						} );
-
-					if ( it != sortedPasses.end() )
+						it != sortedPasses.end() )
 					{
 						sortedPasses.insert( it, pass );
 						added = true;
+#if !defined( NDEBUG )
+						processed = true;
+#endif
 					}
-					else
+					else if ( auto rit = std::find_if( sortedPasses.rbegin()
+						, sortedPasses.rend()
+						, [&pass]( FramePass const * lookup )
+						{
+							return pass->dependsOn( *lookup );
+						} );
+						rit != sortedPasses.rend() )
 					{
-						auto rit = std::find_if( sortedPasses.rbegin()
-							, sortedPasses.rend()
-							, [&pass]( FramePass const * lookup )
-							{
-								return pass->dependsOn( *lookup );
-							} );
-
-						if ( rit != sortedPasses.rend() )
-						{
-							sortedPasses.insert( rit.base(), pass );
-							added = true;
-						}
-						else
-						{
-							unsortedPasses.push_back( pass );
-						}
+						sortedPasses.insert( rit.base(), pass );
+						added = true;
+#if !defined( NDEBUG )
+						processed = true;
+#endif
 					}
+
+					assert( processed && "Couldn't process pass" );
 				}
 
 				if ( !added )
