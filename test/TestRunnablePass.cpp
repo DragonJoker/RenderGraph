@@ -43,11 +43,7 @@ namespace
 			testPass.addTransferOutputBuffer( crg::Buffer{ VkBuffer( 1 ), "outBuffer" }, 0u, 1024u );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		{
 			crg::FrameGraph graph{ handler, testCounts.testName };
@@ -63,11 +59,7 @@ namespace
 			testPass.addTransferInOutBuffer( crg::Buffer{ VkBuffer( 2 ), "ioBuffer" }, 512u, 1024u );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		testEnd()
 	}
@@ -91,11 +83,7 @@ namespace
 		testPass.addTransferOutputView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
+		test::checkRunnable( testCounts, runnable );
 		testEnd()
 	}
 
@@ -116,11 +104,7 @@ namespace
 		testPass.addTransferInOutView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
+		test::checkRunnable( testCounts, runnable );
 		testEnd()
 	}
 
@@ -147,11 +131,7 @@ namespace
 		testPass.addTransferOutputView( resultv );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
+		test::checkRunnable( testCounts, runnable );
 		testEnd()
 	}
 
@@ -177,11 +157,7 @@ namespace
 			testPass.addTransferOutputView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		{
 			crg::ResourceHandler handler;
@@ -203,11 +179,7 @@ namespace
 			testPass.addTransferOutputView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		{
 			crg::ResourceHandler handler;
@@ -231,11 +203,7 @@ namespace
 			testPass.addTransferOutputView( inputv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		testEnd()
 	}
@@ -259,11 +227,7 @@ namespace
 		testPass.addTransferOutputBuffer( crg::Buffer{ VkBuffer( 1 ), "outBuffer" }, 0u, 1024u );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
+		test::checkRunnable( testCounts, runnable );
 		testEnd()
 	}
 
@@ -337,15 +301,64 @@ namespace
 		testPass3.addImplicitDepthStencilView( depthStencilv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
+		test::checkRunnable( testCounts, runnable );
 		require( computePass )
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
 		checkNoThrow( computePass->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
+		checkNoThrow( computePass->resetCommandBuffer( 0u ) )
 		checkNoThrow( runnable->record() )
 		checkNoThrow( runnable->run( VkQueue{} ) )
+		checkNoThrow( graph.getFinalAccessState( crg::Buffer{ VkBuffer( 1 ), "buffer1" }, 0u ) )
+		testEnd()
+	}
+
+	void testComputePassTransitions( test::TestCounts & testCounts )
+	{
+		testBegin( "testComputePassTransitions" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, "/" + testCounts.testName };
+		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT ) );
+		auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT, 0u, 1u, 0u, 1u ) );
+		crg::Buffer buffer1{ VkBuffer( 1 ), "buffer1" };
+		crg::Buffer buffer2{ VkBuffer( 2 ), "buffer2" };
+		auto & testPass1 = graph.createPass( "Pass1"
+			, []( crg::FramePass const & pass
+				, crg::GraphContext & context
+				, crg::RunnableGraph & runGraph )
+			{
+				crg::cp::Config cfg;
+				cfg.baseConfig( crg::pp::Config{}
+					.programCreator( crg::ProgramCreator{ 1u
+						, []( uint32_t ){ return crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }; } } ) );
+				return std::make_unique< crg::ComputePass >( pass, context, runGraph
+					, crg::ru::Config{ 1u, true }, std::move( cfg ) );
+			} );
+		testPass1.addClearableOutputStorageView( resultv, 0u );
+		testPass1.addClearableOutputStorageView( depthv, 1u );
+		testPass1.addClearableOutputStorageBuffer( buffer1, 2u, 0u, 1024u );
+		testPass1.addClearableOutputStorageBuffer( buffer2, 3u, 0u, 1024u );
+
+		auto & testPass2 = graph.createPass( "Pass2"
+			, []( crg::FramePass const & pass
+				, crg::GraphContext & context
+				, crg::RunnableGraph & runGraph )
+			{
+				crg::cp::Config cfg;
+				cfg.baseConfig( crg::pp::Config{}
+					.programCreator( crg::ProgramCreator{ 1u
+						, []( uint32_t ){ return crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }; } } ) );
+				return std::make_unique< crg::ComputePass >( pass, context, runGraph
+					, crg::ru::Config{}, std::move( cfg ) );
+			} );
+		testPass2.addDependency( testPass1 );
+		testPass2.addImplicitColourView( resultv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		testPass2.addImplicitDepthView( depthv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		testPass2.addImplicitBuffer( buffer1, 0u, 1024u, {} );
+		testPass2.addImplicitBuffer( buffer2, 0u, 1024u, {} );
+
+		auto runnable = graph.compile( getContext() );
+		test::checkRunnable( testCounts, runnable );
 		testEnd()
 	}
 
@@ -369,9 +382,7 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		{
 			crg::ResourceHandler handler;
@@ -391,9 +402,7 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		{
 			crg::ResourceHandler handler;
@@ -414,9 +423,8 @@ namespace
 			testPass.addOutputColourView( testPass.mergeViews( { result1v, result2v } ) );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
+			check( graph.getFinalLayoutState( testPass.mergeViews( { result1v, result2v } ), 0u ).layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
 		}
 		{
 			crg::ResourceHandler handler;
@@ -435,9 +443,7 @@ namespace
 			testPass.addOutputDepthView( depthv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		{
 			crg::ResourceHandler handler;
@@ -465,11 +471,7 @@ namespace
 			testPass.addOutputDepthView( depthv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 			passIndex = 1u - passIndex;
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
@@ -495,11 +497,7 @@ namespace
 			testPass.addOutputColourView( testPass.mergeViews( { result1v, result2v }, false, false ) );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
+			test::checkRunnable( testCounts, runnable );
 		}
 		testEnd()
 	}
@@ -532,12 +530,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderQuad )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			passIndex = 1u - passIndex;
 			checkNoThrow( renderQuad->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
@@ -564,12 +558,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderQuad )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			checkNoThrow( renderQuad->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
@@ -605,12 +595,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderMesh )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			passIndex = 1u - passIndex;
 			checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
@@ -636,12 +622,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderMesh )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
@@ -669,12 +651,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderMesh )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
@@ -700,12 +678,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderMesh )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
@@ -732,12 +706,8 @@ namespace
 			testPass.addOutputColourView( resultv );
 
 			auto runnable = graph.compile( getContext() );
-			require( runnable )
-			std::stringstream stream;
-			test::display( testCounts, stream, *runnable );
+			test::checkRunnable( testCounts, runnable );
 			require( renderMesh )
-			checkNoThrow( runnable->record() )
-			checkNoThrow( runnable->run( VkQueue{} ) )
 			checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 			checkNoThrow( runnable->record() )
 			checkNoThrow( runnable->run( VkQueue{} ) )
@@ -798,17 +768,15 @@ namespace
 		testMesh.addSampledView( sampledv, 0u );
 
 		auto runnable = graph.compile( getContext() );
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
+		test::checkRunnable( testCounts, runnable );
 		require( renderQuad )
 		require( renderMesh )
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( crg::SemaphoreWait{ VkSemaphore( 1 ), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT }, VkQueue{} ) )
 		checkNoThrow( renderQuad->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
+		checkNoThrow( runnable->run( crg::SemaphoreWait{ VkSemaphore( 1 ), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT }, VkQueue{} ) )
+		check( graph.getFinalLayoutState( sampledv, 0u ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
+		check( graph.getDefaultGroup().getFinalLayoutState( sampledv, 0u ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
 		testEnd()
 	}
 }
@@ -823,6 +791,7 @@ int main( int argc, char ** argv )
 	testImageCopy( testCounts );
 	testImageToBufferCopy( testCounts );
 	testComputePass( testCounts );
+	testComputePassTransitions( testCounts );
 	testRenderPass( testCounts );
 	testRenderQuad( testCounts );
 	testRenderMesh( testCounts );

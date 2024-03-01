@@ -261,9 +261,13 @@ namespace crg
 			}
 		}
 
-		for ( auto & uniform : m_pass.buffers )
+		for ( auto & buffer : m_pass.buffers )
 		{
-			descriptorSet.writes.push_back( uniform.getBufferWrite( index ) );
+			if ( buffer.isStorageBuffer()
+				|| buffer.isUniformBuffer() )
+			{
+				descriptorSet.writes.push_back( buffer.getBufferWrite( index ) );
+			}
 		}
 
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO

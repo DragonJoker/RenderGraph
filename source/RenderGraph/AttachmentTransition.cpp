@@ -53,7 +53,9 @@ namespace crg
 
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions transitions )
 	{
-		return { attTran::mergeIdenticalTransitionsT( std::move( transitions.viewTransitions ) )
-			, attTran::mergeIdenticalTransitionsT( std::move( transitions.bufferTransitions ) ) };
+		AttachmentTransitions result{};
+		result.viewTransitions = attTran::mergeIdenticalTransitionsT( std::move( transitions.viewTransitions ) );
+		result.bufferTransitions = attTran::mergeIdenticalTransitionsT( std::move( transitions.bufferTransitions ) );
+		return result;
 	}
 }
