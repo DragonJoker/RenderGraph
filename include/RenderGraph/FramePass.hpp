@@ -86,6 +86,16 @@ namespace crg
 		/**@{*/
 		/**
 		*\brief
+		*	Creates an implicit buffer attachment.
+		*\remarks
+		*	This buffer will only be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitBuffer( Buffer buffer
+			, VkDeviceSize offset
+			, VkDeviceSize range
+			, AccessState wantedAccess );
+		/**
+		*\brief
 		*	Creates a uniform buffer attachment.
 		*/
 		CRG_API void addUniformBuffer( Buffer buffer
@@ -124,6 +134,17 @@ namespace crg
 			, uint32_t binding
 			, VkDeviceSize offset
 			, VkDeviceSize range );
+		/**
+		*\brief
+		*	Creates an implicit buffer view attachment.
+		*\remarks
+		*	This buffer will only be used to compute dependencies, and is considered an input, in that goal.
+		*/
+		CRG_API void addImplicitBufferView( Buffer buffer
+			, VkBufferView view
+			, VkDeviceSize offset
+			, VkDeviceSize range
+			, AccessState wantedAccess );
 		/**
 		*\brief
 		*	Creates a uniform texel buffer view attachment.

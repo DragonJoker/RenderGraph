@@ -78,6 +78,11 @@ foreach ( TEST_FILE ${TEST_FILES} )
 			)
 		endif ()
 	endif ()
+	if ( MSVC )
+		target_compile_options( ${TEST_NAME} PRIVATE
+			-bigobj
+		)
+	endif ()
 	if ( PROJECTS_COVERAGE )
 		coverage_add_target( ${TEST_NAME}
 			MODULES
@@ -86,6 +91,8 @@ foreach ( TEST_FILE ${TEST_FILES} )
 			SOURCES
 				${CRG_SOURCE_DIR}/include
 				${CRG_SOURCE_DIR}/source
+			EXCLUDES
+				DotExport
 		)
 	endif ()
 	add_test(

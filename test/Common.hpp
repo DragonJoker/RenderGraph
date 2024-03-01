@@ -5,9 +5,19 @@
 
 #include "BaseTest.hpp"
 
+#include <sstream>
+
 namespace test
 {
 	crg::ImageData createImage( std::string name
+		, VkFormat format
+		, uint32_t mipLevels = 1u
+		, uint32_t arrayLayers = 1u );
+	crg::ImageData createImage1D( std::string name
+		, VkFormat format
+		, uint32_t mipLevels = 1u
+		, uint32_t arrayLayers = 1u );
+	crg::ImageData createImageCube( std::string name
 		, VkFormat format
 		, uint32_t mipLevels = 1u
 		, uint32_t arrayLayers = 1u );
@@ -25,6 +35,14 @@ namespace test
 		, uint32_t baseArrayLayer = 0u
 		, uint32_t layerCount = 1u );
 	crg::GraphContext & getDummyContext();
+	std::stringstream checkRunnable( TestCounts & testCounts
+		, crg::RunnableGraph * runnable );
+
+	inline std::stringstream checkRunnable( TestCounts & testCounts
+		, crg::RunnableGraphPtr const & runnable )
+	{
+		return checkRunnable( testCounts, runnable.get() );
+	}
 
 	void display( TestCounts const & testCounts
 		, std::ostream & stream
