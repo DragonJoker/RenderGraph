@@ -224,13 +224,6 @@ namespace crg
 		, LayoutState const & wantedState
 		, bool force )
 	{
-		auto & resources = getResources();
-
-		if( !resources->device )
-		{
-			return;
-		}
-
 		auto range = recctx::adaptRange( *m_resources
 				, image.data->info.format
 				, subresourceRange );
@@ -250,6 +243,7 @@ namespace crg
 				|| from.state.pipelineStage != wantedState.state.pipelineStage )
 				&& wantedState.layout != VK_IMAGE_LAYOUT_UNDEFINED ) )
 		{
+			auto & resources = getResources();
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
 				, nullptr
 				, from.state.access
@@ -330,13 +324,6 @@ namespace crg
 		, AccessState const & wantedState
 		, bool force )
 	{
-		auto const & resources = getResources();
-
-		if ( !resources->device )
-		{
-			return;
-		}
-
 		auto from = getAccessState( buffer
 			, subresourceRange );
 
@@ -349,6 +336,7 @@ namespace crg
 			|| ( from.access != wantedState.access
 				|| from.pipelineStage != wantedState.pipelineStage ) )
 		{
+			auto const & resources = getResources();
 			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
 				, nullptr
 				, from.access
@@ -396,9 +384,10 @@ namespace crg
 
 	RecordContext::ImplicitAction RecordContext::copyImage( ImageViewId srcView
 		, ImageViewId dstView
-		, VkExtent2D extent )
+		, VkExtent2D extent
+		, VkImageLayout finalLayout )
 	{
-		return [srcView, dstView, extent]( RecordContext & recContext
+		return [srcView, dstView, extent, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
@@ -430,6 +419,15 @@ namespace crg
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, 1u
 				, &region );
+
+			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			{
+				recContext.memoryBarrier( commandBuffer
+					, dstView.data->image
+					, dstView.data->info.viewType
+					, dstView.data->info.subresourceRange
+					, makeLayoutState( finalLayout ) );
+			}
 		};
 	}
 

@@ -50,7 +50,8 @@ namespace
 		testBegin( "testImplicitColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( crg::ImageData{ "Test", 0u, VK_IMAGE_TYPE_3D, VK_FORMAT_R32G32B32A32_SFLOAT, { 1024, 1024, 1024 }, VK_IMAGE_USAGE_SAMPLED_BIT, 1u, 1u } );
+		auto range = crg::getVirtualRange( image, VK_IMAGE_VIEW_TYPE_3D, { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u } );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addImplicitColourView( view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
@@ -881,6 +882,34 @@ namespace
 		testEnd()
 	}
 
+	void testImplicitBufferAttachment( test::TestCounts & testCounts )
+	{
+		testBegin( "testImplicitBufferAttachment" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
+		pass.addImplicitBuffer( buffer, 0u, VK_WHOLE_SIZE, {} );
+		require( !pass.buffers.empty() )
+		auto const & attachment = pass.buffers[0];
+		check( attachment.isBuffer() )
+		check( attachment.isInput() )
+		check( !attachment.isOutput() )
+		check( !attachment.isBufferView() )
+		check( !attachment.isTransferBuffer() )
+		check( !attachment.isClearableBuffer() )
+		check( !attachment.isStorageBuffer() )
+		check( !attachment.isStorageBufferView() )
+		check( !attachment.isUniformBuffer() )
+		check( !attachment.isUniformBufferView() )
+		check( attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
+		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ImplB" )
+		check( attachment.buffer() == buffer.buffer() )
+		check( attachment.bufferAttach.buffer == buffer )
+		testEnd()
+	}
+
 	void testUniformBufferAttachment( test::TestCounts & testCounts )
 	{
 		testBegin( "testUniformBufferAttachment" )
@@ -901,6 +930,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/UB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -927,6 +958,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ISB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -953,6 +986,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -979,6 +1014,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -1005,8 +1042,40 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/IOSB" )
 		check( attachment.buffer() == buffer.buffer() )
+		check( attachment.bufferAttach.buffer == buffer )
+		testEnd()
+	}
+
+	void testImplicitBufferViewAttachment( test::TestCounts & testCounts )
+	{
+		testBegin( "testImplicitBufferViewAttachment" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
+		auto view = VkBufferView( 2 );
+		pass.addImplicitBufferView( buffer, view, 0u, VK_WHOLE_SIZE, {} );
+		require( !pass.buffers.empty() )
+		auto const & attachment = pass.buffers[0];
+		check( attachment.isBuffer() )
+		check( attachment.isInput() )
+		check( !attachment.isOutput() )
+		check( attachment.isBufferView() )
+		check( !attachment.isTransferBuffer() )
+		check( !attachment.isClearableBuffer() )
+		check( !attachment.isStorageBuffer() )
+		check( !attachment.isStorageBufferView() )
+		check( !attachment.isUniformBuffer() )
+		check( !attachment.isUniformBufferView() )
+		check( attachment.isTransitionBuffer() )
+		check( attachment.isTransitionBufferView() )
+		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ImplBV" )
+		check( attachment.buffer() == buffer.buffer() )
+		check( attachment.bufferAttach.view == view )
 		check( attachment.bufferAttach.buffer == buffer )
 		testEnd()
 	}
@@ -1032,6 +1101,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( attachment.isUniformBuffer() )
 		check( attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/UBV" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.view == view )
@@ -1060,6 +1131,8 @@ namespace
 		check( attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ISBV" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.view == view )
@@ -1088,6 +1161,8 @@ namespace
 		check( attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSBV" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.view == view )
@@ -1116,6 +1191,8 @@ namespace
 		check( attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSBV" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.view == view )
@@ -1144,6 +1221,8 @@ namespace
 		check( attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/IOSBV" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.view == view )
@@ -1171,6 +1250,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ITB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -1197,6 +1278,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OTB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -1223,6 +1306,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/IOTB" )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
@@ -1246,6 +1331,8 @@ namespace
 		check( !attachment.isStorageBufferView() )
 		check( !attachment.isUniformBuffer() )
 		check( !attachment.isUniformBufferView() )
+		check( !attachment.isTransitionBuffer() )
+		check( !attachment.isTransitionBufferView() )
 		check( attachment.buffer() == buffer.buffer() )
 		check( attachment.bufferAttach.buffer == buffer )
 		testEnd()
@@ -1279,11 +1366,13 @@ int main( int argc, char ** argv )
 	testOutStencilAttachment( testCounts );
 	testInOutStencilAttachment( testCounts );
 	testImageAttachment( testCounts );
+	testImplicitBufferAttachment( testCounts );
 	testUniformBufferAttachment( testCounts );
 	testInputStorageBufferAttachment( testCounts );
 	testOutputStorageBufferAttachment( testCounts );
 	testClearableOutputStorageBufferAttachment( testCounts );
 	testInOutStorageBufferAttachment( testCounts );
+	testImplicitBufferViewAttachment( testCounts );
 	testUniformBufferViewAttachment( testCounts );
 	testInputStorageBufferViewAttachment( testCounts );
 	testOutputStorageBufferViewAttachment( testCounts );

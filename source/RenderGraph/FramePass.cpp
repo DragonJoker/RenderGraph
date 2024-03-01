@@ -274,6 +274,23 @@ namespace crg
 		return it != passDepends.end();
 	}
 
+	void FramePass::addImplicitBuffer( Buffer buffer
+		, VkDeviceSize offset
+		, VkDeviceSize range
+		, AccessState wantedAccess )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ImplB";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, InvalidBindingId
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transition )
+			, std::move( buffer )
+			, offset
+			, range
+			, std::move( wantedAccess ) } );
+	}
+
 	void FramePass::addUniformBuffer( Buffer buffer
 		, uint32_t binding
 		, VkDeviceSize offset
@@ -287,7 +304,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addInputStorageBuffer( Buffer buffer
@@ -303,7 +321,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addOutputStorageBuffer( Buffer buffer
@@ -319,7 +338,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addClearableOutputStorageBuffer( Buffer buffer
@@ -336,7 +356,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addInOutStorageBuffer( Buffer buffer
@@ -352,7 +373,27 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
+	}
+
+	void FramePass::addImplicitBufferView( Buffer buffer
+		, VkBufferView view
+		, VkDeviceSize offset
+		, VkDeviceSize range
+		, AccessState wantedAccess )
+	{
+		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ImplBV";
+		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
+			, *this
+			, InvalidBindingId
+			, std::move( attachName )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::TransitionView )
+			, std::move( buffer )
+			, view
+			, offset
+			, range
+			, std::move( wantedAccess ) } );
 	}
 
 	void FramePass::addUniformBufferView( Buffer buffer
@@ -370,7 +411,8 @@ namespace crg
 			, std::move( buffer )
 			, view
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addInputStorageBufferView( Buffer buffer
@@ -388,7 +430,8 @@ namespace crg
 			, std::move( buffer )
 			, view
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addOutputStorageBufferView( Buffer buffer
@@ -406,7 +449,8 @@ namespace crg
 			, std::move( buffer )
 			, view
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addClearableOutputStorageBufferView( Buffer buffer
@@ -425,7 +469,8 @@ namespace crg
 			, std::move( buffer )
 			, view
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addInOutStorageBufferView( Buffer buffer
@@ -443,7 +488,8 @@ namespace crg
 			, std::move( buffer )
 			, view
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addTransferInputBuffer( Buffer buffer
@@ -458,7 +504,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addTransferOutputBuffer( Buffer buffer
@@ -473,7 +520,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	void FramePass::addTransferInOutBuffer( Buffer buffer
@@ -489,7 +537,8 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 			, std::move( buffer )
 			, offset
-			, range } );
+			, range
+			, AccessState{} } );
 	}
 
 	ImageViewId FramePass::mergeViews( ImageViewIdArray const & views
@@ -572,6 +621,12 @@ namespace crg
 				else
 				{
 					data.info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+				}
+				break;
+			case VK_IMAGE_VIEW_TYPE_CUBE:
+				if ( data.info.subresourceRange.layerCount > 6u )
+				{
+					data.info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
 				}
 				break;
 			default:

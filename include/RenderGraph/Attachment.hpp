@@ -223,8 +223,10 @@ namespace crg
 			Storage = 0x01 << 1,
 			Transfer = 0x01 << 2,
 			View = 0x01 << 3,
+			Transition = 0x01 << 4,
 			UniformView = Uniform | View,
 			StorageView = Storage | View,
+			TransitionView = Transition | View,
 		};
 
 		CRG_API VkDescriptorType getDescriptorType()const;
@@ -265,6 +267,11 @@ namespace crg
 			return hasFlag( Flag::Transfer );
 		}
 
+		bool isTransition()const
+		{
+			return hasFlag( Flag::Transition );
+		}
+
 		bool isView()const
 		{
 			return hasFlag( Flag::View );
@@ -280,6 +287,11 @@ namespace crg
 			return isStorage() && isView();
 		}
 
+		bool isTransitionView()const
+		{
+			return isTransition() && isView();
+		}
+
 		Buffer buffer{ {}, std::string{} };
 		VkBufferView view{};
 		BufferSubresourceRange range{};
@@ -290,14 +302,17 @@ namespace crg
 		CRG_API BufferAttachment( FlagKind flags
 			, Buffer buffer
 			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, VkDeviceSize range
+			, AccessState access = {} );
 		CRG_API BufferAttachment( FlagKind flags
 			, Buffer buffer
 			, VkBufferView view
 			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, VkDeviceSize range
+			, AccessState access = {} );
 
 		FlagKind flags{};
+		AccessState wantedAccess{};
 
 		friend CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
 	};
@@ -364,6 +379,11 @@ namespace crg
 			return hasFlag( Flag::Output );
 		}
 
+		bool isInOut()const
+		{
+			return isInput() && isOutput();
+		}
+
 		bool isImage()const
 		{
 			return hasFlag( Flag::Image );
@@ -426,6 +446,16 @@ namespace crg
 		bool isStorageBufferView()const
 		{
 			return isBuffer() && bufferAttach.isStorageView();
+		}
+
+		bool isTransitionBuffer()const
+		{
+			return isBuffer() && bufferAttach.isTransition();
+		}
+
+		bool isTransitionBufferView()const
+		{
+			return isBuffer() && bufferAttach.isTransitionView();
 		}
 
 		bool isBufferView()const
@@ -649,7 +679,8 @@ namespace crg
 			, BufferAttachment::FlagKind bufferFlags
 			, Buffer buffer
 			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, VkDeviceSize range
+			, AccessState wantedAccess );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding
@@ -658,7 +689,8 @@ namespace crg
 			, Buffer buffer
 			, VkBufferView view
 			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, VkDeviceSize range
+			, AccessState wantedAccess );
 
 		FlagKind flags{};
 

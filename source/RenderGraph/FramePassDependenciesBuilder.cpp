@@ -42,33 +42,28 @@ namespace crg::builder
 		static ImageViewId const & getInputView( ImageViewId const & lhs
 			, ImageViewId const & rhs )
 		{
-			if ( lhs == rhs )
+			auto result = &rhs;
+
+			if ( lhs == rhs
+				|| isSingleMipView( lhs, rhs ) )
 			{
-				return lhs;
+				result = &lhs;
 			}
 
-			if ( isSingleMipView( lhs, rhs ) )
-			{
-				return lhs;
-			}
-
-			return rhs;
+			return *result;
 		}
 
 		static ImageViewId const & getOutputView( ImageViewId const & lhs
 			, ImageViewId const & rhs )
 		{
-			if ( lhs == rhs )
-			{
-				return lhs;
-			}
+			auto result = &lhs;
 
 			if ( isSingleMipView( lhs, rhs ) )
 			{
-				return rhs;
+				result = &rhs;
 			}
 
-			return lhs;
+			return *result;
 		}
 
 		template< typename DataT >
@@ -82,18 +77,16 @@ namespace crg::builder
 				return attach.view();
 			}
 
-			static ImageViewId getOutput( Attachment const & inputAttach
-				, Attachment const & outputAttach )
+			static ImageViewId getOutput( Attachment const & lhsAttach
+				, Attachment const & rhsAttach )
 			{
-				return getOutputView( inputAttach.view()
-					, outputAttach.view() );
+				return getOutputView( lhsAttach.view(), rhsAttach.view() );
 			}
 
-			static ImageViewId getInput( Attachment const & inputAttach
-				, Attachment const & outputAttach )
+			static ImageViewId getInput( Attachment const & lhsAttach
+				, Attachment const & inputAttach )
 			{
-				return getInputView( inputAttach.view()
-					, outputAttach.view() );
+				return getInputView( lhsAttach.view(), inputAttach.view() );
 			}
 
 			static DataTransitionArrayT< ImageViewId > & getTransitions( AttachmentTransitions & transitions )
@@ -139,16 +132,16 @@ namespace crg::builder
 				return attach.bufferAttach.buffer;
 			}
 
-			static Buffer getOutput( Attachment const & inputAttach
+			static Buffer getOutput( Attachment const & lhsAttach
 				, Attachment const & )
 			{
-				return inputAttach.bufferAttach.buffer;
+				return lhsAttach.bufferAttach.buffer;
 			}
 
-			static Buffer getInput( Attachment const & inputAttach
+			static Buffer getInput( Attachment const & lhsAttach
 				, Attachment const & )
 			{
-				return inputAttach.bufferAttach.buffer;
+				return lhsAttach.bufferAttach.buffer;
 			}
 
 			static DataTransitionArrayT< Buffer > & getTransitions( AttachmentTransitions & transitions )
@@ -163,7 +156,8 @@ namespace crg::builder
 
 			static bool isInput( Attachment const & attach )
 			{
-				return attach.isInput() && attach.isStorageBuffer();
+				return attach.isInput()
+					&& ( attach.isStorageBuffer() || attach.isTransitionBuffer() );
 			}
 
 			static bool isOutput( Attachment const & attach )
@@ -552,12 +546,7 @@ namespace crg::builder
 		{
 			auto & transitions = insertPass( attach.pass, inputTransitions ).transitions;
 
-			if ( attach.isColourInOutAttach() )
-			{
-				ViewTransition transition{ attach.view(), attach, attach };
-				insertTransition( transition, cache, transitions.viewTransitions );
-			}
-			else if ( attach.isColourInputAttach()
+			if ( attach.isColourInputAttach()
 				|| attach.isSampledView() )
 			{
 				ViewTransition transition{ attach.view(), Attachment::createDefault( attach.view() ), attach };
@@ -579,13 +568,7 @@ namespace crg::builder
 		{
 			auto & transitions = insertPass( attach.pass, inputTransitions ).transitions;
 
-			if ( attach.isColourInOutAttach() )
-			{
-				BufferTransition transition{ attach.bufferAttach.buffer, attach, attach };
-				insertTransition( transition, cache, transitions.bufferTransitions );
-			}
-			else if ( attach.isColourInputAttach()
-				|| attach.isSampledView() )
+			if ( attach.isInput() )
 			{
 				BufferTransition transition{ attach.bufferAttach.buffer, Attachment::createDefault( attach.bufferAttach.buffer ), attach };
 				insertTransition( transition, cache, transitions.bufferTransitions );
@@ -651,13 +634,73 @@ namespace crg::builder
 			{
 				insertTransition( outputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( allTransitions ) );
 			}
+
+			auto & inTransitions = insertPass( inputAttach.pass, inputTransitions ).transitions;
+			insertTransition( inputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( inTransitions ) );
+			auto & outTransitions = insertPass( outputAttach.pass, outputTransitions ).transitions;
+			insertTransition( outputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( outTransitions ) );
+		}
+
+		template< typename DataT >
+		static void buildPassDependency( Attachment const & inputAttach
+			, Attachment const & outputAttach
+			, PassDependencyCache & cache
+			, FramePassDependencies & inputTransitions
+			, FramePassDependencies & outputTransitions
+			, AttachmentTransitions & allTransitions )
+		{
+			if ( inputAttach.pass->dependsOn( *outputAttach.pass
+				, AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach )
+				, cache ) )
 			{
-				auto & transitions = insertPass( inputAttach.pass, inputTransitions ).transitions;
-				insertTransition( inputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
+				addDependency< DataT >( outputAttach
+					, inputAttach
+					, cache
+					, inputTransitions
+					, outputTransitions
+					, allTransitions );
 			}
+		}
+
+		template< typename DataT >
+		static void buildPassDependencies( AttachesT< DataT > const & input
+			, AttachesT< DataT > const & output
+			, AttachesArrayT< DataT > & all
+			, PassDependencyCache & cache
+			, FramePassDependencies & inputTransitions
+			, FramePassDependencies & outputTransitions
+			, AttachmentTransitions & allTransitions )
+		{
+			if ( areOverlapping( input.data, output.data ) )
 			{
-				auto & transitions = insertPass( outputAttach.pass, outputTransitions ).transitions;
-				insertTransition( outputTransition, cache, AttachDataTraitsT< DataT >::getTransitions( transitions ) );
+				for ( Attachment const & outputAttach : output.attaches )
+				{
+					for ( Attachment const & inputAttach : input.attaches )
+					{
+						buildPassDependency< DataT >( inputAttach
+							, outputAttach
+							, cache
+							, inputTransitions
+							, outputTransitions
+							, allTransitions );
+					}
+				}
+
+// Disabled because GitHub Actions weirdly cries on this
+#pragma warning( push )
+#pragma warning( disable:5233 )
+				auto it = std::find_if( all.begin()
+					, all.end()
+					, [&input]( AttachesT< DataT > const & lookup )
+					{
+				return lookup.data == input.data;
+					} );
+#pragma warning( pop )
+
+				if ( all.end() != it )
+				{
+					all.erase( it );
+				}
 			}
 		}
 
@@ -674,42 +717,7 @@ namespace crg::builder
 			{
 				for ( AttachesT< DataT > const & input : inputs )
 				{
-					if ( areOverlapping( input.data, output.data ) )
-					{
-						for ( Attachment const & outputAttach : output.attaches )
-						{
-							for ( Attachment const & inputAttach : input.attaches )
-							{
-								if ( inputAttach.pass->dependsOn( *outputAttach.pass
-									, AttachDataTraitsT< DataT >::getOutput( inputAttach, outputAttach )
-									, cache ) )
-								{
-									addDependency< DataT >( outputAttach
-										, inputAttach
-										, cache
-										, inputTransitions
-										, outputTransitions
-										, allTransitions );
-								}
-							}
-						}
-
-// Disabled because GitHub Actions weirdly cries on this
-#pragma warning( push )
-#pragma warning( disable:5233 )
-						auto it = std::find_if( all.begin()
-							, all.end()
-							, [&input]( AttachesT< DataT > const & lookup )
-							{
-								return lookup.data == input.data;
-							} );
-#pragma warning( pop )
-
-						if ( all.end() != it )
-						{
-							all.erase( it );
-						}
-					}
+					buildPassDependencies( input, output, all, cache, inputTransitions, outputTransitions, allTransitions );
 				}
 			}
 

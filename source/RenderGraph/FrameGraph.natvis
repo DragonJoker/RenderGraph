@@ -52,11 +52,12 @@
 		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Uniform) != 0">Uniform {buffer}</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Storage) != 0">Storage {buffer}</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transfer) != 0">Transfer {buffer}</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transition) != 0">Transition {buffer}</DisplayString>
 		<Expand>
 			<Item Name="buffer">buffer</Item>
 			<Item Condition="(flags &amp; crg::BufferAttachment::Flag::View)" Name="view">view</Item>
-			<Item Name="offset">offset</Item>
-			<Item Name="range">range</Item>
+			<Item Name="offset">range.offset</Item>
+			<Item Name="range">range.size</Item>
 		</Expand>
 	</Type>
 
