@@ -157,12 +157,14 @@ namespace crg::builder
 			static bool isInput( Attachment const & attach )
 			{
 				return attach.isInput()
-					&& ( attach.isStorageBuffer() || attach.isTransitionBuffer() );
+					&& ( attach.isStorageBuffer() || attach.isUniformBuffer() || attach.isTransitionBuffer()
+						|| attach.isStorageBufferView() || attach.isUniformBufferView() || attach.isTransitionBufferView() );
 			}
 
 			static bool isOutput( Attachment const & attach )
 			{
-				return attach.isOutput() && attach.isStorageBuffer();
+				return attach.isOutput()
+					&& ( attach.isStorageBuffer() || attach.isStorageBufferView() );
 			}
 		};
 
@@ -605,7 +607,7 @@ namespace crg::builder
 
 		static bool match( Buffer const & lhs, Buffer const & rhs )
 		{
-			return lhs.buffer() != rhs.buffer();
+			return lhs.buffer() == rhs.buffer();
 		}
 
 		static bool match( ImageViewId const & lhs, ImageViewId const & rhs )
