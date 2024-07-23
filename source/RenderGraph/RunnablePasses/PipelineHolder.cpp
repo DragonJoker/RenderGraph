@@ -317,13 +317,17 @@ namespace crg
 			}
 		}
 
-		for ( auto & uniform : m_pass.buffers )
+		for ( auto & attach : m_pass.buffers )
 		{
-			m_descriptorBindings.push_back( { uniform.binding
-				, uniform.getDescriptorType()
-				, 1u
-				, shaderStage
-				, nullptr } );
+			if ( attach.isUniformBuffer() || attach.isStorageBuffer()
+				|| attach.isUniformBufferView() || attach.isStorageBufferView() )
+			{
+				m_descriptorBindings.push_back( { attach.binding
+					, attach.getDescriptorType()
+					, 1u
+					, shaderStage
+					, nullptr } );
+			}
 		}
 	}
 
