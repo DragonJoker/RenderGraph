@@ -84,7 +84,6 @@ namespace
 		{
 			using DummyFunc = std::function< void() >;
 			using OnDummy = crg::Signal< DummyFunc >;
-			using OnDummyConnection = crg::SignalConnection< OnDummy >;
 			OnDummy onDummy;
 
 			auto connection = onDummy.connect( []()
@@ -113,7 +112,6 @@ namespace
 		{
 			using DummyFunc = std::function< void() >;
 			using OnDummy = crg::Signal< DummyFunc >;
-			using OnDummyConnection = crg::SignalConnection< OnDummy >;
 			auto onDummy = std::make_unique< OnDummy >();
 
 			auto connection = onDummy->connect( []()

@@ -52,7 +52,7 @@ namespace crg
 
 		Fence( Fence const & ) = delete;
 		Fence & operator=( Fence const & ) = delete;
-		CRG_API Fence & operator=( Fence && rhs )noexcept = delete;
+		Fence & operator=( Fence && rhs )noexcept = delete;
 		CRG_API Fence( Fence && rhs )noexcept;
 		CRG_API ~Fence()noexcept;
 
