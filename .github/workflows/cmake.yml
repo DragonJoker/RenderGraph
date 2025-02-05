@@ -270,8 +270,8 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: |
-        echo "CC=clang-15" >> $GITHUB_ENV
-        echo "CXX=clang++-15" >> $GITHUB_ENV
+        echo "CC=clang-16" >> $GITHUB_ENV
+        echo "CXX=clang++-16" >> $GITHUB_ENV
     - name: Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
