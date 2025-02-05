@@ -30,9 +30,9 @@ namespace crg
 	public:
 		CRG_API explicit FramePassTimerBlock( FramePassTimer & timer );
 		CRG_API FramePassTimerBlock( FramePassTimerBlock && rhs )noexcept;
-		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept = delete;
-		CRG_API FramePassTimerBlock( FramePassTimerBlock const & ) = delete;
-		CRG_API FramePassTimerBlock & operator=( FramePassTimerBlock const & ) = delete;
+		FramePassTimerBlock & operator=( FramePassTimerBlock && rhs )noexcept = delete;
+		FramePassTimerBlock( FramePassTimerBlock const & ) = delete;
+		FramePassTimerBlock & operator=( FramePassTimerBlock const & ) = delete;
 		CRG_API ~FramePassTimerBlock()noexcept;
 
 		FramePassTimer * operator->()const

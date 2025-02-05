@@ -370,10 +370,10 @@ namespace crg
 
 	struct GraphContext
 	{
-		CRG_API GraphContext( GraphContext  const & ) = delete;
-		CRG_API GraphContext( GraphContext  && ) = delete;
-		CRG_API GraphContext & operator=( GraphContext  const & ) = delete;
-		CRG_API GraphContext & operator=( GraphContext  && ) = delete;
+		GraphContext( GraphContext  const & ) = delete;
+		GraphContext( GraphContext  && ) = delete;
+		GraphContext & operator=( GraphContext  const & ) = delete;
+		GraphContext & operator=( GraphContext  && ) = delete;
 
 		CRG_API GraphContext( VkDevice device
 			, VkPipelineCache cache

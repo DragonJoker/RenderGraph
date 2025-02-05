@@ -18,15 +18,15 @@ namespace crg
 		};
 
 	public:
+		RenderPassHolder( RenderPassHolder const & )noexcept = delete;
+		RenderPassHolder & operator=( RenderPassHolder const & )noexcept = delete;
+		RenderPassHolder( RenderPassHolder && )noexcept = delete;
+		RenderPassHolder & operator=( RenderPassHolder && )noexcept = delete;
 		CRG_API RenderPassHolder( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
 			, VkExtent2D size = {} );
-		CRG_API RenderPassHolder( RenderPassHolder const & )noexcept = delete;
-		CRG_API RenderPassHolder & operator=( RenderPassHolder const & )noexcept = delete;
-		CRG_API RenderPassHolder( RenderPassHolder && )noexcept = delete;
-		CRG_API RenderPassHolder & operator=( RenderPassHolder && )noexcept = delete;
 		CRG_API ~RenderPassHolder()noexcept;
 
 		CRG_API bool initialise( RecordContext & context

@@ -26,9 +26,9 @@ namespace crg
 			FramePass,
 		};
 
-		CRG_API GraphNode( GraphNode const & ) = delete;
-		CRG_API GraphNode & operator=( GraphNode const & ) = delete;
-		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept = delete;
+		GraphNode( GraphNode const & ) = delete;
+		GraphNode & operator=( GraphNode const & ) = delete;
+		GraphNode & operator=( GraphNode && rhs )noexcept = delete;
 		CRG_API virtual ~GraphNode()noexcept = default;
 
 		CRG_API GraphNode( GraphNode && rhs )noexcept;

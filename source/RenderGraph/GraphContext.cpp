@@ -36,6 +36,8 @@ namespace crg
 	{
 #pragma warning( push )
 #pragma warning( disable: 4191 )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wcast-function-type-strict"
 #define DECL_vkFunction( name )\
 		if ( vkGetDeviceProcAddr && device )\
 			vk##name = reinterpret_cast< PFN_vk##name >( vkGetDeviceProcAddr( device, "vk"#name ) )
@@ -139,6 +141,7 @@ namespace crg
 #endif
 
 #undef DECL_vkFunction
+#pragma clang diagnostic pop
 #pragma warning( pop )
 	}
 

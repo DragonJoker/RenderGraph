@@ -10,16 +10,16 @@ namespace crg
 	class PipelineHolder
 	{
 	public:
+		PipelineHolder( PipelineHolder const & )noexcept = delete;
+		PipelineHolder & operator=( PipelineHolder const & )noexcept = delete;
+		PipelineHolder( PipelineHolder && )noexcept = delete;
+		PipelineHolder & operator=( PipelineHolder && )noexcept = delete;
 		CRG_API PipelineHolder( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
 			, pp::Config config
 			, VkPipelineBindPoint bindingPoint
 			, uint32_t maxPassCount );
-		CRG_API PipelineHolder( PipelineHolder const & )noexcept = delete;
-		CRG_API PipelineHolder & operator=( PipelineHolder const & )noexcept = delete;
-		CRG_API PipelineHolder( PipelineHolder && )noexcept = delete;
-		CRG_API PipelineHolder & operator=( PipelineHolder && )noexcept = delete;
 		CRG_API virtual ~PipelineHolder()noexcept;
 
 		CRG_API void initialise();
