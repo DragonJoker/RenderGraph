@@ -351,7 +351,7 @@ namespace crg
 		PipelineState m_pipelineState;
 		std::vector< PassData > m_passes;
 		FramePassTimer m_timer;
-		std::map< uint32_t, RecordContext > m_passContexts;
+		std::vector< RecordContext > m_passContexts;
 		LayerLayoutStatesHandler m_imageLayouts;
 		AccessStateMap m_bufferAccesses;
 	};
