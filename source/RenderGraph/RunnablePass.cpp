@@ -258,6 +258,7 @@ namespace crg
 		for ( uint32_t i = 0u; i < m_ruConfig.maxPassCount; ++i )
 		{
 			m_passes.emplace_back( m_graph, m_context, m_pass.getGroupName() );
+			m_passContexts.emplace_back( graph.getResources() );
 		}
 
 		for ( auto & attach : m_pass.images )
@@ -327,10 +328,9 @@ namespace crg
 		assert( m_ruConfig.resettable );
 		auto index = m_callbacks.getPassIndex();
 
-		if ( auto it = m_passContexts.find( index );
-			it != m_passContexts.end() )
+		if ( index < m_passContexts.size() )
 		{
-			auto context = it->second;
+			auto context = m_passContexts[index];
 			recordOne( m_passes[index].commandBuffer
 				, index
 				, context );
@@ -366,7 +366,7 @@ namespace crg
 	{
 		if ( m_ruConfig.resettable )
 		{
-			m_passContexts.insert_or_assign( index, context );
+			m_passContexts[index] = context;
 		}
 
 		if ( isEnabled() )
