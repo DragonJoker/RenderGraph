@@ -93,7 +93,7 @@ jobs:
   build-macos:
     strategy:
       matrix:
-        os: [[macos-latest,x64-osx,clang]]
+        os: [[macos-latest,arm64-osx,clang]]
         buildType: [Release]
     runs-on: ${{ matrix.os[0] }}
     steps:
