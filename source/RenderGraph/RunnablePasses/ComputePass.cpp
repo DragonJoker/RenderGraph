@@ -96,8 +96,8 @@ namespace crg
 		{
 			context->vkCmdDispatch( commandBuffer
 				, ( m_cpConfig.getGroupCountX ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountX )
-				, ( m_cpConfig.getGroupCountY ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountY )
-				, ( m_cpConfig.getGroupCountZ ? ( *m_cpConfig.getGroupCountX )() : m_cpConfig.groupCountZ ) );
+				, ( m_cpConfig.getGroupCountY ? ( *m_cpConfig.getGroupCountY )() : m_cpConfig.groupCountY )
+				, ( m_cpConfig.getGroupCountZ ? ( *m_cpConfig.getGroupCountZ )() : m_cpConfig.groupCountZ ) );
 		}
 
 		m_cpConfig.end( context, commandBuffer, index );
