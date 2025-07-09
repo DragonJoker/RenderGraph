@@ -18,22 +18,22 @@ namespace crg
 
 	struct SamplerDesc
 	{
-		VkFilter magFilter{ VK_FILTER_NEAREST };
-		VkFilter minFilter{ VK_FILTER_NEAREST };
-		VkSamplerMipmapMode mipmapMode{ VK_SAMPLER_MIPMAP_MODE_NEAREST };
-		VkSamplerAddressMode addressModeU{ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE };
-		VkSamplerAddressMode addressModeV{ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE };
-		VkSamplerAddressMode addressModeW{ VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE };
+		FilterMode magFilter{ FilterMode::eNearest };
+		FilterMode minFilter{ FilterMode::eNearest };
+		MipmapMode mipmapMode{ MipmapMode::eNearest };
+		WrapMode addressModeU{ WrapMode::eClampToEdge };
+		WrapMode addressModeV{ WrapMode::eClampToEdge };
+		WrapMode addressModeW{ WrapMode::eClampToEdge };
 		float mipLodBias{ 0.0f };
 		float minLod{ -500.0f };
 		float maxLod{ 500.0f };
 
-		explicit constexpr SamplerDesc( VkFilter magFilter = VK_FILTER_NEAREST
-			, VkFilter minFilter = VK_FILTER_NEAREST
-			, VkSamplerMipmapMode mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST
-			, VkSamplerAddressMode addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-			, VkSamplerAddressMode addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
-			, VkSamplerAddressMode addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE
+		explicit constexpr SamplerDesc( FilterMode magFilter = FilterMode::eNearest
+			, FilterMode minFilter = FilterMode::eNearest
+			, MipmapMode mipmapMode = MipmapMode::eNearest
+			, WrapMode addressModeU = WrapMode::eClampToEdge
+			, WrapMode addressModeV = WrapMode::eClampToEdge
+			, WrapMode addressModeW = WrapMode::eClampToEdge
 			, float mipLodBias = 0.0f
 			, float minLod = -500.0f
 			, float maxLod = 500.0f )
@@ -86,12 +86,12 @@ namespace crg
 		/**@{*/
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkDescriptorType getDescriptorType()const;
-		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts
+		CRG_API ImageLayout getImageLayout( bool separateDepthStencilLayouts
 			, bool isInput
 			, bool isOutput )const;
-		CRG_API VkAccessFlags getAccessMask( bool isInput
+		CRG_API AccessFlags getAccessMask( bool isInput
 			, bool isOutput )const;
-		CRG_API VkPipelineStageFlags getPipelineStageFlags( bool isCompute )const;
+		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
 
 		FlagKind getFlags()const
 		{
@@ -178,7 +178,7 @@ namespace crg
 		SamplerDesc samplerDesc{};
 		VkClearValue clearValue{};
 		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
-		VkImageLayout wantedLayout{};
+		ImageLayout wantedLayout{};
 
 	private:
 		CRG_API ImageAttachment() = default;
@@ -192,7 +192,7 @@ namespace crg
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState
-			, VkImageLayout wantedLayout );
+			, ImageLayout wantedLayout );
 
 		FlagKind flags{};
 
@@ -233,9 +233,9 @@ namespace crg
 		CRG_API WriteDescriptorSet getWrite( uint32_t binding
 			, uint32_t count
 			, uint32_t index )const;
-		CRG_API VkAccessFlags getAccessMask( bool isInput
+		CRG_API AccessFlags getAccessMask( bool isInput
 			, bool isOutput )const;
-		CRG_API VkPipelineStageFlags getPipelineStageFlags( bool isCompute )const;
+		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
 
 		FlagKind getFlags()const
 		{
@@ -348,11 +348,11 @@ namespace crg
 		CRG_API uint32_t getBufferCount()const;
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkBuffer buffer( uint32_t index = 0u )const;
-		CRG_API VkImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
+		CRG_API ImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		CRG_API VkDescriptorType getDescriptorType()const;
 		CRG_API WriteDescriptorSet getBufferWrite( uint32_t index = 0u )const;
-		CRG_API VkAccessFlags getAccessMask()const;
-		CRG_API VkPipelineStageFlags getPipelineStageFlags( bool isCompute )const;
+		CRG_API AccessFlags getAccessMask()const;
+		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
 
 		FlagKind getFlags()const
 		{
@@ -671,7 +671,7 @@ namespace crg
 			, SamplerDesc samplerDesc
 			, VkClearValue clearValue
 			, VkPipelineColorBlendAttachmentState blendState
-			, VkImageLayout wantedLayout );
+			, ImageLayout wantedLayout );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
 			, uint32_t binding

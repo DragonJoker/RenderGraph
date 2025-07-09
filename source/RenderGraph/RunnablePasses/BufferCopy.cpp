@@ -24,7 +24,7 @@ namespace crg
 			, context
 			, graph
 			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
+				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
@@ -49,13 +49,12 @@ namespace crg
 		context.memoryBarrier( commandBuffer
 			, srcBuffer
 			, srcBufferRange
-			, VK_ACCESS_SHADER_WRITE_BIT
-			, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT
-			, crg::AccessState{ VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
+			, { AccessFlags::eShaderWrite, PipelineStageFlags::eFragmentShader }
+			, { AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
 		context.memoryBarrier( commandBuffer
 			, dstBuffer
 			, dstBufferRange
-			, crg::AccessState{ VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
+			, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
 		context->vkCmdCopyBuffer( commandBuffer
 			, srcBuffer
 			, dstBuffer
@@ -64,10 +63,10 @@ namespace crg
 		context.memoryBarrier( commandBuffer
 			, dstBuffer
 			, dstBufferRange
-			, crg::AccessState{ VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT } );
+			, { AccessFlags::eShaderRead, PipelineStageFlags::eComputeShader } );
 		context.memoryBarrier( commandBuffer
 			, srcBuffer
 			, srcBufferRange
-			, crg::AccessState{ VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT } );
+			, { AccessFlags::eShaderWrite, PipelineStageFlags::eFragmentShader } );
 	}
 }

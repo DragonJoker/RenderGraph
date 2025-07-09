@@ -655,11 +655,11 @@ namespace crg
 			, std::move( samplerDesc )
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
+			, ImageLayout::eShaderReadOnly } );
 	}
 
 	void FramePass::addImplicitColourView( ImageViewIdArray views
-		, VkImageLayout wantedLayout )
+		, ImageLayout wantedLayout )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
@@ -679,7 +679,7 @@ namespace crg
 	}
 
 	void FramePass::addImplicitDepthView( ImageViewIdArray views
-		, VkImageLayout wantedLayout )
+		, ImageLayout wantedLayout )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
@@ -700,7 +700,7 @@ namespace crg
 	}
 
 	void FramePass::addImplicitDepthStencilView( ImageViewIdArray views
-		, VkImageLayout wantedLayout )
+		, ImageLayout wantedLayout )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
 		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
@@ -737,7 +737,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_GENERAL } );
+			, ImageLayout::eGeneral } );
 	}
 
 	void FramePass::addOutputStorageView( ImageViewIdArray views
@@ -757,7 +757,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_GENERAL } );
+			, ImageLayout::eGeneral } );
 	}
 
 	void FramePass::addClearableOutputStorageView( ImageViewIdArray views
@@ -778,7 +778,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_GENERAL } );
+			, ImageLayout::eGeneral } );
 	}
 
 	void FramePass::addInOutStorageView( ImageViewIdArray views
@@ -798,7 +798,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_GENERAL } );
+			, ImageLayout::eGeneral } );
 	}
 
 	void FramePass::addTransferInputView( ImageViewIdArray views )
@@ -817,7 +817,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL } );
+			, ImageLayout::eTransferSrc } );
 	}
 
 	void FramePass::addTransferOutputView( ImageViewIdArray views )
@@ -836,7 +836,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL } );
+			, ImageLayout::eTransferDst } );
 	}
 
 	void FramePass::addTransferInOutView( ImageViewIdArray views
@@ -856,7 +856,7 @@ namespace crg
 			, SamplerDesc{}
 			, VkClearValue{}
 			, VkPipelineColorBlendAttachmentState{}
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL } );
+			, ImageLayout::eTransferSrc } );
 	}
 
 	void FramePass::addColourView( std::string const & pname
@@ -864,7 +864,7 @@ namespace crg
 		, ImageViewIdArray views
 		, VkAttachmentLoadOp loadOp
 		, VkAttachmentStoreOp storeOp
-		, VkImageLayout wantedLayout
+		, ImageLayout wantedLayout
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState )
 	{
@@ -892,7 +892,7 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout wantedLayout
+		, ImageLayout wantedLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
@@ -921,7 +921,7 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout wantedLayout
+		, ImageLayout wantedLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
@@ -951,7 +951,7 @@ namespace crg
 		, VkAttachmentStoreOp storeOp
 		, VkAttachmentLoadOp stencilLoadOp
 		, VkAttachmentStoreOp stencilStoreOp
-		, VkImageLayout wantedLayout
+		, ImageLayout wantedLayout
 		, VkClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;

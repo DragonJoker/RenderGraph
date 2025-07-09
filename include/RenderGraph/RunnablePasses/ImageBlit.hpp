@@ -18,7 +18,7 @@ namespace crg
 			, VkExtent3D blitSrcSize
 			, VkOffset3D blitDstOffset
 			, VkExtent3D blitDstSize
-			, VkFilter filter
+			, FilterMode filter
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
@@ -33,6 +33,6 @@ namespace crg
 		VkExtent3D m_srcSize;
 		VkOffset3D m_dstOffset;
 		VkExtent3D m_dstSize;
-		VkFilter m_filter;
+		FilterMode m_filter;
 	};
 }

@@ -246,7 +246,7 @@ namespace crg
 		*	It will also be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		CRG_API void addImplicitColourView( ImageViewIdArray view
-			, VkImageLayout wantedLayout );
+			, ImageLayout wantedLayout );
 		/**
 		*\brief
 		*	Creates an implicit image attachment.
@@ -255,7 +255,7 @@ namespace crg
 		*	It will also be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		CRG_API void addImplicitDepthView( ImageViewIdArray view
-			, VkImageLayout wantedLayout );
+			, ImageLayout wantedLayout );
 		/**
 		*\brief
 		*	Creates an implicit image attachment.
@@ -264,7 +264,7 @@ namespace crg
 		*	It will also be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		CRG_API void addImplicitDepthStencilView( ImageViewIdArray view
-			, VkImageLayout wantedLayout );
+			, ImageLayout wantedLayout );
 		/**
 		*\brief
 		*	Creates a storage image attachment.
@@ -331,7 +331,7 @@ namespace crg
 		*	It will also be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		inline void addImplicitColourView( ImageViewId view
-			, VkImageLayout wantedLayout )
+			, ImageLayout wantedLayout )
 		{
 			addImplicitColourView( ImageViewIdArray{ view }
 				, wantedLayout );
@@ -344,7 +344,7 @@ namespace crg
 		*	It will also be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		inline void addImplicitDepthView( ImageViewId view
-			, VkImageLayout wantedLayout )
+			, ImageLayout wantedLayout )
 		{
 			addImplicitDepthView( ImageViewIdArray{ view }
 				, wantedLayout );
@@ -357,7 +357,7 @@ namespace crg
 		*	It will also be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		inline void addImplicitDepthStencilView( ImageViewId view
-			, VkImageLayout wantedLayout )
+			, ImageLayout wantedLayout )
 		{
 			addImplicitDepthStencilView( ImageViewIdArray{ view }
 				, wantedLayout );
@@ -446,7 +446,7 @@ namespace crg
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL );
+				, ImageLayout::eColorAttachment );
 		}
 		/**
 		*\brief
@@ -461,7 +461,7 @@ namespace crg
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+				, ImageLayout::eColorAttachment
 				, {}
 				, std::move( blendState ) );
 		}
@@ -478,7 +478,7 @@ namespace crg
 				, std::move( view )
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+				, ImageLayout::eColorAttachment
 				, std::move( clearValue ) );
 		}
 		/**
@@ -495,7 +495,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, VkClearValue{} );
 		}
 		/**
@@ -512,7 +512,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, VkClearValue{} );
 		}
 		/**
@@ -530,7 +530,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, std::move( clearValue ) );
 		}
 		/**
@@ -548,7 +548,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, VkClearValue{} );
 		}
 		/**
@@ -566,7 +566,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, VkClearValue{} );
 		}
 		/**
@@ -585,7 +585,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_STORE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, std::move( clearValue ) );
 		}
 		/**
@@ -603,7 +603,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, VkClearValue{} );
 		}
 		/**
@@ -621,7 +621,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_LOAD
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, VkClearValue{} );
 		}
 		/**
@@ -640,7 +640,7 @@ namespace crg
 				, VK_ATTACHMENT_STORE_OP_DONT_CARE
 				, VK_ATTACHMENT_LOAD_OP_CLEAR
 				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+				, ImageLayout::eDepthStencilAttachment
 				, std::move( clearValue ) );
 		}
 		/**@}*/
@@ -675,7 +675,7 @@ namespace crg
 			, ImageViewIdArray view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {}
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		CRG_API void addDepthView( std::string const & name
@@ -685,7 +685,7 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {} );
 		CRG_API void addStencilView( std::string const & name
 			, Attachment::FlagKind flags
@@ -695,7 +695,7 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {} );
 		CRG_API void addDepthStencilView( std::string const & name
 			, Attachment::FlagKind flags
@@ -705,7 +705,7 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {} );
 
 		void addColourView( std::string const & name
@@ -713,7 +713,7 @@ namespace crg
 			, ImageViewId view
 			, VkAttachmentLoadOp loadOp
 			, VkAttachmentStoreOp storeOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {}
 			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
@@ -734,7 +734,7 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {} )
 		{
 			addDepthView( name
@@ -756,7 +756,7 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {} )
 		{
 			addStencilView( name
@@ -779,7 +779,7 @@ namespace crg
 			, VkAttachmentStoreOp storeOp
 			, VkAttachmentLoadOp stencilLoadOp
 			, VkAttachmentStoreOp stencilStoreOp
-			, VkImageLayout wantedLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout wantedLayout = ImageLayout::eUndefined
 			, VkClearValue clearValue = {} )
 		{
 			addDepthStencilView( name

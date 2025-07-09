@@ -24,7 +24,7 @@ namespace crg
 	GenerateMipmaps::GenerateMipmaps( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, VkImageLayout outputLayout
+		, ImageLayout outputLayout
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
 		, IsEnabledCallback isEnabled )
@@ -32,14 +32,12 @@ namespace crg
 			, context
 			, graph
 			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
+				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
-		, m_outputLayout{ outputLayout
-			, getAccessMask( outputLayout )
-			, getStageMask( outputLayout ) }
+		, m_outputLayout{ makeLayoutState( outputLayout ) }
 	{
 	}
 
@@ -87,15 +85,13 @@ namespace crg
 			// Transition first mip level to transfer source for read in next iteration
 			auto firstLayoutState = m_graph.getCurrentLayoutState( context
 				, imageId
-				, viewId.data->info.viewType
+				, convert( viewId.data->info.viewType )
 				, mipSubRange );
 			context.memoryBarrier( commandBuffer
 				, imageId
 				, mipSubRange
 				, firstLayoutState.layout
-				, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-					, VK_ACCESS_TRANSFER_READ_BIT
-					, VK_PIPELINE_STAGE_TRANSFER_BIT } );
+				, makeLayoutState( ImageLayout::eTransferSrc ) );
 
 			// Copy down mips
 			while ( ++mipSubRange.baseMipLevel < mipLevels )
@@ -116,9 +112,7 @@ namespace crg
 				context.memoryBarrier( commandBuffer
 					, imageId
 					, mipSubRange
-					, { VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-						, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
-						, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) } );
+					, makeLayoutState( ImageLayout::eTransferDst ) );
 
 				// Perform blit
 				m_context.vkCmdBlitImage( commandBuffer 
@@ -138,7 +132,7 @@ namespace crg
 						, 1u
 						, mipSubRange.baseArrayLayer
 						, 1u }
-					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					, ImageLayout::eTransferSrc
 					, nextLayoutState );
 
 				if ( mipSubRange.baseMipLevel == ( mipLevels - 1u ) )
@@ -147,7 +141,7 @@ namespace crg
 					context.memoryBarrier( commandBuffer
 						, imageId
 						, mipSubRange
-						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+						, ImageLayout::eTransferDst
 						, nextLayoutState );
 				}
 				else
@@ -156,10 +150,8 @@ namespace crg
 					context.memoryBarrier( commandBuffer
 						, imageId
 						, mipSubRange
-						, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-						, { VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-							, getAccessMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
-							, getStageMask( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) } );
+						, ImageLayout::eTransferDst
+						, makeLayoutState( ImageLayout::eTransferSrc ) );
 				}
 			}
 		}

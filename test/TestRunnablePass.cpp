@@ -69,8 +69,8 @@ namespace
 		testBegin( "testBufferToImageCopy" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		auto & testPass = graph.createPass( "Pass"
 			, []( crg::FramePass const & pass
 				, crg::GraphContext & context
@@ -92,8 +92,8 @@ namespace
 		testBegin( "testGenerateMipmaps" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT, 10u ) );
-		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 10u, 0u, 1u ) );
+		auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT, 10u ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 10u, 0u, 1u ) );
 		auto & testPass = graph.createPass( "Pass"
 			, []( crg::FramePass const & pass
 				, crg::GraphContext & context
@@ -113,10 +113,10 @@ namespace
 		testBegin( "testImageBlit" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto input = graph.createImage( test::createImage( "input", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto inputv = graph.createView( test::createView( "inputv", input, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto input = graph.createImage( test::createImage( "input", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto inputv = graph.createView( test::createView( "inputv", input, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		auto & testPass = graph.createPass( "Pass"
 			, [inputv, resultv]( crg::FramePass const & pass
 				, crg::GraphContext & context
@@ -125,7 +125,7 @@ namespace
 				return std::make_unique< crg::ImageBlit >( pass, context, runGraph
 					, VkOffset3D{}, getExtent( inputv )
 					, VkOffset3D{}, getExtent( resultv )
-					, VK_FILTER_LINEAR );
+					, crg::FilterMode::eLinear );
 			} );
 		testPass.addTransferInputView( inputv );
 		testPass.addTransferOutputView( resultv );
@@ -141,10 +141,10 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto input = graph.createImage( test::createImage( "input", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto inputv = graph.createView( test::createView( "inputv", input, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-			auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto input = graph.createImage( test::createImage( "input", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto inputv = graph.createView( test::createView( "inputv", input, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, [inputv]( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -162,10 +162,10 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto input = graph.createImage( test::createImage( "input", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto inputv = graph.createView( test::createView( "inputv", input, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-			auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto input = graph.createImage( test::createImage( "input", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto inputv = graph.createView( test::createView( "inputv", input, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, [inputv]( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -173,7 +173,7 @@ namespace
 				{
 						return std::make_unique< crg::ImageCopy >( pass, context, runGraph
 							, getExtent( inputv )
-							, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+							, crg::ImageLayout::eShaderReadOnly );
 				} );
 			testPass.addTransferInputView( inputv );
 			testPass.addTransferOutputView( resultv );
@@ -184,10 +184,10 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto input = graph.createImage( test::createImage( "input", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto inputv = graph.createView( test::createView( "inputv", input, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-			auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto input = graph.createImage( test::createImage( "input", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto inputv = graph.createView( test::createView( "inputv", input, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, [inputv]( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -195,7 +195,7 @@ namespace
 				{
 						return std::make_unique< crg::ImageCopy >( pass, context, runGraph
 							, getExtent( inputv )
-							, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+							, crg::ImageLayout::eShaderReadOnly );
 				} );
 			testPass.addTransferInputView( inputv );
 			testPass.addTransferOutputView( resultv );
@@ -213,8 +213,8 @@ namespace
 		testBegin( "testImageToBufferCopy" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto input = graph.createImage( test::createImage( "input", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto inputv = graph.createView( test::createView( "inputv", input, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto input = graph.createImage( test::createImage( "input", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto inputv = graph.createView( test::createView( "inputv", input, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		auto & testPass = graph.createPass( "Pass"
 			, [inputv]( crg::FramePass const & pass
 				, crg::GraphContext & context
@@ -251,12 +251,12 @@ namespace
 			} );
 		testPass1.addClearableOutputStorageBuffer( crg::Buffer{ VkBuffer( 1 ), "buffer1" }, 1u, 0u, 1024u );
 
-		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT ) );
-		auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT, 0u, 1u, 0u, 1u ) );
-		auto depthStencil = graph.createImage( test::createImage( "depthStencil", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
-		auto depthStencilv = graph.createView( test::createView( "depthStencilv", depthStencil, VK_FORMAT_D32_SFLOAT_S8_UINT, 0u, 1u, 0u, 1u ) );
+		auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto depth = graph.createImage( test::createImage( "depth", crg::PixelFormat::eD32_SFLOAT ) );
+		auto depthv = graph.createView( test::createView( "depthv", depth, crg::PixelFormat::eD32_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto depthStencil = graph.createImage( test::createImage( "depthStencil", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto depthStencilv = graph.createView( test::createView( "depthStencilv", depthStencil, crg::PixelFormat::eD32_SFLOAT_S8_UINT, 0u, 1u, 0u, 1u ) );
 		crg::ComputePass * computePass{};
 		auto & testPass2 = graph.createPass( "Pass2"
 			, [&computePass]( crg::FramePass const & pass
@@ -296,9 +296,9 @@ namespace
 		testPass3.addInputStorageBufferView( crg::Buffer{ VkBuffer( 5 ), "buffer4" }, VkBufferView{}, 0u, 0u, 1024u );
 		testPass3.addOutputStorageBufferView( crg::Buffer{ VkBuffer( 6 ), "buffer5" }, VkBufferView{}, 0u, 0u, 1024u );
 		testPass3.addInOutStorageBufferView( crg::Buffer{ VkBuffer( 7 ), "buffer6" }, VkBufferView{}, 0u, 0u, 1024u );
-		testPass3.addImplicitColourView( resultv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
-		testPass3.addImplicitDepthView( depthv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
-		testPass3.addImplicitDepthStencilView( depthStencilv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		testPass3.addImplicitColourView( resultv, crg::ImageLayout::eShaderReadOnly );
+		testPass3.addImplicitDepthView( depthv, crg::ImageLayout::eShaderReadOnly );
+		testPass3.addImplicitDepthStencilView( depthStencilv, crg::ImageLayout::eShaderReadOnly );
 
 		auto runnable = graph.compile( getContext() );
 		test::checkRunnable( testCounts, runnable );
@@ -316,10 +316,10 @@ namespace
 		testBegin( "testComputePassTransitions" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, "/" + testCounts.testName };
-		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-		auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT ) );
-		auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto depth = graph.createImage( test::createImage( "depth", crg::PixelFormat::eD32_SFLOAT ) );
+		auto depthv = graph.createView( test::createView( "depthv", depth, crg::PixelFormat::eD32_SFLOAT, 0u, 1u, 0u, 1u ) );
 		crg::Buffer buffer1{ VkBuffer( 1 ), "buffer1" };
 		crg::Buffer buffer2{ VkBuffer( 2 ), "buffer2" };
 		auto & testPass1 = graph.createPass( "Pass1"
@@ -352,8 +352,8 @@ namespace
 					, crg::ru::Config{}, std::move( cfg ) );
 			} );
 		testPass2.addDependency( testPass1 );
-		testPass2.addImplicitColourView( resultv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
-		testPass2.addImplicitDepthView( depthv, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		testPass2.addImplicitColourView( resultv, crg::ImageLayout::eShaderReadOnly );
+		testPass2.addImplicitDepthView( depthv, crg::ImageLayout::eShaderReadOnly );
 		testPass2.addImplicitBuffer( buffer1, 0u, 1024u, {} );
 		testPass2.addImplicitBuffer( buffer2, 0u, 1024u, {} );
 
@@ -368,8 +368,8 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, []( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -387,8 +387,8 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, []( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -407,9 +407,9 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT, 1u, 2u ) );
-			auto result1v = graph.createView( test::createView( "result1v", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-			auto result2v = graph.createView( test::createView( "result2v", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 1u, 1u ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT, 1u, 2u ) );
+			auto result1v = graph.createView( test::createView( "result1v", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto result2v = graph.createView( test::createView( "result2v", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 1u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, []( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -424,13 +424,13 @@ namespace
 
 			auto runnable = graph.compile( getContext() );
 			test::checkRunnable( testCounts, runnable );
-			check( graph.getFinalLayoutState( testPass.mergeViews( { result1v, result2v } ), 0u ).layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
+			check( graph.getFinalLayoutState( testPass.mergeViews( { result1v, result2v } ), 0u ).layout == crg::ImageLayout::eColorAttachment )
 		}
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT ) );
-			auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto depth = graph.createImage( test::createImage( "depth", crg::PixelFormat::eD32_SFLOAT ) );
+			auto depthv = graph.createView( test::createView( "depthv", depth, crg::PixelFormat::eD32_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, []( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -449,10 +449,10 @@ namespace
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
 			uint32_t passIndex{};
-			auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-			auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-			auto depth = graph.createImage( test::createImage( "depth", VK_FORMAT_D32_SFLOAT ) );
-			auto depthv = graph.createView( test::createView( "depthv", depth, VK_FORMAT_D32_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto depth = graph.createImage( test::createImage( "depth", crg::PixelFormat::eD32_SFLOAT ) );
+			auto depthv = graph.createView( test::createView( "depthv", depth, crg::PixelFormat::eD32_SFLOAT, 0u, 1u, 0u, 1u ) );
 			VkExtent2D extent{ getExtent( resultv ).width, getExtent( resultv ).height };
 			auto & testPass = graph.createPass( "Pass"
 				, [&passIndex, extent]( crg::FramePass const & pass
@@ -479,9 +479,9 @@ namespace
 		{
 			crg::ResourceHandler handler;
 			crg::FrameGraph graph{ handler, testCounts.testName };
-			auto result1 = graph.createImage( test::createImage( "result1", VK_FORMAT_R16G16B16A16_SFLOAT, 1u, 2u ) );
-			auto result1v = graph.createView( test::createView( "result1v", result1, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-			auto result2v = graph.createView( test::createView( "result2v", result1, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto result1 = graph.createImage( test::createImage( "result1", crg::PixelFormat::eR16G16B16A16_SFLOAT, 1u, 2u ) );
+			auto result1v = graph.createView( test::createView( "result1v", result1, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+			auto result2v = graph.createView( test::createView( "result2v", result1, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto & testPass = graph.createPass( "Pass"
 				, []( crg::FramePass const & pass
 					, crg::GraphContext & context
@@ -506,8 +506,8 @@ namespace
 	{
 		testBegin( "testRenderQuad" )
 		crg::ResourceHandler handler;
-		auto result = handler.createImageId( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto resultv = handler.createViewId( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto result = handler.createImageId( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto resultv = handler.createViewId( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		{
 			crg::FrameGraph graph{ handler, testCounts.testName };
 			crg::RenderQuad * renderQuad{};
@@ -571,8 +571,8 @@ namespace
 	{
 		testBegin( "testRenderMesh" )
 		crg::ResourceHandler handler;
-		auto result = handler.createImageId( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto resultv = handler.createViewId( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto result = handler.createImageId( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto resultv = handler.createViewId( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		{
 			crg::FrameGraph graph{ handler, testCounts.testName };
 			crg::RenderMesh * renderMesh{};
@@ -721,8 +721,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 
-		auto sampled = graph.createImage( test::createImage( "sampled", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto sampledv = graph.createView( test::createView( "sampledv", sampled, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto sampled = graph.createImage( test::createImage( "sampled", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto sampledv = graph.createView( test::createView( "sampledv", sampled, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		crg::RenderQuad * renderQuad{};
 		auto & testQuad = graph.createPass( "Quad"
 			, [&renderQuad]( crg::FramePass const & pass
@@ -743,8 +743,8 @@ namespace
 			} );
 		testQuad.addOutputColourView( sampledv );
 
-		auto result = graph.createImage( test::createImage( "result", VK_FORMAT_R16G16B16A16_SFLOAT ) );
-		auto resultv = graph.createView( test::createView( "resultv", result, VK_FORMAT_R16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
+		auto result = graph.createImage( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		crg::RenderMesh * renderMesh{};
 		auto & testMesh = graph.createPass( "Mesh"
 			, [&renderMesh]( crg::FramePass const & pass
@@ -774,9 +774,9 @@ namespace
 		checkNoThrow( renderQuad->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( renderMesh->resetPipeline( crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }, 0u ) )
 		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( crg::SemaphoreWait{ VkSemaphore( 1 ), VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT }, VkQueue{} ) )
-		check( graph.getFinalLayoutState( sampledv, 0u ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
-		check( graph.getDefaultGroup().getFinalLayoutState( sampledv, 0u ).layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
+		checkNoThrow( runnable->run( crg::SemaphoreWait{ VkSemaphore( 1 ), crg::PipelineStageFlags::eAllGraphics }, VkQueue{} ) )
+		check( graph.getFinalLayoutState( sampledv, 0u ).layout == crg::ImageLayout::eShaderReadOnly )
+		check( graph.getDefaultGroup().getFinalLayoutState( sampledv, 0u ).layout == crg::ImageLayout::eShaderReadOnly )
 		testEnd()
 	}
 }

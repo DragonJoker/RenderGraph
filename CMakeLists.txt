@@ -105,6 +105,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/AttachmentTransition.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/DotExport.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.cpp
+		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraphPrerequisites.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePass.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassDependenciesBuilder.cpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FramePassGroup.cpp
@@ -122,9 +123,13 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	set( ${PROJECT_NAME}_NVS_FILES
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/FrameGraph.natvis
 	)
+	set( ${PROJECT_NAME}_XENUM_FILES
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/PixelFormat.enum
+	)
 	source_group( "Header Files" FILES ${${PROJECT_NAME}_HDR_FILES} )
 	source_group( "Source Files" FILES ${${PROJECT_NAME}_SRC_FILES} )
 	source_group( "Visualisation Files" FILES ${${PROJECT_NAME}_NVS_FILES} )
+	source_group( "X Enum Files" FILES ${${PROJECT_NAME}_XENUM_FILES} )
 	set( ${PROJECT_NAME}_FOLDER_HDR_FILES
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/BufferCopy.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePasses/BufferToImageCopy.hpp
@@ -181,6 +186,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			${${PROJECT_NAME}_HDR_FILES}
 			${${PROJECT_NAME}_SRC_FILES}
 			${${PROJECT_NAME}_NVS_FILES}
+			${${PROJECT_NAME}_XENUM_FILES}
 		)
 		target_compile_definitions( ${PROJECT_NAME}
 			PUBLIC
@@ -191,6 +197,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 			${${PROJECT_NAME}_HDR_FILES}
 			${${PROJECT_NAME}_SRC_FILES}
 			${${PROJECT_NAME}_NVS_FILES}
+			${${PROJECT_NAME}_XENUM_FILES}
 		)
 		set_target_properties( ${PROJECT_NAME}
 			PROPERTIES

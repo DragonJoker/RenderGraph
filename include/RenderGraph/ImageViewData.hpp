@@ -22,8 +22,8 @@ namespace crg
 		explicit ImageViewData( std::string name = {}
 			, ImageId image = ImageId{}
 			, VkImageViewCreateFlags flags = {}
-			, VkImageViewType viewType = {}
-			, VkFormat format = {}
+			, ImageViewType viewType = {}
+			, PixelFormat format = {}
 			, VkImageSubresourceRange subresourceRange = {} )
 			: name{ std::move( name ) }
 			, image{ std::move( image ) }
@@ -31,8 +31,8 @@ namespace crg
 				, nullptr
 				, flags
 				, VkImage{}
-				, viewType
-				, format
+				, convert( viewType )
+				, convert( format )
 				, { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A }
 				, subresourceRange }
 		{

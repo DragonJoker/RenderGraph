@@ -60,76 +60,48 @@ namespace test
 			crg::dot::displayTransitions( file, value, { true, true, true, false } );
 		}
 
-		bool isDepthFormat( VkFormat fmt )
-		{
-			return fmt == VK_FORMAT_D16_UNORM
-				|| fmt == VK_FORMAT_X8_D24_UNORM_PACK32
-				|| fmt == VK_FORMAT_D32_SFLOAT
-				|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
-				|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
-				|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
-		}
-
-		bool isStencilFormat( VkFormat fmt )
-		{
-			return fmt == VK_FORMAT_S8_UINT
-				|| fmt == VK_FORMAT_D16_UNORM_S8_UINT
-				|| fmt == VK_FORMAT_D24_UNORM_S8_UINT
-				|| fmt == VK_FORMAT_D32_SFLOAT_S8_UINT;
-		}
-
-		bool isColourFormat( VkFormat fmt )
-		{
-			return !isDepthFormat( fmt ) && !isStencilFormat( fmt );
-		}
-
-		bool isDepthStencilFormat( VkFormat fmt )
-		{
-			return isDepthFormat( fmt ) && isStencilFormat( fmt );
-		}
-
-		VkImageViewType getViewType( VkImageType type
+		crg::ImageViewType getViewType( crg::ImageType type
 			, VkImageCreateFlags flags
 			, uint32_t layerCount )
 		{
 			switch ( type )
 			{
-			case VK_IMAGE_TYPE_1D:
+			case crg::ImageType::e1D:
 				return layerCount > 1u
-					? VK_IMAGE_VIEW_TYPE_1D_ARRAY
-					: VK_IMAGE_VIEW_TYPE_1D;
-			case VK_IMAGE_TYPE_3D:
-				return VK_IMAGE_VIEW_TYPE_3D;
+					? crg::ImageViewType::e1DArray
+					: crg::ImageViewType::e1D;
+			case crg::ImageType::e3D:
+				return crg::ImageViewType::e3D;
 			default:
 				if ( layerCount > 1u )
 				{
 					if ( ( ( layerCount % 6u ) == 0u ) && ( flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT ) )
 					{
 						return ( layerCount > 6u )
-							? VK_IMAGE_VIEW_TYPE_CUBE_ARRAY
-							: VK_IMAGE_VIEW_TYPE_CUBE;
+							? crg::ImageViewType::eCubeArray
+							: crg::ImageViewType::eCube;
 					}
 					else
 					{
-						return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+						return crg::ImageViewType::e2DArray;
 					}
 				}
 				else
 				{
-					return VK_IMAGE_VIEW_TYPE_2D;
+					return crg::ImageViewType::e2D;
 				}
 			}
 		}
 	}
 
 	crg::ImageData createImage( std::string name
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t mipLevels
 		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
 			, 0u
-			, VK_IMAGE_TYPE_2D
+			, crg::ImageType::e2D
 			, format
 			, { 1024, 1024 }
 			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
@@ -139,13 +111,13 @@ namespace test
 	}
 
 	crg::ImageData createImage1D( std::string name
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t mipLevels
 		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
 			, 0u
-			, VK_IMAGE_TYPE_1D
+			, crg::ImageType::e1D
 			, format
 			, { 1024 }
 			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
@@ -155,13 +127,13 @@ namespace test
 	}
 
 	crg::ImageData createImageCube( std::string name
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t mipLevels
 		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
 			, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
-			, VK_IMAGE_TYPE_2D
+			, crg::ImageType::e2D
 			, format
 			, { 1024, 1024u }
 			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
@@ -179,7 +151,7 @@ namespace test
 	{
 		return createView( std::move( name )
 			, image
-			, image.data->info.format
+			, crg::convert( image.data->info.format )
 			, baseMipLevel
 			, levelCount
 			, baseArrayLayer
@@ -188,7 +160,7 @@ namespace test
 
 	crg::ImageViewData createView( std::string name
 		, crg::ImageId image
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t baseMipLevel
 		, uint32_t levelCount
 		, uint32_t baseArrayLayer
@@ -204,7 +176,7 @@ namespace test
 		return crg::ImageViewData{ std::move( name )
 			, image
 			, 0u
-			, getViewType( image.data->info.imageType, image.data->info.flags, layerCount )
+			, getViewType( crg::convert( image.data->info.imageType ), image.data->info.flags, layerCount )
 			, format
 			, { aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount } };
 	}
@@ -689,7 +661,7 @@ namespace test
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph
 			, test::TestCounts & testCounts
-			, VkPipelineStageFlags pipelineStageFlags
+			, crg::PipelineStageFlags pipelineStageFlags
 			, CheckViews checkViews
 			, uint32_t index
 			, bool enabled
@@ -713,7 +685,7 @@ namespace test
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph
 			, test::TestCounts & testCounts
-			, VkPipelineStageFlags pipelineStageFlags
+			, crg::PipelineStageFlags pipelineStageFlags
 			, CheckViews checkViews
 			, uint32_t index
 			, crg::ru::Config config )
@@ -735,7 +707,7 @@ namespace test
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph
 			, test::TestCounts & testCounts
-			, VkPipelineStageFlags pipelineStageFlags
+			, crg::PipelineStageFlags pipelineStageFlags
 			, CheckViews checkViews
 			, crg::ru::Config config )
 			: crg::RunnablePass{ framePass
@@ -755,7 +727,7 @@ namespace test
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph
 			, test::TestCounts & testCounts
-			, VkPipelineStageFlags pipelineStageFlags
+			, crg::PipelineStageFlags pipelineStageFlags
 			, crg::ru::Config config )
 			: crg::RunnablePass{ framePass
 				, context
@@ -787,7 +759,7 @@ namespace test
 		}
 
 		test::TestCounts & m_testCounts;
-		VkPipelineStageFlags m_pipelineStageFlags;
+		crg::PipelineStageFlags m_pipelineStageFlags;
 		CheckViews m_checkViews;
 	};
 
@@ -795,7 +767,7 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews
 		, uint32_t index
 		, bool enabled
@@ -816,7 +788,7 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews
 		, uint32_t index
 		, crg::ru::Config config )
@@ -835,7 +807,7 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews
 		, crg::ru::Config config )
 	{
@@ -852,7 +824,7 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, crg::ru::Config config )
 	{
 		return std::make_unique< DummyRunnable >( framePass

@@ -33,9 +33,9 @@ namespace crg
 	void checkUndefinedInput( std::string const & stepName
 		, Attachment const & attach
 		, ImageViewId const & view
-		, VkImageLayout currentLayout )
+		, ImageLayout currentLayout )
 	{
-		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == ImageLayout::eUndefined )
 		{
 			Logger::logWarning( stepName + " - [" + attach.pass->getFullName() + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
 		}
@@ -53,7 +53,7 @@ namespace crg
 					, wait.semaphore ) )
 			{
 				semaphores.push_back( wait.semaphore );
-				dstStageMasks.push_back( wait.dstStageMask );
+				dstStageMasks.push_back( convert( wait.dstStageMask ) );
 			}
 		}
 	}
@@ -399,7 +399,7 @@ namespace crg
 				{
 					auto needed = makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) );
 					auto currentLayout = ( !attach.isInput()
-						? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
+						? crg::makeLayoutState( ImageLayout::eUndefined )
 						: m_graph.getCurrentLayoutState( context, view ) );
 					checkUndefinedInput( "Record", attach, view, currentLayout.layout );
 
@@ -408,7 +408,7 @@ namespace crg
 						context.memoryBarrier( commandBuffer
 							, view
 							, currentLayout.layout
-							, LayoutState{ VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } } );
+							, makeLayoutState( ImageLayout::eTransferDst ) );
 
 						if ( isColourFormat( getFormat( view ) ) )
 						{
@@ -431,9 +431,9 @@ namespace crg
 								, &view.data->info.subresourceRange );
 						}
 
-						currentLayout.layout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-						currentLayout.state.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-						currentLayout.state.pipelineStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+						currentLayout.layout = ImageLayout::eTransferDst;
+						currentLayout.state.access = AccessFlags::eTransferWrite;
+						currentLayout.state.pipelineStage = PipelineStageFlags::eTransfer;
 					}
 
 					context.memoryBarrier( commandBuffer
@@ -457,23 +457,21 @@ namespace crg
 						context.memoryBarrier( commandBuffer
 							, buffer
 							, range
-							, currentState.access
-							, currentState.pipelineStage
-							, { VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT } );
+							, currentState
+							, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
 						m_context.vkCmdFillBuffer( commandBuffer
 							, buffer
 							, range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u )
 							, range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u )
 							, 0u );
-						currentState.access = VK_ACCESS_TRANSFER_WRITE_BIT;
-						currentState.pipelineStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+						currentState.access = AccessFlags::eTransferWrite;
+						currentState.pipelineStage = PipelineStageFlags::eTransfer;
 					}
 
 					context.memoryBarrier( commandBuffer
 						, buffer
 						, range
-						, currentState.access
-						, currentState.pipelineStage
+						, currentState
 						, { attach.getAccessMask(), attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
 				}
 			}

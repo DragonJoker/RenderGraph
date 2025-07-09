@@ -328,8 +328,8 @@ namespace crg::builder
 			, ImageViewData const & rhs )
 		{
 			return lhs.image == rhs.image
-				&& areIntersecting( getVirtualRange( lhs.image, lhs.info.viewType, lhs.info.subresourceRange )
-					, getVirtualRange( rhs.image, rhs.info.viewType, rhs.info.subresourceRange ) );
+				&& areIntersecting( getVirtualRange( lhs.image, convert( lhs.info.viewType ), lhs.info.subresourceRange )
+					, getVirtualRange( rhs.image, convert( rhs.info.viewType ), rhs.info.subresourceRange ) );
 		}
 
 		static bool areOverlapping( ImageViewId const & lhs

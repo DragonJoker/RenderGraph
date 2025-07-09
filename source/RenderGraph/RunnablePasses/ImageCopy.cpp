@@ -27,7 +27,7 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, VkExtent3D copySize
-		, VkImageLayout finalOutputLayout
+		, ImageLayout finalOutputLayout
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
 		, IsEnabledCallback isEnabled )
@@ -35,7 +35,7 @@ namespace crg
 			, context
 			, graph
 			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
+				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
@@ -57,7 +57,7 @@ namespace crg
 			, context
 			, graph
 			, copySize
-			, VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout::eUndefined
 			, std::move( ruConfig )
 			, std::move( passIndex )
 			, std::move( isEnabled ) }
@@ -92,7 +92,7 @@ namespace crg
 				, 1u
 				, &copyRegion );
 
-			if ( m_finalOutputLayout != VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( m_finalOutputLayout != ImageLayout::eUndefined )
 			{
 				context.memoryBarrier( commandBuffer
 					, dstAttach

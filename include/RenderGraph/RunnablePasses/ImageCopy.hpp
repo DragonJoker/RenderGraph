@@ -22,7 +22,7 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, VkExtent3D copySize
-			, VkImageLayout finalOutputLayout
+			, ImageLayout finalOutputLayout
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
@@ -34,6 +34,6 @@ namespace crg
 
 	private:
 		VkExtent3D m_copySize;
-		VkImageLayout m_finalOutputLayout;
+		ImageLayout m_finalOutputLayout;
 	};
 }

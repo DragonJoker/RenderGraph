@@ -57,13 +57,13 @@ namespace crg
 		CRG_API ImageId createImage( ImageData const & img )const;
 		CRG_API ImageViewId createView( ImageViewData const & view )const;
 		CRG_API void addInput( ImageId image
-			, VkImageViewType viewType
+			, ImageViewType viewType
 			, VkImageSubresourceRange const & range
 			, LayoutState const & outputLayout );
 		CRG_API void addInput( ImageViewId view
 			, LayoutState const & outputLayout );
 		CRG_API void addOutput( ImageId image
-			, VkImageViewType viewType
+			, ImageViewType viewType
 			, VkImageSubresourceRange const & range
 			, LayoutState const & outputLayout );
 		CRG_API void addOutput( ImageViewId view

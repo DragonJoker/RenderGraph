@@ -154,7 +154,7 @@ namespace crg
 	}
 
 	void FramePassGroup::addInput( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & range
 		, LayoutState const & outputLayout )
 	{
@@ -168,13 +168,13 @@ namespace crg
 		, LayoutState const & outputLayout )
 	{
 		addInput( view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange
 			, outputLayout );
 	}
 
 	void FramePassGroup::addOutput( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & range
 		, LayoutState const & outputLayout )
 	{
@@ -188,7 +188,7 @@ namespace crg
 		, LayoutState const & outputLayout )
 	{
 		addOutput( view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange
 			, outputLayout );
 	}

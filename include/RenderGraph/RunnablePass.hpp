@@ -16,7 +16,7 @@ namespace crg
 	CRG_API void checkUndefinedInput( std::string const & stepName
 		, Attachment const & attach
 		, ImageViewId const & view
-		, VkImageLayout currentLayout );
+		, ImageLayout currentLayout );
 
 	template< typename StrongT, typename ValueT >
 	struct GetValueCallbackT
@@ -371,7 +371,7 @@ namespace crg
 	{
 		static RunnablePass::GetPipelineStateCallback get()
 		{
-			RunnablePass::GetPipelineStateCallback const result{ [](){ return PipelineState{ VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT }; } };
+			RunnablePass::GetPipelineStateCallback const result{ [](){ return PipelineState{ AccessFlags::eShaderRead, PipelineStageFlags::eFragmentShader }; } };
 			return result;
 		}
 	};
