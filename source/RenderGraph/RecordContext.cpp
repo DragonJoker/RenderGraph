@@ -25,7 +25,7 @@ namespace crg
 	namespace recctx
 	{
 		static VkImageSubresourceRange adaptRange( GraphContext const & context
-			, VkFormat format
+			, PixelFormat format
 			, VkImageSubresourceRange const & subresourceRange )
 		{
 			VkImageSubresourceRange result = subresourceRange;
@@ -49,9 +49,9 @@ namespace crg
 	RecordContext::RecordContext( ContextResourcesCache & resources )
 		: m_handler{ &resources.getHandler() }
 		, m_resources{ &resources }
-		, m_prevPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
-		, m_currPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
-		, m_nextPipelineState{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT }
+		, m_prevPipelineState{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
+		, m_currPipelineState{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
+		, m_nextPipelineState{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
 	{
 	}
 
@@ -97,7 +97,7 @@ namespace crg
 	}
 
 	void RecordContext::setLayoutState( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
 		, LayoutState const & layoutState )
 	{
@@ -108,7 +108,7 @@ namespace crg
 	}
 
 	LayoutState RecordContext::getLayoutState( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
 		return m_images.getLayoutState( image
@@ -122,7 +122,7 @@ namespace crg
 	}
 
 	LayoutState RecordContext::getNextLayoutState( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
 		return m_nextImages.getLayoutState( image
@@ -181,19 +181,19 @@ namespace crg
 			return bufferIt->second;
 		}
 
-		static AccessState const dummy{ 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+		static AccessState const dummy{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe };
 		return dummy;
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageViewId const & view
-		, VkImageLayout initialLayout
+		, ImageLayout initialLayout
 		, LayoutState const & wantedState
 		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange
 			, initialLayout
 			, wantedState
@@ -203,13 +203,13 @@ namespace crg
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageId const & image
 		, VkImageSubresourceRange const & subresourceRange
-		, VkImageLayout initialLayout
+		, ImageLayout initialLayout
 		, LayoutState const & wantedState
 		, bool force )
 	{
 		memoryBarrier( commandBuffer
 			, image
-			, VkImageViewType( image.data->info.imageType )
+			, ImageViewType( image.data->info.imageType )
 			, subresourceRange
 			, initialLayout
 			, wantedState
@@ -218,45 +218,43 @@ namespace crg
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageId const & image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
-		, VkImageLayout initialLayout
+		, ImageLayout initialLayout
 		, LayoutState const & wantedState
 		, bool force )
 	{
 		auto range = recctx::adaptRange( *m_resources
-				, image.data->info.format
+				, convert( image.data->info.format )
 				, subresourceRange );
 		auto from = getLayoutState( image
 			, viewType
 			, range );
 
-		if ( from.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( from.layout == ImageLayout::eUndefined )
 		{
-			from = { initialLayout
-				, getAccessMask( initialLayout )
-				, getStageMask( initialLayout ) };
+			from = makeLayoutState( initialLayout );
 		}
 
 		if ( force
 			|| ( ( from.layout != wantedState.layout
 				|| from.state.pipelineStage != wantedState.state.pipelineStage )
-				&& wantedState.layout != VK_IMAGE_LAYOUT_UNDEFINED ) )
+				&& wantedState.layout != ImageLayout::eUndefined ) )
 		{
 			auto & resources = getResources();
 			VkImageMemoryBarrier barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER
 				, nullptr
-				, from.state.access
-				, wantedState.state.access
-				, from.layout
-				, wantedState.layout
+				, convert( from.state.access )
+				, convert( wantedState.state.access )
+				, convert( from.layout )
+				, convert( wantedState.layout )
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
 				, resources.createImage( image )
 				, range };
 			resources->vkCmdPipelineBarrier( commandBuffer
-				, from.state.pipelineStage
-				, wantedState.state.pipelineStage
+				, convert( from.state.pipelineStage )
+				, convert( wantedState.state.pipelineStage )
 				, VK_DEPENDENCY_BY_REGION_BIT
 				, 0u
 				, nullptr
@@ -278,9 +276,8 @@ namespace crg
 	{
 		memoryBarrier( commandBuffer
 			, view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange
-			, VK_IMAGE_LAYOUT_UNDEFINED
 			, wantedState
 			, force );
 	}
@@ -293,16 +290,15 @@ namespace crg
 	{
 		memoryBarrier( commandBuffer
 			, image
-			, VkImageViewType( image.data->info.imageType )
+			, ImageViewType( image.data->info.imageType )
 			, subresourceRange
-			, VK_IMAGE_LAYOUT_UNDEFINED
 			, wantedState
 			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageId const & image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
 		, LayoutState const & wantedState
 		, bool force )
@@ -311,7 +307,7 @@ namespace crg
 			, image
 			, viewType
 			, subresourceRange
-			, VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout::eUndefined
 			, wantedState
 			, force );
 	}
@@ -319,15 +315,15 @@ namespace crg
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, VkBuffer buffer
 		, BufferSubresourceRange const & subresourceRange
-		, VkAccessFlags initialMask
-		, VkPipelineStageFlags initialStage
+		, AccessFlags initialMask
+		, PipelineStageFlags initialStage
 		, AccessState const & wantedState
 		, bool force )
 	{
 		auto from = getAccessState( buffer
 			, subresourceRange );
 
-		if ( from.pipelineStage == VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT )
+		if ( from.pipelineStage == PipelineStageFlags::eBottomOfPipe )
 		{
 			from = { initialMask, initialStage };
 		}
@@ -339,16 +335,16 @@ namespace crg
 			auto const & resources = getResources();
 			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
 				, nullptr
-				, from.access
-				, wantedState.access
+				, convert( from.access )
+				, convert( wantedState.access )
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
 				, buffer
 				, subresourceRange.offset
 				, subresourceRange.size };
 			resources->vkCmdPipelineBarrier( commandBuffer
-				, from.pipelineStage
-				, wantedState.pipelineStage
+				, convert( from.pipelineStage )
+				, convert( wantedState.pipelineStage )
 				, VK_DEPENDENCY_BY_REGION_BIT
 				, 0u
 				, nullptr
@@ -371,8 +367,8 @@ namespace crg
 		memoryBarrier( commandBuffer
 			, buffer
 			, subresourceRange
-			, 0u
-			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
+			, AccessFlags::eNone
+			, PipelineStageFlags::eBottomOfPipe
 			, wantedState
 			, force );
 	}
@@ -385,49 +381,28 @@ namespace crg
 	RecordContext::ImplicitAction RecordContext::copyImage( ImageViewId srcView
 		, ImageViewId dstView
 		, VkExtent2D extent
-		, VkImageLayout finalLayout )
+		, ImageLayout finalLayout )
 	{
 		return [srcView, dstView, extent, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
-			auto & resources = recContext.getResources();
-			recContext.runImplicitTransition( commandBuffer
-				, index
-				, srcView );
+			recContext.runImplicitTransition( commandBuffer, index, srcView );
 			auto & srcSubresource = srcView.data->info.subresourceRange;
 			auto & dstSubresource = dstView.data->info.subresourceRange;
-			VkImageCopy region{ VkImageSubresourceLayers{ srcSubresource.aspectMask, srcSubresource.baseMipLevel, srcSubresource.baseArrayLayer, 1u }
-				, VkOffset3D{ 0u, 0u, 0u }
-				, VkImageSubresourceLayers{ dstSubresource.aspectMask, dstSubresource.baseMipLevel, dstSubresource.baseArrayLayer, 1u }
-				, VkOffset3D{ 0u, 0u, 0u }
-			, { extent.width, extent.height, 1u } };
-			recContext.memoryBarrier( commandBuffer
-				, srcView.data->image
-				, srcView.data->info.viewType
-				, srcView.data->info.subresourceRange
-				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) );
-			recContext.memoryBarrier( commandBuffer
-				, dstView.data->image
-				, dstView.data->info.viewType
-				, dstView.data->info.subresourceRange
-				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
+			VkImageCopy region{ VkImageSubresourceLayers{ srcSubresource.aspectMask, srcSubresource.baseMipLevel, srcSubresource.baseArrayLayer, 1u }, VkOffset3D{ 0u, 0u, 0u }
+				, VkImageSubresourceLayers{ dstSubresource.aspectMask, dstSubresource.baseMipLevel, dstSubresource.baseArrayLayer, 1u }, VkOffset3D{ 0u, 0u, 0u }
+				, { extent.width, extent.height, 1u } };
+			recContext.memoryBarrier( commandBuffer, srcView, makeLayoutState( ImageLayout::eTransferSrc ) );
+			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
+			auto & resources = recContext.getResources();
 			resources->vkCmdCopyImage( commandBuffer
-				, resources.createImage( srcView.data->image )
-				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, resources.createImage( dstView.data->image )
-				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-				, 1u
-				, &region );
+				, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+				, 1u, &region );
 
-			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-			{
-				recContext.memoryBarrier( commandBuffer
-					, dstView.data->image
-					, dstView.data->info.viewType
-					, dstView.data->info.subresourceRange
-					, makeLayoutState( finalLayout ) );
-			}
+			if ( finalLayout != ImageLayout::eUndefined )
+				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
 		};
 	}
 
@@ -437,57 +412,35 @@ namespace crg
 		, VkExtent2D srcExtent
 		, VkOffset2D dstOffset
 		, VkExtent2D dstExtent
-		, VkFilter filter
-		, VkImageLayout finalLayout )
+		, FilterMode filter
+		, ImageLayout finalLayout )
 	{
 		return [srcView, dstView, srcOffset, srcExtent, dstOffset, dstExtent, filter, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
-			auto & resources = recContext.getResources();
-			recContext.runImplicitTransition( commandBuffer
-				, index
-				, srcView );
+			recContext.runImplicitTransition( commandBuffer, index, srcView );
 			auto & srcSubresource = srcView.data->info.subresourceRange;
 			auto & dstSubresource = dstView.data->info.subresourceRange;
 			VkImageBlit region{ VkImageSubresourceLayers{ srcSubresource.aspectMask, srcSubresource.baseMipLevel, srcSubresource.baseArrayLayer, 1u }
-				, { VkOffset3D{ srcOffset.x, srcOffset.y, 0u }
-					, VkOffset3D{ int32_t( srcExtent.width ), int32_t( srcExtent.height ), 1 } }
+				, { VkOffset3D{ srcOffset.x, srcOffset.y, 0u }, VkOffset3D{ int32_t( srcExtent.width ), int32_t( srcExtent.height ), 1 } }
 				, VkImageSubresourceLayers{ dstSubresource.aspectMask, dstSubresource.baseMipLevel, dstSubresource.baseArrayLayer, 1u }
-				, { VkOffset3D{ dstOffset.x, dstOffset.y, 0u }
-					, VkOffset3D{ int32_t( dstExtent.width ), int32_t( dstExtent.height ), 1 } } };
-			recContext.memoryBarrier( commandBuffer
-				, srcView.data->image
-				, srcView.data->info.viewType
-				, srcView.data->info.subresourceRange
-				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL ) );
-			recContext.memoryBarrier( commandBuffer
-				, dstView.data->image
-				, dstView.data->info.viewType
-				, dstView.data->info.subresourceRange
-				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
+				, { VkOffset3D{ dstOffset.x, dstOffset.y, 0u }, VkOffset3D{ int32_t( dstExtent.width ), int32_t( dstExtent.height ), 1 } } };
+			recContext.memoryBarrier( commandBuffer, srcView, makeLayoutState( ImageLayout::eTransferSrc ) );
+			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
+			auto & resources = recContext.getResources();
 			resources->vkCmdBlitImage( commandBuffer
-				, resources.createImage( srcView.data->image )
-				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, resources.createImage( dstView.data->image )
-				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-				, 1u
-				, &region
-				, filter );
+				, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+				, 1u, &region, convert( filter ) );
 
-			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-			{
-				recContext.memoryBarrier( commandBuffer
-					, dstView.data->image
-					, dstView.data->info.viewType
-					, dstView.data->info.subresourceRange
-					, makeLayoutState( finalLayout ) );
-			}
+			if ( finalLayout != ImageLayout::eUndefined )
+				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
 		};
 	}
 
-	RecordContext::ImplicitAction RecordContext::clearAttachment( Attachment attach
-		, VkImageLayout finalLayout )
+	RecordContext::ImplicitAction RecordContext::clearAttachment( Attachment const & attach
+		, ImageLayout finalLayout )
 	{
 		return [attach, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
@@ -495,41 +448,19 @@ namespace crg
 		{
 			auto & resources = recContext.getResources();
 			auto dstView = attach.view( index );
-			recContext.memoryBarrier( commandBuffer
-				, dstView.data->image
-				, dstView.data->info.viewType
-				, dstView.data->info.subresourceRange
-				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
+			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
 
 			if ( isColourFormat( getFormat( dstView ) ) )
-			{
-				auto colour = attach.getClearValue().color;
 				resources->vkCmdClearColorImage( commandBuffer
-					, resources.createImage( dstView.data->image )
-					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-					, &colour
-					, 1u
-					, &dstView.data->info.subresourceRange );
-			}
+					, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, &attach.getClearValue().color, 1u, &dstView.data->info.subresourceRange );
 			else
-			{
-				auto depthStencil = attach.getClearValue().depthStencil;
 				resources->vkCmdClearDepthStencilImage( commandBuffer
-					, resources.createImage( dstView.data->image )
-					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-					, &depthStencil
-					, 1u
-					, &dstView.data->info.subresourceRange );
-			}
+					, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, &attach.getClearValue().depthStencil, 1u, &dstView.data->info.subresourceRange );
 
-			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-			{
-				recContext.memoryBarrier( commandBuffer
-					, dstView.data->image
-					, dstView.data->info.viewType
-					, dstView.data->info.subresourceRange
-					, makeLayoutState( finalLayout ) );
-			}
+			if ( finalLayout != ImageLayout::eUndefined )
+				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
 		};
 	}
 
@@ -546,48 +477,26 @@ namespace crg
 
 	RecordContext::ImplicitAction RecordContext::clearAttachment( ImageViewId dstView
 		, VkClearValue const & clearValue
-		, VkImageLayout finalLayout )
+		, ImageLayout finalLayout )
 	{
 		return [clearValue, dstView, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, [[maybe_unused]] uint32_t index )
 		{
 			auto & resources = recContext.getResources();
-			recContext.memoryBarrier( commandBuffer
-				, dstView.data->image
-				, dstView.data->info.viewType
-				, dstView.data->info.subresourceRange
-				, makeLayoutState( VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL ) );
+			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
 
 			if ( isColourFormat( getFormat( dstView ) ) )
-			{
-				auto colour = clearValue.color;
 				resources->vkCmdClearColorImage( commandBuffer
-					, resources.createImage( dstView.data->image )
-					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-					, &colour
-					, 1u
-					, &dstView.data->info.subresourceRange );
-			}
+					, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, &clearValue.color, 1u, &dstView.data->info.subresourceRange );
 			else
-			{
-				auto depthStencil = clearValue.depthStencil;
 				resources->vkCmdClearDepthStencilImage( commandBuffer
-					, resources.createImage( dstView.data->image )
-					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-					, &depthStencil
-					, 1u
-					, &dstView.data->info.subresourceRange );
-			}
+					, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, &clearValue.depthStencil, 1u, &dstView.data->info.subresourceRange );
 
-			if ( finalLayout != VK_IMAGE_LAYOUT_UNDEFINED )
-			{
-				recContext.memoryBarrier( commandBuffer
-					, dstView.data->image
-					, dstView.data->info.viewType
-					, dstView.data->info.subresourceRange
-					, makeLayoutState( finalLayout ) );
-			}
+			if ( finalLayout != ImageLayout::eUndefined )
+				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
 		};
 	}
 

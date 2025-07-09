@@ -15,13 +15,13 @@ namespace crg
 		CRG_API void addStates( LayerLayoutStatesHandler const & data );
 
 		CRG_API void setLayoutState( ImageId image
-			, VkImageViewType viewType
+			, ImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange
 			, LayoutState const & layoutState );
 		CRG_API void setLayoutState( crg::ImageViewId view
 			, LayoutState const & layoutState );
 		CRG_API LayoutState getLayoutState( ImageId image
-			, VkImageViewType viewType
+			, ImageViewType viewType
 			, VkImageSubresourceRange const & subresourceRange )const;
 		CRG_API LayoutState getLayoutState( ImageViewId view )const;
 

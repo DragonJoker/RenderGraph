@@ -15,7 +15,7 @@ namespace
 		testBegin( "testSampledAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addSampledView( view, 1u );
@@ -40,8 +40,8 @@ namespace
 		check( attachment.view() == view )
 		check( attachment.binding == 1u )
 		check( attachment.getSamplerDesc() == defaultSamplerDesc )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eShaderReadOnly )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eShaderReadOnly )
 		testEnd()
 	}
 
@@ -50,12 +50,12 @@ namespace
 		testBegin( "testImplicitColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( crg::ImageData{ "Test", 0u, VK_IMAGE_TYPE_3D, VK_FORMAT_R32G32B32A32_SFLOAT, { 1024, 1024, 1024 }, VK_IMAGE_USAGE_SAMPLED_BIT, 1u, 1u } );
-		auto range = crg::getVirtualRange( image, VK_IMAGE_VIEW_TYPE_3D, { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u } );
+		auto image = graph.createImage( crg::ImageData{ "Test", 0u, crg::ImageType::e3D, crg::PixelFormat::eR32G32B32A32_SFLOAT, { 1024, 1024, 1024 }, VK_IMAGE_USAGE_SAMPLED_BIT, 1u, 1u } );
+		auto range = crg::getVirtualRange( image, crg::ImageViewType::e3D, { VK_IMAGE_ASPECT_COLOR_BIT, 0u, 1u, 0u, 1u } );
 		check( range.baseArrayLayer == 0 )
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addImplicitColourView( view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		pass.addImplicitColourView( view, crg::ImageLayout::eShaderReadOnly );
 		require( pass.images.size() == 1u )
 		auto const & attachment = pass.images[0];
 		check( attachment.isImage() )
@@ -87,10 +87,10 @@ namespace
 		testBegin( "testImplicitDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addImplicitDepthView( view, VK_IMAGE_LAYOUT_PREINITIALIZED );
+		pass.addImplicitDepthView( view, crg::ImageLayout::ePreinitialized );
 		require( pass.images.size() == 1u )
 		auto const & attachment = pass.images[0];
 		check( attachment.isImage() )
@@ -123,10 +123,10 @@ namespace
 		testBegin( "testImplicitDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addImplicitDepthStencilView( view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL );
+		pass.addImplicitDepthStencilView( view, crg::ImageLayout::eShaderReadOnly );
 		require( pass.images.size() == 1u )
 		auto const & attachment = pass.images[0];
 		check( attachment.isImage() )
@@ -160,7 +160,7 @@ namespace
 		testBegin( "testInStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageView( view, 1u );
@@ -184,8 +184,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_GENERAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_GENERAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
@@ -194,7 +194,7 @@ namespace
 		testBegin( "testOutStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStorageView( view, 1u );
@@ -218,8 +218,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_GENERAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_GENERAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
@@ -228,7 +228,7 @@ namespace
 		testBegin( "testClearOutStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addClearableOutputStorageView( view, 1u );
@@ -252,8 +252,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_GENERAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_GENERAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
@@ -262,7 +262,7 @@ namespace
 		testBegin( "testInOutStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutStorageView( view, 1u );
@@ -286,8 +286,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_GENERAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_GENERAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
@@ -296,7 +296,7 @@ namespace
 		testBegin( "testInTransferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addTransferInputView( view );
@@ -320,8 +320,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eTransferSrc )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eTransferSrc )
 		testEnd()
 	}
 
@@ -330,7 +330,7 @@ namespace
 		testBegin( "testOutTransferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addTransferOutputView( view );
@@ -354,8 +354,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eTransferDst )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eTransferDst )
 		testEnd()
 	}
 
@@ -364,7 +364,7 @@ namespace
 		testBegin( "testInOutTransferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addTransferInOutView( view );
@@ -388,8 +388,8 @@ namespace
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
 		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eTransferDst )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eTransferDst )
 		testEnd()
 	}
 
@@ -398,7 +398,7 @@ namespace
 		testBegin( "testInColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputColourView( view );
@@ -426,8 +426,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
@@ -436,7 +436,7 @@ namespace
 		testBegin( "testOutColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputColourView( view );
@@ -464,8 +464,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
@@ -474,7 +474,7 @@ namespace
 		testBegin( "testInOutColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutColourView( view );
@@ -502,8 +502,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
@@ -512,7 +512,7 @@ namespace
 		testBegin( "testInDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthView( view );
@@ -540,8 +540,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilReadOnly )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthReadOnly )
 		testEnd()
 	}
 
@@ -550,7 +550,7 @@ namespace
 		testBegin( "testOutDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthView( view );
@@ -578,8 +578,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthAttachment )
 		testEnd()
 	}
 
@@ -588,7 +588,7 @@ namespace
 		testBegin( "testInOutDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutDepthView( view );
@@ -615,8 +615,8 @@ namespace
 		check( attachment.getStoreOp() == VK_ATTACHMENT_STORE_OP_STORE )
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthAttachment )
 		check( attachment.view() == view )
 		testEnd()
 	}
@@ -626,7 +626,7 @@ namespace
 		testBegin( "testInDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthStencilView( view );
@@ -654,8 +654,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_LOAD )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilReadOnly )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthStencilReadOnly )
 		testEnd()
 	}
 
@@ -664,7 +664,7 @@ namespace
 		testBegin( "testOutDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthStencilView( view );
@@ -692,8 +692,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_CLEAR )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_STORE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthStencilAttachment )
 		testEnd()
 	}
 
@@ -702,7 +702,7 @@ namespace
 		testBegin( "testInOutDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutDepthStencilView( view );
@@ -730,8 +730,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_LOAD )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_STORE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthStencilAttachment )
 		testEnd()
 	}
 
@@ -740,7 +740,7 @@ namespace
 		testBegin( "testInStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStencilView( view );
@@ -768,8 +768,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_LOAD )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_DONT_CARE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilReadOnly )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eStencilReadOnly )
 		testEnd()
 	}
 
@@ -778,7 +778,7 @@ namespace
 		testBegin( "testOutStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStencilView( view );
@@ -806,8 +806,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_CLEAR )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_STORE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eStencilAttachment )
 		testEnd()
 	}
 
@@ -816,7 +816,7 @@ namespace
 		testBegin( "testInOutStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInOutStencilView( view );
@@ -844,8 +844,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_LOAD )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_STORE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eStencilAttachment )
 		testEnd()
 	}
 
@@ -854,7 +854,7 @@ namespace
 		testBegin( "testImageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", VK_FORMAT_S8_UINT ) );
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		auto const attachment = crg::Attachment::createDefault( view );
 		check( attachment.isImage() )
@@ -878,8 +878,8 @@ namespace
 		check( attachment.getStencilLoadOp() == VK_ATTACHMENT_LOAD_OP_LOAD )
 		check( attachment.getStencilStoreOp() == VK_ATTACHMENT_STORE_OP_STORE )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
-		check( attachment.getImageLayout( true ) == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL )
+		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
+		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 

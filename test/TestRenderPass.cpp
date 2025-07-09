@@ -51,7 +51,7 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C", crg::RunnablePassCreator{} );
-		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
@@ -67,11 +67,11 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C", crg::RunnablePassCreator{} );
-		auto rt1 = graph.createImage( test::createImage( "rt1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
 		pass.addOutputColourView( rtv1 );
 
-		auto rt2 = graph.createImage( test::createImage( "rt2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
@@ -88,7 +88,7 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_1I", crg::RunnablePassCreator{} );
-		auto in = graph.createImage( test::createImage( "in", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
@@ -104,11 +104,11 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_2I", crg::RunnablePassCreator{} );
-		auto in1 = graph.createImage( test::createImage( "in1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
 		pass.addSampledView( inv1, 1u );
 
-		auto in2 = graph.createImage( test::createImage( "in2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
@@ -125,11 +125,11 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_1I", crg::RunnablePassCreator{} );
-		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		auto in = graph.createImage( test::createImage( "in", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
@@ -146,15 +146,15 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_2I", crg::RunnablePassCreator{} );
-		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		auto in1 = graph.createImage( test::createImage( "in1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
 		pass.addSampledView( inv1, 1u );
 
-		auto in2 = graph.createImage( test::createImage( "in2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
@@ -172,15 +172,15 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_1I", crg::RunnablePassCreator{} );
-		auto rt1 = graph.createImage( test::createImage( "rt1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
 		pass.addOutputColourView( rtv1 );
 
-		auto rt2 = graph.createImage( test::createImage( "rt2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		auto in = graph.createImage( test::createImage( "in", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
@@ -198,19 +198,19 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_2I", crg::RunnablePassCreator{} );
-		auto rt1 = graph.createImage( test::createImage( "rt1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
 		pass.addOutputColourView( rtv1 );
 
-		auto rt2 = graph.createImage( test::createImage( "rt2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		auto in1 = graph.createImage( test::createImage( "in1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
 		pass.addSampledView( inv1, 1u );
 
-		auto in2 = graph.createImage( test::createImage( "in2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
@@ -229,7 +229,7 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_DS", crg::RunnablePassCreator{} );
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -245,11 +245,11 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_DS", crg::RunnablePassCreator{} );
-		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT_S8_UINT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -266,15 +266,15 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_DS", crg::RunnablePassCreator{} );
-		auto rt1 = graph.createImage( test::createImage( "rt1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
 		pass.addOutputColourView( rtv1 );
 
-		auto rt2 = graph.createImage( test::createImage( "rt2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -292,11 +292,11 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_1I_DS", crg::RunnablePassCreator{} );
-		auto in = graph.createImage( test::createImage( "in", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -313,15 +313,15 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "0C_2I_DS", crg::RunnablePassCreator{} );
-		auto in1 = graph.createImage( test::createImage( "in1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
 		pass.addSampledView( inv1, 1u );
 
-		auto in2 = graph.createImage( test::createImage( "in2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -339,15 +339,15 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_1I_DS", crg::RunnablePassCreator{} );
-		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		auto in = graph.createImage( test::createImage( "in", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -365,19 +365,19 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "1C_2I_DS", crg::RunnablePassCreator{} );
-		auto rt = graph.createImage( test::createImage( "rt", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
 		pass.addOutputColourView( rtv );
 
-		auto in1 = graph.createImage( test::createImage( "in1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
 		pass.addSampledView( inv1, 1u );
 
-		auto in2 = graph.createImage( test::createImage( "in2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -396,19 +396,19 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_1I_DS", crg::RunnablePassCreator{} );
-		auto rt1 = graph.createImage( test::createImage( "rt1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
 		pass.addOutputColourView( rtv1 );
 
-		auto rt2 = graph.createImage( test::createImage( "rt2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		auto in = graph.createImage( test::createImage( "in", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
 		pass.addSampledView( inv, 1u );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 
@@ -427,23 +427,23 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		auto & pass = graph.createPass( "2C_2I_DS", crg::RunnablePassCreator{} );
-		auto rt1 = graph.createImage( test::createImage( "rt1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
 		pass.addOutputColourView( rtv1 );
 
-		auto rt2 = graph.createImage( test::createImage( "rt2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
 		pass.addOutputColourView( rtv2 );
 
-		auto in1 = graph.createImage( test::createImage( "in1", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
 		pass.addSampledView( inv1, 1u );
 
-		auto in2 = graph.createImage( test::createImage( "in2", VK_FORMAT_R32G32B32A32_SFLOAT ) );
+		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
 		pass.addSampledView( inv2, 2u );
 
-		auto ds = graph.createImage( test::createImage( "ds", VK_FORMAT_D32_SFLOAT ) );
+		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
 		pass.addOutputDepthStencilView( dsv );
 

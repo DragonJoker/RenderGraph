@@ -19,8 +19,8 @@ namespace crg
 
 		explicit ImageData( std::string name = {}
 			, VkImageCreateFlags flags = {}
-			, VkImageType imageType = {}
-			, VkFormat format = {}
+			, ImageType imageType = {}
+			, PixelFormat format = {}
 			, VkExtent3D extent = {}
 			, VkImageUsageFlags usage = {}
 			, uint32_t mipLevels = 1u
@@ -31,8 +31,8 @@ namespace crg
 			, info{ VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO
 				, nullptr
 				, flags
-				, imageType
-				, format
+				, convert( imageType )
+				, convert( format )
 				, extent
 				, mipLevels
 				, arrayLayers

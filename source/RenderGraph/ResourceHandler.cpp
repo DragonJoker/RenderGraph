@@ -77,7 +77,7 @@ namespace crg
 
 		static size_t makeHash( SamplerDesc const & samplerDesc )
 		{
-			auto result = std::hash< uint32_t >{}( samplerDesc.magFilter );
+			auto result = std::hash< FilterMode >{}( samplerDesc.magFilter );
 			result = hashCombine( result, samplerDesc.minFilter );
 			result = hashCombine( result, samplerDesc.mipmapMode );
 			result = hashCombine( result, samplerDesc.addressModeU );
@@ -275,12 +275,12 @@ namespace crg
 			VkSamplerCreateInfo createInfo{ VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO
 				, nullptr
 				, 0u
-				, samplerDesc.magFilter
-				, samplerDesc.minFilter
-				, samplerDesc.mipmapMode
-				, samplerDesc.addressModeU
-				, samplerDesc.addressModeV
-				, samplerDesc.addressModeW
+				, convert( samplerDesc.magFilter )
+				, convert( samplerDesc.minFilter )
+				, convert( samplerDesc.mipmapMode )
+				, convert( samplerDesc.addressModeU )
+				, convert( samplerDesc.addressModeV )
+				, convert( samplerDesc.addressModeW )
 				, samplerDesc.mipLodBias // mipLodBias
 				, VK_FALSE // anisotropyEnable
 				, 0.0f // maxAnisotropy

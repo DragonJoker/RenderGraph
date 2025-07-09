@@ -30,7 +30,7 @@ namespace crg
 		, VkExtent3D blitSrcSize
 		, VkOffset3D blitDstOffset
 		, VkExtent3D blitDstSize
-		, VkFilter filter
+		, FilterMode filter
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
 		, IsEnabledCallback isEnabled )
@@ -38,7 +38,7 @@ namespace crg
 			, context
 			, graph
 			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( VK_PIPELINE_STAGE_TRANSFER_BIT ); } )
+				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
 				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
@@ -71,6 +71,6 @@ namespace crg
 			, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, 1u
 			, &blitRegion
-			, m_filter );
+			, convert( m_filter ) );
 	}
 }

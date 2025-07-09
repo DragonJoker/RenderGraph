@@ -108,10 +108,10 @@ namespace crg
 		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	}
 
-	VkAccessFlags BufferAttachment::getAccessMask( bool isInput
+	AccessFlags BufferAttachment::getAccessMask( bool isInput
 		, bool isOutput )const
 	{
-		VkAccessFlags result{ 0u };
+		AccessFlags result{ 0u };
 
 		if ( isTransition() )
 		{
@@ -121,37 +121,37 @@ namespace crg
 		{
 			if ( isInput )
 			{
-				result |= VK_ACCESS_SHADER_READ_BIT;
+				result |= AccessFlags::eShaderRead;
 			}
 
 			if ( isOutput )
 			{
-				result |= VK_ACCESS_SHADER_WRITE_BIT;
+				result |= AccessFlags::eShaderWrite;
 			}
 		}
 		else if ( isTransfer() )
 		{
 			if ( isInput )
 			{
-				result |= VK_ACCESS_TRANSFER_READ_BIT;
+				result |= AccessFlags::eTransferRead;
 			}
 
 			if ( isOutput )
 			{
-				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+				result |= AccessFlags::eTransferWrite;
 			}
 		}
 		else
 		{
-			result |= VK_ACCESS_SHADER_READ_BIT;
+			result |= AccessFlags::eShaderRead;
 		}
 
 		return result;
 	}
 
-	VkPipelineStageFlags BufferAttachment::getPipelineStageFlags( bool isCompute )const
+	PipelineStageFlags BufferAttachment::getPipelineStageFlags( bool isCompute )const
 	{
-		VkPipelineStageFlags result{ 0u };
+		PipelineStageFlags result{ 0u };
 
 		if ( isTransition() )
 		{
@@ -159,15 +159,15 @@ namespace crg
 		}
 		else if ( isTransfer() )
 		{
-			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+			result |= PipelineStageFlags::eTransfer;
 		}
 		else if ( isCompute )
 		{
-			result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			result |= PipelineStageFlags::eComputeShader;
 		}
 		else
 		{
-			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			result |= PipelineStageFlags::eFragmentShader;
 		}
 
 		return result;
@@ -189,7 +189,7 @@ namespace crg
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState
-		, VkImageLayout wantedLayout )
+		, ImageLayout wantedLayout )
 		: views{ std::move( views ) }
 		, loadOp{ loadOp }
 		, storeOp{ storeOp }
@@ -202,13 +202,13 @@ namespace crg
 		, flags{ flags }
 	{
 		assert( ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
-			&& isColourFormat( view().data->info.format ) )
+			&& isColourFormat( convert( view().data->info.format ) ) )
 			|| ( ( view().data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
-				&& isDepthStencilFormat( view().data->info.format ) )
+				&& isDepthStencilFormat( convert( view().data->info.format ) ) )
 			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
-				&& isDepthFormat( view().data->info.format ) )
+				&& isDepthFormat( convert( view().data->info.format ) ) )
 			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
-				&& isStencilFormat( view().data->info.format ) ) );
+				&& isStencilFormat( convert( view().data->info.format ) ) ) );
 		assert( ( !isSampledView() && !isTransitionView() && !isTransferView() )
 			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
@@ -233,15 +233,15 @@ namespace crg
 		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 
-	VkImageLayout ImageAttachment::getImageLayout( bool separateDepthStencilLayouts
+	ImageLayout ImageAttachment::getImageLayout( bool separateDepthStencilLayouts
 		, bool isInput
 		, bool isOutput )const
 	{
-		auto result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		auto result = ImageLayout::eReadOnly;
 
 		if ( isSampledView() )
 		{
-			result = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			result = ImageLayout::eShaderReadOnly;
 		}
 		else if ( isTransitionView() )
 		{
@@ -249,22 +249,22 @@ namespace crg
 		}
 		else if ( isStorageView() )
 		{
-			result = VK_IMAGE_LAYOUT_GENERAL;
+			result = ImageLayout::eGeneral;
 		}
 		else if ( isTransferView() )
 		{
 			if ( isOutput )
 			{
-				result = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+				result = ImageLayout::eTransferDst;
 			}
 			else if ( isInput )
 			{
-				result = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+				result = ImageLayout::eTransferSrc;
 			}
 		}
 		else if ( isColourAttach() )
 		{
-			result = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+			result = ImageLayout::eColorAttachment;
 		}
 #if VK_KHR_separate_depth_stencil_layouts
 		else if ( separateDepthStencilLayouts )
@@ -273,33 +273,33 @@ namespace crg
 			{
 				if ( isOutput )
 				{
-					result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+					result = ImageLayout::eDepthStencilAttachment;
 				}
 				else if ( isInput )
 				{
-					result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+					result = ImageLayout::eDepthStencilReadOnly;
 				}
 			}
 			else if ( isStencilAttach() )
 			{
 				if ( isOutput && isStencilOutputAttach() )
 				{
-					result = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL;
+					result = ImageLayout::eStencilAttachment;
 				}
 				else if ( isInput && isStencilInputAttach() )
 				{
-					result = VK_IMAGE_LAYOUT_STENCIL_READ_ONLY_OPTIMAL;
+					result = ImageLayout::eStencilReadOnly;
 				}
 			}
 			else if ( isDepthAttach() )
 			{
 				if ( isOutput )
 				{
-					result = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+					result = ImageLayout::eDepthAttachment;
 				}
 				else if ( isInput )
 				{
-					result = VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL;
+					result = ImageLayout::eDepthReadOnly;
 				}
 			}
 		}
@@ -309,26 +309,26 @@ namespace crg
 			if ( isOutput
 				&& ( isDepthAttach() || isStencilOutputAttach() ) )
 			{
-				result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+				result = ImageLayout::eDepthStencilAttachment;
 			}
 			else if ( isInput
 				&& ( isDepthAttach() || isStencilInputAttach() ) )
 			{
-				result = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+				result = ImageLayout::eDepthStencilReadOnly;
 			}
 		}
 
 		return result;
 	}
 
-	VkAccessFlags ImageAttachment::getAccessMask( bool isInput
+	AccessFlags ImageAttachment::getAccessMask( bool isInput
 		, bool isOutput )const
 	{
-		VkAccessFlags result{ 0u };
+		AccessFlags result{ 0u };
 
 		if ( isSampledView() )
 		{
-			result |= VK_ACCESS_SHADER_READ_BIT;
+			result |= AccessFlags::eShaderRead;
 		}
 		else if ( isTransitionView() )
 		{
@@ -338,61 +338,61 @@ namespace crg
 		{
 			if ( isInput )
 			{
-				result |= VK_ACCESS_SHADER_READ_BIT;
+				result |= AccessFlags::eShaderRead;
 			}
 
 			if ( isOutput )
 			{
-				result |= VK_ACCESS_SHADER_WRITE_BIT;
+				result |= AccessFlags::eShaderWrite;
 			}
 		}
 		else if ( isTransferView() )
 		{
 			if ( isInput )
 			{
-				result |= VK_ACCESS_TRANSFER_READ_BIT;
+				result |= AccessFlags::eTransferRead;
 			}
 
 			if ( isOutput )
 			{
-				result |= VK_ACCESS_TRANSFER_WRITE_BIT;
+				result |= AccessFlags::eTransferWrite;
 			}
 		}
 		else if ( isDepthAttach() || isStencilAttach() )
 		{
 			if ( isInput )
 			{
-				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+				result |= AccessFlags::eDepthStencilAttachmentRead;
 			}
 
 			if ( isOutput )
 			{
-				result |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+				result |= AccessFlags::eDepthStencilAttachmentWrite;
 			}
 		}
 		else
 		{
 			if ( isInput )
 			{
-				result |= VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+				result |= AccessFlags::eColorAttachmentRead;
 			}
 
 			if ( isOutput )
 			{
-				result |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+				result |= AccessFlags::eColorAttachmentWrite;
 			}
 		}
 
 		return result;
 	}
 
-	VkPipelineStageFlags ImageAttachment::getPipelineStageFlags( bool isCompute )const
+	PipelineStageFlags ImageAttachment::getPipelineStageFlags( bool isCompute )const
 	{
-		VkPipelineStageFlags result{ 0u };
+		PipelineStageFlags result{ 0u };
 
 		if ( isSampledView() )
 		{
-			result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+			result |= PipelineStageFlags::eFragmentShader;
 		}
 		else if ( isTransitionView() )
 		{
@@ -402,24 +402,24 @@ namespace crg
 		{
 			if ( isCompute )
 			{
-				result |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+				result |= PipelineStageFlags::eComputeShader;
 			}
 			else
 			{
-				result |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+				result |= PipelineStageFlags::eFragmentShader;
 			}
 		}
 		else if ( isTransferView() )
 		{
-			result |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+			result |= PipelineStageFlags::eTransfer;
 		}
 		else if ( isDepthAttach() || isStencilAttach() )
 		{
-			result |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+			result |= PipelineStageFlags::eLateFragmentTests;
 		}
 		else
 		{
-			result |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+			result |= PipelineStageFlags::eColorAttachmentOutput;
 		}
 
 		return result;
@@ -463,7 +463,7 @@ namespace crg
 		, SamplerDesc samplerDesc
 		, VkClearValue clearValue
 		, VkPipelineColorBlendAttachmentState blendState
-		, VkImageLayout wantedLayout )
+		, ImageLayout wantedLayout )
 		: pass{ &pass }
 		, binding{ binding }
 		, name{ std::move( name ) }
@@ -559,7 +559,7 @@ namespace crg
 			: VkBuffer{};
 	}
 
-	VkImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
+	ImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
 	{
 		assert( isImage() );
 		return imageAttach.getImageLayout( separateDepthStencilLayouts
@@ -583,7 +583,7 @@ namespace crg
 		return bufferAttach.getWrite( binding, 1u, index );
 	}
 
-	VkAccessFlags Attachment::getAccessMask()const
+	AccessFlags Attachment::getAccessMask()const
 	{
 		if ( isImage() )
 		{
@@ -595,7 +595,7 @@ namespace crg
 			, isOutput() );
 	}
 
-	VkPipelineStageFlags Attachment::getPipelineStageFlags( bool isCompute )const
+	PipelineStageFlags Attachment::getPipelineStageFlags( bool isCompute )const
 	{
 		if ( isImage() )
 		{

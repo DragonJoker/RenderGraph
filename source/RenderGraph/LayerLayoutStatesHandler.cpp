@@ -24,7 +24,7 @@ namespace crg
 	}
 
 	void LayerLayoutStatesHandler::setLayoutState( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange
 		, LayoutState const & layoutState )
 	{
@@ -43,13 +43,13 @@ namespace crg
 		assert( view.data->source.empty()
 			&& "Merged image views must be resolved before setting their layout state" );
 		setLayoutState( view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange
 			, layoutState );
 	}
 
 	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & subresourceRange )const
 	{
 		if ( auto imageIt = images.find( image.id ); imageIt != images.end() )
@@ -61,7 +61,7 @@ namespace crg
 				, range );
 		}
 
-		return { VK_IMAGE_LAYOUT_UNDEFINED, { 0u, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT } };
+		return { ImageLayout::eUndefined, { AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe } };
 	}
 
 	LayoutState LayerLayoutStatesHandler::getLayoutState( ImageViewId view )const
@@ -69,7 +69,7 @@ namespace crg
 		assert( view.data->source.empty()
 			&& "Merged image views must be resolved before finding their layout state" );
 		return getLayoutState( view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange );
 	}
 }

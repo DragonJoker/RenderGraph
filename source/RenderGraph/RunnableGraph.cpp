@@ -416,28 +416,28 @@ namespace crg
 
 	LayoutState RunnableGraph::getCurrentLayoutState( RecordContext & context
 		, ImageId image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange range )const
 	{
 		auto result = context.getLayoutState( image, viewType, range );
 
-		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( result.layout == ImageLayout::eUndefined )
 		{
 			// Lookup in graph's external inputs.
 			result = m_graph.getInputLayoutState( image, viewType, range );
 
-			if ( result.layout != VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( result.layout != ImageLayout::eUndefined )
 			{
 				context.setLayoutState( image, viewType, range, result );
 			}
 		}
 
-		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( result.layout == ImageLayout::eUndefined )
 		{
 			// Lookup in graph's previous final state.
 			result = m_graph.getFinalLayoutState( image, viewType, range );
 
-			if ( result.layout != VK_IMAGE_LAYOUT_UNDEFINED )
+			if ( result.layout != ImageLayout::eUndefined )
 			{
 				context.setLayoutState( image, viewType, range, result );
 			}
@@ -451,7 +451,7 @@ namespace crg
 	{
 		return getCurrentLayoutState( context
 			, view.data->image
-			, view.data->info.viewType
+			, convert( view.data->info.viewType )
 			, view.data->info.subresourceRange );
 	}
 
@@ -461,15 +461,15 @@ namespace crg
 	{
 		auto result = context.getNextLayoutState( view );
 
-		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( result.layout == ImageLayout::eUndefined )
 		{
 			// Next layout undefined means that there is no pass after this one in the graph.
 			result = getOutputLayoutState( view );
 		}
 
-		if ( result.layout == VK_IMAGE_LAYOUT_UNDEFINED )
+		if ( result.layout == ImageLayout::eUndefined )
 		{
-			// Prevent from outputing a VK_IMAGE_LAYOUT_UNDEFINED anyway.
+			// Prevent from outputing a ImageLayout::eUndefined anyway.
 			result = runnable.getLayoutState( view );
 		}
 

@@ -14,7 +14,7 @@ namespace crg
 		CRG_API GenerateMipmaps( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkImageLayout outputLayout = VK_IMAGE_LAYOUT_UNDEFINED
+			, ImageLayout outputLayout = ImageLayout::eUndefined
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );

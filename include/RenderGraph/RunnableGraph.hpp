@@ -73,7 +73,7 @@ namespace crg
 
 		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
 			, ImageId image
-			, VkImageViewType viewType
+			, ImageViewType viewType
 			, VkImageSubresourceRange range )const;
 		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
 			, ImageViewId view )const;

@@ -28,18 +28,18 @@ namespace crg
 			, bool separateDepthStencilLayouts )
 		{
 			VkAttachmentReference result{ uint32_t( attaches.size() )
-				, attach.getImageLayout( separateDepthStencilLayouts ) };
+				, convert( attach.getImageLayout( separateDepthStencilLayouts ) ) };
 			attaches.push_back( { 0u
 				, view.data->info.format
 				, view.data->image.data->info.samples
-				, ( initialLayout.layout == VK_IMAGE_LAYOUT_UNDEFINED
+				, ( initialLayout.layout == ImageLayout::eUndefined
 					? VK_ATTACHMENT_LOAD_OP_CLEAR
 					: attach.getLoadOp() )
 				, attach.getStoreOp()
 				, attach.getStencilLoadOp()
 				, attach.getStencilStoreOp()
-				, initialLayout.layout
-				, finalLayout.layout } );
+				, convert( initialLayout.layout )
+				, convert( finalLayout.layout ) } );
 			viewAttaches.push_back( { view, initialLayout, finalLayout } );
 			clearValues.push_back( attach.getClearValue() );
 
@@ -91,7 +91,7 @@ namespace crg
 		{
 			return lhs.layout != rhs.layout
 				|| lhs.state.access != rhs.state.access
-				|| ( lhs.state.access != 0 && lhs.state.pipelineStage != rhs.state.pipelineStage );
+				|| ( lhs.state.access != AccessFlags::eNone && lhs.state.pipelineStage != rhs.state.pipelineStage );
 		}
 
 		static bool checkAttaches( RecordContext const & context
@@ -104,7 +104,7 @@ namespace crg
 				{
 					auto layout = context.getLayoutState( resolveView( lookup.view, passIndex ) );
 					return layout != lookup.input
-						&& layout.layout != VK_IMAGE_LAYOUT_UNDEFINED;
+						&& layout.layout != ImageLayout::eUndefined;
 				} );
 			return it == attaches.end();
 		}
@@ -256,7 +256,7 @@ namespace crg
 				auto currentLayout = m_graph.getCurrentLayoutState( context, resolved );
 				auto nextLayout = m_graph.getNextLayoutState( context, runnable, resolved );
 				auto from = ( !attach.isInput()
-					? crg::makeLayoutState( VK_IMAGE_LAYOUT_UNDEFINED )
+					? crg::makeLayoutState( ImageLayout::eUndefined )
 					: currentLayout );
 				checkUndefinedInput( "RenderPass", attach, resolved, from.layout );
 
@@ -303,17 +303,17 @@ namespace crg
 		VkSubpassDependencyArray dependencies{
 			{ VK_SUBPASS_EXTERNAL
 				, 0u
-				, previousState.pipelineStage
+				, convert( previousState.pipelineStage )
 				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, previousState.access
+				, convert( previousState.access )
 				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
 				, VK_DEPENDENCY_BY_REGION_BIT }
 			, { 0u
 				, VK_SUBPASS_EXTERNAL
 				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, nextState.pipelineStage
+				, convert( nextState.pipelineStage )
 				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-				, nextState.access
+				, convert( nextState.access )
 				, VK_DEPENDENCY_BY_REGION_BIT } };
 		VkRenderPassCreateInfo createInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO
 			, nullptr

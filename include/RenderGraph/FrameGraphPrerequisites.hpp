@@ -29,8 +29,285 @@ See LICENSE file in root folder.
 #	endif
 #endif
 
+#define CRG_MakeFlags( FlagBits )\
+	constexpr FlagBits operator|( FlagBits lhs, FlagBits rhs ) { return FlagBits( std::underlying_type_t< FlagBits >( lhs ) | std::underlying_type_t< FlagBits >( rhs ) ); }\
+	constexpr FlagBits operator&( FlagBits lhs, FlagBits rhs ) { return FlagBits( std::underlying_type_t< FlagBits >( lhs ) & std::underlying_type_t< FlagBits >( rhs ) ); }\
+	constexpr FlagBits operator^( FlagBits lhs, FlagBits rhs ) { return FlagBits( std::underlying_type_t< FlagBits >( lhs ) ^ std::underlying_type_t< FlagBits >( rhs ) ); }\
+	constexpr FlagBits & operator|=( FlagBits & lhs, FlagBits rhs ) { return lhs = lhs | rhs; }\
+	constexpr FlagBits & operator&=( FlagBits & lhs, FlagBits rhs ) { return lhs = lhs & rhs; }\
+	constexpr FlagBits & operator^=( FlagBits & lhs, FlagBits rhs ) { return lhs = lhs ^ rhs; }\
+	constexpr bool checkFlag( FlagBits lhs, FlagBits rhs ) { return ( lhs & rhs ) == rhs; }
+
 namespace crg
 {
+	enum class PixelFormat : uint32_t
+	{
+#define RGPF_ENUM_VALUE( name, value, components, alpha, colour, depth, stencil, compressed ) e##name = value,
+#include "PixelFormat.enum"
+	};
+
+	enum class ImageType : uint32_t
+	{
+		e1D = 0,
+		e2D = 1,
+		e3D = 2,
+	};
+
+	enum class ImageViewType : uint32_t
+	{
+		e1D = 0,
+		e2D = 1,
+		e3D = 2,
+		eCube = 3,
+		e1DArray = 4,
+		e2DArray = 5,
+		eCubeArray = 6,
+	};
+
+	enum class ImageLayout : uint32_t
+	{
+		eUndefined = 0,
+		eGeneral = 1,
+		eColorAttachment = 2,
+		eDepthStencilAttachment = 3,
+		eDepthStencilReadOnly = 4,
+		eShaderReadOnly = 5,
+		eTransferSrc = 6,
+		eTransferDst = 7,
+		ePreinitialized = 8,
+		eDepthReadOnlyStencilAttachment = 1000117000,
+		eDepthAttachmentStencilReadOnly = 1000117001,
+		eDepthAttachment = 1000241000,
+		eDepthReadOnly = 1000241001,
+		eStencilAttachment = 1000241002,
+		eStencilReadOnly = 1000241003,
+		eReadOnly = 1000314000,
+		eAttachment = 1000314001,
+		eRenderingLocalRead = 1000232000,
+		ePresentSrc = 1000001002,
+		eVideoDecodeDst = 1000024000,
+		eVideoDecodeSrc = 1000024001,
+		eVideoDecodeDpb = 1000024002,
+		eSharedPresent = 1000111000,
+		eFragmentDensityMap = 1000218000,
+		eFragmentShadingRateAttachment = 1000164003,
+		eVideoEncodeDst = 1000299000,
+		eVideoEncodeSrc = 1000299001,
+		eVideoEncodeDpb = 1000299002,
+		eAttachmentFeedbackLoop = 1000339000,
+		eVideoEncodeQuantizationMap = 1000553000,
+	};
+
+	enum class FilterMode : uint32_t
+	{
+		eNearest,
+		eLinear,
+	};
+
+	enum class MipmapMode : uint32_t
+	{
+		eNearest,
+		eLinear,
+	};
+
+	enum class WrapMode : uint32_t
+	{
+		eRepeat,
+		eMirroredRepeat,
+		eClampToBorder,
+		eClampToEdge,
+		eMirrorClampToEdge,
+	};
+
+	enum class PipelineStageFlags : uint32_t
+	{
+		eNone = 0,
+		eTopOfPipe = 0x00000001,
+		eDrawIndirect = 0x00000002,
+		eVertexInput = 0x00000004,
+		eVertexShader = 0x00000008,
+		eTessellationControlShader = 0x00000010,
+		eTessellationEvaluationShader = 0x00000020,
+		eGeometryShader = 0x00000040,
+		eFragmentShader = 0x00000080,
+		eEarlyFragmentTests = 0x00000100,
+		eLateFragmentTests = 0x00000200,
+		eColorAttachmentOutput = 0x00000400,
+		eComputeShader = 0x00000800,
+		eTransfer = 0x00001000,
+		eBottomOfPipe = 0x00002000,
+		eHost = 0x00004000,
+		eAllGraphics = 0x00008000,
+		eAllCommands = 0x00010000,
+		eTransformFeedback = 0x01000000,
+		eConditionalRendering = 0x00040000,
+		eAccelerationStructureBuild = 0x02000000,
+		eRayTracingShader = 0x00200000,
+		eFragmentDensityProcess = 0x00800000,
+		eFragmentShadingRateAttachment = 0x00400000,
+		eTaskShader = 0x00080000,
+		eMeshShader = 0x00100000,
+		eCommandPreprocess = 0x00020000,
+	};
+	CRG_MakeFlags( PipelineStageFlags )
+
+	enum class AccessFlags : uint32_t
+	{
+		eNone = 0,
+		eIndirectCommandRead = 0x00000001,
+		eIndexRead = 0x00000002,
+		eVertexAttributeRead = 0x00000004,
+		eUniformRead = 0x00000008,
+		eInputAttachmentRead = 0x00000010,
+		eShaderRead = 0x00000020,
+		eShaderWrite = 0x00000040,
+		eColorAttachmentRead = 0x00000080,
+		eColorAttachmentWrite = 0x00000100,
+		eDepthStencilAttachmentRead = 0x00000200,
+		eDepthStencilAttachmentWrite = 0x00000400,
+		eTransferRead = 0x00000800,
+		eTransferWrite = 0x00001000,
+		eHostRead = 0x00002000,
+		eHostWrite = 0x00004000,
+		eMemoryRead = 0x00008000,
+		eMemoryWrite = 0x00010000,
+		eTransformFeedbackWrite = 0x02000000,
+		eTransformFeedback_counterRead = 0x04000000,
+		eTransformFeedback_counterWrite = 0x08000000,
+		eConditionalRenderingRead = 0x00100000,
+		eColorAttachmentReadNonCoherent = 0x00080000,
+		eAccelerationStructureRead = 0x00200000,
+		eAccelerationStructureWrite = 0x00400000,
+		eFragmentDensityMapRead = 0x01000000,
+		eFragmentShadingRateAttachmentRead = 0x00800000,
+		eCommandPreprocessRead = 0x00020000,
+		eCommandPreprocessWrite = 0x00040000,
+	};
+	CRG_MakeFlags( AccessFlags )
+
+	CRG_API std::string_view getName( PixelFormat v );
+	CRG_API std::string_view getName( FilterMode v );
+	CRG_API std::string_view getName( MipmapMode v );
+	CRG_API std::string_view getName( WrapMode v );
+
+	constexpr VkFormat convert( PixelFormat v )noexcept
+	{
+		return VkFormat( v );
+	}
+
+	constexpr PixelFormat convert( VkFormat v )noexcept
+	{
+		return PixelFormat( v );
+	}
+
+	constexpr bool isDepthFormat( PixelFormat fmt )noexcept
+	{
+		return fmt == PixelFormat::eD16_UNORM
+			|| fmt == PixelFormat::eX8_D24_UNORM
+			|| fmt == PixelFormat::eD32_SFLOAT
+			|| fmt == PixelFormat::eD16_UNORM_S8_UINT
+			|| fmt == PixelFormat::eD24_UNORM_S8_UINT
+			|| fmt == PixelFormat::eD32_SFLOAT_S8_UINT;
+	}
+
+	constexpr bool isStencilFormat( PixelFormat fmt )noexcept
+	{
+		return fmt == PixelFormat::eS8_UINT
+			|| fmt == PixelFormat::eD16_UNORM_S8_UINT
+			|| fmt == PixelFormat::eD24_UNORM_S8_UINT
+			|| fmt == PixelFormat::eD32_SFLOAT_S8_UINT;
+	}
+
+	constexpr bool isColourFormat( PixelFormat fmt )noexcept
+	{
+		return !isDepthFormat( fmt ) && !isStencilFormat( fmt );
+	}
+
+	constexpr bool isDepthStencilFormat( PixelFormat fmt )noexcept
+	{
+		return isDepthFormat( fmt ) && isStencilFormat( fmt );
+	}
+
+	constexpr VkImageType convert( ImageType v )noexcept
+	{
+		return VkImageType( v );
+	}
+
+	constexpr ImageType convert( VkImageType  v )noexcept
+	{
+		return ImageType( v );
+	}
+
+	constexpr VkImageViewType convert( ImageViewType v )noexcept
+	{
+		return VkImageViewType( v );
+	}
+
+	constexpr ImageViewType convert( VkImageViewType  v )noexcept
+	{
+		return ImageViewType( v );
+	}
+
+	constexpr VkImageLayout convert( ImageLayout v )noexcept
+	{
+		return VkImageLayout( v );
+	}
+
+	constexpr ImageLayout convert( VkImageLayout  v )noexcept
+	{
+		return ImageLayout( v );
+	}
+
+	constexpr VkFilter convert( FilterMode v )noexcept
+	{
+		return VkFilter( v );
+	}
+
+	constexpr FilterMode convert( VkFilter  v )noexcept
+	{
+		return FilterMode( v );
+	}
+
+	constexpr VkSamplerMipmapMode convert( MipmapMode v )noexcept
+	{
+		return VkSamplerMipmapMode( v );
+	}
+
+	constexpr MipmapMode convert( VkSamplerMipmapMode v )noexcept
+	{
+		return MipmapMode( v );
+	}
+
+	constexpr VkSamplerAddressMode convert( WrapMode v )noexcept
+	{
+		return VkSamplerAddressMode( v );
+	}
+
+	constexpr WrapMode convert( VkSamplerAddressMode v )noexcept
+	{
+		return WrapMode( v );
+	}
+
+	constexpr VkPipelineStageFlags convert( PipelineStageFlags v )noexcept
+	{
+		return VkPipelineStageFlags( v );
+	}
+
+	constexpr PipelineStageFlags getPipelineStageFlags( VkPipelineStageFlags v )noexcept
+	{
+		return PipelineStageFlags( v );
+	}
+
+	constexpr VkAccessFlags convert( AccessFlags v )noexcept
+	{
+		return VkAccessFlags( v );
+	}
+
+	constexpr AccessFlags getAccessFlags( VkAccessFlags v )noexcept
+	{
+		return AccessFlags( v );
+	}
+
 	template< typename DataT >
 	struct Id;
 
@@ -143,13 +420,13 @@ namespace crg
 
 	struct PipelineState
 	{
-		VkAccessFlags access;
-		VkPipelineStageFlags pipelineStage;
+		AccessFlags access;
+		PipelineStageFlags pipelineStage;
 	};
 
 	struct LayoutState
 	{
-		VkImageLayout layout;
+		ImageLayout layout;
 		PipelineState state;
 	};
 
@@ -394,40 +671,36 @@ namespace crg
 	struct SemaphoreWait
 	{
 		VkSemaphore semaphore;
-		VkPipelineStageFlags dstStageMask;
+		PipelineStageFlags dstStageMask;
 	};
 
 	using SemaphoreWaitArray = std::vector< SemaphoreWait >;
 
-	CRG_API VkExtent3D getExtent( ImageId const & image );
-	CRG_API VkExtent3D getExtent( ImageViewId const & image );
-	CRG_API VkExtent3D getMipExtent( ImageViewId const & image );
-	CRG_API VkFormat getFormat( ImageId const & image );
-	CRG_API VkFormat getFormat( ImageViewId const & image );
-	CRG_API VkImageType getImageType( ImageId const & image );
-	CRG_API VkImageType getImageType( ImageViewId const & image );
-	CRG_API uint32_t getMipLevels( ImageId const & image );
-	CRG_API uint32_t getMipLevels( ImageViewId const & image );
-	CRG_API uint32_t getArrayLayers( ImageId const & image );
-	CRG_API uint32_t getArrayLayers( ImageViewId const & image );
-	CRG_API VkAccessFlags getAccessMask( VkImageLayout layout )noexcept;
-	CRG_API VkPipelineStageFlags getStageMask( VkImageLayout layout )noexcept;
-	CRG_API PipelineState getPipelineState( VkPipelineStageFlags flags )noexcept;
-	CRG_API LayoutState makeLayoutState( VkImageLayout layout );
-	CRG_API VkImageAspectFlags getAspectMask( VkFormat format )noexcept;
+	CRG_API VkExtent3D getExtent( ImageId const & image )noexcept;
+	CRG_API VkExtent3D getExtent( ImageViewId const & image )noexcept;
+	CRG_API VkExtent3D getMipExtent( ImageViewId const & image )noexcept;
+	CRG_API PixelFormat getFormat( ImageId const & image )noexcept;
+	CRG_API PixelFormat getFormat( ImageViewId const & image )noexcept;
+	CRG_API ImageType getImageType( ImageId const & image )noexcept;
+	CRG_API ImageType getImageType( ImageViewId const & image )noexcept;
+	CRG_API uint32_t getMipLevels( ImageId const & image )noexcept;
+	CRG_API uint32_t getMipLevels( ImageViewId const & image )noexcept;
+	CRG_API uint32_t getArrayLayers( ImageId const & image )noexcept;
+	CRG_API uint32_t getArrayLayers( ImageViewId const & image )noexcept;
+	CRG_API AccessFlags getAccessMask( ImageLayout layout )noexcept;
+	CRG_API PipelineStageFlags getStageMask( ImageLayout layout )noexcept;
+	CRG_API PipelineState getPipelineState( PipelineStageFlags flags )noexcept;
+	CRG_API LayoutState makeLayoutState( ImageLayout layout )noexcept;
+	CRG_API VkImageAspectFlags getAspectMask( PixelFormat format )noexcept;
 	CRG_API LayoutState const & addSubresourceRangeLayout( LayerLayoutStates & ranges
 		, VkImageSubresourceRange const & range
 		, LayoutState const & newLayout );
 	CRG_API LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, VkImageSubresourceRange const & range );
 	CRG_API VkImageSubresourceRange getVirtualRange( ImageId const & image
-		, VkImageViewType viewType
+		, ImageViewType viewType
 		, VkImageSubresourceRange const & range )noexcept;
 	CRG_API bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept;
-	CRG_API bool isDepthFormat( VkFormat fmt )noexcept;
-	CRG_API bool isStencilFormat( VkFormat fmt )noexcept;
-	CRG_API bool isColourFormat( VkFormat fmt )noexcept;
-	CRG_API bool isDepthStencilFormat( VkFormat fmt )noexcept;
 	CRG_API ImageViewId const & resolveView( ImageViewId const & view
 		, uint32_t passIndex );
 

@@ -10,15 +10,15 @@
 namespace test
 {
 	crg::ImageData createImage( std::string name
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t mipLevels = 1u
 		, uint32_t arrayLayers = 1u );
 	crg::ImageData createImage1D( std::string name
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t mipLevels = 1u
 		, uint32_t arrayLayers = 1u );
 	crg::ImageData createImageCube( std::string name
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t mipLevels = 1u
 		, uint32_t arrayLayers = 1u );
 	crg::ImageViewData createView( std::string name
@@ -29,7 +29,7 @@ namespace test
 		, uint32_t layerCount = 1u );
 	crg::ImageViewData createView( std::string name
 		, crg::ImageId image
-		, VkFormat format
+		, crg::PixelFormat format
 		, uint32_t baseMipLevel = 0u
 		, uint32_t levelCount = 1u
 		, uint32_t baseArrayLayer = 0u
@@ -72,7 +72,7 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews
 		, uint32_t index
 		, bool enabled
@@ -81,7 +81,7 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews
 		, uint32_t index
 		, crg::ru::Config config = {} );
@@ -89,14 +89,14 @@ namespace test
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, CheckViews checkViews
 		, crg::ru::Config config = {} );
 	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
 		, crg::FramePass const & framePass
 		, crg::GraphContext & context
 		, crg::RunnableGraph & runGraph
-		, VkPipelineStageFlags pipelineStageFlags
+		, crg::PipelineStageFlags pipelineStageFlags
 		, crg::ru::Config config = {} );
 	void checkDummy( test::TestCounts & testCounts
 		, crg::FramePass const & framePass
