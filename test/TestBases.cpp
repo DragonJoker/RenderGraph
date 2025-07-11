@@ -3,6 +3,7 @@
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/FramePassTimer.hpp>
 #include <RenderGraph/ImageData.hpp>
+#include <RenderGraph/Log.hpp>
 #include <RenderGraph/ResourceHandler.hpp>
 #include <RenderGraph/RunnableGraph.hpp>
 #include <RenderGraph/RunnablePass.hpp>
@@ -27,7 +28,8 @@ namespace
 		getMipExtent( view );
 		auto type = getImageType( image );
 		check( getImageType( view ) == type )
-		check( getImageViewType( view ) == crg::convert( view.data->info.viewType ) )
+		check( getImageViewType( view ) == view.data->info.viewType )
+		check( getImageCreateFlags( view ) == getImageCreateFlags( image ) )
 		check( getMipLevels( image ) == 8u )
 		check( getMipLevels( view ) == 2u )
 		check( getArrayLayers( image ) == 6u )
@@ -87,6 +89,77 @@ namespace
 		auto vb1 = crg::VertexBuffer{ crg::Buffer{ VkBuffer( 1 ), "vtx1" } };
 		auto vb2 = crg::VertexBuffer{ crg::Buffer{ VkBuffer( 2 ), "vtx2" } };
 		vb2 = std::move( vb1 );
+
+		testEnd()
+	}
+
+	void testClearValues( test::TestCounts & testCounts )
+	{
+		testBegin( "testClearValues" )
+		crg::ClearColorValue clearColorInt32{ std::array< int32_t, 4u >{ 1, 2, 3, 4 } };
+		crg::ClearColorValue clearColorUInt32{ std::array< uint32_t, 4u >{ 1u, 2u, 3u, 4u } };
+		crg::ClearColorValue clearColorFloat32{ std::array< float, 4u >{ 1.0f, 2.0f, 3.0f, 4.0f } };
+		crg::ClearDepthStencilValue clearDepthStencil{ 1.0f, 255u };
+
+		checkNoThrow( getClearDepthStencilValue( crg::ClearValue{ clearColorFloat32 } ) );
+		checkNoThrow( getClearColorValue( crg::ClearValue{ clearDepthStencil } ) );
+		checkNoThrow( getClearColorValue( crg::ClearValue{ clearColorFloat32 } ) );
+		checkNoThrow( getClearDepthStencilValue( crg::ClearValue{ clearDepthStencil } ) );
+		checkNoThrow( convert( crg::ClearValue{ clearColorFloat32 } ) );
+		checkNoThrow( convert( crg::ClearValue{ clearDepthStencil } ) );
+		check( clearColorFloat32.isFloat32() );
+		check( !clearColorFloat32.isInt32() );
+		check( !clearColorFloat32.isUInt32() );
+		check( !clearColorUInt32.isFloat32() );
+		check( !clearColorUInt32.isInt32() );
+		check( clearColorUInt32.isUInt32() );
+		check( !clearColorInt32.isFloat32() );
+		check( clearColorInt32.isInt32() );
+		check( !clearColorInt32.isUInt32() );
+		check( crg::ClearValue{ clearColorFloat32 }.isColor() );
+		check( !crg::ClearValue{ clearColorFloat32 }.isDepthStencil() );
+		check( !crg::ClearValue{ clearDepthStencil }.isColor() );
+		check( crg::ClearValue{ clearDepthStencil }.isDepthStencil() );
+		{
+			auto vkClearColorFloat32 = crg::convert( clearColorFloat32 );
+			for ( uint32_t i = 0; i < 4u; ++i )
+				check( vkClearColorFloat32.float32[i] == clearColorFloat32.float32()[i] );
+		}
+		{
+			auto vkClearColorFloat32 = crg::convert( crg::ClearValue{ clearColorFloat32 } );
+			for ( uint32_t i = 0; i < 4u; ++i )
+				check( vkClearColorFloat32.color.float32[i] == clearColorFloat32.float32()[i] );
+		}
+		{
+			auto vkClearColorInt32 = crg::convert( clearColorInt32 );
+			for ( uint32_t i = 0; i < 4u; ++i )
+				check( vkClearColorInt32.int32[i] == clearColorInt32.int32()[i] );
+		}
+		{
+			auto vkClearColorInt32 = crg::convert( crg::ClearValue{ clearColorInt32 } );
+			for ( uint32_t i = 0; i < 4u; ++i )
+				check( vkClearColorInt32.color.int32[i] == clearColorInt32.int32()[i] );
+		}
+		{
+			auto vkClearColorUInt32 = crg::convert( clearColorUInt32 );
+			for ( uint32_t i = 0; i < 4u; ++i )
+				check( vkClearColorUInt32.uint32[i] == clearColorUInt32.uint32()[i] );
+		}
+		{
+			auto vkClearColorUInt32 = crg::convert( crg::ClearValue{ clearColorUInt32 } );
+			for ( uint32_t i = 0; i < 4u; ++i )
+				check( vkClearColorUInt32.color.uint32[i] == clearColorUInt32.uint32()[i] );
+		}
+		{
+			auto vkClearDepthStencil = crg::convert( clearDepthStencil );
+			check( vkClearDepthStencil.depth == clearDepthStencil.depth );
+			check( vkClearDepthStencil.stencil == clearDepthStencil.stencil );
+		}
+		{
+			auto vkClearDepthStencil = crg::convert( crg::ClearValue{ clearDepthStencil } );
+			check( vkClearDepthStencil.depthStencil.depth == clearDepthStencil.depth );
+			check( vkClearDepthStencil.depthStencil.stencil == clearDepthStencil.stencil );
+		}
 
 		testEnd()
 	}
@@ -268,7 +341,7 @@ namespace
 				auto depthIt = framePass.images.begin();
 				auto colourIt = std::next( depthIt );
 				auto extent3D = getExtent( colour2v );
-				auto extent2D = VkExtent2D{ extent3D.width, extent3D.height };
+				auto extent2D = crg::Extent2D{ extent3D.width, extent3D.height };
 				return createDummy( testCounts
 					, framePass, context, runGraph, crg::PipelineStageFlags::eFragmentShader
 					, test::checkDummy
@@ -276,10 +349,10 @@ namespace
 					, false
 					, crg::ru::Config{}
 						.implicitAction( depthIt->view(), crg::RecordContext::clearAttachment( *depthIt, crg::ImageLayout::eDepthStencilAttachment ) )
-						.implicitAction( depth2v, crg::RecordContext::clearAttachment( depth2v, {}, crg::ImageLayout::eDepthStencilAttachment ) )
+						.implicitAction( depth2v, crg::RecordContext::clearAttachment( depth2v, crg::ClearDepthStencilValue{}, crg::ImageLayout::eDepthStencilAttachment ) )
 						.implicitAction( colourIt->view(), crg::RecordContext::clearAttachment( *colourIt ) )
-						.implicitAction( colour4v, crg::RecordContext::clearAttachment( colour4v, {} ) )
-						.implicitAction( colour2v, crg::RecordContext::blitImage( colour1v, colour2v, {}, extent2D, {}, extent2D, crg::FilterMode::eLinear, crg::ImageLayout::eShaderReadOnly ) )
+						.implicitAction( colour4v, crg::RecordContext::clearAttachment( colour4v, crg::ClearColorValue{}, crg::ImageLayout::eShaderReadOnly ) )
+						.implicitAction( colour2v, crg::RecordContext::blitImage( colour1v, colour2v, { {}, extent2D }, { {}, extent2D }, crg::FilterMode::eLinear, crg::ImageLayout::eShaderReadOnly ) )
 						.implicitAction( colour3v, crg::RecordContext::copyImage( colour2v, colour3v, extent2D, crg::ImageLayout::eShaderReadOnly ) ) );
 			} );
 		testPass1.addOutputDepthStencilView( depth1v );
@@ -337,16 +410,16 @@ namespace
 				auto depthIt = framePass.images.begin();
 				auto colourIt = std::next( depthIt );
 				auto extent3D = getExtent( colour2v );
-				auto extent2D = VkExtent2D{ extent3D.width, extent3D.height };
+				auto extent2D = crg::Extent2D{ extent3D.width, extent3D.height };
 				return createDummy( testCounts
 					, framePass, context, runGraph, crg::PipelineStageFlags::eFragmentShader
 					, test::checkDummy
 					, crg::ru::Config{}
 						.prePassAction( crg::RecordContext::clearAttachment( *depthIt, crg::ImageLayout::eDepthStencilAttachment ) )
-						.prePassAction( crg::RecordContext::clearAttachment( depth2v, {}, crg::ImageLayout::eDepthStencilAttachment ) )
+						.prePassAction( crg::RecordContext::clearAttachment( depth2v, crg::ClearDepthStencilValue{}, crg::ImageLayout::eDepthStencilAttachment ) )
 						.prePassAction( crg::RecordContext::clearAttachment( *colourIt ) )
-						.prePassAction( crg::RecordContext::clearAttachment( colour4v, {} ) )
-						.prePassAction( crg::RecordContext::blitImage( colour1v, colour2v, {}, extent2D, {}, extent2D, crg::FilterMode::eLinear, crg::ImageLayout::eShaderReadOnly ) )
+						.prePassAction( crg::RecordContext::clearAttachment( colour4v, crg::ClearColorValue{} ) )
+						.prePassAction( crg::RecordContext::blitImage( colour1v, colour2v, { {}, extent2D }, { {}, extent2D }, crg::FilterMode::eLinear, crg::ImageLayout::eShaderReadOnly ) )
 						.prePassAction( crg::RecordContext::copyImage( colour2v, colour3v, extent2D, crg::ImageLayout::eShaderReadOnly ) ) );
 			} );
 		testPass1.addOutputDepthStencilView( depth1v );
@@ -396,7 +469,7 @@ namespace
 		auto colour3v = graph.createView( test::createView( "colour3v", colour3, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		auto colour4 = graph.createImage( test::createImage( "colour4", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto colour4v = graph.createView( test::createView( "colour4v", colour4, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
-		crg::RunnablePass * runPass{};
+		crg::RunnablePass const * runPass{};
 		auto & testPass1 = graph.createPass( "Mesh"
 			, [&runPass , &testCounts, depth2v, colour1v, colour2v, colour3v, colour4v]( crg::FramePass const & framePass
 				, crg::GraphContext & context
@@ -405,16 +478,16 @@ namespace
 				auto depthIt = framePass.images.begin();
 				auto colourIt = std::next( depthIt );
 				auto extent3D = getExtent( colour2v );
-				auto extent2D = VkExtent2D{ extent3D.width, extent3D.height };
+				auto extent2D = crg::Extent2D{ extent3D.width, extent3D.height };
 				auto res = createDummy( testCounts
 					, framePass, context, runGraph, crg::PipelineStageFlags::eFragmentShader
 					, test::checkDummy
 					, crg::ru::Config{ 1u, true }
 						.postPassAction( crg::RecordContext::clearAttachment( *depthIt, crg::ImageLayout::eDepthStencilAttachment ) )
-						.postPassAction( crg::RecordContext::clearAttachment( depth2v, {}, crg::ImageLayout::eDepthStencilAttachment ) )
+						.postPassAction( crg::RecordContext::clearAttachment( depth2v, crg::ClearDepthStencilValue{}, crg::ImageLayout::eDepthStencilAttachment ) )
 						.postPassAction( crg::RecordContext::clearAttachment( *colourIt ) )
-						.postPassAction( crg::RecordContext::clearAttachment( colour4v, {} ) )
-						.postPassAction( crg::RecordContext::blitImage( colour1v, colour2v, {}, extent2D, {}, extent2D, crg::FilterMode::eLinear, crg::ImageLayout::eShaderReadOnly ) )
+						.postPassAction( crg::RecordContext::clearAttachment( colour4v, crg::ClearColorValue{} ) )
+						.postPassAction( crg::RecordContext::blitImage( colour1v, colour2v, { {}, extent2D }, { {}, extent2D }, crg::FilterMode::eLinear, crg::ImageLayout::eShaderReadOnly ) )
 						.postPassAction( crg::RecordContext::copyImage( colour2v, colour3v, extent2D, crg::ImageLayout::eShaderReadOnly ) ) );
 				runPass = res.get();
 				return res;
@@ -716,6 +789,7 @@ int main( int argc, char ** argv )
 {
 	testSuiteBegin( "TestBases" )
 	testBaseFuncs( testCounts );
+	testClearValues( testCounts );
 	testSignal( testCounts );
 	testFence( testCounts );
 	testFramePassTimer( testCounts );

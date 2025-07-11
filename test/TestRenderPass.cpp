@@ -12,19 +12,13 @@ namespace
 	void testLog( test::TestCounts & testCounts )
 	{
 		testBegin( "testLog" )
-		auto callback = []( std::string const & msg, bool newLine )
-		{
-			std::cout << msg << "Callback";
-
-			if ( newLine )
+		auto callback = []( std::string_view msg, bool newLine )noexcept
 			{
-				std::cout << "\n";
-			}
-			else
-			{
-				std::cout << " ";
-			}
-		};
+				if ( newLine )
+					printf( "%s Callback\n", msg.data() );
+				else
+					printf( "%s Callback ", msg.data() );
+			};
 
 		crg::Logger::setTraceCallback( callback );
 		crg::Logger::setDebugCallback( callback );

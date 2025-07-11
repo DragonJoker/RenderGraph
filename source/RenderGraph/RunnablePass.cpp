@@ -19,12 +19,149 @@ namespace crg
 {
 	namespace details
 	{
-		static constexpr VkDeviceSize getAlignedSize( VkDeviceSize size, VkDeviceSize align )
+		static constexpr DeviceSize getAlignedSize( DeviceSize size, DeviceSize align )
 		{
 			auto rem = size % align;
 			return ( rem
 				? size + ( align - rem )
 				: size );
+		}
+
+		static void registerImage( Attachment const & attach
+			, bool isComputePass, bool separateDepthStencilLayouts
+			, LayerLayoutStatesHandler & imageLayouts )
+		{
+			for ( uint32_t i = 0u; i < attach.getViewCount(); ++i )
+			{
+				auto view = attach.view( i );
+
+				if ( view.data->source.empty() )
+				{
+					imageLayouts.setLayoutState( view
+						, { attach.getImageLayout( separateDepthStencilLayouts )
+							, attach.getAccessMask()
+							, attach.getPipelineStageFlags( isComputePass ) } );
+				}
+				else
+				{
+					for ( auto & source : view.data->source )
+					{
+						imageLayouts.setLayoutState( source
+							, { attach.getImageLayout( separateDepthStencilLayouts )
+								, attach.getAccessMask()
+								, attach.getPipelineStageFlags( isComputePass ) } );
+					}
+				}
+			}
+		}
+
+		static void registerBuffer( Attachment const & attach
+			, bool isComputePass
+			, AccessStateMap & bufferAccesses )
+		{
+			for ( uint32_t i = 0u; i < attach.getBufferCount(); ++i )
+			{
+				bufferAccesses.insert_or_assign( attach.buffer( i )
+					, AccessState{ attach.getAccessMask()
+						, attach.getPipelineStageFlags( isComputePass ) } );
+			}
+		}
+
+		static void prepareImage( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, Attachment const & attach
+			, bool separateDepthStencilLayouts
+			, RunnableGraph & graph
+			, RecordContext & recordContext )
+		{
+			auto view = attach.view( index );
+			recordContext.runImplicitTransition( commandBuffer
+				, index
+				, view );
+
+			if ( !attach.isNoTransition()
+				&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
+			{
+				auto needed = makeLayoutState( attach.getImageLayout( separateDepthStencilLayouts ) );
+				auto currentLayout = ( !attach.isInput()
+					? crg::makeLayoutState( ImageLayout::eUndefined )
+					: graph.getCurrentLayoutState( recordContext, view ) );
+				checkUndefinedInput( "Record", attach, view, currentLayout.layout );
+
+				if ( attach.isClearableImage() )
+				{
+					recordContext.memoryBarrier( commandBuffer
+						, view
+						, currentLayout.layout
+						, makeLayoutState( ImageLayout::eTransferDst ) );
+					auto subresourceRange = convert( getSubresourceRange( view ) );
+
+					if ( isColourFormat( getFormat( view ) ) )
+					{
+						VkClearColorValue colour{};
+						recordContext->vkCmdClearColorImage( commandBuffer
+							, graph.createImage( view.data->image )
+							, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+							, &colour
+							, 1u, &subresourceRange );
+					}
+					else
+					{
+						VkClearDepthStencilValue depthStencil{};
+						recordContext->vkCmdClearDepthStencilImage( commandBuffer
+							, graph.createImage( view.data->image )
+							, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+							, &depthStencil
+							, 1u, &subresourceRange );
+					}
+
+					currentLayout.layout = ImageLayout::eTransferDst;
+					currentLayout.state.access = AccessFlags::eTransferWrite;
+					currentLayout.state.pipelineStage = PipelineStageFlags::eTransfer;
+				}
+
+				recordContext.memoryBarrier( commandBuffer
+					, view
+					, currentLayout.layout
+					, needed );
+			}
+		}
+
+		static void prepareBuffer( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, Attachment const & attach
+			, bool isComputePass
+			, RecordContext & recordContext )
+		{
+			if ( !attach.isNoTransition()
+				&& ( attach.isStorageBuffer() || attach.isTransferBuffer() || attach.isTransitionBuffer() ) )
+			{
+				auto & range = attach.getBufferRange();
+				auto buffer = attach.buffer( index );
+				auto currentState = recordContext.getAccessState( buffer, range );
+
+				if ( attach.isClearableBuffer() )
+				{
+					recordContext.memoryBarrier( commandBuffer
+						, buffer
+						, range
+						, currentState
+						, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
+					recordContext->vkCmdFillBuffer( commandBuffer
+						, buffer
+						, range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u )
+						, range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u )
+						, 0u );
+					currentState.access = AccessFlags::eTransferWrite;
+					currentState.pipelineStage = PipelineStageFlags::eTransfer;
+				}
+
+				recordContext.memoryBarrier( commandBuffer
+					, buffer
+					, range
+					, currentState
+					, { attach.getAccessMask(), attach.getPipelineStageFlags( isComputePass ) } );
+			}
 		}
 	}
 
@@ -36,9 +173,7 @@ namespace crg
 		, ImageLayout currentLayout )
 	{
 		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == ImageLayout::eUndefined )
-		{
 			Logger::logWarning( stepName + " - [" + attach.pass->getFullName() + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
-		}
 	}
 
 	void convert( SemaphoreWaitArray const & toWait
@@ -53,9 +188,18 @@ namespace crg
 					, wait.semaphore ) )
 			{
 				semaphores.push_back( wait.semaphore );
-				dstStageMasks.push_back( convert( wait.dstStageMask ) );
+				dstStageMasks.push_back( getPipelineStageFlags( wait.dstStageMask ) );
 			}
 		}
+	}
+
+	std::vector< VkClearValue > convert( std::vector< ClearValue > const & v )
+	{
+		std::vector< VkClearValue > result;
+		result.reserve( v.size() );
+		for ( auto & value : v )
+			result.push_back( convert( value ) );
+		return result;
 	}
 
 	//*********************************************************************************************
@@ -261,41 +405,11 @@ namespace crg
 			m_passContexts.emplace_back( graph.getResources() );
 		}
 
+		bool isComputePass = m_callbacks.isComputePass();
 		for ( auto & attach : m_pass.images )
-		{
-			for ( uint32_t i = 0u; i < attach.getViewCount(); ++i )
-			{
-				auto view = attach.view( i );
-
-				if ( view.data->source.empty() )
-				{
-					m_imageLayouts.setLayoutState( view
-						, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-							, attach.getAccessMask()
-							, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
-				}
-				else
-				{
-					for ( auto & source : view.data->source )
-					{
-						m_imageLayouts.setLayoutState( source
-							, { attach.getImageLayout( m_context.separateDepthStencilLayouts )
-								, attach.getAccessMask()
-								, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
-					}
-				}
-			}
-		}
-
+			details::registerImage( attach, isComputePass, m_context.separateDepthStencilLayouts, m_imageLayouts );
 		for ( auto & attach : m_pass.buffers )
-		{
-			for ( uint32_t i = 0u; i < attach.getBufferCount(); ++i )
-			{
-				m_bufferAccesses.insert_or_assign( attach.buffer( i )
-					, AccessState{ attach.getAccessMask()
-						, attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
-			}
-		}
+			details::registerBuffer( attach, isComputePass, m_bufferAccesses );
 	}
 
 	RunnablePass::~RunnablePass()noexcept
@@ -388,93 +502,10 @@ namespace crg
 			m_timer.beginPass( commandBuffer );
 
 			for ( auto & attach : m_pass.images )
-			{
-				auto view = attach.view( index );
-				context.runImplicitTransition( commandBuffer
-					, index
-					, view );
-
-				if ( !attach.isNoTransition()
-					&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
-				{
-					auto needed = makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) );
-					auto currentLayout = ( !attach.isInput()
-						? crg::makeLayoutState( ImageLayout::eUndefined )
-						: m_graph.getCurrentLayoutState( context, view ) );
-					checkUndefinedInput( "Record", attach, view, currentLayout.layout );
-
-					if ( attach.isClearableImage() )
-					{
-						context.memoryBarrier( commandBuffer
-							, view
-							, currentLayout.layout
-							, makeLayoutState( ImageLayout::eTransferDst ) );
-
-						if ( isColourFormat( getFormat( view ) ) )
-						{
-							VkClearColorValue colour{};
-							m_context.vkCmdClearColorImage( commandBuffer
-								, m_graph.createImage( view.data->image )
-								, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-								, &colour
-								, 1u
-								, &view.data->info.subresourceRange );
-						}
-						else
-						{
-							VkClearDepthStencilValue depthStencil{};
-							m_context.vkCmdClearDepthStencilImage( commandBuffer
-								, m_graph.createImage( view.data->image )
-								, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-								, &depthStencil
-								, 1u
-								, &view.data->info.subresourceRange );
-						}
-
-						currentLayout.layout = ImageLayout::eTransferDst;
-						currentLayout.state.access = AccessFlags::eTransferWrite;
-						currentLayout.state.pipelineStage = PipelineStageFlags::eTransfer;
-					}
-
-					context.memoryBarrier( commandBuffer
-						, view
-						, currentLayout.layout
-						, needed );
-				}
-			}
+				details::prepareImage( commandBuffer, index, attach, m_context.separateDepthStencilLayouts, m_graph, context );
 
 			for ( auto & attach : m_pass.buffers )
-			{
-				if ( !attach.isNoTransition()
-					&& ( attach.isStorageBuffer() || attach.isTransferBuffer() || attach.isTransitionBuffer() ) )
-				{
-					auto & range = attach.getBufferRange();
-					auto buffer = attach.buffer( index );
-					auto currentState = context.getAccessState( buffer, range );
-
-					if ( attach.isClearableBuffer() )
-					{
-						context.memoryBarrier( commandBuffer
-							, buffer
-							, range
-							, currentState
-							, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
-						m_context.vkCmdFillBuffer( commandBuffer
-							, buffer
-							, range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u )
-							, range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u )
-							, 0u );
-						currentState.access = AccessFlags::eTransferWrite;
-						currentState.pipelineStage = PipelineStageFlags::eTransfer;
-					}
-
-					context.memoryBarrier( commandBuffer
-						, buffer
-						, range
-						, currentState
-						, { attach.getAccessMask(), attach.getPipelineStageFlags( m_callbacks.isComputePass() ) } );
-				}
-			}
+				details::prepareBuffer( commandBuffer, index, attach, m_callbacks.isComputePass(), context );
 
 			for ( auto const & action : m_ruConfig.prePassActions )
 			{

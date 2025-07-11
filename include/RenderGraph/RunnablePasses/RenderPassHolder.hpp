@@ -26,7 +26,7 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, uint32_t maxPassCount
-			, VkExtent2D size = {} );
+			, Extent2D size = {} );
 		CRG_API ~RenderPassHolder()noexcept;
 
 		CRG_API bool initialise( RecordContext & context
@@ -47,17 +47,17 @@ namespace crg
 			return m_passes[index].renderPass;
 		}
 
-		VkExtent2D const & getRenderSize()const
+		Extent2D const & getRenderSize()const
 		{
 			return m_size;
 		}
 
-		VkRect2D const & getRenderArea( uint32_t index )const
+		Rect2D const & getRenderArea( uint32_t index )const
 		{
 			return m_passes[index].renderArea;
 		}
 
-		std::vector< VkClearValue > const & getClearValues( uint32_t index )const
+		std::vector< ClearValue > const & getClearValues( uint32_t index )const
 		{
 			return m_passes[index].clearValues;
 		}
@@ -81,9 +81,9 @@ namespace crg
 		{
 			VkRenderPass renderPass{};
 			mutable VkFramebuffer frameBuffer{};
-			VkRect2D renderArea{};
+			Rect2D renderArea{};
 			std::vector< Attachment const * > attachments;
-			std::vector< VkClearValue > clearValues;
+			std::vector< ClearValue > clearValues;
 			std::vector< Entry > attaches;
 			PipelineState previousState;
 			PipelineState nextState;
@@ -94,7 +94,7 @@ namespace crg
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
-		VkExtent2D m_size;
+		Extent2D m_size;
 		std::vector< PassData > m_passes;
 		PassData const * m_currentPass{};
 		VkPipelineColorBlendAttachmentStateArray m_blendAttachs;

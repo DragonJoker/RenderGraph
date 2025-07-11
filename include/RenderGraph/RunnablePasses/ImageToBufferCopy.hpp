@@ -14,14 +14,14 @@ namespace crg
 		CRG_API ImageToBufferCopy( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkOffset3D copyOffset
-			, VkExtent3D copySize
+			, Offset3D const & copyOffset
+			, Extent3D const & copySize
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
 
 	private:
-		void doRecordInto( RecordContext & context
+		void doRecordInto( RecordContext const & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 

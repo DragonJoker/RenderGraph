@@ -12,21 +12,10 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace imgCopy
-	{
-		static VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
-		{
-			return VkImageSubresourceLayers{ range.aspectMask
-				, range.baseMipLevel
-				, range.baseArrayLayer
-				, range.layerCount };
-		}
-	}
-
 	ImageCopy::ImageCopy( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, VkExtent3D copySize
+		, Extent3D const & copySize
 		, ImageLayout finalOutputLayout
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
@@ -40,7 +29,7 @@ namespace crg
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
-		, m_copySize{std::move( copySize ) }
+		, m_copySize{ convert( copySize ) }
 		, m_finalOutputLayout{ finalOutputLayout }
 	{
 		assert( ( pass.images.size() % 2u ) == 0u );
@@ -49,7 +38,7 @@ namespace crg
 	ImageCopy::ImageCopy( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, VkExtent3D copySize
+		, Extent3D const & copySize
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
 		, IsEnabledCallback isEnabled )
@@ -79,9 +68,9 @@ namespace crg
 			auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 			auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
 			// Copy source to target.
-			VkImageCopy copyRegion{ imgCopy::convert( srcAttach.data->info.subresourceRange )
+			VkImageCopy copyRegion{ getSubresourceLayers( srcAttach.data->info.subresourceRange )
 				, {}
-				, imgCopy::convert( dstAttach.data->info.subresourceRange )
+				, getSubresourceLayers( dstAttach.data->info.subresourceRange )
 				, {}
 				, m_copySize };
 			context->vkCmdCopyImage( commandBuffer

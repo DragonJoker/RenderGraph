@@ -65,13 +65,13 @@ namespace crg
 		for ( uint32_t i = 0u; i < layerCount; ++i )
 		{
 			auto layer = baseArrayLayer + i;
-			VkImageSubresourceRange mipSubRange{ aspectMask
+			ImageSubresourceRange mipSubRange{ aspectMask
 				, 0u
 				, 1u
 				, layer
 				, 1u };
 			VkImageBlit imageBlit{};
-			imageBlit.dstSubresource.aspectMask = aspectMask;
+			imageBlit.dstSubresource.aspectMask = getImageAspectFlags( aspectMask );
 			imageBlit.dstSubresource.baseArrayLayer = mipSubRange.baseArrayLayer;
 			imageBlit.dstSubresource.layerCount = 1;
 			imageBlit.dstSubresource.mipLevel = mipSubRange.baseMipLevel;
@@ -85,7 +85,7 @@ namespace crg
 			// Transition first mip level to transfer source for read in next iteration
 			auto firstLayoutState = m_graph.getCurrentLayoutState( context
 				, imageId
-				, convert( viewId.data->info.viewType )
+				, viewId.data->info.viewType
 				, mipSubRange );
 			context.memoryBarrier( commandBuffer
 				, imageId

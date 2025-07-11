@@ -90,7 +90,7 @@ namespace crg
 			*\param[in] config
 			*	The render area size.
 			*/
-			auto & renderSize( VkExtent2D config )
+			auto & renderSize( Extent2D config )
 			{
 				m_renderSize = std::move( config );
 				return *this;
@@ -99,7 +99,7 @@ namespace crg
 			*\param[in] config
 			*	The render position.
 			*/
-			auto & renderPosition( VkOffset2D config )
+			auto & renderPosition( Offset2D config )
 			{
 				m_renderPosition = std::move( config );
 				return *this;
@@ -214,7 +214,7 @@ namespace crg
 			}
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
-			WrapperT< VkOffset2D > m_renderPosition{};
+			WrapperT< Offset2D > m_renderPosition{};
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState{};
 			WrapperT< RunnablePass::GetPassIndexCallback > m_getPassIndex{};
 			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
@@ -224,7 +224,7 @@ namespace crg
 			WrapperT< GetVertexCountCallback > m_getVertexCount{};
 			WrapperT< GetIndexTypeCallback > m_getIndexType{};
 			WrapperT< GetCullModeCallback > m_getCullMode{};
-			WrapperT< VkExtent2D > m_renderSize{};
+			WrapperT< Extent2D > m_renderSize{};
 			WrapperT< VertexBuffer > m_vertexBuffer{};
 			WrapperT< IndexBuffer > m_indexBuffer{};
 			WrapperT< IndirectBuffer > m_indirectBuffer{};
@@ -233,7 +233,7 @@ namespace crg
 		template<>
 		struct ConfigT< RawTypeT >
 		{
-			RawTypeT< VkOffset2D > renderPosition{};
+			RawTypeT< Offset2D > renderPosition{};
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState{};
 			RawTypeT< RunnablePass::GetPassIndexCallback > getPassIndex{};
 			RawTypeT< RunnablePass::IsEnabledCallback > isEnabled{};

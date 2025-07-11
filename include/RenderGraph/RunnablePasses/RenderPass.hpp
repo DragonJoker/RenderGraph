@@ -65,7 +65,7 @@ namespace crg
 			, GraphContext & context
 			, RunnableGraph & graph
 			, Callbacks callbacks
-			, VkExtent2D const & size = {}
+			, Extent2D size = {}
 			, ru::Config const & ruConfig = {} );
 
 		VkRenderPass getRenderPass( uint32_t passIndex )const

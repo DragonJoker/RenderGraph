@@ -12,24 +12,13 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace imgBlit
-	{
-		static VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
-		{
-			return VkImageSubresourceLayers{ range.aspectMask
-				, range.baseMipLevel
-				, range.baseArrayLayer
-				, range.layerCount };
-		}
-	}
-
 	ImageBlit::ImageBlit( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, VkOffset3D blitSrcOffset
-		, VkExtent3D blitSrcSize
-		, VkOffset3D blitDstOffset
-		, VkExtent3D blitDstSize
+		, Offset3D const & blitSrcOffset
+		, Extent3D const & blitSrcSize
+		, Offset3D const & blitDstOffset
+		, Extent3D const & blitDstSize
 		, FilterMode filter
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
@@ -39,20 +28,20 @@ namespace crg
 			, graph
 			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
+				, [this]( RecordContext const & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
-		, m_srcOffset{ std::move( blitSrcOffset ) }
-		, m_srcSize{ std::move( blitSrcSize ) }
-		, m_dstOffset{ std::move( blitDstOffset ) }
-		, m_dstSize{ std::move( blitDstSize ) }
+		, m_srcOffset{ convert( blitSrcOffset ) }
+		, m_srcSize{ convert( blitSrcSize ) }
+		, m_dstOffset{ convert( blitDstOffset ) }
+		, m_dstSize{ convert( blitDstSize ) }
 		, m_filter{ filter }
 	{
 		assert( pass.images.size() == 2u );
 	}
 
-	void ImageBlit::doRecordInto( RecordContext & context
+	void ImageBlit::doRecordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
@@ -60,9 +49,9 @@ namespace crg
 		auto dstAttach{ m_pass.images.back().view( index ) };
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
-		VkImageBlit blitRegion{ imgBlit::convert( srcAttach.data->info.subresourceRange )
+		VkImageBlit blitRegion{ getSubresourceLayers( srcAttach.data->info.subresourceRange )
 			, { m_srcOffset, VkOffset3D{ int32_t( m_srcSize.width ), int32_t( m_srcSize.height ), int32_t( m_srcSize.depth ) } }
-			, imgBlit::convert( dstAttach.data->info.subresourceRange )
+			, getSubresourceLayers( dstAttach.data->info.subresourceRange )
 			, { m_dstOffset, VkOffset3D{ int32_t( m_dstSize.width ), int32_t( m_dstSize.height ), int32_t( m_dstSize.depth ) } } };
 		context->vkCmdBlitImage( commandBuffer
 			, srcImage

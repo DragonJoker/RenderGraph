@@ -52,16 +52,16 @@ namespace crg
 
 		CRG_API void setLayoutState( ImageId image
 			, ImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
+			, ImageSubresourceRange const & subresourceRange
 			, LayoutState const & layoutState );
 		CRG_API LayoutState getLayoutState( ImageId image
 			, ImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange )const;
+			, ImageSubresourceRange const & subresourceRange )const;
 
 		CRG_API LayoutState getNextLayoutState( ImageViewId view )const;
 		CRG_API LayoutState getNextLayoutState( ImageId image
 			, ImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange )const;
+			, ImageSubresourceRange const & subresourceRange )const;
 
 		CRG_API void registerImplicitTransition( RunnablePass const & pass
 			, crg::ImageViewId view
@@ -97,14 +97,14 @@ namespace crg
 			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
-			, VkImageSubresourceRange const & subresourceRange
+			, ImageSubresourceRange const & subresourceRange
 			, ImageLayout initialLayout
 			, LayoutState const & wantedState
 			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, ImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
+			, ImageSubresourceRange const & subresourceRange
 			, ImageLayout initialLayout
 			, LayoutState const & wantedState
 			, bool force = false );
@@ -114,13 +114,13 @@ namespace crg
 			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
-			, VkImageSubresourceRange const & subresourceRange
+			, ImageSubresourceRange const & subresourceRange
 			, LayoutState const & wantedState
 			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
 			, ImageId const & image
 			, ImageViewType viewType
-			, VkImageSubresourceRange const & subresourceRange
+			, ImageSubresourceRange const & subresourceRange
 			, LayoutState const & wantedState
 			, bool force = false );
 		//@}
@@ -149,6 +149,7 @@ namespace crg
 		//@}
 		//@}
 		CRG_API GraphContext & getContext()const;
+		CRG_API ContextResourcesCache & getResources()const;
 
 		GraphContext * operator->()const
 		{
@@ -157,20 +158,21 @@ namespace crg
 
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView
-			, VkExtent2D extent
+			, Extent2D const & extent
 			, ImageLayout finalLayout = ImageLayout::eUndefined );
 		CRG_API static ImplicitAction blitImage( ImageViewId srcView
 			, ImageViewId dstView
-			, VkOffset2D srcOffset
-			, VkExtent2D srcExtent
-			, VkOffset2D dstOffset
-			, VkExtent2D dstExtent
+			, Rect2D const & srcRect
+			, Rect2D const & dstRect
 			, FilterMode filter
 			, ImageLayout finalLayout = ImageLayout::eUndefined );
 		CRG_API static ImplicitAction clearAttachment( Attachment const & attach
 			, ImageLayout finalLayout = ImageLayout::eUndefined );
 		CRG_API static ImplicitAction clearAttachment( ImageViewId view
-			, VkClearValue const & clearValue
+			, ClearColorValue const & clearValue
+			, ImageLayout finalLayout = ImageLayout::eUndefined );
+		CRG_API static ImplicitAction clearAttachment( ImageViewId view
+			, ClearDepthStencilValue const & clearValue
 			, ImageLayout finalLayout = ImageLayout::eUndefined );
 
 		ResourceHandler & getHandler()const
@@ -197,9 +199,6 @@ namespace crg
 		{
 			return m_nextPipelineState;
 		}
-
-	private:
-		ContextResourcesCache & getResources()const;
 
 	private:
 		ResourceHandler * m_handler;

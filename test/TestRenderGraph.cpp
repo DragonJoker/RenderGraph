@@ -31,7 +31,7 @@ namespace
 				auto resolved = crg::resolveView( view, index );
 				check( context.getNextLayoutState( resolved ).layout == crg::ImageLayout::eShaderReadOnly )
 				check( context.getNextLayoutState( resolved.data->image
-					, crg::convert( resolved.data->info.viewType )
+					, resolved.data->info.viewType
 					, resolved.data->info.subresourceRange ).layout == crg::ImageLayout::eShaderReadOnly )
 			}
 		}
@@ -66,7 +66,8 @@ namespace
 	{
 		testBegin( "testNoPass" )
 		crg::ResourceHandler handler;
-		auto graph = buildNoPassGraph( testCounts, handler );
+		auto graph1 = buildNoPassGraph( testCounts, handler );
+		crg::FrameGraph graph{ std::move( graph1 ) };
 
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );

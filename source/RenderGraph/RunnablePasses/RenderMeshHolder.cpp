@@ -13,7 +13,7 @@ namespace crg
 		, RunnableGraph & graph
 		, rm::Config config
 		, uint32_t maxPassCount )
-		: m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< VkOffset2D >()
+		: m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< Offset2D >()
 			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
 			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
 			, config.m_isEnabled ? std::move( *config.m_isEnabled ) : getDefaultV< RunnablePass::IsEnabledCallback >()
@@ -32,7 +32,7 @@ namespace crg
 			, config.m_baseConfig
 			, VK_PIPELINE_BIND_POINT_GRAPHICS
 			, maxPassCount }
-		, m_renderSize{ config.m_renderSize ? *config.m_renderSize : getDefaultV< VkExtent2D >() }
+		, m_renderSize{ config.m_renderSize ? *config.m_renderSize : getDefaultV< Extent2D >() }
 	{
 		m_iaState = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
 			, nullptr
@@ -63,7 +63,7 @@ namespace crg
 			, 0.0f };
 	}
 
-	void RenderMeshHolder::initialise( VkExtent2D const & renderSize
+	void RenderMeshHolder::initialise( Extent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState
 		, uint32_t index )
@@ -87,7 +87,7 @@ namespace crg
 		m_pipeline.cleanup();
 	}
 
-	void RenderMeshHolder::resetRenderPass( VkExtent2D const & renderSize
+	void RenderMeshHolder::resetRenderPass( Extent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState
 		, uint32_t index )
@@ -115,7 +115,7 @@ namespace crg
 		doCreatePipeline( index );
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
-		VkDeviceSize offset{};
+		DeviceSize offset{};
 
 		if ( m_config.vertexBuffer.buffer.buffer( index ) )
 		{
@@ -162,12 +162,12 @@ namespace crg
 		return m_config.isEnabled();
 	}
 
-	VkExtent2D RenderMeshHolder::getRenderSize()const
+	Extent2D RenderMeshHolder::getRenderSize()const
 	{
 		return m_renderSize;
 	}
 
-	void RenderMeshHolder::doPreparePipelineStates( VkExtent2D const & renderSize
+	void RenderMeshHolder::doPreparePipelineStates( Extent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState )
 	{
@@ -210,7 +210,7 @@ namespace crg
 
 	}
 
-	VkPipelineViewportStateCreateInfo RenderMeshHolder::doCreateViewportState( VkExtent2D const & renderSize
+	VkPipelineViewportStateCreateInfo RenderMeshHolder::doCreateViewportState( Extent2D const & renderSize
 		, VkViewport & viewport
 		, VkRect2D & scissor )const
 	{

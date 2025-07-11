@@ -16,49 +16,26 @@ namespace crg
 	{
 		std::string name;
 		ImageId image;
-		VkImageViewCreateInfo info;
+		ImageViewCreateInfo info;
 		ImageViewIdArray source{};
 
 		explicit ImageViewData( std::string name = {}
 			, ImageId image = ImageId{}
-			, VkImageViewCreateFlags flags = {}
+			, ImageViewCreateFlags flags = {}
 			, ImageViewType viewType = {}
 			, PixelFormat format = {}
-			, VkImageSubresourceRange subresourceRange = {} )
+			, ImageSubresourceRange subresourceRange = {} )
 			: name{ std::move( name ) }
 			, image{ std::move( image ) }
-			, info{ VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO
-				, nullptr
-				, flags
-				, VkImage{}
-				, convert( viewType )
-				, convert( format )
-				, { VK_COMPONENT_SWIZZLE_R, VK_COMPONENT_SWIZZLE_G, VK_COMPONENT_SWIZZLE_B, VK_COMPONENT_SWIZZLE_A }
-				, subresourceRange }
+			, info{ flags, viewType, format, subresourceRange }
 		{
 		}
+
+	private:
+		friend bool operator==( ImageViewData const & lhs, ImageViewData const & rhs )
+		{
+			return lhs.image == rhs.image
+				&& lhs.info == rhs.info;
+		}
 	};
-
-	inline bool operator==( VkImageSubresourceRange const & lhs, VkImageSubresourceRange const & rhs )
-	{
-		return lhs.aspectMask == rhs.aspectMask
-			&& lhs.baseArrayLayer == rhs.baseArrayLayer
-			&& lhs.layerCount == rhs.layerCount
-			&& lhs.baseMipLevel == rhs.baseMipLevel
-			&& lhs.levelCount == rhs.levelCount;
-	}
-
-	inline bool operator==( VkImageViewCreateInfo const & lhs, VkImageViewCreateInfo const & rhs )
-	{
-		return lhs.flags == rhs.flags
-			&& lhs.viewType == rhs.viewType
-			&& lhs.format == rhs.format
-			&& lhs.subresourceRange == rhs.subresourceRange;
-	}
-
-	inline bool operator==( ImageViewData const & lhs, ImageViewData const & rhs )
-	{
-		return lhs.image == rhs.image
-			&& lhs.info == rhs.info;
-	}
 }

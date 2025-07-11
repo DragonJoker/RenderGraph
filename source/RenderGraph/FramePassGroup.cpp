@@ -18,10 +18,7 @@ namespace crg
 		static FramePassGroup const * getOutermost( FramePassGroup const * group )
 		{
 			while ( group && group->parent )
-			{
 				group = group->parent;
-			}
-
 			return group;
 		}
 
@@ -155,7 +152,7 @@ namespace crg
 
 	void FramePassGroup::addInput( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range
+		, ImageSubresourceRange const & range
 		, LayoutState const & outputLayout )
 	{
 		m_graph.addInput( image
@@ -168,14 +165,14 @@ namespace crg
 		, LayoutState const & outputLayout )
 	{
 		addInput( view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, outputLayout );
 	}
 
 	void FramePassGroup::addOutput( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range
+		, ImageSubresourceRange const & range
 		, LayoutState const & outputLayout )
 	{
 		m_graph.addOutput( image
@@ -188,7 +185,7 @@ namespace crg
 		, LayoutState const & outputLayout )
 	{
 		addOutput( view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, outputLayout );
 	}

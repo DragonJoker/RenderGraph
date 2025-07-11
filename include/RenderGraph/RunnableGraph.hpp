@@ -74,13 +74,16 @@ namespace crg
 		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
 			, ImageId image
 			, ImageViewType viewType
-			, VkImageSubresourceRange range )const;
+			, ImageSubresourceRange range )const;
 		CRG_API LayoutState getCurrentLayoutState( RecordContext & context
 			, ImageViewId view )const;
 		CRG_API LayoutState getNextLayoutState( RecordContext const & context
 			, crg::RunnablePass const & runnable
 			, ImageViewId view )const;
 		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
+
+		CRG_API VkDescriptorType getDescriptorType( Attachment const & attach )const;
+		CRG_API WriteDescriptorSet getBufferWrite( Attachment const & attach, uint32_t index = 0u )const;
 
 		ConstGraphAdjacentNode getGraph()const noexcept
 		{

@@ -91,8 +91,8 @@ namespace crg
 		*	This buffer will only be used to compute dependencies, and is considered an input, in that goal.
 		*/
 		CRG_API void addImplicitBuffer( Buffer buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, AccessState wantedAccess );
 		/**
 		*\brief
@@ -100,40 +100,40 @@ namespace crg
 		*/
 		CRG_API void addUniformBuffer( Buffer buffer
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an input storage buffer attachment.
 		*/
 		CRG_API void addInputStorageBuffer( Buffer buffer
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an output storage buffer attachment.
 		*/
 		CRG_API void addOutputStorageBuffer( Buffer buffer
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates a storage buffer attachment that will be cleared a the beginning of the pass.
 		*/
 		CRG_API void addClearableOutputStorageBuffer( Buffer buffer
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an input/output storage buffer attachment.
 		*/
 		CRG_API void addInOutStorageBuffer( Buffer buffer
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an implicit buffer view attachment.
@@ -142,8 +142,8 @@ namespace crg
 		*/
 		CRG_API void addImplicitBufferView( Buffer buffer
 			, VkBufferView view
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, AccessState wantedAccess );
 		/**
 		*\brief
@@ -152,8 +152,8 @@ namespace crg
 		CRG_API void addUniformBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an input  storage texel buffer view attachment.
@@ -161,8 +161,8 @@ namespace crg
 		CRG_API void addInputStorageBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an output storage texel buffer view attachment.
@@ -170,8 +170,8 @@ namespace crg
 		CRG_API void addOutputStorageBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates a storage texel buffer attachment that will be cleared a the beginning of the pass.
@@ -179,8 +179,8 @@ namespace crg
 		CRG_API void addClearableOutputStorageBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates an input/output storage texel buffer view attachment.
@@ -188,29 +188,29 @@ namespace crg
 		CRG_API void addInOutStorageBufferView( Buffer buffer
 			, VkBufferView view
 			, uint32_t binding
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates a transfer input buffer attachment.
 		*/
 		CRG_API void addTransferInputBuffer( Buffer buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates a transfer output buffer attachment.
 		*/
 		CRG_API void addTransferOutputBuffer( Buffer buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range );
+			, DeviceSize offset
+			, DeviceSize range );
 		/**
 		*\brief
 		*	Creates a transfer input/output buffer attachment.
 		*/
 		CRG_API void addTransferInOutBuffer( Buffer buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, Attachment::Flag flag = {} );
 		/**@}*/
 		/**
@@ -444,8 +444,8 @@ namespace crg
 			addColourView( "Ic"
 				, Attachment::FlagKind( Attachment::Flag::Input )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eDontCare
 				, ImageLayout::eColorAttachment );
 		}
 		/**
@@ -454,15 +454,15 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addInOutColourView( ImageViewT view
-			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
+			, PipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
 			addColourView( "IOc"
 				, Attachment::FlagKind( Attachment::Flag::InOut )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eStore
 				, ImageLayout::eColorAttachment
-				, {}
+				, ClearColorValue{}
 				, std::move( blendState ) );
 		}
 		/**
@@ -471,13 +471,13 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputColourView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, ClearColorValue clearValue = ClearColorValue{} )
 		{
 			addColourView( "Oc"
 				, Attachment::FlagKind( Attachment::Flag::Output )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
+				, AttachmentLoadOp::eClear
+				, AttachmentStoreOp::eStore
 				, ImageLayout::eColorAttachment
 				, std::move( clearValue ) );
 		}
@@ -491,12 +491,12 @@ namespace crg
 			addDepthView( "Id"
 				, Attachment::FlagKind( Attachment::Flag::Input )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eDontCare
+				, AttachmentStoreOp::eDontCare
 				, ImageLayout::eDepthStencilAttachment
-				, VkClearValue{} );
+				, ClearDepthStencilValue{} );
 		}
 		/**
 		*\brief
@@ -508,12 +508,12 @@ namespace crg
 			addDepthView( "IOd"
 				, Attachment::FlagKind( Attachment::Flag::InOut )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eStore
+				, AttachmentLoadOp::eDontCare
+				, AttachmentStoreOp::eDontCare
 				, ImageLayout::eDepthStencilAttachment
-				, VkClearValue{} );
+				, ClearDepthStencilValue{} );
 		}
 		/**
 		*\brief
@@ -521,15 +521,15 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputDepthView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} )
 		{
 			addDepthView( "Od"
 				, Attachment::FlagKind( Attachment::Flag::Output )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, AttachmentLoadOp::eClear
+				, AttachmentStoreOp::eStore
+				, AttachmentLoadOp::eDontCare
+				, AttachmentStoreOp::eDontCare
 				, ImageLayout::eDepthStencilAttachment
 				, std::move( clearValue ) );
 		}
@@ -544,12 +544,12 @@ namespace crg
 				, Attachment::FlagKind( Attachment::Flag::Input )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eDontCare
 				, ImageLayout::eDepthStencilAttachment
-				, VkClearValue{} );
+				, ClearDepthStencilValue{} );
 		}
 		/**
 		*\brief
@@ -562,12 +562,12 @@ namespace crg
 				, Attachment::FlagKind( Attachment::Flag::InOut )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInOut )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eStore
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eStore
 				, ImageLayout::eDepthStencilAttachment
-				, VkClearValue{} );
+				, ClearDepthStencilValue{} );
 		}
 		/**
 		*\brief
@@ -575,16 +575,16 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputDepthStencilView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} )
 		{
 			addDepthStencilView( "Ods"
 				, Attachment::FlagKind( Attachment::Flag::Output )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
+				, AttachmentLoadOp::eClear
+				, AttachmentStoreOp::eStore
+				, AttachmentLoadOp::eClear
+				, AttachmentStoreOp::eStore
 				, ImageLayout::eDepthStencilAttachment
 				, std::move( clearValue ) );
 		}
@@ -599,12 +599,12 @@ namespace crg
 				, Attachment::FlagKind( Attachment::Flag::Input )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
+				, AttachmentLoadOp::eDontCare
+				, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eDontCare
 				, ImageLayout::eDepthStencilAttachment
-				, VkClearValue{} );
+				, ClearDepthStencilValue{} );
 		}
 		/**
 		*\brief
@@ -617,12 +617,12 @@ namespace crg
 				, Attachment::FlagKind( Attachment::Flag::InOut )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInOut )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_ATTACHMENT_LOAD_OP_LOAD
-				, VK_ATTACHMENT_STORE_OP_STORE
+				, AttachmentLoadOp::eDontCare
+				, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eLoad
+				, AttachmentStoreOp::eStore
 				, ImageLayout::eDepthStencilAttachment
-				, VkClearValue{} );
+				, ClearDepthStencilValue{} );
 		}
 		/**
 		*\brief
@@ -630,16 +630,16 @@ namespace crg
 		*/
 		template< typename ImageViewT >
 		void addOutputStencilView( ImageViewT view
-			, VkClearValue clearValue = {} )
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} )
 		{
 			addStencilView( "Os"
 				, Attachment::FlagKind( Attachment::Flag::Output )
 				, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput )
 				, std::move( view )
-				, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-				, VK_ATTACHMENT_STORE_OP_DONT_CARE
-				, VK_ATTACHMENT_LOAD_OP_CLEAR
-				, VK_ATTACHMENT_STORE_OP_STORE
+				, AttachmentLoadOp::eDontCare
+				, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eClear
+				, AttachmentStoreOp::eStore
 				, ImageLayout::eDepthStencilAttachment
 				, std::move( clearValue ) );
 		}
@@ -673,49 +673,49 @@ namespace crg
 		CRG_API void addColourView( std::string const & name
 			, Attachment::FlagKind flags
 			, ImageViewIdArray view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {}
-			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState );
+			, ClearColorValue clearValue = ClearColorValue{}
+			, PipelineColorBlendAttachmentState blendState = DefaultBlendState );
 		CRG_API void addDepthView( std::string const & name
 			, Attachment::FlagKind flags
 			, ImageViewIdArray view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {} );
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} );
 		CRG_API void addStencilView( std::string const & name
 			, Attachment::FlagKind flags
 			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewIdArray view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {} );
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} );
 		CRG_API void addDepthStencilView( std::string const & name
 			, Attachment::FlagKind flags
 			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewIdArray view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {} );
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} );
 
 		void addColourView( std::string const & name
 			, Attachment::FlagKind flags
 			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {}
-			, VkPipelineColorBlendAttachmentState blendState = DefaultBlendState )
+			, ClearColorValue clearValue = ClearColorValue{}
+			, PipelineColorBlendAttachmentState blendState = DefaultBlendState )
 		{
 			addColourView( name
 				, flags
@@ -730,12 +730,12 @@ namespace crg
 		void addDepthView( std::string const & name
 			, Attachment::FlagKind flags
 			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {} )
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} )
 		{
 			addDepthView( name
 				, flags
@@ -752,12 +752,12 @@ namespace crg
 			, Attachment::FlagKind flags
 			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {} )
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} )
 		{
 			addStencilView( name
 				, flags
@@ -775,12 +775,12 @@ namespace crg
 			, Attachment::FlagKind flags
 			, ImageAttachment::FlagKind stencilFlags
 			, ImageViewId view
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, ImageLayout wantedLayout = ImageLayout::eUndefined
-			, VkClearValue clearValue = {} )
+			, ClearDepthStencilValue clearValue = ClearDepthStencilValue{} )
 		{
 			addDepthStencilView( name
 				, flags

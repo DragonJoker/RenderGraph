@@ -25,6 +25,12 @@ namespace crg
 			, data{ data }
 		{
 		}
+
+	private:
+		friend bool operator==( Id const & lhs, Id const & rhs )
+		{
+			return lhs.id == rhs.id;
+		}
 	};
 
 	template< typename TypeT >
@@ -37,17 +43,5 @@ namespace crg
 	inline bool operator>( Id< TypeT > const & lhs, Id< TypeT > const & rhs )
 	{
 		return lhs.id > rhs.id;
-	}
-
-	template< typename TypeT >
-	inline bool operator==( Id< TypeT > const & lhs, Id< TypeT > const & rhs )
-	{
-		return lhs.id == rhs.id;
-	}
-
-	template< typename TypeT >
-	inline bool operator!=( Id< TypeT > const & lhs, Id< TypeT > const & rhs )
-	{
-		return lhs.id != rhs.id;
 	}
 }

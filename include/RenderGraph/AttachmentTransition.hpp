@@ -16,10 +16,15 @@ namespace crg
 		DataT data;
 		Attachment outputAttach;
 		Attachment inputAttach;
-	};
 
-	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs );
-	bool operator==( BufferTransition const & lhs, BufferTransition const & rhs );
+	private:
+		friend bool operator==( DataTransitionT const & lhs, DataTransitionT const & rhs )
+		{
+			return match( lhs.data, rhs.data )
+				&& lhs.outputAttach == rhs.outputAttach
+				&& lhs.inputAttach == rhs.inputAttach;
+		}
+	};
 
 	struct AttachmentTransitions
 	{

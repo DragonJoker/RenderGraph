@@ -33,7 +33,7 @@ namespace crg
 			, context
 			, graph
 			, ruConfig.maxPassCount
-			, rqConfig.m_renderSize ? *rqConfig.m_renderSize : getDefaultV< VkExtent2D >() }
+			, rqConfig.m_renderSize ? *rqConfig.m_renderSize : getDefaultV< Extent2D >() }
 	{
 	}
 

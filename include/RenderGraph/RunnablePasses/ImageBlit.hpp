@@ -14,17 +14,17 @@ namespace crg
 		CRG_API ImageBlit( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkOffset3D blitSrcOffset
-			, VkExtent3D blitSrcSize
-			, VkOffset3D blitDstOffset
-			, VkExtent3D blitDstSize
+			, Offset3D const & blitSrcOffset
+			, Extent3D const & blitSrcSize
+			, Offset3D const & blitDstOffset
+			, Extent3D const & blitDstSize
 			, FilterMode filter
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
 
 	private:
-		void doRecordInto( RecordContext & context
+		void doRecordInto( RecordContext const & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 

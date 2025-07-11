@@ -37,13 +37,13 @@ namespace crg
 
 		static VkImageCreateInfo convert( ImageData const & data )
 		{
-			return data.info;
+			return convert( data.info );
 		}
 
 		static VkImageViewCreateInfo convert( ImageViewData const & data
 			, VkImage const & image )
 		{
-			auto result = data.info;
+			auto result = convert( data.info );
 			result.image = image;
 			return result;
 		}

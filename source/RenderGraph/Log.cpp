@@ -13,49 +13,49 @@ namespace crg
 	{
 		using lock_type = std::unique_lock< std::mutex >;
 
-		static void doLog( std::string const & message
+		static void doLog( std::string_view message
 			, bool newLine
-			, std::ostream & stream )
+			, FILE * stream )noexcept
 		{
-			stream << message;
+			fprintf( stream, "%s", message.data() );
 
 			if ( newLine )
 			{
-				stream << std::endl;
+				fprintf( stream, "\n" );
 			}
 		}
 	}
 
 	Logger::Logger()
-		: m_trace{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::clog ); } }
-		, m_debug{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::clog ); } }
-		, m_info{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::cout ); } }
-		, m_warning{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::cout ); } }
-		, m_error{ []( std::string const & msg, bool newLine ){ log::doLog( msg, newLine, std::cerr ); } }
+		: m_trace{ []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); } }
+		, m_debug{ []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); } }
+		, m_info{ []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); } }
+		, m_warning{ []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); } }
+		, m_error{ []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stderr ); } }
 	{
 	}
 
-	void Logger::logTrace( std::string const & message, bool newLine )
+	void Logger::logTrace( std::string_view message, bool newLine )noexcept
 	{
 		doGetInstance().m_trace( message, newLine );
 	}
 
-	void Logger::logDebug( std::string const & message, bool newLine )
+	void Logger::logDebug( std::string_view message, bool newLine )noexcept
 	{
 		doGetInstance().m_debug( message, newLine );
 	}
 
-	void Logger::logInfo( std::string const & message, bool newLine )
+	void Logger::logInfo( std::string_view message, bool newLine )noexcept
 	{
 		doGetInstance().m_info( message, newLine );
 	}
 
-	void Logger::logWarning( std::string const & message, bool newLine )
+	void Logger::logWarning( std::string_view message, bool newLine )noexcept
 	{
 		doGetInstance().m_warning( message, newLine );
 	}
 
-	void Logger::logError( std::string const & message, bool newLine )
+	void Logger::logError( std::string_view message, bool newLine )noexcept
 	{
 		doGetInstance().m_error( message, newLine );
 	}
@@ -85,7 +85,7 @@ namespace crg
 		doGetInstance().m_error = std::move( callback );
 	}
 
-	Logger & Logger::doGetInstance()
+	Logger & Logger::doGetInstance()noexcept
 	{
 		static Logger instance;
 		static std::mutex mutex;

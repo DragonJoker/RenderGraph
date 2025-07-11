@@ -85,8 +85,7 @@ namespace crg
 							, []( Attachment const & lhs
 								, ImageViewId const & rhs )
 							{
-								return match( *lhs.view().data, *rhs.data )
-									&& lhs.isOutput();
+								return lhs.isOutput() && match( lhs.view(), rhs );
 							} );
 				} );
 
@@ -105,8 +104,7 @@ namespace crg
 						, []( Attachment const & lhs
 							, ImageViewId const & rhs )
 						{
-							return match( *lhs.view().data, *rhs.data )
-								&& lhs.isInput();
+							return lhs.isInput() && match( lhs.view(), rhs );
 						} );
 				} );
 
@@ -183,6 +181,58 @@ namespace crg
 				return size_t( pass.id ) << 16u
 					| ( ptrdiff_t( buffer.buffer() ) & 0x0000FFFF );
 			}
+		}
+
+		static void mergeViewData( ImageViewId const & view
+			, bool mergeMipLevels
+			, bool mergeArrayLayers
+			, ImageViewData & data )
+		{
+			if ( data.image.id == 0 )
+			{
+				data.image = view.data->image;
+				data.name = data.image.data->name;
+				data.info.flags = view.data->info.flags;
+				data.info.format = view.data->info.format;
+				data.info.viewType = view.data->info.viewType;
+				data.info.subresourceRange = view.data->info.subresourceRange;
+			}
+			else
+			{
+				assert( data.image == view.data->image );
+
+				if ( mergeMipLevels )
+				{
+					auto maxLevel = std::max( data.info.subresourceRange.levelCount + data.info.subresourceRange.baseMipLevel
+						, view.data->info.subresourceRange.levelCount + view.data->info.subresourceRange.baseMipLevel );
+					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
+						, data.info.subresourceRange.baseMipLevel );
+					data.info.subresourceRange.levelCount = maxLevel - data.info.subresourceRange.baseMipLevel;
+				}
+				else
+				{
+					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
+						, data.info.subresourceRange.baseMipLevel );
+					data.info.subresourceRange.levelCount = 1u;
+				}
+
+				if ( mergeArrayLayers )
+				{
+					auto maxLayer = std::max( data.info.subresourceRange.layerCount + data.info.subresourceRange.baseArrayLayer
+						, view.data->info.subresourceRange.layerCount + view.data->info.subresourceRange.baseArrayLayer );
+					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
+						, data.info.subresourceRange.baseArrayLayer );
+					data.info.subresourceRange.layerCount = maxLayer - data.info.subresourceRange.baseArrayLayer;
+				}
+				else
+				{
+					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
+						, data.info.subresourceRange.baseArrayLayer );
+					data.info.subresourceRange.layerCount = 1u;
+				}
+			}
+
+			data.source.push_back( view );
 		}
 	}
 
@@ -275,8 +325,8 @@ namespace crg
 	}
 
 	void FramePass::addImplicitBuffer( Buffer buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, AccessState wantedAccess )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ImplB";
@@ -293,8 +343,8 @@ namespace crg
 
 	void FramePass::addUniformBuffer( Buffer buffer
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/UB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
@@ -310,8 +360,8 @@ namespace crg
 
 	void FramePass::addInputStorageBuffer( Buffer buffer
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ISB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
@@ -327,8 +377,8 @@ namespace crg
 
 	void FramePass::addOutputStorageBuffer( Buffer buffer
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
@@ -344,8 +394,8 @@ namespace crg
 
 	void FramePass::addClearableOutputStorageBuffer( Buffer buffer
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSB";
 		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
@@ -362,8 +412,8 @@ namespace crg
 
 	void FramePass::addInOutStorageBuffer( Buffer buffer
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOSB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
@@ -379,8 +429,8 @@ namespace crg
 
 	void FramePass::addImplicitBufferView( Buffer buffer
 		, VkBufferView view
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, AccessState wantedAccess )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ImplBV";
@@ -399,8 +449,8 @@ namespace crg
 	void FramePass::addUniformBufferView( Buffer buffer
 		, VkBufferView view
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/UBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
@@ -418,8 +468,8 @@ namespace crg
 	void FramePass::addInputStorageBufferView( Buffer buffer
 		, VkBufferView view
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ISBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
@@ -437,8 +487,8 @@ namespace crg
 	void FramePass::addOutputStorageBufferView( Buffer buffer
 		, VkBufferView view
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
@@ -456,8 +506,8 @@ namespace crg
 	void FramePass::addClearableOutputStorageBufferView( Buffer buffer
 		, VkBufferView view
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSBV";
 		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
@@ -476,8 +526,8 @@ namespace crg
 	void FramePass::addInOutStorageBufferView( Buffer buffer
 		, VkBufferView view
 		, uint32_t binding
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOSBV";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
@@ -493,8 +543,8 @@ namespace crg
 	}
 
 	void FramePass::addTransferInputBuffer( Buffer buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ITB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
@@ -509,8 +559,8 @@ namespace crg
 	}
 
 	void FramePass::addTransferOutputBuffer( Buffer buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range )
+		, DeviceSize offset
+		, DeviceSize range )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OTB";
 		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
@@ -525,8 +575,8 @@ namespace crg
 	}
 
 	void FramePass::addTransferInOutBuffer( Buffer buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, Attachment::Flag flag )
 	{
 		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOTB";
@@ -546,87 +596,39 @@ namespace crg
 		, bool mergeArrayLayers )
 	{
 		ImageViewData data;
-
 		for ( auto & view : views )
-		{
-			if ( data.image.id == 0 )
-			{
-				data.image = view.data->image;
-				data.name = data.image.data->name;
-				data.info.components = view.data->info.components;
-				data.info.flags = view.data->info.flags;
-				data.info.format = view.data->info.format;
-				data.info.viewType = view.data->info.viewType;
-				data.info.subresourceRange = view.data->info.subresourceRange;
-			}
-			else
-			{
-				assert( data.image == view.data->image );
-
-				if ( mergeMipLevels )
-				{
-					auto maxLevel = std::max( data.info.subresourceRange.levelCount + data.info.subresourceRange.baseMipLevel
-						, view.data->info.subresourceRange.levelCount + view.data->info.subresourceRange.baseMipLevel );
-					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
-						, data.info.subresourceRange.baseMipLevel );
-					data.info.subresourceRange.levelCount = maxLevel - data.info.subresourceRange.baseMipLevel;
-				}
-				else
-				{
-					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
-						, data.info.subresourceRange.baseMipLevel );
-					data.info.subresourceRange.levelCount = 1u;
-				}
-
-				if ( mergeArrayLayers )
-				{
-					auto maxLayer = std::max( data.info.subresourceRange.layerCount + data.info.subresourceRange.baseArrayLayer
-						, view.data->info.subresourceRange.layerCount + view.data->info.subresourceRange.baseArrayLayer );
-					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
-						, data.info.subresourceRange.baseArrayLayer );
-					data.info.subresourceRange.layerCount = maxLayer - data.info.subresourceRange.baseArrayLayer;
-				}
-				else
-				{
-					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
-						, data.info.subresourceRange.baseArrayLayer );
-					data.info.subresourceRange.layerCount = 1u;
-				}
-			}
-
-			data.source.push_back( view );
-		}
+			fpass::mergeViewData( view, mergeMipLevels, mergeArrayLayers, data );
 
 		if ( data.info.subresourceRange.layerCount > 1u )
 		{
 			switch ( data.info.viewType )
 			{
-			case VK_IMAGE_VIEW_TYPE_1D:
-				data.info.viewType = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+			case ImageViewType::e1D:
+				data.info.viewType = ImageViewType::e1DArray;
 				break;
-			case VK_IMAGE_VIEW_TYPE_2D:
-				if ( ( data.image.data->info.flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT )
+			case ImageViewType::e2D:
+				if ( checkFlag( data.image.data->info.flags, ImageCreateFlags::eCubeCompatible )
 					&& ( data.info.subresourceRange.layerCount % 6u ) == 0u
 					&& data.info.subresourceRange.baseArrayLayer == 0u )
 				{
 					if ( data.info.subresourceRange.layerCount > 6u )
 					{
-						data.info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+						data.info.viewType = ImageViewType::eCubeArray;
 					}
 					else
 					{
-						data.info.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+						data.info.viewType = ImageViewType::eCube;
 					}
 				}
 				else
 				{
-					data.info.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+					data.info.viewType = ImageViewType::e2DArray;
 				}
 				break;
-			case VK_IMAGE_VIEW_TYPE_CUBE:
+			case ImageViewType::eCube:
 				if ( data.info.subresourceRange.layerCount > 6u )
 				{
-					data.info.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+					data.info.viewType = ImageViewType::eCubeArray;
 				}
 				break;
 			default:
@@ -648,13 +650,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, std::move( samplerDesc )
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eShaderReadOnly } );
 	}
 
@@ -668,13 +670,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, wantedLayout } );
 	}
 
@@ -689,13 +691,13 @@ namespace crg
 			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
 				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth ) )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, wantedLayout } );
 	}
 
@@ -710,13 +712,13 @@ namespace crg
 			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
 				| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, wantedLayout } );
 	}
 
@@ -730,13 +732,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral } );
 	}
 
@@ -750,13 +752,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral } );
 	}
 
@@ -771,13 +773,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral } );
 	}
 
@@ -791,13 +793,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral } );
 	}
 
@@ -810,13 +812,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eTransferSrc } );
 	}
 
@@ -829,13 +831,13 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eTransferDst } );
 	}
 
@@ -849,24 +851,24 @@ namespace crg
 			, std::move( attachName )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
 			, std::move( views )
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, VkClearValue{}
-			, VkPipelineColorBlendAttachmentState{}
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eTransferSrc } );
 	}
 
 	void FramePass::addColourView( std::string const & pname
 		, crg::Attachment::FlagKind flags
 		, ImageViewIdArray views
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
+		, AttachmentLoadOp loadOp
+		, AttachmentStoreOp storeOp
 		, ImageLayout wantedLayout
-		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState )
+		, ClearColorValue clearValue
+		, PipelineColorBlendAttachmentState blendState )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.push_back( { flags
@@ -877,10 +879,10 @@ namespace crg
 			, std::move( views )
 			, loadOp
 			, storeOp
-			, VK_ATTACHMENT_LOAD_OP_DONT_CARE
-			, VK_ATTACHMENT_STORE_OP_DONT_CARE
+			, AttachmentLoadOp::eDontCare
+			, AttachmentStoreOp::eDontCare
 			, SamplerDesc{}
-			, std::move( clearValue )
+			, ClearValue{ std::move( clearValue ) }
 			, std::move( blendState )
 			, wantedLayout } );
 	}
@@ -888,12 +890,12 @@ namespace crg
 	void FramePass::addDepthView( std::string const & pname
 		, crg::Attachment::FlagKind flags
 		, ImageViewIdArray views
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
+		, AttachmentLoadOp loadOp
+		, AttachmentStoreOp storeOp
+		, AttachmentLoadOp stencilLoadOp
+		, AttachmentStoreOp stencilStoreOp
 		, ImageLayout wantedLayout
-		, VkClearValue clearValue )
+		, ClearDepthStencilValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
@@ -908,8 +910,8 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, SamplerDesc{}
-				, std::move( clearValue )
-				, VkPipelineColorBlendAttachmentState{}
+				, ClearValue{ std::move( clearValue ) }
+				, PipelineColorBlendAttachmentState{}
 				, wantedLayout } );
 	}
 
@@ -917,12 +919,12 @@ namespace crg
 		, crg::Attachment::FlagKind flags
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
+		, AttachmentLoadOp loadOp
+		, AttachmentStoreOp storeOp
+		, AttachmentLoadOp stencilLoadOp
+		, AttachmentStoreOp stencilStoreOp
 		, ImageLayout wantedLayout
-		, VkClearValue clearValue )
+		, ClearDepthStencilValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
@@ -938,8 +940,8 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, SamplerDesc{}
-				, std::move( clearValue )
-				, VkPipelineColorBlendAttachmentState{}
+				, ClearValue{ std::move( clearValue ) }
+				, PipelineColorBlendAttachmentState{}
 				, wantedLayout } );
 	}
 
@@ -947,12 +949,12 @@ namespace crg
 		, crg::Attachment::FlagKind flags
 		, ImageAttachment::FlagKind stencilFlags
 		, ImageViewIdArray views
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
+		, AttachmentLoadOp loadOp
+		, AttachmentStoreOp storeOp
+		, AttachmentLoadOp stencilLoadOp
+		, AttachmentStoreOp stencilStoreOp
 		, ImageLayout wantedLayout
-		, VkClearValue clearValue )
+		, ClearDepthStencilValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
 		images.insert( images.begin()
@@ -968,8 +970,8 @@ namespace crg
 				, stencilLoadOp
 				, stencilStoreOp
 				, SamplerDesc{}
-				, std::move( clearValue )
-				, VkPipelineColorBlendAttachmentState{}
+				, ClearValue{ std::move( clearValue ) }
+				, PipelineColorBlendAttachmentState{}
 				, wantedLayout } );
 	}
 

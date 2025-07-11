@@ -39,22 +39,22 @@ namespace crg
 	};
 
 	template<>
-	struct DefaultValueGetterT< VkExtent2D >
+	struct DefaultValueGetterT< Extent2D >
 	{
-		static inline VkExtent2D const value{};
+		static inline Extent2D const value{};
 
-		static VkExtent2D get()
+		static Extent2D get()
 		{
 			return value;
 		}
 	};
 
 	template<>
-	struct DefaultValueGetterT< VkOffset2D >
+	struct DefaultValueGetterT< Offset2D >
 	{
-		static inline VkOffset2D const value{};
+		static inline Offset2D const value{};
 
-		static VkOffset2D get()
+		static Offset2D get()
 		{
 			return value;
 		}

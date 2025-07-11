@@ -311,8 +311,8 @@ namespace crg::builder
 				|| isInRange( rhsLBound, lhsLBound, lhsCount );
 		}
 
-		static bool areIntersecting( VkImageSubresourceRange const & lhs
-			, VkImageSubresourceRange const & rhs )
+		static bool areIntersecting( ImageSubresourceRange const & lhs
+			, ImageSubresourceRange const & rhs )
 		{
 			return areIntersecting( lhs.baseMipLevel
 				, lhs.levelCount
@@ -328,8 +328,8 @@ namespace crg::builder
 			, ImageViewData const & rhs )
 		{
 			return lhs.image == rhs.image
-				&& areIntersecting( getVirtualRange( lhs.image, convert( lhs.info.viewType ), lhs.info.subresourceRange )
-					, getVirtualRange( rhs.image, convert( rhs.info.viewType ), rhs.info.subresourceRange ) );
+				&& areIntersecting( getVirtualRange( lhs.image, lhs.info.viewType, lhs.info.subresourceRange )
+					, getVirtualRange( rhs.image, rhs.info.viewType, rhs.info.subresourceRange ) );
 		}
 
 		static bool areOverlapping( ImageViewId const & lhs
@@ -356,8 +356,7 @@ namespace crg::builder
 		static void insertAttach( Attachment const & attach
 			, AttachesArrayT< DataT > & cont )
 		{
-			auto it = std::find_if( cont.begin()
-				, cont.end()
+			auto it = std::find_if( cont.begin(), cont.end()
 				, [&attach]( AttachesT< DataT > const & lookup )
 				{
 					return lookup.data == AttachDataTraitsT< DataT >::get( attach );
@@ -369,11 +368,8 @@ namespace crg::builder
 				it = std::prev( cont.end() );
 			}
 
-			auto attachesIt = std::find( it->attaches.begin()
-				, it->attaches.end()
-				, attach );
-
-			if ( attachesIt == it->attaches.end() )
+			if ( auto attachesIt = std::find( it->attaches.begin(), it->attaches.end(), attach );
+				attachesIt == it->attaches.end() )
 			{
 				it->attaches.push_back( attach );
 			}
@@ -387,9 +383,7 @@ namespace crg::builder
 			, std::function< bool( DataT const &, DataT const & ) > processAttach )
 		{
 			if ( processAttach( sourceView, attachView )
-				&& lookup.attaches.end() == std::find( lookup.attaches.begin()
-					, lookup.attaches.end()
-					, attach ) )
+				&& lookup.attaches.end() == std::find( lookup.attaches.begin(), lookup.attaches.end(), attach ) )
 			{
 				lookup.attaches.push_back( attach );
 			}
@@ -466,9 +460,7 @@ namespace crg::builder
 		static bool hasTransition( DataTransitionArrayT< DataT > const & transitions
 			, DataTransitionT< DataT > const & transition )
 		{
-			return transitions.end() != std::find( transitions.begin()
-				, transitions.end()
-				, transition );
+			return transitions.end() != std::find( transitions.begin(), transitions.end(), transition );
 		}
 
 		static FramePassTransitions & insertPass( FramePass const * pass
@@ -509,27 +501,23 @@ namespace crg::builder
 		{
 			if ( !hasTransition( transitions, transition ) )
 			{
-				auto it = std::find_if( transitions.begin()
-					, transitions.end()
+				if ( auto it = std::find_if( transitions.begin(), transitions.end()
 					, [&transition, &cache]( DataTransitionT< DataT > const & lookup )
 					{
 						return dependsOn( lookup, transition, cache );
 					} );
-
-				if ( it != transitions.end() )
+					it != transitions.end() )
 				{
 					transitions.insert( it, transition );
 				}
 				else
 				{
-					auto rit = std::find_if( transitions.rbegin()
-						, transitions.rend()
+					if ( auto rit = std::find_if( transitions.rbegin(), transitions.rend()
 						, [&transition, &cache]( DataTransitionT< DataT > const & lookup )
 						{
 							return dependsOn( transition, lookup, cache );
 						} );
-
-					if ( rit != transitions.rend() )
+						rit != transitions.rend() )
 					{
 						transitions.insert( rit.base(), transition );
 					}
@@ -603,16 +591,6 @@ namespace crg::builder
 					, inputTransitions
 					, allTransitions.bufferTransitions );
 			}
-		}
-
-		static bool match( Buffer const & lhs, Buffer const & rhs )
-		{
-			return lhs.buffer() == rhs.buffer();
-		}
-
-		static bool match( ImageViewId const & lhs, ImageViewId const & rhs )
-		{
-			return match( *lhs.data, *rhs.data );
 		}
 
 		template< typename DataT >
@@ -691,11 +669,10 @@ namespace crg::builder
 // Disabled because GitHub Actions weirdly cries on this
 #pragma warning( push )
 #pragma warning( disable:5233 )
-				auto it = std::find_if( all.begin()
-					, all.end()
+				auto it = std::find_if( all.begin(), all.end()
 					, [&input]( AttachesT< DataT > const & lookup )
 					{
-				return lookup.data == input.data;
+						return lookup.data == input.data;
 					} );
 #pragma warning( pop )
 

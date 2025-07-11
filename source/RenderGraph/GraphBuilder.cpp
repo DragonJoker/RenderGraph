@@ -22,8 +22,7 @@ namespace crg::builder
 			}
 
 			GraphAdjacentNode result{};
-			auto it = std::find_if( nodes.begin()
-				, nodes.end()
+			auto it = std::find_if( nodes.begin(), nodes.end()
 				, [pass]( auto & lookup )
 				{
 					return getFramePass( *lookup ) == pass;
@@ -51,10 +50,8 @@ namespace crg::builder
 		{
 			for ( DataTransitionT< DataT > const & transition : transitions )
 			{
-				GraphAdjacentNode outputAdjNode = findNode( transition.outputAttach.pass
-					, nodes );
-				GraphAdjacentNode inputAdjNode = findNode( transition.inputAttach.pass
-					, nodes );
+				GraphAdjacentNode outputAdjNode = findNode( transition.outputAttach.pass, nodes );
+				GraphAdjacentNode inputAdjNode = findNode( transition.inputAttach.pass, nodes );
 
 				if ( inputAdjNode
 					&& outputAdjNode

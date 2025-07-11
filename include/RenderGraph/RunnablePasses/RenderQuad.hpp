@@ -65,7 +65,7 @@ namespace crg
 		*\param[in] config
 		*	The render area size.
 		*/
-		auto & renderSize( VkExtent2D config )
+		auto & renderSize( Extent2D config )
 		{
 			m_config.renderSize( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
@@ -74,7 +74,7 @@ namespace crg
 		*\param[in] config
 		*	The render position.
 		*/
-		auto & renderPosition( VkOffset2D config )
+		auto & renderPosition( Offset2D config )
 		{
 			m_config.renderPosition( std::move( config ) );
 			return static_cast< BuilderT & >( *this );
