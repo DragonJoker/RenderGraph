@@ -8,10 +8,10 @@ namespace crg
 {
 	namespace fgph
 	{
-		static bool match( VkImageSubresourceRange const & lhsRange
-			, VkImageSubresourceRange const & rhsRange )noexcept
+		static bool match( ImageSubresourceRange const & lhsRange
+			, ImageSubresourceRange const & rhsRange )noexcept
 		{
-			return ( ( lhsRange.aspectMask & rhsRange.aspectMask ) != 0 )
+			return ( ( lhsRange.aspectMask & rhsRange.aspectMask ) != ImageAspectFlags::eNone )
 				&& lhsRange.baseArrayLayer == rhsRange.baseArrayLayer
 				&& lhsRange.layerCount == rhsRange.layerCount
 				&& lhsRange.baseMipLevel == rhsRange.baseMipLevel
@@ -21,8 +21,8 @@ namespace crg
 		static bool match( ImageId const & image
 			, ImageViewType lhsType
 			, ImageViewType rhsType
-			, VkImageSubresourceRange const & lhsRange
-			, VkImageSubresourceRange const & rhsRange )noexcept
+			, ImageSubresourceRange const & lhsRange
+			, ImageSubresourceRange const & rhsRange )noexcept
 		{
 			auto result = lhsType == rhsType;
 
@@ -40,14 +40,20 @@ namespace crg
 		}
 
 		static bool match( ImageId const & image
-			, VkImageViewCreateInfo const & lhsInfo
-			, VkImageViewCreateInfo const & rhsInfo )noexcept
+			, ImageViewCreateInfo const & lhsInfo
+			, ImageViewCreateInfo const & rhsInfo )noexcept
 		{
 			return lhsInfo.flags == rhsInfo.flags
 				&& lhsInfo.format == rhsInfo.format
 				&& match( image
-					, convert( lhsInfo.viewType ), convert( rhsInfo.viewType )
+					, lhsInfo.viewType, rhsInfo.viewType
 					, lhsInfo.subresourceRange, rhsInfo.subresourceRange );
+		}
+
+		static bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept
+		{
+			return lhs.image.id == rhs.image.id
+				&& match( lhs.image, lhs.info, rhs.info );
 		}
 	}
 
@@ -477,38 +483,48 @@ namespace crg
 
 	//*********************************************************************************************
 
-	VkExtent3D const & getExtent( ImageId const & image )noexcept
+	ImageCreateFlags getImageCreateFlags( ImageId const & image )noexcept
+	{
+		return image.data->info.flags;
+	}
+
+	ImageCreateFlags getImageCreateFlags( ImageViewId const & image )noexcept
+	{
+		return getImageCreateFlags( image.data->image );
+	}
+
+	Extent3D const & getExtent( ImageId const & image )noexcept
 	{
 		return image.data->info.extent;
 	}
 
-	VkExtent3D const & getExtent( ImageViewId const & image )noexcept
+	Extent3D const & getExtent( ImageViewId const & image )noexcept
 	{
 		return getExtent( image.data->image );
 	}
 
-	VkExtent3D getMipExtent( ImageViewId const & image )noexcept
+	Extent3D getMipExtent( ImageViewId const & image )noexcept
 	{
 		auto result = getExtent( image.data->image );
-		result.width >>= image.data->info.subresourceRange.baseMipLevel;
-		result.height >>= image.data->info.subresourceRange.baseMipLevel;
-		result.depth >>= image.data->info.subresourceRange.baseMipLevel;
+		result.width >>= getSubresourceRange( image ).baseMipLevel;
+		result.height >>= getSubresourceRange( image ).baseMipLevel;
+		result.depth >>= getSubresourceRange( image ).baseMipLevel;
 		return result;
 	}
 
 	PixelFormat getFormat( ImageId const & image )noexcept
 	{
-		return convert( image.data->info.format );
+		return image.data->info.format;
 	}
 
 	PixelFormat getFormat( ImageViewId const & image )noexcept
 	{
-		return convert( image.data->info.format );
+		return image.data->info.format;
 	}
 
 	ImageType getImageType( ImageId const & image )noexcept
 	{
-		return convert( image.data->info.imageType );
+		return image.data->info.imageType;
 	}
 
 	ImageType getImageType( ImageViewId const & image )noexcept
@@ -518,7 +534,7 @@ namespace crg
 
 	ImageViewType getImageViewType( ImageViewId const & image )noexcept
 	{
-		return convert( image.data->info.viewType );
+		return image.data->info.viewType;
 	}
 
 	uint32_t getMipLevels( ImageId const & image )noexcept
@@ -528,7 +544,7 @@ namespace crg
 
 	uint32_t getMipLevels( ImageViewId const & image )noexcept
 	{
-		return image.data->info.subresourceRange.levelCount;
+		return getSubresourceRange( image ).levelCount;
 	}
 
 	uint32_t getArrayLayers( ImageId const & image )noexcept
@@ -538,7 +554,17 @@ namespace crg
 
 	uint32_t getArrayLayers( ImageViewId const & image )noexcept
 	{
-		return image.data->info.subresourceRange.layerCount;
+		return getSubresourceRange( image ).layerCount;
+	}
+
+	ImageAspectFlags getAspectFlags( ImageViewId const & image )noexcept
+	{
+		return getSubresourceRange( image ).aspectMask;
+	}
+
+	ImageSubresourceRange const & getSubresourceRange( ImageViewId const & image )noexcept
+	{
+		return image.data->info.subresourceRange;
 	}
 
 	AccessFlags getAccessMask( ImageLayout layout )noexcept
@@ -689,19 +715,19 @@ namespace crg
 		return result;
 	}
 
-	VkImageAspectFlags getAspectMask( PixelFormat format )noexcept
+	ImageAspectFlags getAspectMask( PixelFormat format )noexcept
 	{
-		return VkImageAspectFlags( isDepthStencilFormat( format )
-			? VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT
+		return ImageAspectFlags( isDepthStencilFormat( format )
+			? ImageAspectFlags::eDepth | ImageAspectFlags::eStencil
 			: ( isDepthFormat( format )
-				? VK_IMAGE_ASPECT_DEPTH_BIT
+				? ImageAspectFlags::eDepth
 				: ( isStencilFormat( format )
-					? VK_IMAGE_ASPECT_STENCIL_BIT
-					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
+					? ImageAspectFlags::eStencil
+					: ImageAspectFlags::eColor ) ) );
 	}
 
 	LayoutState const & addSubresourceRangeLayout( LayerLayoutStates & ranges
-		, VkImageSubresourceRange const & range
+		, ImageSubresourceRange const & range
 		, LayoutState const & newLayout )
 	{
 		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
@@ -718,23 +744,21 @@ namespace crg
 	}
 
 	LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
-		, VkImageSubresourceRange const & range )
+		, ImageSubresourceRange const & range )
 	{
 		std::map< ImageLayout, LayoutState > states;
 
 		for ( uint32_t layerIdx = 0u; layerIdx < range.layerCount; ++layerIdx )
 		{
-			auto layerIt = ranges.find( range.baseArrayLayer + layerIdx );
-
-			if ( layerIt != ranges.end() )
+			if ( auto layerIt = ranges.find( range.baseArrayLayer + layerIdx );
+				layerIt != ranges.end() )
 			{
 				auto & layers = layerIt->second;
 
 				for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
 				{
-					auto it = layers.find( range.baseMipLevel + levelIdx );
-
-					if ( it != layers.end() )
+					if ( auto it = layers.find( range.baseMipLevel + levelIdx );
+						it != layers.end() )
 					{
 						auto state = it->second;
 						auto [rit, res] = states.emplace( state.layout, state );
@@ -761,11 +785,11 @@ namespace crg
 		return states.begin()->second;
 	}
 
-	VkImageSubresourceRange getVirtualRange( ImageId const & image
+	ImageSubresourceRange getVirtualRange( ImageId const & image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range )noexcept
+		, ImageSubresourceRange const & range )noexcept
 	{
-		VkImageSubresourceRange result = range;
+		ImageSubresourceRange result = range;
 
 		if ( viewType == ImageViewType::e3D
 			&& ( range.levelCount == 1u
@@ -778,12 +802,14 @@ namespace crg
 		return result;
 	}
 
-	bool match( ImageViewData const & lhs, ImageViewData const & rhs )noexcept
+	bool match( ImageViewId const & lhs, ImageViewId const & rhs )noexcept
 	{
-		return lhs.image.id == rhs.image.id
-			&& fgph::match( lhs.image
-				, lhs.info
-				, rhs.info );
+		return fgph::match( *lhs.data, *rhs.data );
+	}
+
+	bool match( Buffer const & lhs, Buffer const & rhs )noexcept
+	{
+		return lhs == rhs;
 	}
 
 	ImageViewId const & resolveView( ImageViewId const & view
@@ -792,6 +818,22 @@ namespace crg
 		return view.data->source.empty()
 			? view
 			: view.data->source[passIndex];
+	}
+
+	ClearColorValue getClearColorValue( ClearValue const & v )
+	{
+		if ( v.isColor() )
+			return v.color();
+		static ClearColorValue dummy{};
+		return dummy;
+	}
+
+	ClearDepthStencilValue getClearDepthStencilValue( ClearValue const & v )
+	{
+		if ( v.isDepthStencil() )
+			return v.depthStencil();
+		static ClearDepthStencilValue dummy{};
+		return dummy;
 	}
 
 	//*********************************************************************************************

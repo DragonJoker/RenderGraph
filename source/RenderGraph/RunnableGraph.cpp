@@ -130,6 +130,48 @@ namespace crg
 				? ( *nextPassIt )->getPipelineState()
 				: currentState;
 		}
+
+		static VkDescriptorType getDescriptorType( BufferAttachment const & attach )
+		{
+			if ( attach.isUniformView() )
+				return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
+			if ( attach.isStorageView() )
+				return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
+			if ( attach.isUniform() )
+				return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+		}
+
+		static VkDescriptorType getDescriptorType( ImageAttachment const & attach )
+		{
+			if ( attach.isStorageView() )
+				return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		}
+
+		static WriteDescriptorSet getWrite( BufferAttachment const & attach
+			, uint32_t binding
+			, uint32_t count
+			, uint32_t index )
+		{
+			WriteDescriptorSet result{ binding
+				, 0u
+				, count
+				, getDescriptorType( attach ) };
+			VkDescriptorBufferInfo info{ attach.buffer.buffer( index ), attach.range.offset, attach.range.size };
+
+			if ( attach.isView() )
+			{
+				result.bufferViewInfo.push_back( info );
+				result.texelBufferView.push_back( attach.view );
+			}
+			else
+			{
+				result.bufferInfo.push_back( info );
+			}
+
+			return result;
+		}
 	}
 
 	//************************************************************************************************
@@ -417,7 +459,7 @@ namespace crg
 	LayoutState RunnableGraph::getCurrentLayoutState( RecordContext & context
 		, ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange range )const
+		, ImageSubresourceRange range )const
 	{
 		auto result = context.getLayoutState( image, viewType, range );
 
@@ -451,7 +493,7 @@ namespace crg
 	{
 		return getCurrentLayoutState( context
 			, view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange );
 	}
 
@@ -479,5 +521,18 @@ namespace crg
 	LayoutState RunnableGraph::getOutputLayoutState( ImageViewId view )const
 	{
 		return m_graph.getOutputLayoutState( view );
+	}
+
+	VkDescriptorType RunnableGraph::getDescriptorType( Attachment const & attach )const
+	{
+		if ( attach.isImage() )
+			return rungrf::getDescriptorType( attach.imageAttach );
+		return rungrf::getDescriptorType( attach.bufferAttach );
+	}
+
+	WriteDescriptorSet RunnableGraph::getBufferWrite( Attachment const & attach, uint32_t index )const
+	{
+		assert( attach.isBuffer() );
+		return rungrf::getWrite( attach.bufferAttach, attach.binding, 1u, index );
 	}
 }

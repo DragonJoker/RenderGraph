@@ -14,8 +14,8 @@ namespace crg
 		CRG_API BufferCopy( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkDeviceSize copyOffset
-			, VkDeviceSize copyRange
+			, DeviceSize copyOffset
+			, DeviceSize copyRange
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
@@ -26,7 +26,7 @@ namespace crg
 			, uint32_t index )const;
 
 	private:
-		VkDeviceSize m_copyOffset;
-		VkDeviceSize m_copyRange;
+		DeviceSize m_copyOffset;
+		DeviceSize m_copyRange;
 	};
 }

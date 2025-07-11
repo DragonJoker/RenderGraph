@@ -32,20 +32,6 @@ namespace crg
 		}
 	}
 
-	bool operator==( ViewTransition const & lhs, ViewTransition const & rhs )
-	{
-		return match( *lhs.data.data, *rhs.data.data )
-			&& lhs.outputAttach == rhs.outputAttach
-			&& lhs.inputAttach == rhs.inputAttach;
-	}
-
-	bool operator==( BufferTransition const & lhs, BufferTransition const & rhs )
-	{
-		return lhs.data == rhs.data
-			&& lhs.outputAttach == rhs.outputAttach
-			&& lhs.inputAttach == rhs.inputAttach;
-	}
-
 	bool operator==( Buffer const & lhs, Buffer const & rhs )
 	{
 		return lhs.m_buffers == rhs.m_buffers;

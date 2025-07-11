@@ -77,7 +77,7 @@ namespace
 				, crg::RunnableGraph & runGraph )
 			{
 				return std::make_unique< crg::BufferToImageCopy >( pass, context, runGraph
-					, VkOffset3D{}, VkExtent3D{ 1024, 1024, 1u } );
+					, crg::Offset3D{}, crg::Extent3D{ 1024, 1024, 1u } );
 			} );
 		testPass.addTransferInputBuffer( crg::Buffer{ VkBuffer( 1 ), "inBuffer" }, 0u, 1024u );
 		testPass.addTransferOutputView( resultv );
@@ -123,8 +123,8 @@ namespace
 				, crg::RunnableGraph & runGraph )
 			{
 				return std::make_unique< crg::ImageBlit >( pass, context, runGraph
-					, VkOffset3D{}, getExtent( inputv )
-					, VkOffset3D{}, getExtent( resultv )
+					, crg::Offset3D{}, getExtent( inputv )
+					, crg::Offset3D{}, getExtent( resultv )
 					, crg::FilterMode::eLinear );
 			} );
 		testPass.addTransferInputView( inputv );
@@ -221,7 +221,7 @@ namespace
 				, crg::RunnableGraph & runGraph )
 			{
 				return std::make_unique< crg::ImageToBufferCopy >( pass, context, runGraph
-					, VkOffset3D{}, getExtent( inputv ) );
+					, crg::Offset3D{}, getExtent( inputv ) );
 			} );
 		testPass.addTransferInputView( inputv );
 		testPass.addTransferOutputBuffer( crg::Buffer{ VkBuffer( 1 ), "outBuffer" }, 0u, 1024u );
@@ -453,7 +453,7 @@ namespace
 			auto resultv = graph.createView( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 			auto depth = graph.createImage( test::createImage( "depth", crg::PixelFormat::eD32_SFLOAT ) );
 			auto depthv = graph.createView( test::createView( "depthv", depth, crg::PixelFormat::eD32_SFLOAT, 0u, 1u, 0u, 1u ) );
-			VkExtent2D extent{ getExtent( resultv ).width, getExtent( resultv ).height };
+			crg::Extent2D extent{ getExtent( resultv ).width, getExtent( resultv ).height };
 			auto & testPass = graph.createPass( "Pass"
 				, [&passIndex, extent]( crg::FramePass const & pass
 					, crg::GraphContext & context

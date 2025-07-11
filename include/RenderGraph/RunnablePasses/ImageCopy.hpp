@@ -14,14 +14,14 @@ namespace crg
 		CRG_API ImageCopy( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkExtent3D copySize
+			, Extent3D const & copySize
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )
 			, IsEnabledCallback isEnabled = IsEnabledCallback( [](){ return true; } ) );
 		CRG_API ImageCopy( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, VkExtent3D copySize
+			, Extent3D const & copySize
 			, ImageLayout finalOutputLayout
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )

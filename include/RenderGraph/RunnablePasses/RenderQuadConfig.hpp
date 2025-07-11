@@ -81,7 +81,7 @@ namespace crg
 			*\param[in] config
 			*	The render area size.
 			*/
-			auto & renderSize( VkExtent2D config )
+			auto & renderSize( Extent2D config )
 			{
 				m_renderSize = std::move( config );
 				return *this;
@@ -90,7 +90,7 @@ namespace crg
 			*\param[in] config
 			*	The render position.
 			*/
-			auto & renderPosition( VkOffset2D config )
+			auto & renderPosition( Offset2D config )
 			{
 				m_renderPosition = std::move( config );
 				return *this;
@@ -170,7 +170,7 @@ namespace crg
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
 			WrapperT< Texcoord > m_texcoordConfig{};
-			WrapperT< VkOffset2D > m_renderPosition{};
+			WrapperT< Offset2D > m_renderPosition{};
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState{};
 			WrapperT< uint32_t const * > m_passIndex{};
 			WrapperT< bool const * > m_enabled{};
@@ -178,7 +178,7 @@ namespace crg
 			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
 			WrapperT< RunnablePass::RecordCallback > m_end{};
 			WrapperT< uint32_t > m_instances{};
-			WrapperT< VkExtent2D > m_renderSize{};
+			WrapperT< Extent2D > m_renderSize{};
 			WrapperT< IndirectBuffer > m_indirectBuffer{};
 		};
 
@@ -186,7 +186,7 @@ namespace crg
 		struct ConfigT< RawTypeT >
 		{
 			RawTypeT< Texcoord > texcoordConfig;
-			RawTypeT< VkOffset2D > renderPosition;
+			RawTypeT< Offset2D > renderPosition;
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			RawTypeT< uint32_t const * > passIndex;
 			RawTypeT< bool const * > enabled;

@@ -190,7 +190,7 @@ namespace crg
 			, createInfo );
 	}
 
-	void PipelineHolder::recordInto( RecordContext & context
+	void PipelineHolder::recordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
@@ -263,11 +263,8 @@ namespace crg
 
 		for ( auto & buffer : m_pass.buffers )
 		{
-			if ( buffer.isStorageBuffer()
-				|| buffer.isUniformBuffer() )
-			{
-				descriptorSet.writes.push_back( buffer.getBufferWrite( index ) );
-			}
+			if ( buffer.isStorageBuffer() || buffer.isUniformBuffer() )
+				descriptorSet.writes.push_back( m_graph.getBufferWrite( buffer, index ) );
 		}
 
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
@@ -310,7 +307,7 @@ namespace crg
 			if ( attach.isSampledView() || attach.isStorageView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
-					, attach.getDescriptorType()
+					, m_graph.getDescriptorType( attach )
 					, 1u
 					, shaderStage
 					, nullptr } );
@@ -323,7 +320,7 @@ namespace crg
 				|| attach.isUniformBufferView() || attach.isStorageBufferView() )
 			{
 				m_descriptorBindings.push_back( { attach.binding
-					, attach.getDescriptorType()
+					, m_graph.getDescriptorType( attach )
 					, 1u
 					, shaderStage
 					, nullptr } );

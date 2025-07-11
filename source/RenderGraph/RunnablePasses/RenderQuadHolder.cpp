@@ -16,7 +16,7 @@ namespace crg
 		, rq::Config config
 		, uint32_t maxPassCount )
 		: m_config{ config.m_texcoordConfig ? std::move( *config.m_texcoordConfig ) : getDefaultV< Texcoord >()
-			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< VkOffset2D >()
+			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< Offset2D >()
 			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
 			, config.m_passIndex ? *config.m_passIndex : getDefaultV< uint32_t const * >()
 			, config.m_enabled ? *config.m_enabled : getDefaultV< bool const * >()
@@ -63,7 +63,7 @@ namespace crg
 			, 0.0f };
 	}
 
-	void RenderQuadHolder::initialise( VkExtent2D const & renderSize
+	void RenderQuadHolder::initialise( Extent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState
 		, uint32_t index )
@@ -83,7 +83,7 @@ namespace crg
 		doCreatePipeline( index );
 	}
 
-	void RenderQuadHolder::resetRenderPass( VkExtent2D const & renderSize
+	void RenderQuadHolder::resetRenderPass( Extent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState
 		, uint32_t index )
@@ -111,7 +111,7 @@ namespace crg
 		doCreatePipeline( index );
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
-		VkDeviceSize offset{};
+		DeviceSize offset{};
 
 		if ( m_vertexBuffer
 			&& m_vertexBuffer->buffer.buffer( index ) )
@@ -150,7 +150,7 @@ namespace crg
 			: ( m_config.enabled ? *m_config.enabled : true ) );
 	}
 
-	void RenderQuadHolder::doPreparePipelineStates( VkExtent2D const & renderSize
+	void RenderQuadHolder::doPreparePipelineStates( Extent2D const & renderSize
 		, VkRenderPass renderPass
 		, VkPipelineColorBlendStateCreateInfo blendState )
 	{
@@ -192,7 +192,7 @@ namespace crg
 		m_pipeline.createPipeline( index, createInfo );
 	}
 
-	VkPipelineViewportStateCreateInfo RenderQuadHolder::doCreateViewportState( VkExtent2D const & renderSize
+	VkPipelineViewportStateCreateInfo RenderQuadHolder::doCreateViewportState( Extent2D const & renderSize
 		, VkViewport & viewport
 		, VkRect2D & scissor )const
 	{

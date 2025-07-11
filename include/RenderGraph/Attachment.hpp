@@ -48,9 +48,10 @@ namespace crg
 			, maxLod{ maxLod }
 		{
 		}
+
+	private:
+		friend bool operator==( SamplerDesc const & lhs, SamplerDesc const & rhs ) = default;
 	};
-	CRG_API bool operator==( SamplerDesc const & lhs
-		, SamplerDesc const & rhs );
 	/**
 	*\brief
 	*	An image attachment.
@@ -85,7 +86,6 @@ namespace crg
 		*/
 		/**@{*/
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
-		CRG_API VkDescriptorType getDescriptorType()const;
 		CRG_API ImageLayout getImageLayout( bool separateDepthStencilLayouts
 			, bool isInput
 			, bool isOutput )const;
@@ -171,13 +171,13 @@ namespace crg
 
 	public:
 		ImageViewIdArray views{};
-		VkAttachmentLoadOp loadOp{};
-		VkAttachmentStoreOp storeOp{};
-		VkAttachmentLoadOp stencilLoadOp{};
-		VkAttachmentStoreOp stencilStoreOp{};
+		AttachmentLoadOp loadOp{};
+		AttachmentStoreOp storeOp{};
+		AttachmentLoadOp stencilLoadOp{};
+		AttachmentStoreOp stencilStoreOp{};
 		SamplerDesc samplerDesc{};
-		VkClearValue clearValue{};
-		VkPipelineColorBlendAttachmentState blendState = DefaultBlendState;
+		ClearValue clearValue{};
+		PipelineColorBlendAttachmentState blendState = DefaultBlendState;
 		ImageLayout wantedLayout{};
 
 	private:
@@ -185,23 +185,36 @@ namespace crg
 		CRG_API explicit ImageAttachment( ImageViewId view );
 		CRG_API ImageAttachment( FlagKind flags
 			, ImageViewIdArray views
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, SamplerDesc samplerDesc
-			, VkClearValue clearValue
-			, VkPipelineColorBlendAttachmentState blendState
+			, ClearValue clearValue
+			, PipelineColorBlendAttachmentState blendState
 			, ImageLayout wantedLayout );
 
 		FlagKind flags{};
 
-		friend CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
+		friend bool operator==( ImageAttachment const & lhs
+			, ImageAttachment const & rhs )
+		{
+			return lhs.flags == rhs.flags
+				&& lhs.views == rhs.views
+				&& lhs.loadOp == rhs.loadOp
+				&& lhs.storeOp == rhs.storeOp
+				&& lhs.stencilLoadOp == rhs.stencilLoadOp
+				&& lhs.stencilStoreOp == rhs.stencilStoreOp
+				&& lhs.samplerDesc == rhs.samplerDesc
+				&& lhs.clearValue == rhs.clearValue
+				&& lhs.blendState == rhs.blendState;
+		}
+
 	};
 	struct BufferSubresourceRange
 	{
-		VkDeviceSize offset{};
-		VkDeviceSize size{};
+		DeviceSize offset{};
+		DeviceSize size{};
 	};
 	/**
 	*\brief
@@ -229,10 +242,6 @@ namespace crg
 			TransitionView = Transition | View,
 		};
 
-		CRG_API VkDescriptorType getDescriptorType()const;
-		CRG_API WriteDescriptorSet getWrite( uint32_t binding
-			, uint32_t count
-			, uint32_t index )const;
 		CRG_API AccessFlags getAccessMask( bool isInput
 			, bool isOutput )const;
 		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
@@ -301,20 +310,27 @@ namespace crg
 		CRG_API explicit BufferAttachment( Buffer buffer );
 		CRG_API BufferAttachment( FlagKind flags
 			, Buffer buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, AccessState access = {} );
 		CRG_API BufferAttachment( FlagKind flags
 			, Buffer buffer
 			, VkBufferView view
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, AccessState access = {} );
 
 		FlagKind flags{};
 		AccessState wantedAccess{};
 
-		friend CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
+		friend bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs )
+		{
+			return lhs.flags == rhs.flags
+				&& lhs.buffer == rhs.buffer
+				&& lhs.view == rhs.view
+				&& lhs.range.offset == rhs.range.offset
+				&& lhs.range.size == rhs.range.size;
+		}
 	};
 	/**
 	*\brief
@@ -349,8 +365,6 @@ namespace crg
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
 		CRG_API VkBuffer buffer( uint32_t index = 0u )const;
 		CRG_API ImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
-		CRG_API VkDescriptorType getDescriptorType()const;
-		CRG_API WriteDescriptorSet getBufferWrite( uint32_t index = 0u )const;
 		CRG_API AccessFlags getAccessMask()const;
 		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
 
@@ -598,32 +612,32 @@ namespace crg
 			return imageAttach.samplerDesc;
 		}
 
-		VkClearValue const & getClearValue()const
+		ClearValue const & getClearValue()const
 		{
 			return imageAttach.clearValue;
 		}
 
-		VkAttachmentLoadOp getLoadOp()const
+		AttachmentLoadOp getLoadOp()const
 		{
 			return imageAttach.loadOp;
 		}
 
-		VkAttachmentLoadOp getStencilLoadOp()const
+		AttachmentLoadOp getStencilLoadOp()const
 		{
 			return imageAttach.stencilLoadOp;
 		}
 
-		VkAttachmentStoreOp getStoreOp()const
+		AttachmentStoreOp getStoreOp()const
 		{
 			return imageAttach.storeOp;
 		}
 
-		VkAttachmentStoreOp getStencilStoreOp()const
+		AttachmentStoreOp getStencilStoreOp()const
 		{
 			return imageAttach.stencilStoreOp;
 		}
 
-		VkPipelineColorBlendAttachmentState getBlendState()const
+		PipelineColorBlendAttachmentState getBlendState()const
 		{
 			return imageAttach.blendState;
 		}
@@ -664,13 +678,13 @@ namespace crg
 			, std::string name
 			, ImageAttachment::FlagKind imageFlags
 			, ImageViewIdArray views
-			, VkAttachmentLoadOp loadOp
-			, VkAttachmentStoreOp storeOp
-			, VkAttachmentLoadOp stencilLoadOp
-			, VkAttachmentStoreOp stencilStoreOp
+			, AttachmentLoadOp loadOp
+			, AttachmentStoreOp storeOp
+			, AttachmentLoadOp stencilLoadOp
+			, AttachmentStoreOp stencilStoreOp
 			, SamplerDesc samplerDesc
-			, VkClearValue clearValue
-			, VkPipelineColorBlendAttachmentState blendState
+			, ClearValue clearValue
+			, PipelineColorBlendAttachmentState blendState
 			, ImageLayout wantedLayout );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
@@ -678,8 +692,8 @@ namespace crg
 			, std::string name
 			, BufferAttachment::FlagKind bufferFlags
 			, Buffer buffer
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, AccessState wantedAccess );
 		CRG_API Attachment( FlagKind flags
 			, FramePass & pass
@@ -688,16 +702,19 @@ namespace crg
 			, BufferAttachment::FlagKind bufferFlags
 			, Buffer buffer
 			, VkBufferView view
-			, VkDeviceSize offset
-			, VkDeviceSize range
+			, DeviceSize offset
+			, DeviceSize range
 			, AccessState wantedAccess );
 
 		FlagKind flags{};
 
-		friend CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
+		friend bool operator==( Attachment const & lhs
+			, Attachment const & rhs )
+		{
+			return lhs.pass == rhs.pass
+				&& lhs.flags == rhs.flags
+				&& lhs.imageAttach == rhs.imageAttach
+				&& lhs.bufferAttach == rhs.bufferAttach;
+		}
 	};
-
-	CRG_API bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs );
-	CRG_API bool operator==( ImageAttachment const & lhs, ImageAttachment const & rhs );
-	CRG_API bool operator==( Attachment const & lhs, Attachment const & rhs );
 }

@@ -12,22 +12,11 @@ See LICENSE file in root folder.
 
 namespace crg
 {
-	namespace imToBuf
-	{
-		static VkImageSubresourceLayers convert( VkImageSubresourceRange const & range )
-		{
-			return VkImageSubresourceLayers{ range.aspectMask
-				, range.baseMipLevel
-				, range.baseArrayLayer
-				, range.layerCount };
-		}
-	}
-
 	ImageToBufferCopy::ImageToBufferCopy( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, VkOffset3D copyOffset
-		, VkExtent3D copySize
+		, Offset3D const & copyOffset
+		, Extent3D const & copySize
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
 		, IsEnabledCallback isEnabled )
@@ -36,16 +25,16 @@ namespace crg
 			, graph
 			, { defaultV< InitialiseCallback >
 				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
+				, [this]( RecordContext const & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
 				, std::move( passIndex )
 				, std::move( isEnabled ) }
 			, std::move( ruConfig ) }
-		, m_copyOffset{ std::move( copyOffset ) }
-		, m_copySize{ std::move( copySize ) }
+		, m_copyOffset{ convert( copyOffset ) }
+		, m_copySize{ convert( copySize ) }
 	{
 	}
 
-	void ImageToBufferCopy::doRecordInto( RecordContext & context
+	void ImageToBufferCopy::doRecordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
@@ -53,7 +42,7 @@ namespace crg
 		auto dstBuffer{ m_pass.buffers.front().buffer( index ) };
 		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 		// Copy source to target.
-		auto range = imToBuf::convert( srcAttach.data->info.subresourceRange );
+		auto range = getSubresourceLayers( srcAttach.data->info.subresourceRange );
 		VkBufferImageCopy copyRegion{ 0ULL
 			, 0u
 			, 0u

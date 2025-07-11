@@ -14,27 +14,6 @@ namespace crg
 {
 	//*********************************************************************************************
 
-	static bool operator==( VkClearValue const & lhs
-		, VkClearValue const & rhs )
-	{
-		return std::memcmp( &lhs, &rhs, sizeof( VkClearValue ) ) == 0;
-	}
-
-	static bool operator==( VkPipelineColorBlendAttachmentState const & lhs
-		, VkPipelineColorBlendAttachmentState const & rhs )
-	{
-		return lhs.blendEnable == rhs.blendEnable
-			&& lhs.srcColorBlendFactor == rhs.srcColorBlendFactor
-			&& lhs.dstColorBlendFactor == rhs.dstColorBlendFactor
-			&& lhs.colorBlendOp == rhs.colorBlendOp
-			&& lhs.srcAlphaBlendFactor == rhs.srcAlphaBlendFactor
-			&& lhs.dstAlphaBlendFactor == rhs.dstAlphaBlendFactor
-			&& lhs.alphaBlendOp == rhs.alphaBlendOp
-			&& lhs.colorWriteMask == rhs.colorWriteMask;
-	}
-
-	//*********************************************************************************************
-
 	BufferAttachment::BufferAttachment( Buffer buffer )
 		: buffer{ std::move( buffer ) }
 	{
@@ -42,8 +21,8 @@ namespace crg
 
 	BufferAttachment::BufferAttachment( FlagKind flags
 		, Buffer buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, AccessState access )
 		: buffer{ std::move( buffer ) }
 		, range{ offset, range }
@@ -55,8 +34,8 @@ namespace crg
 	BufferAttachment::BufferAttachment( FlagKind flags
 		, Buffer buffer
 		, VkBufferView view
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, AccessState access )
 		: buffer{ std::move( buffer ) }
 		, view{ view }
@@ -64,48 +43,6 @@ namespace crg
 		, flags{ flags }
 		, wantedAccess{ std::move( access ) }
 	{
-	}
-
-	WriteDescriptorSet BufferAttachment::getWrite( uint32_t binding
-		, uint32_t count
-		, uint32_t index )const
-	{
-		WriteDescriptorSet result{ binding
-			, 0u
-			, count
-			, getDescriptorType() };
-
-		if ( isView() )
-		{
-			result.bufferViewInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
-			result.texelBufferView.push_back( view );
-		}
-		else
-		{
-			result.bufferInfo.push_back( VkDescriptorBufferInfo{ buffer.buffer( index ), range.offset, range.size } );
-		}
-
-		return result;
-	}
-
-	VkDescriptorType BufferAttachment::getDescriptorType()const
-	{
-		if ( isUniformView() )
-		{
-			return VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER;
-		}
-
-		if ( isStorageView() )
-		{
-			return VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER;
-		}
-
-		if ( isUniform() )
-		{
-			return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		}
-
-		return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 	}
 
 	AccessFlags BufferAttachment::getAccessMask( bool isInput
@@ -182,13 +119,13 @@ namespace crg
 
 	ImageAttachment::ImageAttachment( FlagKind flags
 		, ImageViewIdArray views
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
+		, AttachmentLoadOp loadOp
+		, AttachmentStoreOp storeOp
+		, AttachmentLoadOp stencilLoadOp
+		, AttachmentStoreOp stencilStoreOp
 		, SamplerDesc samplerDesc
-		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState
+		, ClearValue clearValue
+		, PipelineColorBlendAttachmentState blendState
 		, ImageLayout wantedLayout )
 		: views{ std::move( views ) }
 		, loadOp{ loadOp }
@@ -201,19 +138,15 @@ namespace crg
 		, wantedLayout{ wantedLayout }
 		, flags{ flags }
 	{
-		assert( ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_COLOR_BIT ) != 0
-			&& isColourFormat( convert( view().data->info.format ) ) )
-			|| ( ( view().data->info.subresourceRange.aspectMask & ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT ) ) != 0
-				&& isDepthStencilFormat( convert( view().data->info.format ) ) )
-			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_DEPTH_BIT ) != 0
-				&& isDepthFormat( convert( view().data->info.format ) ) )
-			|| ( ( view().data->info.subresourceRange.aspectMask & VK_IMAGE_ASPECT_STENCIL_BIT ) != 0
-				&& isStencilFormat( convert( view().data->info.format ) ) ) );
+		assert( ( checkFlag( getAspectFlags( view() ), ImageAspectFlags::eColor ) && isColourFormat( getFormat( view() ) ) )
+			|| ( checkFlag( getAspectFlags( view() ), ImageAspectFlags::eDepthStencil ) && isDepthStencilFormat( getFormat( view() ) ) )
+			|| ( checkFlag( getAspectFlags( view() ), ImageAspectFlags::eDepth ) && isDepthFormat( getFormat( view() ) ) )
+			|| ( checkFlag( getAspectFlags( view() ), ImageAspectFlags::eStencil ) && isStencilFormat( getFormat( view() ) ) ) );
 		assert( ( !isSampledView() && !isTransitionView() && !isTransferView() )
-			|| ( ( this->loadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
-				&& ( this->storeOp == VK_ATTACHMENT_STORE_OP_DONT_CARE )
-				&& ( this->stencilLoadOp == VK_ATTACHMENT_LOAD_OP_DONT_CARE )
-				&& ( this->stencilStoreOp == VK_ATTACHMENT_STORE_OP_DONT_CARE ) ) );
+			|| ( ( this->loadOp == AttachmentLoadOp::eDontCare )
+				&& ( this->storeOp == AttachmentStoreOp::eDontCare )
+				&& ( this->stencilLoadOp == AttachmentLoadOp::eDontCare )
+				&& ( this->stencilStoreOp == AttachmentStoreOp::eDontCare ) ) );
 	}
 
 	ImageViewId ImageAttachment::view( uint32_t index )const
@@ -221,16 +154,6 @@ namespace crg
 		return views.size() == 1u
 			? views.front()
 			: views[index];
-	}
-
-	VkDescriptorType ImageAttachment::getDescriptorType()const
-	{
-		if ( isStorageView() )
-		{
-			return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		}
-
-		return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 	}
 
 	ImageLayout ImageAttachment::getImageLayout( bool separateDepthStencilLayouts
@@ -254,13 +177,9 @@ namespace crg
 		else if ( isTransferView() )
 		{
 			if ( isOutput )
-			{
 				result = ImageLayout::eTransferDst;
-			}
 			else if ( isInput )
-			{
 				result = ImageLayout::eTransferSrc;
-			}
 		}
 		else if ( isColourAttach() )
 		{
@@ -272,35 +191,23 @@ namespace crg
 			if ( isDepthStencilAttach() )
 			{
 				if ( isOutput )
-				{
 					result = ImageLayout::eDepthStencilAttachment;
-				}
 				else if ( isInput )
-				{
 					result = ImageLayout::eDepthStencilReadOnly;
-				}
 			}
 			else if ( isStencilAttach() )
 			{
 				if ( isOutput && isStencilOutputAttach() )
-				{
 					result = ImageLayout::eStencilAttachment;
-				}
 				else if ( isInput && isStencilInputAttach() )
-				{
 					result = ImageLayout::eStencilReadOnly;
-				}
 			}
 			else if ( isDepthAttach() )
 			{
 				if ( isOutput )
-				{
 					result = ImageLayout::eDepthAttachment;
-				}
 				else if ( isInput )
-				{
 					result = ImageLayout::eDepthReadOnly;
-				}
 			}
 		}
 		else
@@ -337,50 +244,30 @@ namespace crg
 		else if ( isStorageView() )
 		{
 			if ( isInput )
-			{
 				result |= AccessFlags::eShaderRead;
-			}
-
 			if ( isOutput )
-			{
 				result |= AccessFlags::eShaderWrite;
-			}
 		}
 		else if ( isTransferView() )
 		{
 			if ( isInput )
-			{
 				result |= AccessFlags::eTransferRead;
-			}
-
 			if ( isOutput )
-			{
 				result |= AccessFlags::eTransferWrite;
-			}
 		}
 		else if ( isDepthAttach() || isStencilAttach() )
 		{
 			if ( isInput )
-			{
 				result |= AccessFlags::eDepthStencilAttachmentRead;
-			}
-
 			if ( isOutput )
-			{
 				result |= AccessFlags::eDepthStencilAttachmentWrite;
-			}
 		}
 		else
 		{
 			if ( isInput )
-			{
 				result |= AccessFlags::eColorAttachmentRead;
-			}
-
 			if ( isOutput )
-			{
 				result |= AccessFlags::eColorAttachmentWrite;
-			}
 		}
 
 		return result;
@@ -401,13 +288,9 @@ namespace crg
 		else if ( isStorageView() )
 		{
 			if ( isCompute )
-			{
 				result |= PipelineStageFlags::eComputeShader;
-			}
 			else
-			{
 				result |= PipelineStageFlags::eFragmentShader;
-			}
 		}
 		else if ( isTransferView() )
 		{
@@ -456,13 +339,13 @@ namespace crg
 		, std::string name
 		, ImageAttachment::FlagKind imageFlags
 		, ImageViewIdArray views
-		, VkAttachmentLoadOp loadOp
-		, VkAttachmentStoreOp storeOp
-		, VkAttachmentLoadOp stencilLoadOp
-		, VkAttachmentStoreOp stencilStoreOp
+		, AttachmentLoadOp loadOp
+		, AttachmentStoreOp storeOp
+		, AttachmentLoadOp stencilLoadOp
+		, AttachmentStoreOp stencilStoreOp
 		, SamplerDesc samplerDesc
-		, VkClearValue clearValue
-		, VkPipelineColorBlendAttachmentState blendState
+		, ClearValue clearValue
+		, PipelineColorBlendAttachmentState blendState
 		, ImageLayout wantedLayout )
 		: pass{ &pass }
 		, binding{ binding }
@@ -479,16 +362,16 @@ namespace crg
 			, wantedLayout }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Image )
-			| ( loadOp == VK_ATTACHMENT_LOAD_OP_LOAD
+			| ( loadOp == AttachmentLoadOp::eLoad
 				? FlagKind( Flag::Input )
 				: FlagKind( Flag::None ) )
-			| ( storeOp == VK_ATTACHMENT_STORE_OP_STORE
+			| ( storeOp == AttachmentStoreOp::eStore
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) )
-			| ( stencilLoadOp == VK_ATTACHMENT_LOAD_OP_LOAD
+			| ( stencilLoadOp == AttachmentLoadOp::eLoad
 				? FlagKind( Flag::Input )
 				: FlagKind( Flag::None ) )
-			| ( stencilStoreOp == VK_ATTACHMENT_STORE_OP_STORE
+			| ( stencilStoreOp == AttachmentStoreOp::eStore
 				? FlagKind( Flag::Output )
 				: FlagKind( Flag::None ) ) ) }
 	{
@@ -500,8 +383,8 @@ namespace crg
 		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
 		, Buffer buffer
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, AccessState wantedAccess )
 		: pass{ &pass }
 		, binding{ binding }
@@ -519,8 +402,8 @@ namespace crg
 		, BufferAttachment::FlagKind bufferFlags
 		, Buffer buffer
 		, VkBufferView view
-		, VkDeviceSize offset
-		, VkDeviceSize range
+		, DeviceSize offset
+		, DeviceSize range
 		, AccessState wantedAccess )
 		: pass{ &pass }
 		, binding{ binding }
@@ -567,22 +450,6 @@ namespace crg
 			, isOutput() );
 	}
 
-	VkDescriptorType Attachment::getDescriptorType()const
-	{
-		if ( isImage() )
-		{
-			return imageAttach.getDescriptorType();
-		}
-
-		return bufferAttach.getDescriptorType();
-	}
-
-	WriteDescriptorSet Attachment::getBufferWrite( uint32_t index )const
-	{
-		assert( isBuffer() );
-		return bufferAttach.getWrite( binding, 1u, index );
-	}
-
 	AccessFlags Attachment::getAccessMask()const
 	{
 		if ( isImage() )
@@ -603,55 +470,6 @@ namespace crg
 		}
 
 		return bufferAttach.getPipelineStageFlags( isCompute );
-	}
-
-	//*********************************************************************************************
-
-	bool operator==( SamplerDesc const & lhs
-		, SamplerDesc const & rhs )
-	{
-		return lhs.magFilter == rhs.magFilter
-			&& lhs.minFilter == rhs.minFilter
-			&& lhs.mipmapMode == rhs.mipmapMode
-			&& lhs.addressModeU == rhs.addressModeU
-			&& lhs.addressModeV == rhs.addressModeV
-			&& lhs.addressModeW == rhs.addressModeW
-			&& lhs.mipLodBias == rhs.mipLodBias
-			&& lhs.minLod == rhs.minLod
-			&& lhs.maxLod == rhs.maxLod;
-	}
-
-	bool operator==( BufferAttachment const & lhs
-		, BufferAttachment const & rhs )
-	{
-		return lhs.flags == rhs.flags
-			&& lhs.buffer == rhs.buffer
-			&& lhs.view == rhs.view
-			&& lhs.range.offset == rhs.range.offset
-			&& lhs.range.size == rhs.range.size;
-	}
-
-	bool operator==( ImageAttachment const & lhs
-		, ImageAttachment const & rhs )
-	{
-		return lhs.flags == rhs.flags
-			&& lhs.views == rhs.views
-			&& lhs.loadOp == rhs.loadOp
-			&& lhs.storeOp == rhs.storeOp
-			&& lhs.stencilLoadOp == rhs.stencilLoadOp
-			&& lhs.stencilStoreOp == rhs.stencilStoreOp
-			&& lhs.samplerDesc == rhs.samplerDesc
-			&& lhs.clearValue == rhs.clearValue
-			&& lhs.blendState == rhs.blendState;
-	}
-
-	bool operator==( Attachment const & lhs
-		, Attachment const & rhs )
-	{
-		return lhs.pass == rhs.pass
-			&& lhs.flags == rhs.flags
-			&& lhs.imageAttach == rhs.imageAttach
-			&& lhs.bufferAttach == rhs.bufferAttach;
 	}
 
 	//*********************************************************************************************

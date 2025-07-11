@@ -95,7 +95,7 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, Callbacks callbacks
-		, VkExtent2D const & size
+		, Extent2D size
 		, ru::Config const & ruConfig )
 		: RunnablePass{ pass
 			, context
@@ -111,7 +111,7 @@ namespace crg
 			, context
 			, graph
 			, ruConfig.maxPassCount
-			, size }
+			, std::move( size ) }
 	{
 	}
 

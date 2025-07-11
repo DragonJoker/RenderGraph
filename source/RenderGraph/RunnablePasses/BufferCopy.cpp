@@ -15,8 +15,8 @@ namespace crg
 	BufferCopy::BufferCopy( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
-		, VkDeviceSize copyOffset
-		, VkDeviceSize copyRange
+		, DeviceSize copyOffset
+		, DeviceSize copyRange
 		, ru::Config ruConfig
 		, GetPassIndexCallback passIndex
 		, IsEnabledCallback isEnabled )

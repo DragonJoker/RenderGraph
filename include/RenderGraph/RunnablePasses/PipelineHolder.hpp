@@ -36,7 +36,7 @@ namespace crg
 			, VkComputePipelineCreateInfo const & createInfo );
 		CRG_API void createPipeline( uint32_t index
 			, VkComputePipelineCreateInfo const & createInfo );
-		CRG_API void recordInto( RecordContext & context
+		CRG_API void recordInto( RecordContext const & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config

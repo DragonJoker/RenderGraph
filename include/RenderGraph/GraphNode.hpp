@@ -91,7 +91,7 @@ namespace crg
 			, std::string name
 			, FramePassGroup const & group );
 
-	protected:
+	private:
 		Kind kind{};
 		uint32_t id{};
 		std::string name{};

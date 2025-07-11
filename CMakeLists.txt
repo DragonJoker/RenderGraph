@@ -79,7 +79,11 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/DotExport.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Exception.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraph.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphBase.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphEnums.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphFunctions.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphPrerequisites.hpp
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FrameGraphStructs.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassGroup.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/FramePassTimer.hpp
@@ -249,7 +253,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	)
 	set_target_properties( ${PROJECT_NAME}
 		PROPERTIES
-			CXX_STANDARD 17
+			CXX_STANDARD 20
 			FOLDER "${CRG_BASE_DIR}/Core"
 			DEBUG_POSTFIX "d"
 			UNITY_BUILD "${PROJECTS_UNITY_BUILD}"

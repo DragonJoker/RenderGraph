@@ -61,7 +61,7 @@ namespace test
 		}
 
 		crg::ImageViewType getViewType( crg::ImageType type
-			, VkImageCreateFlags flags
+			, crg::ImageCreateFlags flags
 			, uint32_t layerCount )
 		{
 			switch ( type )
@@ -75,7 +75,7 @@ namespace test
 			default:
 				if ( layerCount > 1u )
 				{
-					if ( ( ( layerCount % 6u ) == 0u ) && ( flags & VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT ) )
+					if ( ( ( layerCount % 6u ) == 0u ) && checkFlag( flags, crg::ImageCreateFlags::eCubeCompatible ) )
 					{
 						return ( layerCount > 6u )
 							? crg::ImageViewType::eCubeArray
@@ -100,12 +100,12 @@ namespace test
 		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
-			, 0u
+			, crg::ImageCreateFlags::eNone
 			, crg::ImageType::e2D
 			, format
 			, { 1024, 1024 }
-			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-				| VK_IMAGE_USAGE_SAMPLED_BIT )
+			, ( crg::ImageUsageFlags::eColorAttachment
+				| crg::ImageUsageFlags::eSampled )
 			, mipLevels
 			, arrayLayers };
 	}
@@ -116,12 +116,12 @@ namespace test
 		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
-			, 0u
+			, crg::ImageCreateFlags::eNone
 			, crg::ImageType::e1D
 			, format
 			, { 1024 }
-			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-				| VK_IMAGE_USAGE_SAMPLED_BIT )
+			, ( crg::ImageUsageFlags::eColorAttachment
+				| crg::ImageUsageFlags::eSampled )
 			, mipLevels
 			, arrayLayers };
 	}
@@ -132,12 +132,12 @@ namespace test
 		, uint32_t arrayLayers )
 	{
 		return crg::ImageData{ std::move( name )
-			, VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT
+			, crg::ImageCreateFlags::eCubeCompatible
 			, crg::ImageType::e2D
 			, format
 			, { 1024, 1024u }
-			, ( VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT
-				| VK_IMAGE_USAGE_SAMPLED_BIT )
+			, ( crg::ImageUsageFlags::eColorAttachment
+				| crg::ImageUsageFlags::eSampled )
 			, mipLevels
 			, arrayLayers * 6u };
 	}
@@ -151,7 +151,7 @@ namespace test
 	{
 		return createView( std::move( name )
 			, image
-			, crg::convert( image.data->info.format )
+			, image.data->info.format
 			, baseMipLevel
 			, levelCount
 			, baseArrayLayer
@@ -166,19 +166,12 @@ namespace test
 		, uint32_t baseArrayLayer
 		, uint32_t layerCount )
 	{
-		VkImageAspectFlags aspect = ( isDepthStencilFormat( format )
-			? ( VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_DEPTH_BIT )
-			: ( isDepthFormat( format )
-				? VK_IMAGE_ASPECT_DEPTH_BIT
-				: ( isStencilFormat( format )
-					? VK_IMAGE_ASPECT_STENCIL_BIT
-					: VK_IMAGE_ASPECT_COLOR_BIT ) ) );
 		return crg::ImageViewData{ std::move( name )
 			, image
-			, 0u
-			, getViewType( crg::convert( image.data->info.imageType ), image.data->info.flags, layerCount )
+			, crg::ImageViewCreateFlags::eNone
+			, getViewType( getImageType( image ), getImageCreateFlags( image ), layerCount )
 			, format
-			, { aspect, baseMipLevel, levelCount, baseArrayLayer, layerCount } };
+			, { getAspectMask( format ), baseMipLevel, levelCount, baseArrayLayer, layerCount } };
 	}
 
 	crg::GraphContext & getDummyContext()

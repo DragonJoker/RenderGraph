@@ -1,5 +1,6 @@
 #include "RenderGraph/FramePassTimer.hpp"
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Log.hpp"
 
 #include <cassert>
 

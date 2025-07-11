@@ -193,7 +193,7 @@ namespace crg
 
 	LayoutState FrameGraph::getFinalLayoutState( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range )const
+		, ImageSubresourceRange const & range )const
 	{
 		return m_finalState.getLayoutState( image, viewType, range );
 	}
@@ -204,7 +204,7 @@ namespace crg
 		if ( view.data->source.empty() )
 		{
 			return getFinalLayoutState( view.data->image
-				, convert( view.data->info.viewType )
+				, view.data->info.viewType
 				, view.data->info.subresourceRange );
 		}
 
@@ -219,7 +219,7 @@ namespace crg
 
 	void FrameGraph::addInput( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range
+		, ImageSubresourceRange const & range
 		, LayoutState const & outputLayout )
 	{
 		m_inputs.setLayoutState( image
@@ -232,14 +232,14 @@ namespace crg
 		, LayoutState const & outputLayout )
 	{
 		addInput( view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, outputLayout );
 	}
 
 	LayoutState FrameGraph::getInputLayoutState( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range )const
+		, ImageSubresourceRange const & range )const
 	{
 		return m_inputs.getLayoutState( image
 			, viewType
@@ -249,13 +249,13 @@ namespace crg
 	LayoutState FrameGraph::getInputLayoutState( ImageViewId view )const
 	{
 		return getInputLayoutState( view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange );
 	}
 
 	void FrameGraph::addOutput( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range
+		, ImageSubresourceRange const & range
 		, LayoutState const & outputLayout )
 	{
 		m_outputs.setLayoutState( image
@@ -268,14 +268,14 @@ namespace crg
 		, LayoutState const & outputLayout )
 	{
 		addOutput( view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange
 			, outputLayout );
 	}
 
 	LayoutState FrameGraph::getOutputLayoutState( ImageId image
 		, ImageViewType viewType
-		, VkImageSubresourceRange const & range )const
+		, ImageSubresourceRange const & range )const
 	{
 		return m_outputs.getLayoutState( image
 			, viewType
@@ -285,7 +285,7 @@ namespace crg
 	LayoutState FrameGraph::getOutputLayoutState( ImageViewId view )const
 	{
 		return getOutputLayoutState( view.data->image
-			, convert( view.data->info.viewType )
+			, view.data->info.viewType
 			, view.data->info.subresourceRange );
 	}
 

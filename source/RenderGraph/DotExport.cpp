@@ -468,7 +468,7 @@ namespace crg::dot
 			static void displayNode( std::ostream & stream
 				, std::string const & name
 				, std::string const & shape
-				, std::string_view const & colour
+				, std::string_view colour
 				, std::set< std::string, std::less<> > & nodes
 				, Config const & config )
 			{
@@ -499,7 +499,7 @@ namespace crg::dot
 			static FramePassGroupStreams & displayPassNode( uint32_t id
 				, std::string const & name
 				, FramePassGroup const * group
-				, std::string_view const & colour
+				, std::string_view colour
 				, FramePassGroupStreams & groups
 				, Config const & config )
 			{
@@ -534,7 +534,7 @@ namespace crg::dot
 				, std::string const & from
 				, std::string const & to
 				, std::string const & label
-				, std::string_view const & colour
+				, std::string_view colour
 				, Config const & config )
 			{
 				stream << Indent{ 2 };
@@ -602,7 +602,7 @@ namespace crg::dot
 
 			template< typename TransitionT >
 			static void displayTransitionEdge( std::ostream & stream
-				, std::string_view const & colour
+				, std::string_view colour
 				, TransitionT const & transition
 				, FramePassGroupStreams & groups
 				, Config const & config )

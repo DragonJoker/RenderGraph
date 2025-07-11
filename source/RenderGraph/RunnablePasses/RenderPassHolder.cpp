@@ -22,7 +22,7 @@ namespace crg
 			, ImageViewId view
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
-			, std::vector< VkClearValue > & clearValues
+			, std::vector< ClearValue > & clearValues
 			, LayoutState initialLayout
 			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
@@ -30,14 +30,14 @@ namespace crg
 			VkAttachmentReference result{ uint32_t( attaches.size() )
 				, convert( attach.getImageLayout( separateDepthStencilLayouts ) ) };
 			attaches.push_back( { 0u
-				, view.data->info.format
-				, view.data->image.data->info.samples
-				, ( initialLayout.layout == ImageLayout::eUndefined
-					? VK_ATTACHMENT_LOAD_OP_CLEAR
+				, convert( view.data->info.format )
+				, convert( view.data->image.data->info.samples )
+				, convert( initialLayout.layout == ImageLayout::eUndefined
+					? AttachmentLoadOp::eClear
 					: attach.getLoadOp() )
-				, attach.getStoreOp()
-				, attach.getStencilLoadOp()
-				, attach.getStencilStoreOp()
+				, convert( attach.getStoreOp() )
+				, convert( attach.getStencilLoadOp() )
+				, convert( attach.getStencilStoreOp() )
 				, convert( initialLayout.layout )
 				, convert( finalLayout.layout ) } );
 			viewAttaches.push_back( { view, initialLayout, finalLayout } );
@@ -63,13 +63,13 @@ namespace crg
 			, ImageViewId view
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
-			, std::vector< VkClearValue > & clearValues
+			, std::vector< ClearValue > & clearValues
 			, VkPipelineColorBlendAttachmentStateArray & blendAttachs
 			, LayoutState initialLayout
 			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
 		{
-			blendAttachs.push_back( attach.getBlendState() );
+			blendAttachs.push_back( convert( attach.getBlendState() ) );
 			return addAttach( context
 				, attach
 				, view
@@ -142,7 +142,7 @@ namespace crg
 		, GraphContext & context
 		, RunnableGraph & graph
 		, uint32_t maxPassCount
-		, VkExtent2D size )
+		, Extent2D size )
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
@@ -190,13 +190,14 @@ namespace crg
 	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )const
 	{
 		auto frameBuffer = getFramebuffer( index );
+		auto clearValues = convert( getClearValues( index ) );
 		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
 			, nullptr
 			, getRenderPass( index )
 			, frameBuffer
-			, getRenderArea( index )
-			, uint32_t( getClearValues( index ).size() )
-			, getClearValues( index ).data() };
+			, convert( getRenderArea( index ) )
+			, uint32_t( clearValues.size() )
+			, clearValues.data() };
 	}
 
 	void RenderPassHolder::begin( RecordContext & context
@@ -303,17 +304,17 @@ namespace crg
 		VkSubpassDependencyArray dependencies{
 			{ VK_SUBPASS_EXTERNAL
 				, 0u
-				, convert( previousState.pipelineStage )
+				, getPipelineStageFlags( previousState.pipelineStage )
 				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, convert( previousState.access )
+				, getAccessFlags( previousState.access )
 				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
 				, VK_DEPENDENCY_BY_REGION_BIT }
 			, { 0u
 				, VK_SUBPASS_EXTERNAL
 				, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT
-				, convert( nextState.pipelineStage )
+				, getPipelineStageFlags( nextState.pipelineStage )
 				, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
-				, convert( nextState.access )
+				, getAccessFlags( nextState.access )
 				, VK_DEPENDENCY_BY_REGION_BIT } };
 		VkRenderPassCreateInfo createInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO
 			, nullptr

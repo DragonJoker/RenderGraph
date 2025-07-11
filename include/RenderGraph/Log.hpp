@@ -20,34 +20,34 @@ namespace crg
 	class Logger
 	{
 	public:
-		using LogCallback = std::function< void( std::string const & msg, bool newLine ) >;
+		using LogCallback = void( * )( std::string_view msg, bool newLine )noexcept;
 
 	public:
 		/**
 		*\brief
 		*	Logs a trace message.
 		*/
-		CRG_API static void logTrace( std::string const & message, bool newLine = true );
+		CRG_API static void logTrace( std::string_view message, bool newLine = true )noexcept;
 		/**
 		*\brief
 		*	Logs a debug message.
 		*/
-		CRG_API static void logDebug( std::string const & message, bool newLine = true );
+		CRG_API static void logDebug( std::string_view message, bool newLine = true )noexcept;
 		/**
 		*\brief
 		*	Logs an info message.
 		*/
-		CRG_API static void logInfo( std::string const & message, bool newLine = true );
+		CRG_API static void logInfo( std::string_view message, bool newLine = true )noexcept;
 		/**
 		*\brief
 		*	Logs a warning message.
 		*/
-		CRG_API static void logWarning( std::string const & message, bool newLine = true );
+		CRG_API static void logWarning( std::string_view message, bool newLine = true )noexcept;
 		/**
 		*\brief
 		*	Logs an error message.
 		*/
-		CRG_API static void logError( std::string const & message, bool newLine = true );
+		CRG_API static void logError( std::string_view message, bool newLine = true )noexcept;
 		/**
 		*\brief
 		*	Sets the trace callback.
@@ -77,7 +77,7 @@ namespace crg
 	private:
 		Logger();
 
-		static Logger & doGetInstance();
+		static Logger & doGetInstance()noexcept;
 
 	private:
 		LogCallback m_trace;

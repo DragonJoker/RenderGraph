@@ -366,9 +366,9 @@ namespace crg
 		if ( object )
 		{
 			lock_type lock{ m_mutex };
-			auto it = m_allocated.find( size_t( object ) );
 
-			if ( it != m_allocated.end() )
+			if ( auto it = m_allocated.find( size_t( object ) );
+				it != m_allocated.end() )
 			{
 				std::stringstream stream;
 				stream.imbue( std::locale{ "C" } );
