@@ -22,7 +22,7 @@ namespace crg
 			, ImageViewId view
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
-			, std::vector< ClearValue > & clearValues
+			, std::vector< VkClearValue > & clearValues
 			, LayoutState initialLayout
 			, LayoutState finalLayout
 			, bool separateDepthStencilLayouts )
@@ -41,7 +41,7 @@ namespace crg
 				, convert( initialLayout.layout )
 				, convert( finalLayout.layout ) } );
 			viewAttaches.push_back( { view, initialLayout, finalLayout } );
-			clearValues.push_back( attach.getClearValue() );
+			clearValues.push_back( convert( attach.getClearValue() ) );
 
 			if ( view.data->source.empty() )
 			{
@@ -63,7 +63,7 @@ namespace crg
 			, ImageViewId view
 			, VkAttachmentDescriptionArray & attaches
 			, std::vector< RenderPassHolder::Entry > & viewAttaches
-			, std::vector< ClearValue > & clearValues
+			, std::vector< VkClearValue > & clearValues
 			, VkPipelineColorBlendAttachmentStateArray & blendAttachs
 			, LayoutState initialLayout
 			, LayoutState finalLayout
@@ -190,14 +190,13 @@ namespace crg
 	VkRenderPassBeginInfo RenderPassHolder::getBeginInfo( uint32_t index )const
 	{
 		auto frameBuffer = getFramebuffer( index );
-		auto clearValues = convert( getClearValues( index ) );
 		return VkRenderPassBeginInfo{ VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO
 			, nullptr
 			, getRenderPass( index )
 			, frameBuffer
 			, convert( getRenderArea( index ) )
-			, uint32_t( clearValues.size() )
-			, clearValues.data() };
+			, uint32_t( getClearValues( index ).size() )
+			, getClearValues( index ).data() };
 	}
 
 	void RenderPassHolder::begin( RecordContext & context
