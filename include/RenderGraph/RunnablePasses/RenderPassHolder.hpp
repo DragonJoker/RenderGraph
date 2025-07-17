@@ -57,7 +57,7 @@ namespace crg
 			return m_passes[index].renderArea;
 		}
 
-		std::vector< ClearValue > const & getClearValues( uint32_t index )const
+		std::vector< VkClearValue > const & getClearValues( uint32_t index )const
 		{
 			return m_passes[index].clearValues;
 		}
@@ -83,7 +83,7 @@ namespace crg
 			mutable VkFramebuffer frameBuffer{};
 			Rect2D renderArea{};
 			std::vector< Attachment const * > attachments;
-			std::vector< ClearValue > clearValues;
+			std::vector< VkClearValue > clearValues;
 			std::vector< Entry > attaches;
 			PipelineState previousState;
 			PipelineState nextState;

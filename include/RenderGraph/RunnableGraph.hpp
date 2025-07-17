@@ -130,14 +130,19 @@ namespace crg
 			return m_fence;
 		}
 
-		FramePassTimer const & getTimer()const
+		FramePassTimer const & getTimer()const noexcept
 		{
 			return m_timer;
 		}
 
-		FramePassTimer & getTimer()
+		FramePassTimer & getTimer()noexcept
 		{
 			return m_timer;
+		}
+
+		GraphContext & getContext()const noexcept
+		{
+			return m_context;
 		}
 
 	private:
