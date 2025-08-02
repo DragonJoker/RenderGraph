@@ -61,10 +61,40 @@ namespace crg
 		{
 			for ( uint32_t i = 0u; i < attach.getBufferCount(); ++i )
 			{
-				bufferAccesses.insert_or_assign( attach.buffer( i )
+				bufferAccesses.insert_or_assign( attach.buffer( i ).data->buffer.id
 					, AccessState{ attach.getAccessMask()
 						, attach.getPipelineStageFlags( isComputePass ) } );
 			}
+		}
+
+		static void registerResources( FramePass const & pass
+			, RunnablePass::Callbacks const & callbacks
+			, GraphContext const & graphContext
+			, LayerLayoutStatesHandler & imageLayouts
+			, AccessStateMap & bufferAccesses )
+		{
+			bool isComputePass = callbacks.isComputePass();
+			for ( auto & [binding, attach] : pass.uniforms )
+				registerBuffer( *attach, isComputePass, bufferAccesses );
+			for ( auto & [binding, attach] : pass.sampled )
+				registerImage( *attach.attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
+			for ( auto & [binding, attach] : pass.inputs )
+				if ( attach->isImage() )
+					registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
+				else
+					registerBuffer( *attach, isComputePass, bufferAccesses );
+			for ( auto & [binding, attach] : pass.inouts )
+				if ( attach->isImage() )
+					registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
+				else
+					registerBuffer( *attach, isComputePass, bufferAccesses );
+			for ( auto & [binding, attach] : pass.outputs )
+				if ( attach->isImage() )
+					registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
+				else
+					registerBuffer( *attach, isComputePass, bufferAccesses );
+			for ( auto attach : pass.targets )
+				registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
 		}
 
 		static void prepareImage( VkCommandBuffer commandBuffer
@@ -80,7 +110,7 @@ namespace crg
 				, view );
 
 			if ( !attach.isNoTransition()
-				&& ( attach.isSampledView() || attach.isStorageView() || attach.isTransferView() || attach.isTransitionView() ) )
+				&& ( attach.isSampledImageView() || attach.isStorageImageView() || attach.isTransferImageView() || attach.isTransitionImageView() ) )
 			{
 				auto needed = makeLayoutState( attach.getImageLayout( separateDepthStencilLayouts ) );
 				auto currentLayout = ( !attach.isInput()
@@ -131,14 +161,20 @@ namespace crg
 			, uint32_t index
 			, Attachment const & attach
 			, bool isComputePass
+			, RunnableGraph & graph
 			, RecordContext & recordContext )
 		{
+			auto view = attach.buffer( index );
+			recordContext.runImplicitTransition( commandBuffer
+				, index
+				, view );
+
 			if ( !attach.isNoTransition()
 				&& ( attach.isStorageBuffer() || attach.isTransferBuffer() || attach.isTransitionBuffer() ) )
 			{
-				auto & range = attach.getBufferRange();
-				auto buffer = attach.buffer( index );
-				auto currentState = recordContext.getAccessState( buffer, range );
+				auto buffer = view.data->buffer;
+				auto & range = getSubresourceRange( view );
+				auto currentState = recordContext.getAccessState( view );
 
 				if ( attach.isClearableBuffer() )
 				{
@@ -148,7 +184,7 @@ namespace crg
 						, currentState
 						, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
 					recordContext->vkCmdFillBuffer( commandBuffer
-						, buffer
+						, graph.createBuffer( buffer )
 						, range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u )
 						, range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u )
 						, 0u );
@@ -163,6 +199,37 @@ namespace crg
 					, { attach.getAccessMask(), attach.getPipelineStageFlags( isComputePass ) } );
 			}
 		}
+
+		static void prepareResources( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, RecordContext & recordContext
+			, RunnableGraph & graph
+			, FramePass const & pass
+			, RunnablePass::Callbacks const & callbacks
+			, GraphContext & graphContext )
+		{
+			for ( auto & [binding, attach] : pass.sampled )
+				prepareImage( commandBuffer, index, *attach.attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
+			for ( auto & [binding, attach] : pass.uniforms )
+				prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
+			for ( auto & [binding, attach] : pass.inputs )
+				if ( attach->isImage() )
+					prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
+				else
+					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
+			for ( auto & [binding, attach] : pass.inouts )
+				if ( attach->isImage() )
+					prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
+				else
+					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
+			for ( auto & [binding, attach] : pass.outputs )
+				if ( attach->isImage() )
+					prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
+				else
+					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
+			for ( auto & attach : pass.targets )
+				prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
+		}
 	}
 
 	//*********************************************************************************************
@@ -172,8 +239,11 @@ namespace crg
 		, ImageViewId const & view
 		, ImageLayout currentLayout )
 	{
-		if ( !attach.isTransitionView() && attach.isInput() && currentLayout == ImageLayout::eUndefined )
-			Logger::logWarning( stepName + " - [" + attach.pass->getFullName() + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
+		if ( !attach.isTransitionImageView() && attach.isInput() && currentLayout == ImageLayout::eUndefined )
+		{
+			auto passName = attach.pass ? attach.pass->getFullName() : attach.source.front().pass->getFullName();
+			Logger::logWarning( stepName + " - [" + passName + "]: Input view [" + view.data->name + "] is currently in undefined layout" );
+		}
 	}
 
 	void convert( SemaphoreWaitArray const & toWait
@@ -191,15 +261,6 @@ namespace crg
 				dstStageMasks.push_back( getPipelineStageFlags( wait.dstStageMask ) );
 			}
 		}
-	}
-
-	std::vector< VkClearValue > convert( std::vector< ClearValue > const & v )
-	{
-		std::vector< VkClearValue > result;
-		result.reserve( v.size() );
-		for ( auto & value : v )
-			result.push_back( convert( value ) );
-		return result;
 	}
 
 	//*********************************************************************************************
@@ -405,11 +466,8 @@ namespace crg
 			m_passContexts.emplace_back( graph.getResources() );
 		}
 
-		bool isComputePass = m_callbacks.isComputePass();
-		for ( auto & attach : m_pass.images )
-			details::registerImage( attach, isComputePass, m_context.separateDepthStencilLayouts, m_imageLayouts );
-		for ( auto & attach : m_pass.buffers )
-			details::registerBuffer( attach, isComputePass, m_bufferAccesses );
+		details::registerResources( pass, m_callbacks, m_context
+			, m_imageLayouts, m_bufferAccesses );
 	}
 
 	RunnablePass::~RunnablePass()noexcept
@@ -501,11 +559,8 @@ namespace crg
 #pragma GCC diagnostic pop
 			m_timer.beginPass( commandBuffer );
 
-			for ( auto & attach : m_pass.images )
-				details::prepareImage( commandBuffer, index, attach, m_context.separateDepthStencilLayouts, m_graph, context );
-
-			for ( auto & attach : m_pass.buffers )
-				details::prepareBuffer( commandBuffer, index, attach, m_callbacks.isComputePass(), context );
+			details::prepareResources( commandBuffer, index, context
+				, m_graph, m_pass, m_callbacks, m_context );
 
 			for ( auto const & action : m_ruConfig.prePassActions )
 			{
@@ -523,7 +578,12 @@ namespace crg
 			m_context.vkCmdEndDebugBlock( commandBuffer );
 		}
 
-		for ( auto const & [view, action] : m_ruConfig.implicitActions )
+		for ( auto const & [view, action] : m_ruConfig.implicitImageActions )
+		{
+			context.registerImplicitTransition( *this, view, action );
+		}
+
+		for ( auto const & [view, action] : m_ruConfig.implicitBufferActions )
 		{
 			context.registerImplicitTransition( *this, view, action );
 		}

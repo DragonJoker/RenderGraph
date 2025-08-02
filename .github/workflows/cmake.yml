@@ -20,17 +20,15 @@ jobs:
     runs-on: ${{ matrix.os[0] }}
     steps:
     - uses: actions/checkout@v4
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: '7a57b42f959ad138a5283477fe2e6c97a7cb852f'
-    - name: Install dependencies from vcpkg
-      shell: bash
-      run: |
-        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
     - name: Checkout submodules
       run: |
         git submodule update --init -- "CMake"
+        git submodule update --init -- "external/vcpkg"
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/external/vcpkg'
+        vcpkgJsonGlob: 'vcpkg.json'
     - name: Setup OpenCppCoverage
       id: setup_opencppcoverage
       run: |
@@ -39,23 +37,11 @@ jobs:
     - name: Create Build Environment
       run: |
         cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
-    - name: Configure Warnings as errors (OFF)
-      if: github.event_name == 'push'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: |
-        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
-    - name: Configure Warnings as errors (ON)
-      if: github.event_name == 'pull_request'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: |
-        echo "PROJ_WAE=ON" >> $GITHUB_ENV
     - name: Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: |
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DPROJECTS_COVERAGE=ON -DCRG_BUILD_STATIC=OFF -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/external/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_COVERAGE=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include --preset ci
     - name: Build
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
@@ -98,37 +84,23 @@ jobs:
     runs-on: ${{ matrix.os[0] }}
     steps:
     - uses: actions/checkout@v4
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
-    - name: Install dependencies from vcpkg
-      shell: bash
-      run: |
-        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
     - name: Checkout submodules
       run: |
         git submodule update --init -- "CMake"
+        git submodule update --init -- "external/vcpkg"
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/external/vcpkg'
+        vcpkgJsonGlob: 'vcpkg.json'
     - name: Create Build Environment
       run: |
         cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
-    - name: Configure Warnings as errors (OFF)
-      if: github.event_name == 'push'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: |
-        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
-    - name: Configure Warnings as errors (ON)
-      if: github.event_name == 'pull_request'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: |
-        echo "PROJ_WAE=ON" >> $GITHUB_ENV
     - name: Configure CMake
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: |
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/external/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include --preset ci
     - name: Build
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
@@ -166,32 +138,18 @@ jobs:
     runs-on: ${{ matrix.os[0] }}
     steps:
     - uses: actions/checkout@v4
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
-    - name: Install dependencies from vcpkg
-      shell: bash
-      run: |
-        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
     - name: Checkout submodules
       run: |
         git submodule update --init -- "CMake"
+        git submodule update --init -- "external/vcpkg"
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/external/vcpkg'
+        vcpkgJsonGlob: 'vcpkg.json'
     - name: Create Build Environment
       run: |
         cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
-    - name: Configure Warnings as errors (OFF)
-      if: github.event_name == 'push'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: |
-        echo "PROJ_WAE=OFF" >> $GITHUB_ENV
-    - name: Configure Warnings as errors (ON)
-      if: github.event_name == 'pull_request'
-      shell: bash
-      working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
-      run: |
-        echo "PROJ_WAE=ON" >> $GITHUB_ENV
     - name: Configure GCC version
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
@@ -202,7 +160,7 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: |
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/external/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include --preset ci
     - name: Build
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash
@@ -240,17 +198,15 @@ jobs:
     runs-on: ${{ matrix.os[0] }}
     steps:
     - uses: actions/checkout@v4
-    - name: Setup vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgGitCommitId: 'f740d6f22908ccd8a519228a26b267f7a68dda9c'
-    - name: Install dependencies from vcpkg
-      shell: bash
-      run: |
-        $VCPKG_ROOT/vcpkg install vulkan-headers:${{ matrix.os[1] }}
     - name: Checkout submodules
       run: |
         git submodule update --init -- "CMake"
+        git submodule update --init -- "external/vcpkg"
+    - name: Setup vcpkg
+      uses: lukka/run-vcpkg@v11
+      with:
+        vcpkgDirectory: '${{ github.workspace }}/external/vcpkg'
+        vcpkgJsonGlob: 'vcpkg.json'
     - name: Create Build Environment
       run: |
         cmake -E make_directory ${{runner.workspace}}/build-${{ matrix.buildType }}
@@ -276,7 +232,7 @@ jobs:
       shell: bash
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       run: |
-        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DPROJECTS_WARNINGS_AS_ERRORS=$PROJ_WAE -DCRG_UNITY_BUILD=ON -DCRG_BUILD_TESTS=ON -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include
+        cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ matrix.buildType }} -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/external/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/package/rendergraph -DVULKAN_HEADERS_INCLUDE_DIRS=$VCPKG_ROOT/installed/${{matrix.os[1]}}/include --preset ci
     - name: Build
       working-directory: ${{runner.workspace}}/build-${{ matrix.buildType }}
       shell: bash

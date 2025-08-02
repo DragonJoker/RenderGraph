@@ -51,7 +51,6 @@ namespace crg
 		*	All transitions.
 		*/
 		CRG_API RunnableGraph( FrameGraph & graph
-			, AttachmentTransitions transitions
 			, GraphNodePtrArray nodes
 			, RootNode rootNode
 			, GraphContext & context );
@@ -65,6 +64,8 @@ namespace crg
 		CRG_API SemaphoreWaitArray run( SemaphoreWaitArray const & toWait
 			, VkQueue queue );
 
+		CRG_API VkBuffer createBuffer( BufferId const & buffer );
+		CRG_API VkBufferView createBufferView( BufferViewId const & view );
 		CRG_API VkImage createImage( ImageId const & image );
 		CRG_API VkImageView createImageView( ImageViewId const & view );
 		CRG_API VkSampler createSampler( SamplerDesc const & samplerDesc );
@@ -83,7 +84,8 @@ namespace crg
 		CRG_API LayoutState getOutputLayoutState( ImageViewId view )const;
 
 		CRG_API VkDescriptorType getDescriptorType( Attachment const & attach )const;
-		CRG_API WriteDescriptorSet getBufferWrite( Attachment const & attach, uint32_t index = 0u )const;
+		CRG_API WriteDescriptorSet getDescriptorWrite( Attachment const & attach, uint32_t binding, uint32_t index = 0u );
+		CRG_API WriteDescriptorSet getDescriptorWrite( Attachment const & attach, SamplerDesc const & samplerDesc, uint32_t binding, uint32_t index = 0u );
 
 		ConstGraphAdjacentNode getGraph()const noexcept
 		{
@@ -93,11 +95,6 @@ namespace crg
 		std::string const & getName()const noexcept
 		{
 			return m_graph.getName();
-		}
-
-		AttachmentTransitions const & getTransitions()const noexcept
-		{
-			return m_transitions;
 		}
 
 		VkCommandPool getCommandPool()const noexcept
@@ -149,7 +146,6 @@ namespace crg
 		FrameGraph & m_graph;
 		GraphContext & m_context;
 		ContextResourcesCache m_resources;
-		AttachmentTransitions m_transitions;
 		GraphNodePtrArray m_nodes;
 		RootNode m_rootNode;
 		ContextObjectT< VkQueryPool > m_timerQueries;

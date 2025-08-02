@@ -13,7 +13,8 @@ namespace crg
 		, RunnableGraph & graph
 		, rm::Config config
 		, uint32_t maxPassCount )
-		: m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< Offset2D >()
+		: m_graph{ graph }
+		, m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< Offset2D >()
 			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
 			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
 			, config.m_isEnabled ? std::move( *config.m_isEnabled ) : getDefaultV< RunnablePass::IsEnabledCallback >()
@@ -115,28 +116,31 @@ namespace crg
 		doCreatePipeline( index );
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_config.recordInto( context, commandBuffer, index );
-		DeviceSize offset{};
 
-		if ( m_config.vertexBuffer.buffer.buffer( index ) )
+		if ( m_config.vertexBuffer.buffer != BufferViewId{} )
 		{
-			context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &m_config.vertexBuffer.buffer.buffer( index ), &offset );
+			auto vkBuffer = m_graph.createBuffer( m_config.vertexBuffer.buffer.data->buffer );
+			context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &vkBuffer, &getSubresourceRange( m_config.vertexBuffer.buffer ).offset );
 		}
 
-		if ( auto indirectBuffer = m_config.indirectBuffer.buffer.buffer( index ) )
+		if ( m_config.indirectBuffer != defaultV< IndirectBuffer > )
 		{
-			if ( auto indexBuffer = m_config.indexBuffer.buffer.buffer( index ) )
+			auto indirectBuffer = m_graph.createBuffer( m_config.indirectBuffer.buffer.data->buffer );
+			if ( m_config.indexBuffer != defaultV< IndexBuffer > )
 			{
-				context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
-				context->vkCmdDrawIndexedIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+				auto indexBuffer = m_graph.createBuffer( m_config.indexBuffer.buffer.data->buffer );
+				context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, getSubresourceRange( m_config.indexBuffer.buffer ).offset, m_config.getIndexType() );
+				context->vkCmdDrawIndexedIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_config.indirectBuffer.buffer ).offset, 1u, m_config.indirectBuffer.stride );
 			}
 			else
 			{
-				context->vkCmdDrawIndirect( commandBuffer, indirectBuffer, m_config.indirectBuffer.offset, 1u, m_config.indirectBuffer.stride );
+				context->vkCmdDrawIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_config.indirectBuffer.buffer ).offset, 1u, m_config.indirectBuffer.stride );
 			}
 		}
-		else if ( auto indexBuffer = m_config.indexBuffer.buffer.buffer( index ) )
+		else if ( m_config.indexBuffer != defaultV< IndexBuffer > )
 		{
-			context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, offset, m_config.getIndexType() );
+			auto indexBuffer = m_graph.createBuffer( m_config.indexBuffer.buffer.data->buffer );
+			context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, getSubresourceRange( m_config.indexBuffer.buffer ).offset, m_config.getIndexType() );
 			context->vkCmdDrawIndexed( commandBuffer, m_config.getPrimitiveCount(), 1u, 0u, 0u, 0u );
 		}
 		else

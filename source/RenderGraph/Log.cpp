@@ -62,27 +62,42 @@ namespace crg
 
 	void Logger::setTraceCallback( LogCallback callback )
 	{
-		doGetInstance().m_trace = std::move( callback );
+		if ( callback )
+			doGetInstance().m_trace = std::move( callback );
+		else
+			doGetInstance().m_trace = []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); };
 	}
 
 	void Logger::setDebugCallback( LogCallback callback )
 	{
-		doGetInstance().m_debug = std::move( callback );
+		if ( callback )
+			doGetInstance().m_debug = std::move( callback );
+		else
+			doGetInstance().m_debug = []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); };
 	}
 
 	void Logger::setInfoCallback( LogCallback callback )
 	{
-		doGetInstance().m_info = std::move( callback );
+		if ( callback )
+			doGetInstance().m_info = std::move( callback );
+		else
+			doGetInstance().m_info = []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); };
 	}
 
 	void Logger::setWarningCallback( LogCallback callback )
 	{
-		doGetInstance().m_warning = std::move( callback );
+		if ( callback )
+			doGetInstance().m_warning = std::move( callback );
+		else
+			doGetInstance().m_warning = []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stdout ); };
 	}
 
 	void Logger::setErrorCallback( LogCallback callback )
 	{
-		doGetInstance().m_error = std::move( callback );
+		if ( callback )
+			doGetInstance().m_error = std::move( callback );
+		else
+			doGetInstance().m_error = []( std::string_view msg, bool newLine )noexcept { log::doLog( msg, newLine, stderr ); };
 	}
 
 	Logger & Logger::doGetInstance()noexcept

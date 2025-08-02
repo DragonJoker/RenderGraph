@@ -13,6 +13,13 @@ namespace crg
 	template< typename DataT >
 	struct DataTransitionT
 	{
+		DataTransitionT( DataT data, Attachment outputAttach, Attachment inputAttach )noexcept
+			: data{ std::move( data ) }
+			, outputAttach{ std::move( outputAttach ) }
+			, inputAttach{ std::move( inputAttach ) }
+		{
+		}
+
 		DataT data;
 		Attachment outputAttach;
 		Attachment inputAttach;
@@ -28,15 +35,9 @@ namespace crg
 
 	struct AttachmentTransitions
 	{
-		ViewTransitionArray viewTransitions;
+		ImageTransitionArray imageTransitions;
 		BufferTransitionArray bufferTransitions;
 	};
 
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions value );
-
-	struct FramePassTransitions
-	{
-		FramePass const * pass;
-		AttachmentTransitions transitions;
-	};
 }

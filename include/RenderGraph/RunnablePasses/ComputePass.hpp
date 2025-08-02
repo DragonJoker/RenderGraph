@@ -3,6 +3,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
+#include "RenderGraph/BufferViewData.hpp"
 #include "RenderGraph/RunnablePass.hpp"
 #include "RenderGraph/RunnablePasses/PipelineHolder.hpp"
 

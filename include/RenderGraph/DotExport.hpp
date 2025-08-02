@@ -22,6 +22,7 @@ namespace crg::dot
 		bool withIds{};
 		bool withGroups{};
 		bool splitGroups{};
+		std::string toRemove{};
 	};
 	using DisplayResult = std::map< std::string, std::stringstream, std::less<> >;
 

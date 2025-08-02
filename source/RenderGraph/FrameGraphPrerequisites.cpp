@@ -1,4 +1,6 @@
 #include "RenderGraph/FrameGraphPrerequisites.hpp"
+#include "RenderGraph/BufferData.hpp"
+#include "RenderGraph/BufferViewData.hpp"
 #include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/ImageViewData.hpp"
 
@@ -24,19 +26,8 @@ namespace crg
 			, ImageSubresourceRange const & lhsRange
 			, ImageSubresourceRange const & rhsRange )noexcept
 		{
-			auto result = lhsType == rhsType;
-
-			if ( !result )
-			{
-				result = match( getVirtualRange( image, lhsType, lhsRange )
-					, getVirtualRange( image, rhsType, rhsRange ) );
-			}
-			else
-			{
-				result = match( lhsRange, rhsRange );
-			}
-
-			return result;
+			return match( getVirtualRange( image, lhsType, lhsRange )
+				, getVirtualRange( image, rhsType, rhsRange ) );
 		}
 
 		static bool match( ImageId const & image
@@ -440,26 +431,18 @@ namespace crg
 
 	std::string_view getName( FilterMode v )
 	{
-		switch ( v )
-		{
-		case FilterMode::eLinear:
+		if ( v == FilterMode::eLinear )
 			return "linear";
-		default:
-			return "nearest";
-		}
+		return "nearest";
 	}
 
 	//*********************************************************************************************
 
 	std::string_view getName( MipmapMode v )
 	{
-		switch ( v )
-		{
-		case MipmapMode::eLinear:
+		if ( v == MipmapMode::eLinear )
 			return "linear";
-		default:
-			return "nearest";
-		}
+		return "nearest";
 	}
 
 	//*********************************************************************************************
@@ -501,6 +484,16 @@ namespace crg
 	Extent3D const & getExtent( ImageViewId const & image )noexcept
 	{
 		return getExtent( image.data->image );
+	}
+
+	DeviceSize getSize( BufferId const & buffer )noexcept
+	{
+		return buffer.data->info.size;
+	}
+
+	DeviceSize getSize( BufferViewId const & buffer )noexcept
+	{
+		return buffer.data->info.subresourceRange.size;
 	}
 
 	Extent3D getMipExtent( ImageViewId const & image )noexcept
@@ -565,6 +558,11 @@ namespace crg
 	ImageSubresourceRange const & getSubresourceRange( ImageViewId const & image )noexcept
 	{
 		return image.data->info.subresourceRange;
+	}
+
+	BufferSubresourceRange const & getSubresourceRange( BufferViewId const & buffer )noexcept
+	{
+		return buffer.data->info.subresourceRange;
 	}
 
 	AccessFlags getAccessMask( ImageLayout layout )noexcept
@@ -717,13 +715,13 @@ namespace crg
 
 	ImageAspectFlags getAspectMask( PixelFormat format )noexcept
 	{
-		return ImageAspectFlags( isDepthStencilFormat( format )
-			? ImageAspectFlags::eDepth | ImageAspectFlags::eStencil
-			: ( isDepthFormat( format )
-				? ImageAspectFlags::eDepth
-				: ( isStencilFormat( format )
-					? ImageAspectFlags::eStencil
-					: ImageAspectFlags::eColor ) ) );
+		if ( isDepthStencilFormat( format ) )
+			return ImageAspectFlags::eDepth | ImageAspectFlags::eStencil;
+		if ( isDepthFormat( format ) )
+			return ImageAspectFlags::eDepth;
+		if ( isStencilFormat( format ) )
+			return ImageAspectFlags::eStencil;
+		return ImageAspectFlags::eColor;
 	}
 
 	LayoutState const & addSubresourceRangeLayout( LayerLayoutStates & ranges
@@ -807,12 +805,20 @@ namespace crg
 		return fgph::match( *lhs.data, *rhs.data );
 	}
 
-	bool match( Buffer const & lhs, Buffer const & rhs )noexcept
+	bool match( BufferViewId const & lhs, BufferViewId const & rhs )noexcept
 	{
 		return lhs == rhs;
 	}
 
 	ImageViewId const & resolveView( ImageViewId const & view
+		, uint32_t passIndex )
+	{
+		return view.data->source.empty()
+			? view
+			: view.data->source[passIndex];
+	}
+
+	BufferViewId const & resolveView( BufferViewId const & view
 		, uint32_t passIndex )
 	{
 		return view.data->source.empty()

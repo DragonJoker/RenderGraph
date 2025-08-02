@@ -5,7 +5,6 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/ImageCopy.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -32,7 +31,7 @@ namespace crg
 		, m_copySize{ convert( copySize ) }
 		, m_finalOutputLayout{ finalOutputLayout }
 	{
-		assert( ( pass.images.size() % 2u ) == 0u );
+		assert( m_pass.inputs.size() == m_pass.outputs.size() || m_pass.inputs.size() == 1u || m_pass.outputs.size() == 1u );
 	}
 
 	ImageCopy::ImageCopy( FramePass const & pass
@@ -51,28 +50,47 @@ namespace crg
 			, std::move( passIndex )
 			, std::move( isEnabled ) }
 	{
-		assert( ( pass.images.size() % 2u ) == 0u );
+		assert( m_pass.inputs.size() == m_pass.outputs.size() || m_pass.inputs.size() == 1u || m_pass.outputs.size() == 1u );
 	}
 
 	void ImageCopy::doRecordInto( RecordContext & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcIt = m_pass.images.begin();
-		auto dstIt = std::next( srcIt );
-
-		while ( srcIt != m_pass.images.end() )
+		if ( m_pass.inputs.size() == m_pass.outputs.size() )
 		{
-			auto srcAttach{ srcIt->view( index ) };
-			auto dstAttach{ dstIt->view( index ) };
+			doRecordMultiToMulti( context, commandBuffer, index );
+		}
+		else if ( m_pass.outputs.size() == 1u )
+		{
+			doRecordMultiToSingle( context, commandBuffer, index );
+		}
+		else if ( m_pass.inputs.size() == 1u )
+		{
+			doRecordSingleToMulti( context, commandBuffer, index );
+		}
+	}
+
+	void ImageCopy::doRecordMultiToMulti( RecordContext & context
+		, VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		auto srcIt = m_pass.inputs.begin();
+		auto dstIt = m_pass.outputs.begin();
+
+		while ( srcIt != m_pass.inputs.end()
+			&& dstIt != m_pass.outputs.end() )
+		{
+			auto srcAttach{ srcIt->second->view( index ) };
+			auto dstAttach{ dstIt->second->view( index ) };
 			auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
 			auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
 			// Copy source to target.
-			VkImageCopy copyRegion{ getSubresourceLayers( srcAttach.data->info.subresourceRange )
+			VkImageCopy copyRegion{ getSubresourceLayers( getSubresourceRange( srcAttach ) )
 				, {}
-				, getSubresourceLayers( dstAttach.data->info.subresourceRange )
+				, getSubresourceLayers( getSubresourceRange( dstAttach ) )
 				, {}
-				, m_copySize };
+			, m_copySize };
 			context->vkCmdCopyImage( commandBuffer
 				, srcImage
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
@@ -88,11 +106,121 @@ namespace crg
 					, crg::makeLayoutState( m_finalOutputLayout ) );
 			}
 
-			srcIt = std::next( dstIt );
+			++srcIt;
+			++dstIt;
+		}
+	}
 
-			if ( srcIt != m_pass.images.end() )
+	void ImageCopy::doRecordMultiToSingle( RecordContext & context
+		, VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		std::vector< VkImageCopy > copyRegions;
+		auto dstIt = m_pass.outputs.begin();
+		auto dstAttach{ dstIt->second->view( index ) };
+		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+		auto dstSubresourceRange = getSubresourceLayers( getSubresourceRange( dstAttach ) );
+		auto prvSrcImage{ m_graph.createImage( m_pass.inputs.begin()->second->view( index ).data->image ) };
+
+		for ( auto const & [_, attach] : m_pass.inputs )
+		{
+			auto srcAttach{ attach->view( index ) };
+
+			if ( auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
+				srcImage != prvSrcImage )
 			{
-				dstIt = std::next( srcIt );
+				context->vkCmdCopyImage( commandBuffer
+					, prvSrcImage
+					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					, dstImage
+					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, uint32_t( copyRegions.size() )
+					, copyRegions.data() );
+				copyRegions.clear();
+				prvSrcImage = srcImage;
+			}
+
+			copyRegions.push_back( { getSubresourceLayers( getSubresourceRange( srcAttach ) )
+				, {}
+				, dstSubresourceRange
+				, {}
+			, m_copySize } );
+		}
+
+		if ( !copyRegions.empty() )
+		{
+			context->vkCmdCopyImage( commandBuffer
+				, prvSrcImage
+				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				, dstImage
+				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+				, uint32_t( copyRegions.size() )
+				, copyRegions.data() );
+		}
+
+		if ( m_finalOutputLayout != ImageLayout::eUndefined )
+		{
+			context.memoryBarrier( commandBuffer
+				, dstAttach
+				, crg::makeLayoutState( m_finalOutputLayout ) );
+		}
+	}
+
+	void ImageCopy::doRecordSingleToMulti( RecordContext & context
+		, VkCommandBuffer commandBuffer
+		, uint32_t index )
+	{
+		std::vector< VkImageCopy > copyRegions;
+		auto srcIt = m_pass.inputs.begin();
+		auto srcAttach{ srcIt->second->view( index ) };
+		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
+		auto srcSubresourceRange = getSubresourceLayers( getSubresourceRange( srcAttach ) );
+		auto prvDstImage{ m_graph.createImage( m_pass.outputs.begin()->second->view( index ).data->image ) };
+
+		for ( auto const & [_, attach] : m_pass.outputs )
+		{
+			auto dstAttach{ attach->view( index ) };
+
+			if ( auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+				dstImage != prvDstImage )
+			{
+				context->vkCmdCopyImage( commandBuffer
+					, srcImage
+					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+					, prvDstImage
+					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+					, uint32_t( copyRegions.size() )
+					, copyRegions.data() );
+				copyRegions.clear();
+				prvDstImage = dstImage;
+			}
+
+			copyRegions.push_back( { srcSubresourceRange
+				, {}
+				, getSubresourceLayers( getSubresourceRange( dstAttach ) )
+				, {}
+			, m_copySize } );
+		}
+
+		if ( !copyRegions.empty() )
+		{
+			context->vkCmdCopyImage( commandBuffer
+				, srcImage
+				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				, prvDstImage
+				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+				, uint32_t( copyRegions.size() )
+				, copyRegions.data() );
+		}
+
+		if ( m_finalOutputLayout != ImageLayout::eUndefined )
+		{
+			for ( auto const & [_, attach] : m_pass.outputs )
+			{
+				auto dstAttach{ attach->view( index ) };
+				context.memoryBarrier( commandBuffer
+					, dstAttach
+					, crg::makeLayoutState( m_finalOutputLayout ) );
 			}
 		}
 	}

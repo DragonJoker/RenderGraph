@@ -38,16 +38,6 @@ namespace crg
 		}
 	};
 
-	template<>
-	struct DefaultValueGetterT< IndirectBuffer >
-	{
-		static IndirectBuffer get()
-		{
-			IndirectBuffer const result{ Buffer{ VkBuffer{}, std::string{} }, 0u };
-			return result;
-		}
-	};
-
 	template< typename TypeT >
 	using RawTypeT = typename RawTyperT< TypeT >::Type;
 }

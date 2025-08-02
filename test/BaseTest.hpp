@@ -7,23 +7,37 @@
 
 #include <RenderGraph/Exception.hpp>
 
+#include <gtest/gtest.h>
+
 namespace test
 {
 	std::string getExecutableDirectory();
 
 	struct TestCounts
 	{
-		void initialise( std::string const & suiteName );
-		void cleanup();
+		explicit TestCounts( std::string const & testName )
+			: testName{ testName }
+		{
+		}
+
 		std::string diffLines( std::string const & check
 			, std::string const & ref );
-		void updateName( std::string const & testName );
 
-		std::string suiteName;
 		std::string testName;
-		uint32_t testId = 0u;
-		uint32_t totalCount = 0u;
-		uint32_t errorCount = 0u;
+	};
+
+	class Exception
+		: public std::runtime_error
+	{
+	public:
+		using std::runtime_error::runtime_error;
+	};
+
+	class TestSuite
+		: public ::testing::Environment
+	{
+	public:
+		TestSuite( std::string const & name );
 
 	private:
 		std::unique_ptr< std::streambuf > tclog;
@@ -31,480 +45,75 @@ namespace test
 		std::unique_ptr< std::streambuf > tcerr;
 	};
 
-	struct MessageData
-	{
-		std::string target;
-		std::string error;
-		std::string message;
-		std::string function;
-		int line;
-	};
+	int testsMain( int argc, char ** argv, std::string_view testSuiteName );
 
-	inline MessageData makeMessageData( std::string target
-		, std::string error
-		, std::string message
-		, std::string function
-		, int line )
-	{
-		return MessageData{ std::move( target )
-			, std::move( error )
-			, std::move( message )
-			, std::move( function )
-			, line };
-	}
-
-	class Exception
-		: public std::exception
-	{
-	public:
-		explicit Exception( MessageData data )
-			: data{ std::move( data ) }
-		{
-		}
-
-		inline const char * what()const noexcept override
-		{
-			return data.message.c_str();
-		}
-
-		MessageData data;
-	};
-
-	int reportTestSuite( TestCounts const & testCounts );
-	void reportSuccess( TestCounts & testCounts, MessageData const & data );
-	void reportFailure( TestCounts & testCounts, MessageData const & data );
-	void reportUnhandled( TestCounts & testCounts, MessageData const & data );
 	std::string sortLines( std::string const & value );
 
 #define testStringify( x )\
 	#x
 
-#define testConcat2( x, y )\
-	testStringify( x ) testStringify( y )
-
-#define testConcat3( x, y, z )\
-	testConcat2( x, y ) testStringify( z )
-
-#define testConcat4( x, y, z, w )\
-	testConcat3( x, y, z ) testStringify( w )
-
-#define testSuiteBeginEx2( name, testCounts )\
-		testCounts.initialise( name );\
-		try\
-		{\
-
-#define testSuiteBeginEx( name, testCounts )\
-	int result;\
-	{\
-		testSuiteBeginEx2( name, testCounts )
-
-#define testSuiteBegin( name )\
-	int result;\
-	{\
-		test::TestCounts testCounts;\
-		testSuiteBeginEx2( name, testCounts )
-
-#define testSuiteEnd()\
-		}\
-		catch ( crg::Exception & exc )\
-		{\
-			test::reportUnhandled( testCounts\
-				, test::makeMessageData( testCounts.suiteName\
-					, "GLOBAL"\
-					, exc.what()\
-					, __FUNCTION__\
-					, __LINE__ ) );\
-		}\
-		catch ( ... )\
-		{\
-			test::reportUnhandled( testCounts\
-				, test::makeMessageData( testCounts.suiteName\
-					, "GLOBAL"\
-					, "Unknown"\
-					, __FUNCTION__\
-					, __LINE__ ) );\
-		}\
-		result = test::reportTestSuite( testCounts );\
-		testCounts.cleanup();\
-	}\
-	return result;
+#define nameConcat( X, Y ) nameConcat_( X, Y )
+#define nameConcat_( X, Y ) X ## Y
 
 #define testBegin( name )\
-	testCounts.updateName( name );\
-	auto testName = testCounts.testName;\
-	std::cout << "********************************************************************************" << std::endl;\
-	std::cout << "TEST: " << testCounts.testName << std::endl;\
-	std::cout << "********************************************************************************" << std::endl;\
-	try\
-	{\
+	test::TestCounts testCounts{ name };
 
-#define testEnd()\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "TEST"\
-				, exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "TEST"\
-				, "Unknown"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
-
-#define failure( x )\
-	++testCounts.totalCount;\
-	test::reportFailure( testCounts\
-		, test::makeMessageData( testCounts.testName\
-			, "FAILURE"\
-			, #x\
-			, __FUNCTION__\
-			, __LINE__ ) );
+#define testEnd()
 
 #define require( x )\
 	try\
 	{\
-		++testCounts.totalCount;\
 		if ( !( x ) )\
 		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "COND"\
-				, std::string{ #x }\
-				, __FUNCTION__\
-				, __LINE__ ) };\
+			throw test::Exception{ std::string{ testStringify( x ) } };\
 		}\
 	}\
 	catch ( test::Exception & exc )\
 	{\
-		test::reportFailure( testCounts, exc.data );\
+		GTEST_FATAL_FAILURE_( ( std::string{ testStringify( x )" failed." } + exc.what() ).c_str() );\
 	}\
 	catch ( ... )\
 	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "COND"\
-				, std::string{ #x }\
-				, __FUNCTION__\
-				, __LINE__ ) );\
+		GTEST_FATAL_FAILURE_( "Unknown unhandled exception." );\
 	}
 
 #define check( x )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		if ( !( x ) )\
-		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "REQCOND"\
-				, std::string{ #x }\
-				, __FUNCTION__\
-				, __LINE__ ) };\
-		}\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "REQCOND"\
-				, std::string{ #x } + " " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "REQCOND"\
-				, std::string{ #x }\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
+	EXPECT_TRUE( x );
 
 #define checkEqual( x, y )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		if ( ( x ) != ( y ) )\
-		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) };\
-		}\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " ) " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
-
-#define checkEqualStr( x, y )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		if ( ( x ) != ( y ) )\
-		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) };\
-		}\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
-
-#define checkEqualLines( x, y )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		auto diff = testCounts.diffLines( x, y );\
-		if ( !diff.empty() )\
-		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )\nDIFF(\n" + diff + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) };\
-		}\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
+	EXPECT_EQ( x, y );
 
 #define checkEqualSortedLines( x, y )\
 	try\
 	{\
-		++testCounts.totalCount;\
 		auto diff = testCounts.diffLines( test::sortLines( x ), test::sortLines( y ) );\
 		if ( !diff.empty() )\
 		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )\nDIFF(\n" + diff + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) };\
+			throw test::Exception{ "LHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )\nDIFF(\n" + diff + " )" };\
 		}\
 	}\
 	catch ( test::Exception & exc )\
 	{\
-		test::reportFailure( testCounts, exc.data );\
+		GTEST_FATAL_FAILURE_( ( std::string{ #x" failed." } + exc.what() ).c_str() );\
 	}\
 	catch ( crg::Exception & exc )\
 	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
+		GTEST_FATAL_FAILURE_( ( std::string{ #x" failed." } + exc.what() ).c_str() );\
 	}\
 	catch ( ... )\
 	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "EQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
+		GTEST_FATAL_FAILURE_( "Unknown unhandled exception." );\
 	}
 
-#define checkNotEqual( x, y )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		if ( ( x ) == ( y ) )\
-		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "NEQUAL"\
-				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) };\
-		}\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "NEQUAL"\
-				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " ) " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "NEQUAL"\
-				, "\nLHS(\n" + std::string{ #x } + " )\nRHS(\n" + std::string{ #y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
-
-#define checkNotEqualStr( x, y )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		if ( ( x ) != ( y ) )\
-		{\
-			throw test::Exception{ test::makeMessageData( testCounts.testName\
-				, "NEQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) };\
-		}\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "NEQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " ) " + exc.what()\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "NEQUAL"\
-				, "\nLHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )"\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
-
-#define checkThrow( x )\
-	try\
-	{\
-		++testCounts.totalCount;\
-		( x ); \
-		throw test::Exception{ test::makeMessageData( testCounts.testName\
-			, "THROW"\
-			, std::string{ #x }\
-			, __FUNCTION__\
-			, __LINE__ ) };\
-	}\
-	catch ( test::Exception & exc )\
-	{\
-		test::reportFailure( testCounts, exc.data );\
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportSuccess( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "THROW"\
-				, std::string{ #x } + " " + std::string{ exc.what() }\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "THROW"\
-				, std::string{ #x }\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}
+#define checkThrow( x, excType )\
+	EXPECT_THROW( x, excType );
 
 #define checkNoThrow( x )\
-	try\
+	EXPECT_NO_THROW( x );
+
+#define testSuiteMain()\
+	int main( int argc, char ** argv )\
 	{\
-		++testCounts.totalCount;\
-		( x ); \
-	}\
-	catch ( crg::Exception & exc )\
-	{\
-		test::reportFailure( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "THROW"\
-				, std::string{ #x } + " " + std::string{ exc.what() }\
-				, __FUNCTION__\
-				, __LINE__ ) );\
-	}\
-	catch ( ... )\
-	{\
-		test::reportUnhandled( testCounts\
-			, test::makeMessageData( testCounts.testName\
-				, "NOTHROW"\
-				, std::string{ #x }\
-				, __FUNCTION__\
-				, __LINE__ ) );\
+		return test::testsMain( argc, argv, CRG_TestSuiteNameString );\
 	}
 }

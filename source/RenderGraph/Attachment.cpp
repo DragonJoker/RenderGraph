@@ -3,6 +3,9 @@ This file belongs to FrameGraph.
 See LICENSE file in root folder.
 */
 #include "RenderGraph/Attachment.hpp"
+#include "RenderGraph/BufferData.hpp"
+#include "RenderGraph/BufferViewData.hpp"
+#include "RenderGraph/Exception.hpp"
 #include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/ImageViewData.hpp"
 #include "RenderGraph/WriteDescriptorSet.hpp"
@@ -14,35 +17,29 @@ namespace crg
 {
 	//*********************************************************************************************
 
-	BufferAttachment::BufferAttachment( Buffer buffer )
-		: buffer{ std::move( buffer ) }
+	BufferAttachment::BufferAttachment( BufferViewIdArray views )
+		: buffers{ std::move( views ) }
+		, flags{ FlagKind( buffers.front().data->info.format == PixelFormat::eUNDEFINED
+			? Flag::None
+			: Flag::View ) }
 	{
 	}
 
 	BufferAttachment::BufferAttachment( FlagKind flags
-		, Buffer buffer
-		, DeviceSize offset
-		, DeviceSize range
+		, BufferViewIdArray views
 		, AccessState access )
-		: buffer{ std::move( buffer ) }
-		, range{ offset, range }
-		, flags{ flags }
+		: buffers{ std::move( views ) }
+		, flags{ FlagKind( flags
+			| FlagKind( buffers.front().data->info.format == PixelFormat::eUNDEFINED ? Flag::None : Flag::View ) ) }
 		, wantedAccess{ std::move( access ) }
 	{
 	}
 
-	BufferAttachment::BufferAttachment( FlagKind flags
-		, Buffer buffer
-		, VkBufferView view
-		, DeviceSize offset
-		, DeviceSize range
-		, AccessState access )
-		: buffer{ std::move( buffer ) }
-		, view{ view }
-		, range{ offset, range }
-		, flags{ flags }
-		, wantedAccess{ std::move( access ) }
+	BufferViewId BufferAttachment::buffer( uint32_t index )const
 	{
+		return buffers.size() == 1u
+			? buffers.front()
+			: buffers[index];
 	}
 
 	AccessFlags BufferAttachment::getAccessMask( bool isInput
@@ -110,10 +107,15 @@ namespace crg
 		return result;
 	}
 
+	uint32_t BufferAttachment::getBufferCount()const
+	{
+		return uint32_t( buffers.size() );
+	}
+
 	//*********************************************************************************************
 
-	ImageAttachment::ImageAttachment( ImageViewId view )
-		: views{ 1u, view }
+	ImageAttachment::ImageAttachment( ImageViewIdArray views )
+		: views{std::move( views )  }
 	{
 	}
 
@@ -123,7 +125,6 @@ namespace crg
 		, AttachmentStoreOp storeOp
 		, AttachmentLoadOp stencilLoadOp
 		, AttachmentStoreOp stencilStoreOp
-		, SamplerDesc samplerDesc
 		, ClearValue clearValue
 		, PipelineColorBlendAttachmentState blendState
 		, ImageLayout wantedLayout )
@@ -132,7 +133,6 @@ namespace crg
 		, storeOp{ storeOp }
 		, stencilLoadOp{ stencilLoadOp }
 		, stencilStoreOp{ stencilStoreOp }
-		, samplerDesc{ std::move( samplerDesc ) }
 		, clearValue{ std::move( clearValue ) }
 		, blendState{ std::move( blendState ) }
 		, wantedLayout{ wantedLayout }
@@ -181,28 +181,28 @@ namespace crg
 			else if ( isInput )
 				result = ImageLayout::eTransferSrc;
 		}
-		else if ( isColourAttach() )
+		else if ( isColourTarget() )
 		{
 			result = ImageLayout::eColorAttachment;
 		}
 #if VK_KHR_separate_depth_stencil_layouts
 		else if ( separateDepthStencilLayouts )
 		{
-			if ( isDepthStencilAttach() )
+			if ( isDepthStencilTarget() )
 			{
 				if ( isOutput )
 					result = ImageLayout::eDepthStencilAttachment;
 				else if ( isInput )
 					result = ImageLayout::eDepthStencilReadOnly;
 			}
-			else if ( isStencilAttach() )
+			else if ( isStencilTarget() )
 			{
-				if ( isOutput && isStencilOutputAttach() )
+				if ( isOutput && isStencilOutputTarget() )
 					result = ImageLayout::eStencilAttachment;
-				else if ( isInput && isStencilInputAttach() )
+				else if ( isInput && isStencilInputTarget() )
 					result = ImageLayout::eStencilReadOnly;
 			}
-			else if ( isDepthAttach() )
+			else if ( isDepthTarget() )
 			{
 				if ( isOutput )
 					result = ImageLayout::eDepthAttachment;
@@ -214,12 +214,12 @@ namespace crg
 #endif
 		{
 			if ( isOutput
-				&& ( isDepthAttach() || isStencilOutputAttach() ) )
+				&& ( isDepthTarget() || isStencilOutputTarget() ) )
 			{
 				result = ImageLayout::eDepthStencilAttachment;
 			}
 			else if ( isInput
-				&& ( isDepthAttach() || isStencilInputAttach() ) )
+				&& ( isDepthTarget() || isStencilInputTarget() ) )
 			{
 				result = ImageLayout::eDepthStencilReadOnly;
 			}
@@ -255,7 +255,7 @@ namespace crg
 			if ( isOutput )
 				result |= AccessFlags::eTransferWrite;
 		}
-		else if ( isDepthAttach() || isStencilAttach() )
+		else if ( isDepthTarget() || isStencilTarget() )
 		{
 			if ( isInput )
 				result |= AccessFlags::eDepthStencilAttachmentRead;
@@ -296,7 +296,7 @@ namespace crg
 		{
 			result |= PipelineStageFlags::eTransfer;
 		}
-		else if ( isDepthAttach() || isStencilAttach() )
+		else if ( isDepthTarget() || isStencilTarget() )
 		{
 			result |= PipelineStageFlags::eLateFragmentTests;
 		}
@@ -310,32 +310,60 @@ namespace crg
 
 	//*********************************************************************************************
 
-	Attachment::Attachment( ImageViewId view
-		, Attachment const & origin )
-		: pass{ origin.pass }
-		, binding{ origin.binding }
-		, name{ origin.name + view.data->name }
-		, imageAttach{ origin.imageAttach }
-		, bufferAttach{ origin.bufferAttach }
-		, flags{ origin.flags }
+	Attachment::Attachment( Attachment const & rhs )
+		: pass{ rhs.pass }
+		, name{ rhs.name }
+		, imageAttach{ rhs.imageAttach }
+		, bufferAttach{ rhs.bufferAttach }
+		, flags{ rhs.flags }
 	{
 	}
 
-	Attachment::Attachment( ImageViewId view )
-		: imageAttach{ std::move( view ) }
+	Attachment & Attachment::operator=( Attachment const & rhs )
+	{
+		pass = rhs.pass;
+		name = rhs.name;
+		imageAttach = rhs.imageAttach;
+		bufferAttach = rhs.bufferAttach;
+		flags = rhs.flags;
+
+		return *this;
+	}
+
+	Attachment::Attachment( ImageViewId view
+		, Attachment const & origin )
+		: pass{ origin.pass }
+		, name{ origin.name + view.data->name }
+		, imageAttach{ origin.imageAttach }
+		, flags{ origin.flags }
+	{
+		imageAttach.views = { view };
+	}
+
+	Attachment::Attachment( BufferViewId view
+		, Attachment const & origin )
+		: pass{ origin.pass }
+		, name{ origin.name + view.data->name }
+		, bufferAttach{ origin.bufferAttach }
+		, flags{ origin.flags }
+	{
+		bufferAttach.buffers = { view };
+	}
+
+	Attachment::Attachment( ImageViewIdArray views )
+		: imageAttach{ std::move( views ) }
 		, flags{ FlagKind( Attachment::Flag::Image ) }
 	{
 	}
 
-	Attachment::Attachment( Buffer buffer )
-		: bufferAttach{ std::move( buffer ) }
+	Attachment::Attachment( BufferViewIdArray views )
+		: bufferAttach{ std::move( views ) }
 		, flags{ FlagKind( Attachment::Flag::Buffer ) }
 	{
 	}
 
 	Attachment::Attachment( FlagKind flags
-		, FramePass & pass
-		, uint32_t binding
+		, FramePass const & pass
 		, std::string name
 		, ImageAttachment::FlagKind imageFlags
 		, ImageViewIdArray views
@@ -343,12 +371,11 @@ namespace crg
 		, AttachmentStoreOp storeOp
 		, AttachmentLoadOp stencilLoadOp
 		, AttachmentStoreOp stencilStoreOp
-		, SamplerDesc samplerDesc
 		, ClearValue clearValue
 		, PipelineColorBlendAttachmentState blendState
-		, ImageLayout wantedLayout )
+		, ImageLayout wantedLayout
+		, Token )
 		: pass{ &pass }
-		, binding{ binding }
 		, name{ std::move( name ) }
 		, imageAttach{ imageFlags
 			, std::move( views )
@@ -356,7 +383,6 @@ namespace crg
 			, storeOp
 			, stencilLoadOp
 			, stencilStoreOp
-			, std::move( samplerDesc )
 			, std::move( clearValue )
 			, std::move( blendState )
 			, wantedLayout }
@@ -378,39 +404,41 @@ namespace crg
 	}
 
 	Attachment::Attachment( FlagKind flags
-		, FramePass & pass
-		, uint32_t binding
+		, FramePass const & pass
 		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
-		, Buffer buffer
-		, DeviceSize offset
-		, DeviceSize range
-		, AccessState wantedAccess )
+		, BufferViewIdArray views
+		, AccessState wantedAccess
+		, Token )
 		: pass{ &pass }
-		, binding{ binding }
 		, name{ std::move( name ) }
-		, bufferAttach{ bufferFlags, std::move( buffer ), offset, range, std::move( wantedAccess ) }
+		, bufferAttach{ bufferFlags, std::move( views ), std::move( wantedAccess ) }
 		, flags{ FlagKind( flags
 			| FlagKind( Flag::Buffer ) ) }
 	{
 	}
 
 	Attachment::Attachment( FlagKind flags
-		, FramePass & pass
-		, uint32_t binding
 		, std::string name
-		, BufferAttachment::FlagKind bufferFlags
-		, Buffer buffer
-		, VkBufferView view
-		, DeviceSize offset
-		, DeviceSize range
-		, AccessState wantedAccess )
-		: pass{ &pass }
-		, binding{ binding }
+		, FramePass const * pass
+		, ImageAttachment attach
+		, Token )
+		: pass{ pass }
 		, name{ std::move( name ) }
-		, bufferAttach{ bufferFlags, std::move( buffer ), view, offset, range, std::move( wantedAccess ) }
-		, flags{ FlagKind( flags
-			| FlagKind( Flag::Buffer ) ) }
+		, imageAttach{ std::move( attach ) }
+		, flags{ flags }
+	{
+	}
+
+	Attachment::Attachment( FlagKind flags
+		, std::string name
+		, FramePass const * pass
+		, BufferAttachment attach
+		, Token )
+		: pass{ pass }
+		, name{ std::move( name ) }
+		, bufferAttach{ std::move( attach ) }
+		, flags{ flags }
 	{
 	}
 
@@ -435,11 +463,11 @@ namespace crg
 			: ImageViewId{};
 	}
 
-	VkBuffer Attachment::buffer( uint32_t index )const
+	BufferViewId Attachment::buffer( uint32_t index )const
 	{
 		return isBuffer()
-			? bufferAttach.buffer.buffer( index )
-			: VkBuffer{};
+			? bufferAttach.buffer( index )
+			: BufferViewId{};
 	}
 
 	ImageLayout Attachment::getImageLayout( bool separateDepthStencilLayouts )const
@@ -470,6 +498,43 @@ namespace crg
 		}
 
 		return bufferAttach.getPipelineStageFlags( isCompute );
+	}
+
+	Attachment const * Attachment::getSource( uint32_t index )const
+	{
+		if ( index > 0 && index >= source.size() )
+			CRG_Exception( "Invalid index" );
+
+		if ( source.empty() )
+			return this;
+
+		return source[index].attach.get();
+	}
+
+	void Attachment::initSources()
+	{
+		for ( uint32_t index = 0u; index < source.size(); ++index )
+		{
+			Source & attachSource = source[index];
+			if ( isImage() )
+			{
+				attachSource.attach = std::make_unique< Attachment >( flags
+					, name + std::to_string( index )
+					, attachSource.pass
+					, *attachSource.imageAttach
+					, Token{} );
+				attachSource.imageAttach = &attachSource.attach->imageAttach;
+			}
+			else
+			{
+				attachSource.attach = std::make_unique< Attachment >( flags
+					, name + std::to_string( index )
+					, attachSource.pass
+					, *attachSource.bufferAttach
+					, Token{} );
+				attachSource.bufferAttach = &attachSource.attach->bufferAttach;
+			}
+		}
 	}
 
 	//*********************************************************************************************

@@ -20,10 +20,17 @@ namespace crg
 		using GraphIndexMap = std::map< FrameGraph const *, PassIndexArray >;
 		using ImplicitAction = std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) >;
 
-		struct ImplicitTransition
+		struct ImplicitImageTransition
 		{
 			RunnablePass const * pass;
 			ImageViewId view;
+			ImplicitAction action;
+		};
+
+		struct ImplicitBufferTransition
+		{
+			RunnablePass const * pass;
+			BufferViewId view;
 			ImplicitAction action;
 		};
 
@@ -66,19 +73,30 @@ namespace crg
 		CRG_API void registerImplicitTransition( RunnablePass const & pass
 			, crg::ImageViewId view
 			, ImplicitAction action = []( RecordContext &, VkCommandBuffer, uint32_t ){} );
-		CRG_API void registerImplicitTransition( ImplicitTransition transition );
+		CRG_API void registerImplicitTransition( RunnablePass const & pass
+			, crg::BufferViewId view
+			, ImplicitAction action = []( RecordContext &, VkCommandBuffer, uint32_t ){} );
+		CRG_API void registerImplicitTransition( ImplicitImageTransition transition );
+		CRG_API void registerImplicitTransition( ImplicitBufferTransition transition );
 		CRG_API void runImplicitTransition( VkCommandBuffer commandBuffer
 			, uint32_t index
 			, crg::ImageViewId view );
+		CRG_API void runImplicitTransition( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, crg::BufferViewId view );
 		//@}
 		/**
 		*\name	Buffers
 		*/
 		//@{
-		CRG_API void setAccessState( VkBuffer buffer
+		CRG_API void setAccessState( BufferViewId buffer
+			, AccessState const & accessState );
+		CRG_API AccessState getAccessState( BufferViewId view )const;
+
+		CRG_API void setAccessState( BufferId buffer
 			, BufferSubresourceRange const & subresourceRange
-			, AccessState const & layoutState );
-		CRG_API AccessState const & getAccessState( VkBuffer buffer
+			, AccessState const & accessState );
+		CRG_API AccessState const & getAccessState( BufferId buffer
 			, BufferSubresourceRange const & subresourceRange )const;
 		//@}
 		//@}
@@ -129,21 +147,23 @@ namespace crg
 		*/
 		//@{
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, VkBuffer buffer
+			, BufferId buffer
 			, BufferSubresourceRange const & subresourceRange
 			, AccessState const & initialState
 			, AccessState const & wantedState
 			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, VkBuffer buffer
-			, BufferSubresourceRange const & subresourceRange
-			, AccessFlags initialMask
-			, PipelineStageFlags initialStage
+			, BufferViewId view
+			, AccessState const & initialState
 			, AccessState const & wantedState
 			, bool force = false );
 		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
-			, VkBuffer buffer
+			, BufferId buffer
 			, BufferSubresourceRange const & subresourceRange
+			, AccessState const & wantedState
+			, bool force = false );
+		CRG_API void memoryBarrier( VkCommandBuffer commandBuffer
+			, BufferViewId view
 			, AccessState const & wantedState
 			, bool force = false );
 		//@}
@@ -155,6 +175,40 @@ namespace crg
 		{
 			return &getContext();
 		}
+
+		CRG_API void copyImage( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, ImageViewId srcView
+			, ImageViewId dstView
+			, Extent2D const & extent
+			, ImageLayout finalLayout = ImageLayout::eUndefined );
+		CRG_API void blitImage( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, ImageViewId srcView
+			, ImageViewId dstView
+			, Rect2D const & srcRect
+			, Rect2D const & dstRect
+			, FilterMode filter
+			, ImageLayout finalLayout = ImageLayout::eUndefined );
+		CRG_API void clearAttachment( VkCommandBuffer commandBuffer
+			, ImageViewId dstView
+			, ClearColorValue const & clearValue
+			, ImageLayout finalLayout = ImageLayout::eUndefined );
+		CRG_API void clearAttachment( VkCommandBuffer commandBuffer
+			, ImageViewId dstView
+			, ClearDepthStencilValue const & clearValue
+			, ImageLayout finalLayout = ImageLayout::eUndefined );
+		CRG_API void copyBuffer( VkCommandBuffer commandBuffer
+			, uint32_t index
+			, BufferViewId srcView
+			, BufferViewId dstView
+			, DeviceSize srcOffset, DeviceSize dstOffset
+			, DeviceSize size
+			, AccessState const & finalState = {} );
+		CRG_API void clearBuffer( VkCommandBuffer commandBuffer
+			, BufferViewId dstView
+			, uint32_t clearValue
+			, AccessState const & finalState = {} );
 
 		CRG_API static ImplicitAction copyImage( ImageViewId srcView
 			, ImageViewId dstView
@@ -174,6 +228,16 @@ namespace crg
 		CRG_API static ImplicitAction clearAttachment( ImageViewId view
 			, ClearDepthStencilValue const & clearValue
 			, ImageLayout finalLayout = ImageLayout::eUndefined );
+		CRG_API static ImplicitAction clearBuffer( BufferViewId dstView
+			, AccessState const & finalState = {} );
+		CRG_API static ImplicitAction clearBuffer( BufferViewId dstView
+			, uint32_t clearValue
+			, AccessState const & finalState = {} );
+		CRG_API static ImplicitAction copyBuffer( BufferViewId srcView
+			, BufferViewId dstView
+			, DeviceSize srcOffset, DeviceSize dstOffset
+			, DeviceSize size
+			, AccessState const & finalState = {} );
 
 		ResourceHandler & getHandler()const
 		{
@@ -205,7 +269,8 @@ namespace crg
 		ContextResourcesCache * m_resources;
 		LayerLayoutStatesHandler m_images;
 		AccessStateMap m_buffers;
-		std::vector< ImplicitTransition > m_implicitTransitions;
+		std::vector< ImplicitImageTransition > m_implicitImageTransitions;
+		std::vector< ImplicitBufferTransition > m_implicitBufferTransitions;
 		PassIndexArray m_state;
 		PipelineState m_prevPipelineState{};
 		PipelineState m_currPipelineState{};

@@ -1,16 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
-	<Type Name="crg::Buffer">
-		<DisplayString>{name}</DisplayString>
+	<Type Name="crg::BufferData">
+		<DisplayString>{name,sb} fmt={info.size}</DisplayString>
+		<Expand>
+			<Item Name="name">name</Item>
+			<Item Name="flags">info.flags</Item>
+			<Item Name="size">info.size</Item>
+			<Item Name="usage">info.usage</Item>
+		</Expand>
+	</Type>
+
+	<Type Name="crg::BufferViewData">
+		<DisplayString>{name,sb} fmt={info.format} offset={info.subresourceRange.offset} size={info.subresourceRange.size}</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
 			<Item Name="buffer">buffer</Item>
+			<Item Name="format">info.format</Item>
+			<Item Name="offset">info.subresourceRange.offset</Item>
+			<Item Name="size">info.subresourceRange.size</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::ImageData">
-		<DisplayString>{name} fmt={info.format} mips={info.mipLevels}</DisplayString>
+		<DisplayString>{name,sb} fmt={info.format} mips={info.mipLevels}</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
 			<Item Name="flags">info.flags</Item>
@@ -26,7 +39,7 @@
 	</Type>
 
 	<Type Name="crg::ImageViewData">
-		<DisplayString>{name} fmt={info.format} mipLevel={info.subresourceRange.baseMipLevel} mipCount={info.subresourceRange.levelCount}</DisplayString>
+		<DisplayString>{name,sb} fmt={info.format} mipLevel={info.subresourceRange.baseMipLevel} mipCount={info.subresourceRange.levelCount}</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
 			<Item Name="image">image</Item>
@@ -41,7 +54,7 @@
 	</Type>
 
 	<Type Name="crg::Id&lt;*&gt;">
-		<DisplayString>{id} {data->name}</DisplayString>
+		<DisplayString>{id} {data->name,sb}</DisplayString>
 		<Expand>
 			<Item Name="id">id</Item>
 			<Item Name="data">*data</Item>
@@ -49,23 +62,24 @@
 	</Type>
 
 	<Type Name="crg::BufferAttachment">
-		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Uniform) != 0">Uniform {buffer}</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Storage) != 0">Storage {buffer}</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transfer) != 0">Transfer {buffer}</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transition) != 0">Transition {buffer}</DisplayString>
+		<DisplayString Condition="flags == 0">{buffers[0]}</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Uniform) != 0">Uniform {buffers[0]}</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Storage) != 0">Storage {buffers[0]}</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transfer) != 0">Transfer {buffers[0]}</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::BufferAttachment::Flag::Transition) != 0">Transition {buffers[0]}</DisplayString>
 		<Expand>
-			<Item Name="buffer">buffer</Item>
-			<Item Condition="(flags &amp; crg::BufferAttachment::Flag::View)" Name="view">view</Item>
-			<Item Name="offset">range.offset</Item>
-			<Item Name="range">range.size</Item>
+			<Item Name="buffers">buffers</Item>
+			<Item Name="wantedAccess">wantedAccess</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::ImageAttachment">
+		<DisplayString Condition="flags == 0">{views[0]}</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Sampled) != 0">Sampled {views[0]}"</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Storage) != 0">Storage {views[0]}"</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Transfer) != 0">Transfer {views[0]}"</DisplayString>
 		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Transition) != 0">Transition {views[0]}"</DisplayString>
+		<DisplayString Condition="(flags &amp; crg::ImageAttachment::Flag::Sampled) == 0 &amp;&amp; (flags &amp; crg::ImageAttachment::Flag::Storage) == 0 &amp;&amp; (flags &amp; crg::ImageAttachment::Flag::Transfer) == 0 &amp;&amp; (flags &amp; crg::ImageAttachment::Flag::Transition) == 0">Target {views[0]}</DisplayString>
 		<Expand>
 			<Item Name="views">views</Item>
 			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="loadOp">loadOp</Item>
@@ -74,41 +88,54 @@
 			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="stencilStoreOp">stencilStoreOp</Item>
 			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="blendState">blendState</Item>
 			<Item Condition="!(flags &amp; crg::ImageAttachment::Flag::Sampled) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Storage) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transfer) &amp;&amp; !(flags &amp; crg::ImageAttachment::Flag::Transition)" Name="clearValue">clearValue</Item>
-			<Item Condition="(flags &amp; crg::ImageAttachment::Flag::Sampled)" Name="samplerDesc">samplerDesc</Item>
 			<Item Name="wantedLayout">wantedLayout</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::Attachment">
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {imageAttach} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {imageAttach} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {imageAttach} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">In {bufferAttach} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Out {bufferAttach} {*pass}"</DisplayString>
-		<DisplayString Condition="(flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">InOut {bufferAttach} {*pass}"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags == crg::Attachment::Flag::Image)">Image {imageAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags == crg::Attachment::Flag::Buffer)">Buffer {bufferAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags == crg::Attachment::Flag::Image)">Image {imageAttach}"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags == crg::Attachment::Flag::Buffer)">Buffer {bufferAttach}"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">Image In {imageAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Image Out {imageAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Image InOut {imageAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">Buffer In {bufferAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Buffer Out {bufferAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Buffer InOut {bufferAttach} ({*pass})"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">Image In {imageAttach}"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Image Out {imageAttach}"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Image) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Image InOut {imageAttach}"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) == 0">Buffer In {bufferAttach}"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Buffer Out {bufferAttach}"</DisplayString>
+		<DisplayString Condition="pass == 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Buffer) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Input) != 0 &amp;&amp; (flags &amp; crg::Attachment::Flag::Output) != 0">Buffer InOut {bufferAttach}"</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
 			<Item Condition="(flags &amp; crg::Attachment::Flag::Image)" Name="image">imageAttach</Item>
 			<Item Condition="(flags &amp; crg::Attachment::Flag::Buffer)" Name="buffer">bufferAttach</Item>
-			<Item Name="pass">*pass</Item>
+			<Item Condition="pass != 0" Name="pass">*pass</Item>
+			<Item Condition="pass == 0" Name="source">source</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::FramePass">
-		<DisplayString>{group}/{id} {m_name}</DisplayString>
+		<DisplayString>{group}/{id} {m_name,sb}</DisplayString>
 		<Expand>
-      <Item Name="group">group</Item>
-      <Item Name="id">id</Item>
+			<Item Name="group">group</Item>
+			<Item Name="id">id</Item>
 			<Item Name="name">m_name</Item>
-			<Item Name="images">images</Item>
-			<Item Name="buffers">buffers</Item>
-			<Item Name="passDepends">passDepends</Item>
+			<Item Name="uniforms">uniforms</Item>
+			<Item Name="sampled">sampled</Item>
+			<Item Name="inputs">inputs</Item>
+			<Item Name="inouts">inouts</Item>
+			<Item Name="outputs">outputs</Item>
+			<Item Name="targets">targets</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::FramePassGroup">
-		<DisplayString Condition="parent == 0">{m_name}</DisplayString>
-		<DisplayString Condition="parent != 0">{*parent}/{m_name}</DisplayString>
+		<DisplayString Condition="parent == 0">{m_name,sb}</DisplayString>
+		<DisplayString Condition="parent != 0">{*parent}/{m_name,sb}</DisplayString>
 		<Expand>
 			<Item Name="id">id</Item>
 			<Item Name="name">m_name</Item>
@@ -120,29 +147,29 @@
 	</Type>
 
 	<Type Name="crg::GraphNode">
-		<DisplayString>{kind} {name} {next}</DisplayString>
+		<DisplayString>{kind} {name}</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
 			<Item Name="kind">kind</Item>
-			<Item Name="next">next</Item>
+			<Item Name="pred">prev</Item>
 			<Item Name="attachsToPrev">attachsToPrev</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::FramePassNode">
-		<DisplayString>{kind} {*pass}, {next}</DisplayString>
+		<DisplayString>{kind} {*pass}</DisplayString>
 		<Expand>
 			<Item Name="pass">*pass</Item>
-			<Item Name="next">next</Item>
+			<Item Name="pred">prev</Item>
 			<Item Name="attachsToPrev">attachsToPrev</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::RootNode">
-		<DisplayString>{kind} {name}, {next}</DisplayString>
+		<DisplayString>{kind} {name}</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
-			<Item Name="next">next</Item>
+			<Item Name="pred">prev</Item>
 		</Expand>
 	</Type>
 

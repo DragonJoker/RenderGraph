@@ -6,9 +6,9 @@ See LICENSE file in root folder.
 
 namespace crg::builder
 {
-	void buildGraph( RootNode & rootNode
-		, GraphNodePtrArray const & passes
-		, PassDependencyCache & imgDepsCache
-		, PassDependencyCache & bufDepsCache
-		, AttachmentTransitions const & transitions );
+	AttachmentArray findEndPoints( FramePassArray const & passes );
+	void buildGraph( AttachmentArray const & endPoints
+		, RootNode & root
+		, GraphNodePtrArray & graph
+		, bool separateDepthStencilLayouts );
 }

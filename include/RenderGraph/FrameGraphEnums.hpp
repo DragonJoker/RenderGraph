@@ -110,8 +110,8 @@ namespace crg
 	{
 		eRepeat,
 		eMirroredRepeat,
-		eClampToBorder,
 		eClampToEdge,
+		eClampToBorder,
 		eMirrorClampToEdge,
 	};
 
@@ -207,6 +207,66 @@ namespace crg
 		eGreen = 1000148044,
 		eBlue = 1000148045,
 	};
+
+	enum class BufferCreateFlags : int32_t
+	{
+		eNone = 0x00000000,
+		eSparseBinding = 0x00000001,
+		eSparseResidency = 0x00000002,
+		eSparseAliased = 0x00000004,
+		eProtected = 0x00000008,
+		eDeviceAddressCaptureReplay = 0x00000010,
+		eDescriptorBufferCaptureReplay = 0x00000020,
+		eVideoProfileIndependent = 0x00000040,
+	};
+	CRG_MakeFlags( BufferCreateFlags )
+
+	enum class BufferUsageFlags : int32_t
+	{
+		eNone = 0x00000000,
+		eTransferSrc = 0x00000001,
+		eTransferDst = 0x00000002,
+		eUniformTexelBuffer = 0x00000004,
+		eStorageTexelBuffer = 0x00000008,
+		eUniformBuffer = 0x00000010,
+		eStorageBuffer = 0x00000020,
+		eIndexBuffer = 0x00000040,
+		eVertexBuffer = 0x00000080,
+		eIndirectBuffer = 0x00000100,
+		eShaderDeviceAddress = 0x00020000,
+		eVideoDecodeSrc = 0x00002000,
+		eVideoDecodeDst = 0x00004000,
+		eTransformFeedbackBuffer = 0x00000800,
+		eTransformFeedbackCounterBuffer = 0x00001000,
+		eConditionalRendering = 0x00000200,
+		eAccelerationStructureBuildInputReadOnly = 0x00080000,
+		eAccelerationStructureStorage = 0x00100000,
+		eShaderBindingTable = 0x00000400,
+		eVideoEncodeDst = 0x00008000,
+		eVideoEncodeSrc = 0x00010000,
+		eSamplerDescriptorBuffer = 0x00200000,
+		eResourceDescriptorBuffer = 0x00400000,
+		ePushDescriptorsDescriptorBuffer = 0x04000000,
+		eMicromapBuildInputReadOnly = 0x00800000,
+		eMicromapStorage = 0x01000000,
+		eTileMemory = 0x08000000,
+	};
+	CRG_MakeFlags( BufferUsageFlags )
+
+	enum class MemoryPropertyFlags : int32_t
+	{
+		eNone = 0x0000000,
+		eDeviceLocal = 0x00000001,
+		eHostVisible = 0x00000002,
+		eHostCoherent = 0x00000004,
+		eHostCached = 0x00000008,
+		eLazilyAllocated = 0x00000010,
+		eProtected = 0x00000020,
+		eDeviceCoherent = 0x00000040,
+		eDeviceUncached = 0x00000080,
+		eRdmaCapable = 0x00000100,
+	};
+	CRG_MakeFlags( MemoryPropertyFlags )
 
 	enum class ImageCreateFlags : int32_t
 	{
@@ -344,8 +404,8 @@ namespace crg
 		eMemoryRead = 0x00008000,
 		eMemoryWrite = 0x00010000,
 		eTransformFeedbackWrite = 0x02000000,
-		eTransformFeedback_counterRead = 0x04000000,
-		eTransformFeedback_counterWrite = 0x08000000,
+		eTransformFeedbackCounterRead = 0x04000000,
+		eTransformFeedbackCounterWrite = 0x08000000,
 		eConditionalRenderingRead = 0x00100000,
 		eColorAttachmentReadNonCoherent = 0x00080000,
 		eAccelerationStructureRead = 0x00200000,

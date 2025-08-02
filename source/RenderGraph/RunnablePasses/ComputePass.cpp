@@ -4,13 +4,20 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/ComputePass.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
 
 namespace crg
 {
+	namespace cppss
+	{
+		static bool isPtrEnabled( bool const * v )
+		{
+			return v ? *v : true;
+		}
+	}
+
 	ComputePass::ComputePass( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
@@ -27,14 +34,14 @@ namespace crg
 				, IsComputePassCallback( [](){ return true; } ) }
 			, ruConfig }
 		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : getDefaultV< RunnablePass::InitialiseCallback >()
-			, cpConfig.m_enabled ? std::move( *cpConfig.m_enabled ) : getDefaultV< bool const * >()
+			, cpConfig.m_enabled.has_value() ? std::move( *cpConfig.m_enabled ) : getDefaultV< bool const * >()
 			, cpConfig.m_isEnabled
 			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
 			, cpConfig.m_recordInto ? std::move( *cpConfig.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
 			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
-			, cpConfig.m_groupCountX ? *cpConfig.m_groupCountX : 1u
-			, cpConfig.m_groupCountY ? *cpConfig.m_groupCountY : 1u
-			, cpConfig.m_groupCountZ ? *cpConfig.m_groupCountZ : 1u
+			, cpConfig.m_groupCountX.has_value() ? *cpConfig.m_groupCountX : 1u
+			, cpConfig.m_groupCountY.has_value() ? *cpConfig.m_groupCountY : 1u
+			, cpConfig.m_groupCountZ.has_value() ? *cpConfig.m_groupCountZ : 1u
 			, cpConfig.m_getGroupCountX ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountX ) ) : std::nullopt
 			, cpConfig.m_getGroupCountY ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountY ) ) : std::nullopt
 			, cpConfig.m_getGroupCountZ ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountZ ) ) : std::nullopt
@@ -78,7 +85,7 @@ namespace crg
 	{
 		return ( m_cpConfig.isEnabled
 			? ( *m_cpConfig.isEnabled )()
-			: ( m_cpConfig.enabled ? *m_cpConfig.enabled : true ) );
+			: cppss::isPtrEnabled( m_cpConfig.enabled ) );
 	}
 
 	void ComputePass::doRecordInto( RecordContext & context
@@ -88,9 +95,10 @@ namespace crg
 		m_pipeline.recordInto( context, commandBuffer, index );
 		m_cpConfig.recordInto( context, commandBuffer, index );
 
-		if ( auto indirectBuffer = m_cpConfig.indirectBuffer.buffer.buffer( index ) )
-		{ 
-			context->vkCmdDispatchIndirect( commandBuffer, indirectBuffer, m_cpConfig.indirectBuffer.offset );
+		if ( m_cpConfig.indirectBuffer != defaultV< IndirectBuffer > )
+		{
+			auto indirectBuffer = m_graph.createBuffer( m_cpConfig.indirectBuffer.buffer.data->buffer );
+			context->vkCmdDispatchIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_cpConfig.indirectBuffer.buffer ).offset );
 		}
 		else
 		{

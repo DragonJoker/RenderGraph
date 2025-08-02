@@ -49,6 +49,7 @@ namespace crg
 			, VkRect2D & scissor )const;
 
 	private:
+		RunnableGraph & m_graph;
 		rm::ConfigData m_config;
 		PipelineHolder m_pipeline;
 		VkRenderPass m_renderPass{};

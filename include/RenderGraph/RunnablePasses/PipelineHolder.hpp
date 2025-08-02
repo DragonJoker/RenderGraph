@@ -84,8 +84,8 @@ namespace crg
 		VkDescriptorPool m_descriptorSetPool{};
 		struct DescriptorSet
 		{
-			WriteDescriptorSetArray writes;
-			VkDescriptorSet set;
+			WriteDescriptorSetArray writes{};
+			VkDescriptorSet set{};
 		};
 		std::vector< DescriptorSet > m_descriptorSets;
 

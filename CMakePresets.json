@@ -24,7 +24,9 @@
 			"description": "Developer build configuration using Visual Studio",
 			"inherits": "default-base",
 			"cacheVariables": {
-				"PROJECTS_WARNINGS_AS_ERRORS": true
+				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"PROJECTS_WARNINGS_AS_ERRORS": true,
+				"VCPKG_MANIFEST_FEATURES": "tests"
 			}
 		},
 		{
@@ -91,6 +93,18 @@
 			"inherits": "dev-ninja-base",
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
+			"name": "ci",
+			"installDir": "${sourceDir}/package/Castor3D",
+			"cacheVariables": {
+				"CMAKE_TOOLCHAIN_FILE": "${sourceDir}/external/vcpkg/scripts/buildsystems/vcpkg.cmake",
+				"CRG_BUILD_STATIC": false,
+				"CRG_UNITY_BUILD": true,
+				"CRG_BUILD_TESTS": true,
+				"PROJECTS_WARNINGS_AS_ERRORS": true,
+				"VCPKG_MANIFEST_FEATURES": "tests"
 			}
 		}
 	]

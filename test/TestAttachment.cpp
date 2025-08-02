@@ -3,14 +3,13 @@
 #include <RenderGraph/Attachment.hpp>
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/FramePass.hpp>
-#include <RenderGraph/ImageData.hpp>
 #include <RenderGraph/ResourceHandler.hpp>
 
 namespace
 {
 	constexpr crg::SamplerDesc defaultSamplerDesc{};
 
-	void testSampledAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, SampledAttachment )
 	{
 		testBegin( "testSampledAttachment" )
 		crg::ResourceHandler handler;
@@ -18,34 +17,76 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addSampledView( view, 1u );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Spl" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == 1u )
-		check( attachment.getSamplerDesc() == defaultSamplerDesc )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eShaderReadOnly )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eShaderReadOnly )
+		auto tmpAttach1 = crg::Attachment::createDefault( view );
+		auto tmpAttach2 = crg::Attachment::createDefault( view );
+		tmpAttach2 = std::move( tmpAttach1 );
+		tmpAttach1 = tmpAttach2;
+		auto viewAttach = std::move( tmpAttach2 );
+		pass.addInputSampled( viewAttach, 1u );
+		require( pass.sampled.size() == 1u )
+		auto attachIt = pass.sampled.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment.attach->isImage() )
+		check( attachment.attach->isInput() )
+		check( !attachment.attach->isOutput() )
+		check( !attachment.attach->isClearable() )
+		check( !attachment.attach->isTransitionImageView() )
+		check( !attachment.attach->isTransferImageView() )
+		check( !attachment.attach->imageAttach.isDepthStencilTarget() )
+		check( !attachment.attach->imageAttach.isDepthTarget() )
+		check( !attachment.attach->imageAttach.isStencilTarget() )
+		check( !attachment.attach->imageAttach.isStencilInputTarget() )
+		check( !attachment.attach->imageAttach.isStencilOutputTarget() )
+		check( attachment.attach->name == pass.getGroupName() + "/" + view.data->name + "/Spl" )
+		checkEqual( attachment.attach->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment.attach->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment.attach->view() == view )
+		check( attachIt->first == 1u )
+		check( attachment.sampler == defaultSamplerDesc )
+		checkEqual( attachment.attach->getImageLayout( false ), crg::ImageLayout::eShaderReadOnly )
+		checkEqual( attachment.attach->getImageLayout( true ), crg::ImageLayout::eShaderReadOnly )
 		testEnd()
 	}
 
-	void testImplicitColourAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, SampledImage )
+	{
+		testBegin( "testSampledImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputSampledImage( view, 1u );
+		require( pass.sampled.size() == 1u )
+		auto attachIt = pass.sampled.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment.attach->isImage() )
+		check( attachment.attach->isInput() )
+		check( !attachment.attach->isOutput() )
+		check( !attachment.attach->isClearable() )
+		check( !attachment.attach->isTransitionImageView() )
+		check( !attachment.attach->isTransferImageView() )
+		check( !attachment.attach->imageAttach.isDepthStencilTarget() )
+		check( !attachment.attach->imageAttach.isDepthTarget() )
+		check( !attachment.attach->imageAttach.isStencilTarget() )
+		check( !attachment.attach->imageAttach.isStencilInputTarget() )
+		check( !attachment.attach->imageAttach.isStencilOutputTarget() )
+		check( attachment.attach->name == pass.getGroupName() + "/" + view.data->name + "/Spl" )
+		checkEqual( attachment.attach->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment.attach->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment.attach->view() == view )
+		check( attachIt->first == 1u )
+		check( attachment.sampler == defaultSamplerDesc )
+		checkEqual( attachment.attach->getImageLayout( false ), crg::ImageLayout::eShaderReadOnly )
+		checkEqual( attachment.attach->getImageLayout( true ), crg::ImageLayout::eShaderReadOnly )
+		testEnd()
+	}
+
+	TEST( Attachment, ImplicitColourAttachment )
 	{
 		testBegin( "testImplicitColourAttachment" )
 		crg::ResourceHandler handler;
@@ -55,34 +96,35 @@ namespace
 		check( range.baseArrayLayer == 0 )
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addImplicitColourView( view, crg::ImageLayout::eShaderReadOnly );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Impl" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getSamplerDesc() == defaultSamplerDesc )
-		check( attachment.getImageLayout( false ) == attachment.imageAttach.wantedLayout )
-		check( attachment.getImageLayout( true ) == attachment.imageAttach.wantedLayout )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		auto imageLayout = crg::ImageLayout::eShaderReadOnly;
+		pass.addImplicit( viewAttach, imageLayout );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/Impl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), imageLayout )
+		checkEqual( attachment->getImageLayout( true ), imageLayout )
 		testEnd()
 	}
 
-	void testImplicitDepthAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ImplicitDepthAttachment )
 	{
 		testBegin( "testImplicitDepthAttachment" )
 		crg::ResourceHandler handler;
@@ -90,35 +132,35 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addImplicitDepthView( view, crg::ImageLayout::ePreinitialized );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( attachment.imageAttach.hasFlag( crg::ImageAttachment::Flag::Depth ) )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Impl" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getSamplerDesc() == defaultSamplerDesc )
-		check( attachment.getImageLayout( false ) == attachment.imageAttach.wantedLayout )
-		check( attachment.getImageLayout( true ) == attachment.imageAttach.wantedLayout )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		auto imageLayout = crg::ImageLayout::ePreinitialized;
+		pass.addImplicit( viewAttach, imageLayout );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/Impl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), imageLayout )
+		checkEqual( attachment->getImageLayout( true ), imageLayout )
 		testEnd()
 	}
 
-	void testImplicitDepthStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ImplicitDepthStencilAttachment )
 	{
 		testBegin( "testImplicitDepthStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -126,36 +168,35 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addImplicitDepthStencilView( view, crg::ImageLayout::eShaderReadOnly );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( attachment.imageAttach.hasFlag( crg::ImageAttachment::Flag::Depth ) )
-		check( attachment.imageAttach.hasFlag( crg::ImageAttachment::Flag::Stencil ) )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Impl" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getSamplerDesc() == defaultSamplerDesc )
-		check( attachment.getImageLayout( false ) == attachment.imageAttach.wantedLayout )
-		check( attachment.getImageLayout( true ) == attachment.imageAttach.wantedLayout )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		auto imageLayout = crg::ImageLayout::eShaderReadOnly;
+		pass.addImplicit( viewAttach, imageLayout );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/Impl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), imageLayout )
+		checkEqual( attachment->getImageLayout( true ), imageLayout )
 		testEnd()
 	}
 
-	void testInStorageAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InStorageAttachment )
 	{
 		testBegin( "testInStorageAttachment" )
 		crg::ResourceHandler handler;
@@ -163,33 +204,96 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInputStorageView( view, 1u );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IStr" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputStorage( viewAttach, 1u );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
-	void testOutStorageAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InStorageImage )
+	{
+		testBegin( "testInStorageImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputStorageImage( view, 1u );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
+		testEnd()
+	}
+
+	TEST( Attachment, InStorageBuffer )
+	{
+		testBegin( "testInStorageBuffer" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto view = graph.createView( test::createView( "Test", buffer ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputStorageBuffer( view, 1u );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->bufferAttach.isStorage() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/SB" )
+		check( attachment->buffer() == view )
+		check( attachIt->first == 1u )
+		testEnd()
+	}
+
+	TEST( Attachment, OutStorageAttachment )
 	{
 		testBegin( "testOutStorageAttachment" )
 		crg::ResourceHandler handler;
@@ -197,33 +301,34 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addOutputStorageView( view, 1u );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/OStr" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
+		pass.addOutputStorageImage( view, 1u );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/OStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
-	void testClearOutStorageAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ClearOutStorageAttachment )
 	{
 		testBegin( "testClearOutStorageAttachment" )
 		crg::ResourceHandler handler;
@@ -231,33 +336,34 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addClearableOutputStorageView( view, 1u );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/COStr" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
+		pass.addClearableOutputStorageImage( view, 1u );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/COStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
-	void testInOutStorageAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutStorageAttachment )
 	{
 		testBegin( "testInOutStorageAttachment" )
 		crg::ResourceHandler handler;
@@ -265,33 +371,35 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInOutStorageView( view, 1u );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOStr" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == 1u )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eGeneral )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eGeneral )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutStorage( viewAttach, 1u );
+		require( pass.inouts.size() == 1u )
+		auto attachIt = pass.inouts.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IOStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
 		testEnd()
 	}
 
-	void testInTransferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InTransferAttachment )
 	{
 		testBegin( "testInTransferAttachment" )
 		crg::ResourceHandler handler;
@@ -299,33 +407,92 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addTransferInputView( view );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/It" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eTransferSrc )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eTransferSrc )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputTransfer( viewAttach );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ITrf" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eTransferSrc )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eTransferSrc )
 		testEnd()
 	}
 
-	void testOutTransferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InTransferImage )
+	{
+		testBegin( "testInTransferImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputTransferImage( view );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ITrf" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eTransferSrc )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eTransferSrc )
+		testEnd()
+	}
+
+	TEST( Attachment, InTransferBuffer )
+	{
+		testBegin( "testInTransferBuffer" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto view = graph.createView( test::createView( "Test", buffer ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputTransferBuffer( view );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->isTransferBuffer() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ITrf" )
+		check( attachment->buffer() == view )
+		testEnd()
+	}
+
+	TEST( Attachment, OutTransferAttachment )
 	{
 		testBegin( "testOutTransferAttachment" )
 		crg::ResourceHandler handler;
@@ -333,33 +500,33 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addTransferOutputView( view );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ot" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eTransferDst )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eTransferDst )
+		pass.addOutputTransferImage( view );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/OT" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eTransferDst )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eTransferDst )
 		testEnd()
 	}
 
-	void testInOutTransferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutTransferAttachment )
 	{
 		testBegin( "testInOutTransferAttachment" )
 		crg::ResourceHandler handler;
@@ -367,33 +534,34 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addTransferInOutView( view );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isTransitionView() )
-		check( attachment.isTransferView() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOt" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.binding == crg::InvalidBindingId )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eTransferDst )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eTransferDst )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutTransfer( viewAttach );
+		require( pass.inouts.size() == 1u )
+		auto attachIt = pass.inouts.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IOTrf" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eTransferDst )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eTransferDst )
 		testEnd()
 	}
 
-	void testInColourAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InColourAttachment )
 	{
 		testBegin( "testInColourAttachment" )
 		crg::ResourceHandler handler;
@@ -401,37 +569,76 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInputColourView( view );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ic" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputColourTarget( viewAttach );
+		require( pass.targets.size() == 1u )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRcl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eColorAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
-	void testOutColourAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InColourImage )
+	{
+		testBegin( "testInColourImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputColourTargetImage( view );
+		require( pass.targets.size() == 1u )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRcl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eColorAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eColorAttachment )
+		testEnd()
+	}
+
+	TEST( Attachment, OutColourAttachment )
 	{
 		testBegin( "testOutColourAttachment" )
 		crg::ResourceHandler handler;
@@ -439,37 +646,37 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addOutputColourView( view );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Oc" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eClear )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
+		pass.addOutputColourTarget( view );
+		require( pass.targets.size() == 1u )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ORcl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eClear )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eColorAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
-	void testInOutColourAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutColourAttachment )
 	{
 		testBegin( "testInOutColourAttachment" )
 		crg::ResourceHandler handler;
@@ -477,37 +684,38 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInOutColourView( view );
-		require( pass.images.size() == 1u )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( attachment.isColourAttach() )
-		check( attachment.isColourInOutAttach() )
-		check( attachment.isColourInputAttach() )
-		check( attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOc" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutColourTarget( viewAttach );
+		require( pass.targets.size() == 1u )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( attachment->isColourImageTarget() )
+		check( attachment->isColourInOutImageTarget() )
+		check( attachment->isColourInputImageTarget() )
+		check( attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IORcl" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eColorAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
-	void testInDepthAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InDepthAttachment )
 	{
 		testBegin( "testInDepthAttachment" )
 		crg::ResourceHandler handler;
@@ -515,37 +723,76 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInputDepthView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Id" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilReadOnly )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthReadOnly )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputDepthTarget( viewAttach );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRdp" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilReadOnly )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthReadOnly )
 		testEnd()
 	}
 
-	void testOutDepthAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InDepthImage )
+	{
+		testBegin( "testInDepthImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputDepthTargetImage( view );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRdp" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilReadOnly )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthReadOnly )
+		testEnd()
+	}
+
+	TEST( Attachment, OutDepthAttachment )
 	{
 		testBegin( "testOutDepthAttachment" )
 		crg::ResourceHandler handler;
@@ -553,37 +800,37 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addOutputDepthView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Od" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eClear )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthAttachment )
+		pass.addOutputDepthTarget( view );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ORdp" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eClear )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthAttachment )
 		testEnd()
 	}
 
-	void testInOutDepthAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutDepthAttachment )
 	{
 		testBegin( "testInOutDepthAttachment" )
 		crg::ResourceHandler handler;
@@ -591,37 +838,38 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInOutDepthView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOd" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthAttachment )
-		check( attachment.view() == view )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutDepthTarget( viewAttach );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IORdp" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthAttachment )
+		check( attachment->view() == view )
 		testEnd()
 	}
 
-	void testInDepthStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InDepthStencilAttachment )
 	{
 		testBegin( "testInDepthStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -629,37 +877,76 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInputDepthStencilView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( attachment.imageAttach.isDepthStencilAttach() )
-		check( attachment.imageAttach.isDepthAttach() )
-		check( attachment.imageAttach.isStencilAttach() )
-		check( attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ids" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilReadOnly )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthStencilReadOnly )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputDepthStencilTarget( viewAttach );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRds" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilReadOnly )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthStencilReadOnly )
 		testEnd()
 	}
 
-	void testOutDepthStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InDepthStencilImage )
+	{
+		testBegin( "testInDepthStencilImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputDepthStencilTargetImage( view );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRds" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilReadOnly )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthStencilReadOnly )
+		testEnd()
+	}
+
+	TEST( Attachment, OutDepthStencilAttachment )
 	{
 		testBegin( "testOutDepthStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -667,37 +954,37 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addOutputDepthStencilView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( attachment.imageAttach.isDepthStencilAttach() )
-		check( attachment.imageAttach.isDepthAttach() )
-		check( attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Ods" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eClear )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eClear )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthStencilAttachment )
+		pass.addOutputDepthStencilTarget( view );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ORds" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eClear )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eClear )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eStore )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthStencilAttachment )
 		testEnd()
 	}
 
-	void testInOutDepthStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutDepthStencilAttachment )
 	{
 		testBegin( "testInOutDepthStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -705,37 +992,38 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInOutDepthStencilView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( attachment.imageAttach.isDepthStencilAttach() )
-		check( attachment.imageAttach.isDepthAttach() )
-		check( attachment.imageAttach.isStencilAttach() )
-		check( attachment.imageAttach.isStencilInputAttach() )
-		check( attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOds" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eDepthStencilAttachment )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutDepthStencilTarget( viewAttach );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( attachment->imageAttach.isDepthStencilTarget() )
+		check( attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( attachment->imageAttach.isStencilInputTarget() )
+		check( attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IORds" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eStore )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eDepthStencilAttachment )
 		testEnd()
 	}
 
-	void testInStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InStencilAttachment )
 	{
 		testBegin( "testInStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -743,37 +1031,76 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInputStencilView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( attachment.imageAttach.isStencilAttach() )
-		check( attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Is" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilReadOnly )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eStencilReadOnly )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputStencilTarget( viewAttach );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRst" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilReadOnly )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eStencilReadOnly )
 		testEnd()
 	}
 
-	void testOutStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InStencilImage )
+	{
+		testBegin( "testInStencilImage" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputStencilTargetImage( view );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IRst" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilReadOnly )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eStencilReadOnly )
+		testEnd()
+	}
+
+	TEST( Attachment, OutStencilAttachment )
 	{
 		testBegin( "testOutStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -781,37 +1108,37 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addOutputStencilView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/Os" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eClear )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eStencilAttachment )
+		pass.addOutputStencilTarget( view );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/ORst" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eClear )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eStore )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eStencilAttachment )
 		testEnd()
 	}
 
-	void testInOutStencilAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutStencilAttachment )
 	{
 		testBegin( "testInOutStencilAttachment" )
 		crg::ResourceHandler handler;
@@ -819,37 +1146,38 @@ namespace
 		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		pass.addInOutStencilView( view );
-		require( !pass.images.empty() )
-		auto const & attachment = pass.images[0];
-		check( attachment.isImage() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isClearable() )
-		check( !attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( !attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( attachment.imageAttach.isStencilAttach() )
-		check( attachment.imageAttach.isStencilInputAttach() )
-		check( attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.name == pass.getGroupName() + "/" + view.data->name + "/IOs" )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eDontCare )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eDontCare )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eDepthStencilAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eStencilAttachment )
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutStencilTarget( viewAttach );
+		require( !pass.targets.empty() )
+		auto const & attachment = pass.targets[0];
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isColourImageTarget() )
+		check( !attachment->isColourInOutImageTarget() )
+		check( !attachment->isColourInputImageTarget() )
+		check( !attachment->isColourOutputImageTarget() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isColourTarget() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( attachment->imageAttach.isStencilTarget() )
+		check( attachment->imageAttach.isStencilInputTarget() )
+		check( attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IORst" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eStore )
+		check( attachment->view() == view )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eDepthStencilAttachment )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eStencilAttachment )
 		testEnd()
 	}
 
-	void testImageAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ImageAttachment )
 	{
 		testBegin( "testImageAttachment" )
 		crg::ResourceHandler handler;
@@ -861,467 +1189,509 @@ namespace
 		check( !attachment.isInput() )
 		check( !attachment.isOutput() )
 		check( !attachment.isClearable() )
-		check( attachment.isColourAttach() )
-		check( !attachment.isColourInOutAttach() )
-		check( !attachment.isColourInputAttach() )
-		check( !attachment.isColourOutputAttach() )
-		check( !attachment.isTransitionView() )
-		check( !attachment.isTransferView() )
-		check( attachment.imageAttach.isColourAttach() )
-		check( !attachment.imageAttach.isDepthStencilAttach() )
-		check( !attachment.imageAttach.isDepthAttach() )
-		check( !attachment.imageAttach.isStencilAttach() )
-		check( !attachment.imageAttach.isStencilInputAttach() )
-		check( !attachment.imageAttach.isStencilOutputAttach() )
-		check( attachment.getLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStoreOp() == crg::AttachmentStoreOp::eStore )
-		check( attachment.getStencilLoadOp() == crg::AttachmentLoadOp::eLoad )
-		check( attachment.getStencilStoreOp() == crg::AttachmentStoreOp::eStore )
+		check( attachment.isColourImageTarget() )
+		check( !attachment.isColourInOutImageTarget() )
+		check( !attachment.isColourInputImageTarget() )
+		check( !attachment.isColourOutputImageTarget() )
+		check( !attachment.isTransitionImageView() )
+		check( !attachment.isTransferImageView() )
+		check( attachment.imageAttach.isColourTarget() )
+		check( !attachment.imageAttach.isDepthStencilTarget() )
+		check( !attachment.imageAttach.isDepthTarget() )
+		check( !attachment.imageAttach.isStencilTarget() )
+		check( !attachment.imageAttach.isStencilInputTarget() )
+		check( !attachment.imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment.getLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment.getStoreOp(), crg::AttachmentStoreOp::eStore )
+		checkEqual( attachment.getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+		checkEqual( attachment.getStencilStoreOp(), crg::AttachmentStoreOp::eStore )
 		check( attachment.view() == view )
-		check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
-		check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
+		checkEqual( attachment.getImageLayout( false ), crg::ImageLayout::eColorAttachment )
+		checkEqual( attachment.getImageLayout( true ), crg::ImageLayout::eColorAttachment )
 		testEnd()
 	}
 
-	void testImplicitBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ImplicitBufferAttachment )
 	{
 		testBegin( "testImplicitBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addImplicitBuffer( buffer, 0u, VK_WHOLE_SIZE, {} );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ImplB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		crg::AccessState accessState{};
+		pass.addImplicit( bufferAttach, accessState );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		checkEqual( getSize( buffer ), 1024u )
+		checkEqual( getSize( bufferv ), 1024u )
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/Impl" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		checkEqual( attachment->getAccessMask(), accessState.access )
+		checkEqual( attachment->getPipelineStageFlags( true ), accessState.pipelineStage )
 		testEnd()
 	}
 
-	void testUniformBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, UniformBufferAttachment )
 	{
 		testBegin( "testUniformBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addUniformBuffer( buffer, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/UB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addInputUniformBuffer( bufferv, 1u );
+		require( pass.uniforms.size() == 1u )
+		auto attachIt = pass.uniforms.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/UB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testInputStorageBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InputStorageBufferAttachment )
 	{
 		testBegin( "testInputStorageBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addInputStorageBuffer( buffer, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ISB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInputStorage( bufferAttach, 1u );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testOutputStorageBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, OutputStorageBufferAttachment )
 	{
 		testBegin( "testOutputStorageBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addOutputStorageBuffer( buffer, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addOutputStorageBuffer( bufferv, 1u );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testClearableOutputStorageBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ClearableOutputStorageBufferAttachment )
 	{
 		testBegin( "testClearableOutputStorageBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addClearableOutputStorageBuffer( buffer, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addClearableOutputStorageBuffer( bufferv, 1u );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testInOutStorageBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutStorageBufferAttachment )
 	{
 		testBegin( "testInOutStorageBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addInOutStorageBuffer( buffer, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/IOSB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInOutStorage( bufferAttach, 1u );
+		require( pass.inouts.size() == 1u )
+		auto attachIt = pass.inouts.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testImplicitBufferViewAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ImplicitBufferViewAttachment )
 	{
 		testBegin( "testImplicitBufferViewAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto view = VkBufferView( 2 );
-		pass.addImplicitBufferView( buffer, view, 0u, VK_WHOLE_SIZE, {} );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( attachment.isTransitionBuffer() )
-		check( attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ImplBV" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.view == view )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addImplicit( bufferAttach, crg::AccessState{} );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( attachment->isTransitionBuffer() )
+		check( attachment->isTransitionBufferView() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/Impl" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testUniformBufferViewAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, UniformBufferViewAttachment )
 	{
 		testBegin( "testUniformBufferViewAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto view = VkBufferView( 2 );
-		pass.addUniformBufferView( buffer, view, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( attachment.isUniformBuffer() )
-		check( attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/UBV" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.view == view )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		pass.addInputUniformBuffer( bufferv, 1u );
+		require( !pass.uniforms.empty() )
+		auto attachIt = pass.uniforms.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( attachment->isUniformBuffer() )
+		check( attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/UB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testInputStorageBufferViewAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InputStorageBufferViewAttachment )
 	{
 		testBegin( "testInputStorageBufferViewAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto view = VkBufferView( 2 );
-		pass.addInputStorageBufferView( buffer, view, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ISBV" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.view == view )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInputStorage( bufferAttach, 1u );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testOutputStorageBufferViewAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, OutputStorageBufferViewAttachment )
 	{
 		testBegin( "testOutputStorageBufferViewAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto view = VkBufferView( 2 );
-		pass.addOutputStorageBufferView( buffer, view, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSBV" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.view == view )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		pass.addOutputStorageBuffer( bufferv, 1u );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testClearableOutputStorageBufferViewAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, ClearableOutputStorageBufferViewAttachment )
 	{
 		testBegin( "testClearableOutputStorageBufferViewAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto view = VkBufferView( 2 );
-		pass.addClearableOutputStorageBufferView( buffer, view, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OSBV" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.view == view )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		pass.addClearableOutputStorageBuffer( bufferv, 1u );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testInOutStorageBufferViewAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutStorageBufferViewAttachment )
 	{
 		testBegin( "testInOutStorageBufferViewAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto view = VkBufferView( 2 );
-		pass.addInOutStorageBufferView( buffer, view, 0u, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( attachment.isBufferView() )
-		check( !attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( attachment.isStorageBuffer() )
-		check( attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/IOSBV" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.view == view )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInOutStorage( bufferAttach, 1u );
+		require( pass.inouts.size() == 1u )
+		auto attachIt = pass.inouts.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testInputTransferBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InputTransferBufferAttachment )
 	{
 		testBegin( "testInputTransferBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addTransferInputBuffer( buffer, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( !attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/ITB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInputTransfer( bufferAttach );
+		require( pass.inputs.size() == 1u )
+		auto attachIt = pass.inputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/ITrf" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testOutputTransferBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, OutputTransferBufferAttachment )
 	{
 		testBegin( "testOutputTransferBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addTransferOutputBuffer( buffer, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( !attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/OTB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addOutputTransferBuffer( bufferv );
+		require( pass.outputs.size() == 1u )
+		auto attachIt = pass.outputs.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OTB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testInOutTransferBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, InOutTransferBufferAttachment )
 	{
 		testBegin( "testInOutTransferBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		pass.addTransferInOutBuffer( buffer, 0u, VK_WHOLE_SIZE );
-		require( !pass.buffers.empty() )
-		auto const & attachment = pass.buffers[0];
-		check( attachment.isBuffer() )
-		check( attachment.isInput() )
-		check( attachment.isOutput() )
-		check( !attachment.isBufferView() )
-		check( attachment.isTransferBuffer() )
-		check( !attachment.isClearableBuffer() )
-		check( !attachment.isStorageBuffer() )
-		check( !attachment.isStorageBufferView() )
-		check( !attachment.isUniformBuffer() )
-		check( !attachment.isUniformBufferView() )
-		check( !attachment.isTransitionBuffer() )
-		check( !attachment.isTransitionBufferView() )
-		check( attachment.name == pass.getGroupName() + "/" + buffer.name + "/IOTB" )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInOutTransfer( bufferAttach );
+		require( pass.inouts.size() == 1u )
+		auto attachIt = pass.inouts.begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOTrf" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
 		testEnd()
 	}
 
-	void testBufferAttachment( test::TestCounts & testCounts )
+	TEST( Attachment, BufferAttachment )
 	{
 		testBegin( "testBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		crg::Buffer buffer{ VkBuffer( 1 ), "buffer" };
-		auto const attachment = crg::Attachment::createDefault( buffer );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto attachment = crg::Attachment::createDefault( bufferv );
 		check( attachment.isBuffer() )
 		check( !attachment.isInput() )
 		check( !attachment.isOutput() )
@@ -1334,54 +1704,132 @@ namespace
 		check( !attachment.isUniformBufferView() )
 		check( !attachment.isTransitionBuffer() )
 		check( !attachment.isTransitionBufferView() )
-		check( attachment.buffer() == buffer.buffer() )
-		check( attachment.bufferAttach.buffer == buffer )
+		check( attachment.buffer() == bufferv )
+		check( attachment.bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, AttachmentMerge )
+	{
+		testBegin( "testAttachmentMerge" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "buffer1" ) );
+		auto buffer1v = graph.createView( test::createView( "buffer1v", buffer, 0u, 512u ) );
+		auto buffer2v = graph.createView( test::createView( "buffer2v", buffer, 512u, 512u ) );
+		auto image = graph.createImage( test::createImage( "image1", crg::PixelFormat::eR32G32B32A32_SFLOAT, 2u, 2u ) );
+		auto image1v = graph.createView( test::createView( "image1v", image, 0u, 1u, 0u, 1u ) );
+		auto image2v = graph.createView( test::createView( "image2v", image, 1u, 1u, 1u, 1u ) );
+		{
+			// Empty attachment list
+			check( graph.mergeAttachments( {} ) == nullptr )
+		}
+		{
+			// Single buffer attachment in list
+			auto attachment = crg::Attachment::createDefault( buffer1v );
+			checkThrow( attachment.getSource( 1u ), crg::Exception );
+			check( attachment.getSource( 0u ) == &attachment );
+			check( graph.mergeAttachments( { &attachment } ) == &attachment );
+		}
+		{
+			// Single image attachment in list
+			auto attachment = crg::Attachment::createDefault( image1v );
+			check( graph.mergeAttachments( { &attachment } ) == &attachment );
+		}
+		{
+			// Mixed attachments in list
+			auto attachment1 = crg::Attachment::createDefault( image1v );
+			auto attachment2 = crg::Attachment::createDefault( buffer1v );
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+		}
+		{
+			// Empty image attachments in list
+			auto attachment1 = crg::Attachment::createDefault( image1v );
+			attachment1.imageAttach.views.clear();
+			auto attachment2 = crg::Attachment::createDefault( image2v );
+			attachment2.imageAttach.views.clear();
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+		}
+		{
+			// Empty buffer attachments in list
+			auto attachment1 = crg::Attachment::createDefault( buffer1v );
+			attachment1.bufferAttach.buffers.clear();
+			auto attachment2 = crg::Attachment::createDefault( buffer2v );
+			attachment2.bufferAttach.buffers.clear();
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+		}
+		{
+			// Image attachments with different pass count
+			auto attachment1 = crg::Attachment::createDefault( image1v );
+			auto attachment2 = crg::Attachment::createDefault( image2v );
+			attachment2.imageAttach.views.clear();
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+		}
+		{
+			// Buffer attachments with different pass count
+			auto attachment1 = crg::Attachment::createDefault( buffer1v );
+			auto attachment2 = crg::Attachment::createDefault( buffer2v );
+			attachment2.bufferAttach.buffers.clear();
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+		}
+		{
+			// Image attachments
+			auto attachment1 = crg::Attachment::createDefault( image1v );
+			auto attachment2 = crg::Attachment::createDefault( image2v );
+			checkNoThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ) );
+			auto & attachment = *graph.mergeAttachments( { &attachment1, &attachment2 } );
+			check( attachment.isImage() )
+			check( !attachment.isInput() )
+			check( !attachment.isOutput() )
+			check( !attachment.isClearable() )
+			check( attachment.isColourImageTarget() )
+			check( !attachment.isColourInOutImageTarget() )
+			check( !attachment.isColourInputImageTarget() )
+			check( !attachment.isColourOutputImageTarget() )
+			check( !attachment.isTransitionImageView() )
+			check( !attachment.isTransferImageView() )
+			check( attachment.imageAttach.isColourTarget() )
+			check( !attachment.imageAttach.isDepthStencilTarget() )
+			check( !attachment.imageAttach.isDepthTarget() )
+			check( !attachment.imageAttach.isStencilTarget() )
+			check( !attachment.imageAttach.isStencilInputTarget() )
+			check( !attachment.imageAttach.isStencilOutputTarget() )
+			checkEqual( attachment.getLoadOp(), crg::AttachmentLoadOp::eLoad )
+			checkEqual( attachment.getStoreOp(), crg::AttachmentStoreOp::eStore )
+			checkEqual( attachment.getStencilLoadOp(), crg::AttachmentLoadOp::eLoad )
+			checkEqual( attachment.getStencilStoreOp(), crg::AttachmentStoreOp::eStore )
+			check( attachment.getImageLayout( false ) == crg::ImageLayout::eColorAttachment )
+			check( attachment.getImageLayout( true ) == crg::ImageLayout::eColorAttachment )
+			check( attachment.pass == nullptr )
+			check( attachment.view().data->source.size() == 2u )
+			check( attachment.view().data->source[0] == image1v )
+			check( attachment.view().data->source[1] == image2v )
+		}
+		{
+			// Buffer attachments
+			auto attachment1 = crg::Attachment::createDefault( buffer1v );
+			auto attachment2 = crg::Attachment::createDefault( buffer2v );
+			checkNoThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ) );
+			auto & attachment = *graph.mergeAttachments( { &attachment1, &attachment2 } );
+			check( attachment.isBuffer() )
+			check( !attachment.isInput() )
+			check( !attachment.isOutput() )
+			check( !attachment.isBufferView() )
+			check( !attachment.isTransferBuffer() )
+			check( !attachment.isClearableBuffer() )
+			check( !attachment.isStorageBuffer() )
+			check( !attachment.isStorageBufferView() )
+			check( !attachment.isUniformBuffer() )
+			check( !attachment.isUniformBufferView() )
+			check( !attachment.isTransitionBuffer() )
+			check( !attachment.isTransitionBufferView() )
+			check( attachment.pass == nullptr )
+			check( attachment.buffer().data->source.size() == 2u )
+			check( attachment.buffer().data->source[0] == buffer1v )
+			check( attachment.buffer().data->source[1] == buffer2v )
+		}
 		testEnd()
 	}
 }
 
-int main( int argc, char ** argv )
-{
-	testSuiteBegin( "TestAttachment" )
-	testSampledAttachment( testCounts );
-	testImplicitColourAttachment( testCounts );
-	testImplicitDepthAttachment( testCounts );
-	testImplicitDepthStencilAttachment( testCounts );
-	testInStorageAttachment( testCounts );
-	testOutStorageAttachment( testCounts );
-	testClearOutStorageAttachment( testCounts );
-	testInOutStorageAttachment( testCounts );
-	testInTransferAttachment( testCounts );
-	testOutTransferAttachment( testCounts );
-	testInOutTransferAttachment( testCounts );
-	testInColourAttachment( testCounts );
-	testOutColourAttachment( testCounts );
-	testInOutColourAttachment( testCounts );
-	testInDepthAttachment( testCounts );
-	testOutDepthAttachment( testCounts );
-	testInOutDepthAttachment( testCounts );
-	testInDepthStencilAttachment( testCounts );
-	testOutDepthStencilAttachment( testCounts );
-	testInOutDepthStencilAttachment( testCounts );
-	testInStencilAttachment( testCounts );
-	testOutStencilAttachment( testCounts );
-	testInOutStencilAttachment( testCounts );
-	testImageAttachment( testCounts );
-	testImplicitBufferAttachment( testCounts );
-	testUniformBufferAttachment( testCounts );
-	testInputStorageBufferAttachment( testCounts );
-	testOutputStorageBufferAttachment( testCounts );
-	testClearableOutputStorageBufferAttachment( testCounts );
-	testInOutStorageBufferAttachment( testCounts );
-	testImplicitBufferViewAttachment( testCounts );
-	testUniformBufferViewAttachment( testCounts );
-	testInputStorageBufferViewAttachment( testCounts );
-	testOutputStorageBufferViewAttachment( testCounts );
-	testClearableOutputStorageBufferViewAttachment( testCounts );
-	testInOutStorageBufferViewAttachment( testCounts );
-	testInputTransferBufferAttachment( testCounts );
-	testOutputTransferBufferAttachment( testCounts );
-	testInOutTransferBufferAttachment( testCounts );
-	testBufferAttachment( testCounts );
-	testSuiteEnd()
-}
+testSuiteMain()

@@ -4,8 +4,6 @@
 #include <RenderGraph/DotExport.hpp>
 #include <RenderGraph/GraphContext.hpp>
 #include <RenderGraph/GraphVisitor.hpp>
-#include <RenderGraph/ImageData.hpp>
-#include <RenderGraph/ImageViewData.hpp>
 #include <RenderGraph/FrameGraph.hpp>
 #include <RenderGraph/RunnableGraph.hpp>
 
@@ -40,24 +38,15 @@ namespace test
 			return stream;
 		}
 
-		void displayPasses( TestCounts const & testCounts
-			, std::ostream & stream
-			, crg::RunnableGraph const & value
-			, crg::dot::Config const & cfg )
-		{
-			crg::dot::displayPasses( stream, value, cfg );
-			std::ofstream file{ testCounts.testName + ".dot" };
-			crg::dot::displayPasses( file, value, { true, true, true, false } );
-		}
-
 		void displayTransitions( TestCounts const & testCounts
 			, std::ostream & stream
 			, crg::RunnableGraph const & value
-			, crg::dot::Config const & cfg )
+			, crg::dot::Config cfg )
 		{
+			cfg.toRemove = testCounts.testName + "/";
 			crg::dot::displayTransitions( stream, value, cfg );
-			std::ofstream file{ testCounts.testName + "_transitions.dot" };
-			crg::dot::displayTransitions( file, value, { true, true, true, false } );
+			std::ofstream file{ testCounts.testName + ".dot" };
+			crg::dot::displayTransitions( file, value, { true, true, true, false, cfg.toRemove } );
 		}
 
 		crg::ImageViewType getViewType( crg::ImageType type
@@ -92,6 +81,48 @@ namespace test
 				}
 			}
 		}
+
+		void checkRunnable( TestCounts const & testCounts
+			, crg::RunnableGraph * runnable
+			, std::stringstream & stream )
+		{
+			require( runnable )
+			test::display( testCounts, stream, *runnable );
+			checkNoThrow( runnable->record() )
+			checkNoThrow( runnable->run( VkQueue{} ) )
+		}
+	}
+
+	crg::BufferData createBuffer( std::string name )
+	{
+		return crg::BufferData{ std::move( name )
+			, crg::BufferCreateFlags::eNone
+			, 1024
+			, ( crg::BufferUsageFlags::eUniformBuffer
+				| crg::BufferUsageFlags::eStorageBuffer
+				| crg::BufferUsageFlags::eUniformTexelBuffer
+				| crg::BufferUsageFlags::eStorageTexelBuffer ) };
+	}
+
+	crg::BufferViewData createView( std::string name
+		, crg::BufferId buffer
+		, crg::PixelFormat format )
+	{
+		return createView( std::move( name )
+			, buffer
+			, 0u, buffer.data->info.size
+			, format );
+	}
+
+	crg::BufferViewData createView( std::string name
+		, crg::BufferId buffer
+		, crg::DeviceSize offset, crg::DeviceSize size
+		, crg::PixelFormat format )
+	{
+		return crg::BufferViewData{ std::move( name )
+			, buffer
+			, { offset, size }
+			, format };
 	}
 
 	crg::ImageData createImage( std::string name
@@ -120,6 +151,22 @@ namespace test
 			, crg::ImageType::e1D
 			, format
 			, { 1024 }
+			, ( crg::ImageUsageFlags::eColorAttachment
+				| crg::ImageUsageFlags::eSampled )
+			, mipLevels
+			, arrayLayers };
+	}
+
+	crg::ImageData createImage3D( std::string name
+		, crg::PixelFormat format
+		, uint32_t mipLevels
+		, uint32_t arrayLayers )
+	{
+		return crg::ImageData{ std::move( name )
+			, crg::ImageCreateFlags::eNone
+			, crg::ImageType::e3D
+			, format
+			, { 1024, 1024u, 64u }
 			, ( crg::ImageUsageFlags::eColorAttachment
 				| crg::ImageUsageFlags::eSampled )
 			, mipLevels
@@ -399,6 +446,12 @@ namespace test
 				++counter;
 				return VK_SUCCESS;
 			} );
+		context.vkCreateBufferView = PFN_vkCreateBufferView( []( VkDevice, const VkBufferViewCreateInfo *, const VkAllocationCallbacks *, VkBufferView * pBuffer )
+			{
+				*pBuffer = VkBufferView( counter.load() );
+				++counter;
+				return VK_SUCCESS;
+			} );
 		context.vkAllocateMemory = PFN_vkAllocateMemory( []( VkDevice, const VkMemoryAllocateInfo *, const VkAllocationCallbacks *, VkDeviceMemory * pMemory )
 			{
 				*pMemory = VkDeviceMemory( counter.load() );
@@ -484,6 +537,7 @@ namespace test
 		context.vkDestroyDescriptorPool = PFN_vkDestroyDescriptorPool( []( VkDevice, VkDescriptorPool, const VkAllocationCallbacks * ){} );
 		context.vkFreeDescriptorSets = PFN_vkFreeDescriptorSets( []( VkDevice, VkDescriptorPool, uint32_t, const VkDescriptorSet * ){ return VK_SUCCESS; } );
 		context.vkDestroyBuffer = PFN_vkDestroyBuffer( []( VkDevice, VkBuffer, const VkAllocationCallbacks * ){} );
+		context.vkDestroyBufferView = PFN_vkDestroyBufferView( []( VkDevice, VkBufferView, const VkAllocationCallbacks * ){} );
 		context.vkFreeMemory = PFN_vkFreeMemory( []( VkDevice, VkDeviceMemory, const VkAllocationCallbacks * ){} );
 		context.vkDestroyRenderPass = PFN_vkDestroyRenderPass( []( VkDevice, VkRenderPass, const VkAllocationCallbacks * ){} );
 		context.vkDestroyFramebuffer = PFN_vkDestroyFramebuffer( []( VkDevice, VkFramebuffer, const VkAllocationCallbacks * ){} );
@@ -581,15 +635,12 @@ namespace test
 		return context;
 	}
 
-	std::stringstream checkRunnable( TestCounts & testCounts
+	std::string checkRunnable( TestCounts & testCounts
 		, crg::RunnableGraph * runnable )
 	{
-		require( runnable )
-		std::stringstream stream;
-		test::display( testCounts, stream, *runnable );
-		checkNoThrow( runnable->record() )
-		checkNoThrow( runnable->run( VkQueue{} ) )
-		return stream;
+		std::stringstream result;
+		checkRunnable( testCounts, runnable, result );
+		return result.str();
 	}
 
 	void display( TestCounts const & testCounts
@@ -616,25 +667,8 @@ namespace test
 		crg::dot::displayTransitions( tmp, value, { false, false, true, false } );
 		crg::dot::displayTransitions( tmp, value, { false, false, false, true } );
 		crg::dot::displayTransitions( tmp, value, { false, false, false, false } );
-		crg::dot::displayPasses( tmp, value, { true, true, true, true } );
-		crg::dot::displayPasses( tmp, value, { true, true, true, false } );
-		crg::dot::displayPasses( tmp, value, { true, true, false, true } );
-		crg::dot::displayPasses( tmp, value, { true, true, false, false } );
-		crg::dot::displayPasses( tmp, value, { true, false, true, true } );
-		crg::dot::displayPasses( tmp, value, { true, false, true, false } );
-		crg::dot::displayPasses( tmp, value, { true, false, false, true } );
-		crg::dot::displayPasses( tmp, value, { true, false, false, false } );
-		crg::dot::displayPasses( tmp, value, { false, true, true, true } );
-		crg::dot::displayPasses( tmp, value, { false, true, true, false } );
-		crg::dot::displayPasses( tmp, value, { false, true, false, true } );
-		crg::dot::displayPasses( tmp, value, { false, true, false, false } );
-		crg::dot::displayPasses( tmp, value, { false, false, true, true } );
-		crg::dot::displayPasses( tmp, value, { false, false, true, false } );
-		crg::dot::displayPasses( tmp, value, { false, false, false, true } );
-		crg::dot::displayPasses( tmp, value, { false, false, false, false } );
 
-		displayTransitions( testCounts, tmp, value, { withColours, withIds, withGroups } );
-		displayPasses( testCounts, stream, value, { withColours, withIds, withGroups } );
+		displayTransitions( testCounts, stream, value, { withColours, withIds, withGroups } );
 	}
 
 	void display( TestCounts const & testCounts
@@ -664,7 +698,7 @@ namespace test
 				, runGraph
 				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
 					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer, uint32_t i ){ doRecordInto( ctx, i ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } )
 					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } )
 					, crg::RunnablePass::IsEnabledCallback( [enabled](){ return enabled; } ) }
 				, std::move( config ) }
@@ -687,7 +721,7 @@ namespace test
 				, runGraph
 				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
 					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer, uint32_t i ){ doRecordInto( ctx, i ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } )
 					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } ) }
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
@@ -708,7 +742,7 @@ namespace test
 				, runGraph
 				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
 					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer, uint32_t i ){ doRecordInto( ctx, i ); } ) }
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } ) }
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -726,7 +760,8 @@ namespace test
 				, context
 				, runGraph
 				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) }
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordTargetsInto( ctx, cb, i ); } ) }
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -735,13 +770,76 @@ namespace test
 
 	private:
 		void doRecordInto( crg::RecordContext & context
+			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
-			for ( auto & attach : m_pass.images )
+			for ( auto & [binding, attach] : m_pass.uniforms )
 			{
-				auto view = attach.view( index );
+				auto buffer = crg::resolveView( attach->buffer( index ), index );
+				context.setAccessState( buffer
+					, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+			}
+			for ( auto & [binding, attach] : m_pass.sampled )
+			{
+				auto view = attach.attach->view( index );
+				context.runImplicitTransition( commandBuffer, index, view );
 				context.setLayoutState( crg::resolveView( view, index )
-					, crg::makeLayoutState( attach.getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+					, crg::makeLayoutState( attach.attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+			}
+			for ( auto & [binding, attach] : m_pass.inputs )
+			{
+				if ( attach->isImage() )
+				{
+					auto view = attach->view( index );
+					context.runImplicitTransition( commandBuffer, index, view );
+					context.setLayoutState( crg::resolveView( view, index )
+						, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+				}
+				else
+				{
+					auto buffer = crg::resolveView( attach->buffer( index ), index );
+					context.setAccessState( buffer
+						, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+				}
+			}
+			for ( auto & [binding, attach] : m_pass.inouts )
+			{
+				if ( attach->isImage() )
+				{
+					auto view = attach->view( index );
+					context.runImplicitTransition( commandBuffer, index, view );
+					context.setLayoutState( crg::resolveView( view, index )
+						, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+				}
+				else
+				{
+					auto buffer = crg::resolveView( attach->buffer( index ), index );
+					context.setAccessState( buffer
+						, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+				}
+			}
+			for ( auto & [binding, attach] : m_pass.outputs )
+			{
+				if ( attach->isImage() )
+				{
+					auto view = attach->view( index );
+					context.runImplicitTransition( commandBuffer, index, view );
+					context.setLayoutState( crg::resolveView( view, index )
+						, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+				}
+				else
+				{
+					auto buffer = crg::resolveView( attach->buffer( index ), index );
+					context.setAccessState( buffer
+						, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+				}
+			}
+			for ( auto attach : m_pass.targets )
+			{
+				auto view = attach->view( index );
+				context.runImplicitTransition( commandBuffer, index, view );
+				context.setLayoutState( crg::resolveView( view, index )
+					, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
 			}
 
 			m_checkViews( m_testCounts
@@ -751,9 +849,44 @@ namespace test
 				, index );
 		}
 
+		void doRecordTargetsInto( crg::RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, uint32_t index )
+		{
+			for ( auto attach : m_pass.targets )
+			{
+				auto view = attach->view( index );
+				context.runImplicitTransition( commandBuffer, index, view );
+				context.setLayoutState( crg::resolveView( view, index )
+					, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+			}
+		}
+
 		test::TestCounts & m_testCounts;
 		crg::PipelineStageFlags m_pipelineStageFlags;
 		CheckViews m_checkViews;
+	};
+
+	class DummyRunnableNoRecord
+		: public crg::RunnablePass
+	{
+	public:
+		DummyRunnableNoRecord( crg::FramePass const & framePass
+			, crg::GraphContext & context
+			, crg::RunnableGraph & runGraph
+			, crg::PipelineStageFlags pipelineStageFlags
+			, crg::ru::Config config )
+			: crg::RunnablePass{ framePass
+				, context
+				, runGraph
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) }
+				, std::move( config ) }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+		{
+		}
+
+		crg::PipelineStageFlags m_pipelineStageFlags;
 	};
 
 	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
@@ -828,6 +961,19 @@ namespace test
 			, std::move( config ) );
 	}
 
+	crg::RunnablePassPtr createDummyNoRecord( crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, crg::PipelineStageFlags pipelineStageFlags
+		, crg::ru::Config config )
+	{
+		return std::make_unique< DummyRunnableNoRecord >( framePass
+			, context
+			, runGraph
+			, pipelineStageFlags
+			, std::move( config ) );
+	}
+
 	void checkDummy( [[maybe_unused]] test::TestCounts & testCounts
 		, [[maybe_unused]] crg::FramePass const & framePass
 		, [[maybe_unused]] crg::RunnableGraph const & graph
@@ -835,5 +981,113 @@ namespace test
 		, [[maybe_unused]] uint32_t index )
 	{
 		// Nothing checked yet...
+	}
+
+	template< typename EnumT >
+	static void condAppendEnumFlag( std::ostream & stream, std::string & sep, EnumT const & v, EnumT const & t, std::string_view s )
+	{
+		if ( checkFlag( v, t ) )
+		{
+			stream << sep << s;
+			sep = " | ";
+		}
+	}
+}
+
+namespace crg
+{
+	std::ostream & operator<<( std::ostream & stream, AccessFlags const & v )
+	{
+		std::string sep;
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eIndirectCommandRead, "IndirectCommandRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eIndexRead, "IndexRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eVertexAttributeRead, "VertexAttributeRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eUniformRead, "UniformRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eInputAttachmentRead, "InputAttachmentRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eShaderRead, "ShaderRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eShaderWrite, "ShaderWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eColorAttachmentRead, "ColorAttachmentRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eColorAttachmentWrite, "ColorAttachmentWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eDepthStencilAttachmentRead, "DepthStencilAttachmentRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eDepthStencilAttachmentWrite, "DepthStencilAttachmentWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eTransferRead, "TransferRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eTransferWrite, "TransferWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eHostRead, "HostRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eHostWrite, "HostWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eMemoryRead, "MemoryRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eMemoryWrite, "MemoryWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eTransformFeedbackWrite, "TransformFeedbackWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eTransformFeedbackCounterRead, "TransformFeedbackCounterRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eTransformFeedbackCounterWrite, "TransformFeedbackCounterWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eConditionalRenderingRead, "ConditionalRenderingRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eColorAttachmentReadNonCoherent, "ColorAttachmentReadNonCoherent" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eAccelerationStructureRead, "AccelerationStructureRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eAccelerationStructureWrite, "AccelerationStructureWrite" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eFragmentDensityMapRead, "FragmentDensityMapRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eFragmentShadingRateAttachmentRead, "FragmentShadingRateAttachmentRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eCommandPreprocessRead, "CommandPreprocessRead" );
+		test::condAppendEnumFlag( stream, sep, v, AccessFlags::eCommandPreprocessWrite, "CommandPreprocessWrite" );
+		return stream;
+	}
+
+	std::ostream & operator<<( std::ostream & stream, ImageLayout const & v )
+	{
+		switch ( v )
+		{
+		case ImageLayout::eUndefined: stream << "Undefined"; break;
+		case ImageLayout::eGeneral: stream << "General"; break;
+		case ImageLayout::eColorAttachment: stream << "ColorAttachment"; break;
+		case ImageLayout::eDepthStencilAttachment: stream << "DepthStencilAttachment"; break;
+		case ImageLayout::eDepthStencilReadOnly: stream << "DepthStencilReadOnly"; break;
+		case ImageLayout::eShaderReadOnly: stream << "ShaderReadOnly"; break;
+		case ImageLayout::eTransferSrc: stream << "TransferSrc"; break;
+		case ImageLayout::eTransferDst: stream << "TransferDst"; break;
+		case ImageLayout::ePreinitialized: stream << "Preinitialized"; break;
+		case ImageLayout::eDepthReadOnlyStencilAttachment: stream << "DepthReadOnlyStencilAttachment"; break;
+		case ImageLayout::eDepthAttachmentStencilReadOnly: stream << "DepthAttachmentStencilReadOnly"; break;
+		case ImageLayout::eDepthAttachment: stream << "DepthAttachment"; break;
+		case ImageLayout::eDepthReadOnly: stream << "DepthReadOnly"; break;
+		case ImageLayout::eStencilAttachment: stream << "StencilAttachment"; break;
+		case ImageLayout::eStencilReadOnly: stream << "StencilReadOnly"; break;
+		case ImageLayout::eReadOnly: stream << "ReadOnly"; break;
+		case ImageLayout::eAttachment: stream << "Attachment"; break;
+		case ImageLayout::eRenderingLocalRead: stream << "RenderingLocalRead"; break;
+		case ImageLayout::ePresentSrc: stream << "PresentSrc"; break;
+		case ImageLayout::eVideoDecodeDst: stream << "VideoDecodeDst"; break;
+		case ImageLayout::eVideoDecodeSrc: stream << "VideoDecodeSrc"; break;
+		case ImageLayout::eVideoDecodeDpb: stream << "VideoDecodeDpb"; break;
+		case ImageLayout::eSharedPresent: stream << "SharedPresent"; break;
+		case ImageLayout::eFragmentDensityMap: stream << "FragmentDensityMap"; break;
+		case ImageLayout::eFragmentShadingRateAttachment: stream << "FragmentShadingRateAttachment"; break;
+		case ImageLayout::eVideoEncodeDst: stream << "VideoEncodeDst"; break;
+		case ImageLayout::eVideoEncodeSrc: stream << "VideoEncodeSrc"; break;
+		case ImageLayout::eVideoEncodeDpb: stream << "VideoEncodeDpb"; break;
+		case ImageLayout::eAttachmentFeedbackLoop: stream << "AttachmentFeedbackLoop"; break;
+		case ImageLayout::eVideoEncodeQuantizationMap: stream << "VideoEncodeQuantizationMap"; break;
+		}
+		return stream;
+	}
+
+	std::ostream & operator<<( std::ostream & stream, AttachmentLoadOp const & v )
+	{
+		switch ( v )
+		{
+		case AttachmentLoadOp::eLoad: stream << "Load"; break;
+		case AttachmentLoadOp::eClear: stream << "Clear"; break;
+		case AttachmentLoadOp::eDontCare: stream << "DontCare"; break;
+		case AttachmentLoadOp::eNone: stream << "None"; break;
+		}
+		return stream;
+	}
+
+	std::ostream & operator<<( std::ostream & stream, AttachmentStoreOp const & v )
+	{
+		switch ( v )
+		{
+		case AttachmentStoreOp::eStore: stream << "eStore"; break;
+		case AttachmentStoreOp::eDontCare: stream << "DontCare"; break;
+		case AttachmentStoreOp::eNone: stream << "None"; break;
+		}
+		return stream;
 	}
 }

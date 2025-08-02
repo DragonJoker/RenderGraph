@@ -13,8 +13,8 @@ namespace crg
 {
 	struct Offset2D
 	{
-		int32_t x;
-		int32_t y;
+		int32_t x{};
+		int32_t y{};
 
 	private:
 		friend bool operator==( Offset2D const & lhs, Offset2D const & rhs ) = default;
@@ -22,8 +22,8 @@ namespace crg
 
 	struct Extent2D
 	{
-		uint32_t width;
-		uint32_t height;
+		uint32_t width{};
+		uint32_t height{};
 
 	private:
 		friend bool operator==( Extent2D const & lhs, Extent2D const & rhs ) = default;
@@ -31,8 +31,8 @@ namespace crg
 
 	struct Rect2D
 	{
-		Offset2D offset;
-		Extent2D extent;
+		Offset2D offset{};
+		Extent2D extent{};
 
 	private:
 		friend bool operator==( Rect2D const & lhs, Rect2D const & rhs ) = default;
@@ -40,9 +40,9 @@ namespace crg
 
 	struct Offset3D
 	{
-		int32_t x;
-		int32_t y;
-		int32_t z;
+		int32_t x{};
+		int32_t y{};
+		int32_t z{};
 
 	private:
 		friend bool operator==( Offset3D const & lhs, Offset3D const & rhs ) = default;
@@ -50,37 +50,76 @@ namespace crg
 
 	struct Extent3D
 	{
-		uint32_t width;
-		uint32_t height;
-		uint32_t depth;
+		uint32_t width{};
+		uint32_t height{};
+		uint32_t depth{};
 
 	private:
 		friend bool operator==( Extent3D const & lhs, Extent3D const & rhs ) = default;
 	};
 
+	struct Rect3D
+	{
+		Offset3D offset{};
+		Extent3D extent{};
+
+	private:
+		friend bool operator==( Rect3D const & lhs, Rect3D const & rhs ) = default;
+	};
+
+	struct BufferSubresourceRange
+	{
+		DeviceSize offset{};
+		DeviceSize size{};
+
+	private:
+		friend bool operator==( BufferSubresourceRange const & lhs, BufferSubresourceRange const & rhs ) = default;
+	};
+
 	struct ImageSubresourceRange
 	{
-		ImageAspectFlags aspectMask;
-		uint32_t baseMipLevel;
-		uint32_t levelCount;
-		uint32_t baseArrayLayer;
-		uint32_t layerCount;
+		ImageAspectFlags aspectMask{};
+		uint32_t baseMipLevel{};
+		uint32_t levelCount{};
+		uint32_t baseArrayLayer{};
+		uint32_t layerCount{};
 
 	private:
 		friend bool operator==( ImageSubresourceRange const & lhs, ImageSubresourceRange const & rhs ) = default;
 	};
 
+	struct BufferCreateInfo
+	{
+		BufferCreateFlags flags{};
+		DeviceSize size{};
+		BufferUsageFlags usage{};
+		MemoryPropertyFlags memory{};
+
+	private:
+		friend bool operator==( BufferCreateInfo const & lhs, BufferCreateInfo const & rhs ) = default;
+	};
+
+	struct BufferViewCreateInfo
+	{
+		PixelFormat format{};
+		BufferSubresourceRange subresourceRange{};
+
+	private:
+		friend bool operator==( BufferViewCreateInfo const & lhs, BufferViewCreateInfo const & rhs ) = default;
+	};
+
 	struct ImageCreateInfo
 	{
-		ImageCreateFlags flags;
-		ImageType imageType;
-		PixelFormat format;
-		Extent3D extent;
-		uint32_t mipLevels;
-		uint32_t arrayLayers;
-		SampleCount samples;
-		ImageTiling tiling;
-		ImageUsageFlags usage;
+		ImageCreateFlags flags{};
+		ImageType imageType{};
+		PixelFormat format{};
+		Extent3D extent{};
+		uint32_t mipLevels{};
+		uint32_t arrayLayers{};
+		SampleCount samples{};
+		ImageTiling tiling{};
+		ImageUsageFlags usage{};
+		MemoryPropertyFlags memory{};
 
 	private:
 		friend bool operator==( ImageCreateInfo const & lhs, ImageCreateInfo const & rhs ) = default;
@@ -88,10 +127,10 @@ namespace crg
 
 	struct ImageViewCreateInfo
 	{
-		ImageViewCreateFlags flags;
-		ImageViewType viewType;
-		PixelFormat format;
-		ImageSubresourceRange subresourceRange;
+		ImageViewCreateFlags flags{};
+		ImageViewType viewType{};
+		PixelFormat format{};
+		ImageSubresourceRange subresourceRange{};
 
 	private:
 		friend bool operator==( ImageViewCreateInfo const & lhs, ImageViewCreateInfo const & rhs ) = default;
@@ -167,8 +206,8 @@ namespace crg
 
 	struct ClearDepthStencilValue
 	{
-		float depth;
-		uint32_t stencil;
+		float depth{};
+		uint32_t stencil{};
 
 	private:
 		friend bool operator==( ClearDepthStencilValue const & lhs, ClearDepthStencilValue const & rhs ) = default;
@@ -235,14 +274,17 @@ namespace crg
 
 	struct PipelineState
 	{
-		AccessFlags access;
-		PipelineStageFlags pipelineStage;
+		AccessFlags access{};
+		PipelineStageFlags pipelineStage{};
+
+	private:
+		friend bool operator==( PipelineState const & lhs, PipelineState const & rhs ) = default;
 	};
 
 	struct LayoutState
 	{
-		ImageLayout layout;
-		PipelineState state;
+		ImageLayout layout{};
+		PipelineState state{};
 	};
 
 	template< typename VkTypeT >
@@ -275,138 +317,10 @@ namespace crg
 		void ( *destroy )( GraphContext &, VkTypeT & )noexcept;
 	};
 
-	struct Buffer
-	{
-		std::string name;
-
-		Buffer( VkBufferArray pbuffers
-			, std::string pname )noexcept
-			: name{ std::move( pname ) }
-			, m_buffers{ std::move( pbuffers ) }
-		{
-		}
-
-		Buffer( VkBuffer buffer
-			, std::string name )noexcept
-			: Buffer{ VkBufferArray{ buffer }, std::move( name ) }
-		{
-		}
-
-		VkBuffer const & buffer( uint32_t index = 0 )const noexcept
-		{
-			return m_buffers.size() == 1u
-				? m_buffers.front()
-				: m_buffers[index];
-		}
-
-		VkBuffer & buffer( uint32_t index = 0 )noexcept
-		{
-			return m_buffers.size() == 1u
-				? m_buffers.front()
-				: m_buffers[index];
-		}
-
-		size_t getCount()const noexcept
-		{
-			return m_buffers.size();
-		}
-
-	private:
-		VkBufferArray m_buffers;
-
-		friend CRG_API bool operator==( Buffer const & lhs, Buffer const & rhs );
-	};
-
-	struct VertexBuffer
-	{
-		VertexBuffer( VertexBuffer const & rhs ) = delete;
-		VertexBuffer & operator=( VertexBuffer const & rhs ) = delete;
-		~VertexBuffer()noexcept = default;
-
-		explicit VertexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
-			, VkDeviceMemory pmemory = VkDeviceMemory{}
-			, VkVertexInputAttributeDescriptionArray pvertexAttribs = {}
-			, VkVertexInputBindingDescriptionArray pvertexBindings = {} )
-			: buffer{ std::move( pbuffer ) }
-			, memory{ pmemory }
-			, vertexAttribs{ std::move( pvertexAttribs ) }
-			, vertexBindings{ std::move( pvertexBindings ) }
-		{
-			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
-			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
-			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
-			inputState.pVertexBindingDescriptions = vertexBindings.data();
-		}
-
-		VertexBuffer( VertexBuffer && rhs )noexcept
-			: buffer{ rhs.buffer }
-			, memory{ rhs.memory }
-			, vertexAttribs{ std::move( rhs.vertexAttribs ) }
-			, vertexBindings{ std::move( rhs.vertexBindings ) }
-			, inputState{ std::move( rhs.inputState ) }
-		{
-			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
-			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
-			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
-			inputState.pVertexBindingDescriptions = vertexBindings.data();
-		}
-
-		VertexBuffer & operator=( VertexBuffer && rhs )noexcept
-		{
-			buffer = rhs.buffer;
-			memory = rhs.memory;
-			vertexAttribs = std::move( rhs.vertexAttribs );
-			vertexBindings = std::move( rhs.vertexBindings );
-			inputState = std::move( rhs.inputState );
-
-			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
-			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
-			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
-			inputState.pVertexBindingDescriptions = vertexBindings.data();
-
-			return *this;
-		}
-
-		Buffer buffer{ VkBuffer{}, std::string{} };
-		VkDeviceMemory memory{};
-		VkVertexInputAttributeDescriptionArray vertexAttribs{};
-		VkVertexInputBindingDescriptionArray vertexBindings{};
-		VkPipelineVertexInputStateCreateInfo inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} };
-	};
-
-	struct IndexBuffer
-	{
-		explicit IndexBuffer( Buffer pbuffer = { VkBuffer{}, std::string{} }
-			, VkDeviceMemory pmemory = VkDeviceMemory{} )
-			: buffer{ std::move( pbuffer ) }
-			, memory{ pmemory }
-		{
-		}
-
-		Buffer buffer;
-		VkDeviceMemory memory;
-	};
-
-	struct IndirectBuffer
-	{
-		explicit IndirectBuffer( Buffer pbuffer
-			, uint32_t pstride
-			, DeviceSize poffset = {} )
-			: buffer{ std::move( pbuffer ) }
-			, offset{ poffset }
-			, stride{ pstride }
-		{
-		}
-
-		Buffer buffer;
-		DeviceSize offset;
-		uint32_t stride;
-	};
-
 	struct SemaphoreWait
 	{
-		VkSemaphore semaphore;
-		PipelineStageFlags dstStageMask;
+		VkSemaphore semaphore{};
+		PipelineStageFlags dstStageMask{};
 	};
 
 	template< typename TypeT >

@@ -31,6 +31,15 @@ namespace crg
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
+		void doRecordMultiToMulti( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, uint32_t index );
+		void doRecordMultiToSingle( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, uint32_t index );
+		void doRecordSingleToMulti( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, uint32_t index );
 
 	private:
 		VkExtent3D m_copySize;
