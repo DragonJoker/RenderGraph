@@ -82,11 +82,11 @@ namespace crg
 			VkRenderPass renderPass{};
 			mutable VkFramebuffer frameBuffer{};
 			Rect2D renderArea{};
-			std::vector< Attachment const * > attachments;
-			std::vector< VkClearValue > clearValues;
-			std::vector< Entry > attaches;
-			PipelineState previousState;
-			PipelineState nextState;
+			std::vector< Attachment const * > attachments{};
+			std::vector< VkClearValue > clearValues{};
+			std::vector< Entry > attaches{};
+			PipelineState previousState{};
+			PipelineState nextState{};
 
 			void cleanup( crg::GraphContext & context )noexcept;
 		};

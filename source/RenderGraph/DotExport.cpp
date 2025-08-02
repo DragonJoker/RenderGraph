@@ -9,6 +9,7 @@ See LICENSE file in root folder.
 
 #include <numeric>
 #include <array>
+#include <span>
 #include <string>
 #include <type_traits>
 
@@ -182,6 +183,8 @@ namespace crg::dot
 		template< typename char_type, typename traits >
 		std::atomic_int BasicIndentBufferManager< char_type, traits >::sm_instances = 0;
 
+		inline void addIndent( std::ios_base & ios, long val );
+
 		struct Indent
 		{
 			explicit Indent( long i )
@@ -220,17 +223,15 @@ namespace crg::dot
 		template< typename CharType >
 		inline void callback( std::ios_base::event ev, std::ios_base & ios, int )
 		{
-			if ( BasicIndentBufferManager< CharType >::instances() )
+			if ( BasicIndentBufferManager< CharType >::instances()
+				&& ev == std::ios_base::erase_event )
 			{
-				if ( ev == std::ios_base::erase_event )
-				{
-					BasicIndentBufferManager< CharType >::instance()->erase( ios );
-				}
+				BasicIndentBufferManager< CharType >::instance()->erase( ios );
 			}
 		}
 
 		template< typename CharType >
-		inline std::basic_ostream< CharType > & operator <<( std::basic_ostream< CharType > & stream, Indent const & ind )
+		inline std::basic_ostream< CharType > & operator<<( std::basic_ostream< CharType > & stream, Indent const & ind )
 		{
 			auto sbuf = dynamic_cast< BasicIndentBuffer< CharType > * >( stream.rdbuf() );
 
@@ -266,11 +267,8 @@ namespace crg::dot
 			std::pair< FramePassGroupStreams *, bool > emplace( FramePassGroup const * group )
 			{
 				auto streams = find( group );
-
 				if ( streams )
-				{
 					return { streams, false };
-				}
 
 				assert( group != nullptr );
 
@@ -291,22 +289,15 @@ namespace crg::dot
 			FramePassGroupStreams * find( FramePassGroup const * group )
 			{
 				if ( m_group == group )
-				{
 					return this;
-				}
 
 				FramePassGroupStreams * result{};
-				auto it = std::find_if( m_children.begin()
-					, m_children.end()
+				auto it = std::find_if( m_children.begin(), m_children.end()
 					, [group, &result]( FramePassGroupStreamsPtr const & lookup )
 					{
 						auto ret = lookup->find( group );
-
 						if ( ret )
-						{
 							result = ret;
-						}
-
 						return ret != nullptr;
 					} );
 
@@ -442,353 +433,284 @@ namespace crg::dot
 			std::set< std::string, std::less<> > m_nodes;
 		};
 
-		class DotOutVisitor
-			: public GraphVisitor
+		static void displayNode( std::ostream & stream
+			, std::string const & name
+			, std::string const & shape
+			, std::string_view colour
+			, std::set< std::string, std::less<> > & nodes
+			, Config const & config )
 		{
-		public:
-			static void submit( DisplayResult & streams
-				, FramePassGroupStreams & groups
-				, ConstGraphAdjacentNode node
-				, Config const & config
-				, std::set< ConstGraphAdjacentNode > & visited )
-			{
-				DotOutVisitor vis{ streams, groups, config, visited };
-				node->accept( &vis );
-			}
-
-			static void submit( DisplayResult & streams
-				, FramePassGroupStreams & groups
-				, ConstGraphAdjacentNode node
-				, Config const & config )
-			{
-				std::set< ConstGraphAdjacentNode > visited;
-				submit( streams, groups, node, config, visited );
-			}
-
-			static void displayNode( std::ostream & stream
-				, std::string const & name
-				, std::string const & shape
-				, std::string_view colour
-				, std::set< std::string, std::less<> > & nodes
-				, Config const & config )
-			{
-				if ( nodes.insert( name ).second )
-				{
-					stream << Indent{ 2 };
-					stream << "\"" << name << "\" [ shape=" << shape;
-
-					if ( config.withColours )
-					{
-						stream << " style=filled";
-						stream << " fillcolor=white";
-						stream << " color=\"" << colour << "\"";
-					}
-
-					stream << " ];\n";
-					stream << Indent{ -2 };
-				}
-			}
-
-			static FramePassGroupStreams & displayGroupNode( FramePassGroup const * group
-				, FramePassGroupStreams & groups
-				, Config const & )
-			{
-				return *groups.emplace( group ).first;
-			}
-
-			static FramePassGroupStreams & displayPassNode( uint32_t id
-				, std::string const & name
-				, FramePassGroup const * group
-				, std::string_view colour
-				, FramePassGroupStreams & groups
-				, Config const & config )
-			{
-				auto & groupStream = displayGroupNode( group, groups, config );
-				auto & stream = groupStream.getStream();
-
-				if ( groupStream.getNodes().insert( name ).second )
-				{
-					stream << Indent{ 2 };
-					stream << "\"" << name << "\" [ shape=ellipse";
-
-					if ( config.withIds )
-					{
-						stream << " id=\"" << id << "\"";
-					}
-
-					if ( config.withColours )
-					{
-						stream << " style=filled";
-						stream << " fillcolor=white";
-						stream << " color=\"" << colour << "\"";
-					}
-
-					stream << " ];\n";
-					stream << Indent{ -2 };
-				}
-
-				return groupStream;
-			}
-
-			static void displayEdge( std::ostream & stream
-				, std::string const & from
-				, std::string const & to
-				, std::string const & label
-				, std::string_view colour
-				, Config const & config )
+			if ( nodes.insert( name ).second )
 			{
 				stream << Indent{ 2 };
-				stream << "\"" << from << "\" -> \"" << to << "\" [ label=\"" << label << "\"";
+				stream << "\"" << name << "\" [ shape=" << shape;
 
 				if ( config.withColours )
 				{
-					stream << " color = \"" << colour << "\" fontcolor=\"" << colour << "\"";
+					stream << " style=filled";
+					stream << " fillcolor=white";
+					stream << " color=\"" << colour << "\"";
+				}
+
+				stream << " ];\n";
+				stream << Indent{ -2 };
+			}
+		}
+
+		static FramePassGroupStreams & displayGroupNode( FramePassGroup const * group
+			, FramePassGroupStreams & groups
+			, Config const & )
+		{
+			return *groups.emplace( group ).first;
+		}
+
+		static FramePassGroupStreams & displayPassNode( uint32_t id
+			, std::string const & name
+			, FramePassGroup const * group
+			, std::string_view colour
+			, FramePassGroupStreams & groups
+			, Config const & config )
+		{
+			auto & groupStream = displayGroupNode( group, groups, config );
+			auto & stream = groupStream.getStream();
+
+			if ( groupStream.getNodes().insert( name ).second )
+			{
+				stream << Indent{ 2 };
+				stream << "\"" << name << "\" [ shape=ellipse";
+
+				if ( config.withIds )
+				{
+					stream << " id=\"" << id << "\"";
+				}
+
+				if ( config.withColours )
+				{
+					stream << " style=filled";
+					stream << " fillcolor=white";
+					stream << " color=\"" << colour << "\"";
 				}
 
 				stream << " ];\n";
 				stream << Indent{ -2 };
 			}
 
-			template< typename AttachT >
-			static void displayAttachPass( AttachT const & attach
-				, FramePassGroupStreams & groups
-				, Config const & config )
-			{
-				uint32_t nodeId = 0;
-				std::string node = "ExternalSource";
-				FramePassGroup const * group = nullptr;
-				std::string_view colour = extColour;
+			return groupStream;
+		}
 
-				if ( attach.pass )
+		static void displayEdge( std::ostream & stream
+			, std::string const & from
+			, std::string const & to
+			, std::string const & label
+			, std::string_view colour
+			, Config const & config )
+		{
+			stream << Indent{ 2 };
+			stream << "\"" << from << "\" -> \"" << to << "\" [ label=\"" << label << "\"";
+
+			if ( config.withColours )
+			{
+				stream << " color = \"" << colour << "\" fontcolor=\"" << colour << "\"";
+			}
+
+			stream << " ];\n";
+			stream << Indent{ -2 };
+		}
+
+		static void displayAttachPass( Attachment const & attach
+			, FramePassGroupStreams & groups
+			, Config const & config )
+		{
+			uint32_t nodeId = 0;
+			std::string node = "ExternalSource";
+			FramePassGroup const * group = nullptr;
+			std::string_view colour = extColour;
+
+			if ( attach.pass )
+			{
+				nodeId = attach.pass->id;
+				node = attach.pass->getGroupName();
+				group = &attach.pass->group;
+				colour = passColour;
+			}
+
+			displayPassNode( nodeId, node, group, colour, groups, config );
+		}
+
+		static std::string const & getAttachName( crg::BufferViewId const & data )
+		{
+			return data.data->name;
+		}
+
+		static std::string const & getAttachName( crg::ImageViewId const & data )
+		{
+			return data.data->name;
+		}
+
+		static bool isIn( FramePassGroupStreams const * inner
+			, FramePassGroupStreams const * outer )
+		{
+			return outer == inner
+				|| ( outer && isIn( inner, outer->getParent() ) );
+		}
+
+		static FramePassGroupStreams * getCommonGroup( FramePassGroupStreams * lhs
+			, FramePassGroupStreams const * rhs )
+		{
+			auto current = lhs;
+
+			while ( current && !isIn( current, rhs ) )
+			{
+				current = current->getParent();
+			}
+
+			return current;
+		}
+
+		template< typename TransitionT >
+		static void displayTransitionEdge( std::ostream & stream
+			, std::string_view colour
+			, TransitionT const & transition
+			, FramePassGroupStreams & groups
+			, Config const & config )
+		{
+			auto srcName = transition.outputAttach.name;
+			auto dstName = transition.inputAttach.name;
+			std::string srcNode = "ExternalSource";
+			std::string dstNode = "ExternalDestination";
+			auto srcStream = &groups;
+			auto dstStream = &groups;
+			auto curStreams = &groups;
+
+			if ( transition.outputAttach.pass )
+			{
+				srcNode = transition.outputAttach.pass->getGroupName();
+				srcStream = groups.find( &transition.outputAttach.pass->group );
+			}
+
+			if ( transition.inputAttach.pass )
+			{
+				dstNode = transition.inputAttach.pass->getGroupName();
+				dstStream = groups.find( &transition.inputAttach.pass->group );
+			}
+
+			std::string name{ "Transition to\\n" + dstName };
+			auto curstream = &stream;
+
+			if ( srcStream != &groups
+				&& dstStream != &groups )
+			{
+				if ( srcStream == dstStream )
 				{
-					nodeId = attach.pass->id;
-					node = attach.pass->getGroupName();
-					group = &attach.pass->group;
-					colour = passColour;
+					curStreams = srcStream;
+					curstream = &srcStream->getStream();
 				}
-
-				displayPassNode( nodeId, node, group, colour, groups, config );
-			}
-
-			static std::string const & getAttachName( crg::Buffer const & data )
-			{
-				return data.name;
-			}
-
-			static std::string const & getAttachName( crg::ImageViewId const & data )
-			{
-				return data.data->name;
-			}
-
-			static bool isIn( FramePassGroupStreams const * inner
-				, FramePassGroupStreams const * outer )
-			{
-				return outer == inner
-					|| ( outer && isIn( inner, outer->getParent() ) );
-			}
-
-			static FramePassGroupStreams * getCommonGroup( FramePassGroupStreams * lhs
-				, FramePassGroupStreams const * rhs )
-			{
-				auto current = lhs;
-
-				while ( current && !isIn( current, rhs ) )
+				else if ( auto groupStreams = getCommonGroup( srcStream, dstStream ) )
 				{
-					current = current->getParent();
+					curStreams = groupStreams;
+					curstream = &groupStreams->getStream();
 				}
-
-				return current;
 			}
 
-			template< typename TransitionT >
-			static void displayTransitionEdge( std::ostream & stream
-				, std::string_view colour
-				, TransitionT const & transition
-				, FramePassGroupStreams & groups
-				, Config const & config )
-			{
-				auto srcName = transition.outputAttach.name;
-				auto dstName = transition.inputAttach.name;
-				std::string srcNode = "ExternalSource";
-				std::string dstNode = "ExternalDestination";
-				auto srcStream = &groups;
-				auto dstStream = &groups;
-				auto curStreams = &groups;
+			displayNode( *curstream, name, "box", colour, curStreams->getNodes(), config );
+			displayEdge( *curstream, srcNode, name, getAttachName( transition.data ), colour, config );
+			displayEdge( *curstream, name, dstNode, getAttachName( transition.data ), colour, config );
+		}
 
-				if ( transition.outputAttach.pass )
-				{
-					srcNode = transition.outputAttach.pass->getGroupName();
-					srcStream = groups.find( &transition.outputAttach.pass->group );
-				}
-
-				if ( transition.inputAttach.pass )
-				{
-					dstNode = transition.inputAttach.pass->getGroupName();
-					dstStream = groups.find( &transition.inputAttach.pass->group );
-				}
-
-				std::string name{ srcName + "\\ntransition to\\n" + dstName };
-				auto curstream = &stream;
-
-				if ( srcStream != &groups
-					&& dstStream != &groups )
-				{
-					if ( srcStream == dstStream )
-					{
-						curStreams = srcStream;
-						curstream = &srcStream->getStream();
-					}
-					else if ( auto groupStreams = getCommonGroup( srcStream, dstStream ) )
-					{
-						curStreams = groupStreams;
-						curstream = &groupStreams->getStream();
-					}
-				}
-
-				displayNode( *curstream, name, "box", colour, curStreams->getNodes(), config );
-				displayEdge( *curstream, srcNode, name, getAttachName( transition.data ), colour, config );
-				displayEdge( *curstream, name, dstNode, getAttachName( transition.data ), colour, config );
-			}
-
+		class DotTransitionsVisitor
+			: public GraphVisitor
+		{
+		public:
 			static void submit( DisplayResult & streams
-				, AttachmentTransitions const & transitions
+				, ConstGraphAdjacentNode node
 				, Config const & config )
 			{
-				FramePassGroupStreams groups{ config };
-
-				for ( auto & transition : transitions.viewTransitions )
-				{
-					displayAttachPass( transition.outputAttach, groups, config );
-					displayAttachPass( transition.inputAttach, groups, config );
-				}
-
-				for ( auto & transition : transitions.bufferTransitions )
-				{
-					displayAttachPass( transition.outputAttach, groups, config );
-					displayAttachPass( transition.inputAttach, groups, config );
-				}
-
+				std::set< ConstGraphAdjacentNode > visited;
 				std::stringstream trstream;
-
-				for ( auto & transition : transitions.viewTransitions )
-				{
-					displayTransitionEdge( trstream, imgColour, transition, groups, config );
-				}
-
-				for ( auto & transition : transitions.bufferTransitions )
-				{
-					displayTransitionEdge( trstream, bufColour, transition, groups, config );
-				}
-
+				FramePassGroupStreams groups{ config };
+				submit( streams, node, config, groups, trstream, visited );
 				groups.write( streams, trstream );
 			}
 
 		private:
-			DotOutVisitor( DisplayResult & streams
+			static void submit( DisplayResult & streams
+				, ConstGraphAdjacentNode node
+				, Config const & config
 				, FramePassGroupStreams & groups
+				, std::stringstream & trstream
+				, std::set< ConstGraphAdjacentNode > & visited )
+			{
+				DotTransitionsVisitor vis{ streams, groups, trstream, config, visited };
+				node->accept( &vis );
+			}
+
+			DotTransitionsVisitor( DisplayResult & streams
+				, FramePassGroupStreams & groups
+				, std::stringstream & trstream
 				, Config const & config
 				, std::set< ConstGraphAdjacentNode > & visited )
 				: m_streams{ streams }
 				, m_groups{ groups }
+				, m_trstream{ trstream }
 				, m_config{ config }
 				, m_visited{ visited }
 			{
 			}
 
-			void printEdge( ConstGraphAdjacentNode lhs
-				, ConstGraphAdjacentNode rhs )
-			{
-				std::string sep;
-				auto transitions = rhs->getInputAttaches( lhs );
-				std::sort( transitions.viewTransitions.begin()
-					, transitions.viewTransitions.end()
-					, []( ViewTransition const & ilhs, ViewTransition const & irhs )
-					{
-						return ilhs.outputAttach.name < irhs.outputAttach.name;
-					} );
-				std::sort( transitions.bufferTransitions.begin()
-					, transitions.bufferTransitions.end()
-					, []( BufferTransition const & ilhs, BufferTransition const & irhs )
-					{
-						return ilhs.outputAttach.name < irhs.outputAttach.name;
-					} );
-
-				auto lhsStream = &displayPassNode( lhs->getId(), lhs->getName(), &lhs->getGroup(), passColour, m_groups, m_config );
-				auto rhsStream = &displayPassNode( rhs->getId(), rhs->getName(), &rhs->getGroup(), passColour, m_groups, m_config );
-				auto curStreams = &m_groups;
-				auto curstream = &m_groups.getStream();
-				auto & lhsName = lhs->getName();
-				auto & rhsName = rhs->getName();
-
-				if ( lhsStream != &m_groups
-					&& rhsStream != &m_groups )
-				{
-					if ( lhsStream == rhsStream )
-					{
-						curStreams = lhsStream;
-						curstream = &curStreams->getStream();
-					}
-					else if ( auto groupStreams = getCommonGroup( lhsStream, rhsStream ) )
-					{
-						curStreams = groupStreams;
-						curstream = &groupStreams->getStream();
-					}
-				}
-
-				for ( auto const & transition : transitions.viewTransitions )
-				{
-					auto attachName = transition.inputAttach.name;
-					std::string name{ "Transition to\\n" + attachName };
-					displayNode( *curstream, name, "box", imgColour, curStreams->getNodes(), m_config );
-					displayEdge( *curstream, lhsName, name, transition.data.data->name, imgColour, m_config );
-					displayEdge( *curstream, name, rhsName, transition.data.data->name, imgColour, m_config );
-				}
-
-				for ( auto const & transition : transitions.bufferTransitions )
-				{
-					auto attachName = transition.inputAttach.name;
-					std::string name{ "Transition to\\n" + attachName };
-					displayNode( *curstream, name, "box", bufColour, curStreams->getNodes(), m_config );
-					displayEdge( *curstream, lhsName, name, transition.data.name, bufColour, m_config );
-					displayEdge( *curstream, name, rhsName, transition.data.name, bufColour, m_config );
-				}
-			}
-
 			void submit( ConstGraphAdjacentNode node )
 			{
 				submit( m_streams
-					, m_groups
 					, node
 					, m_config
+					, m_groups
+					, m_trstream
 					, m_visited );
 			}
 
 			void visitRootNode( RootNode const * node )override
 			{
-				for ( auto & next : node->getNext() )
+				for ( auto & pred : node->getPredecessors() )
 				{
 					submit( m_streams
-						, m_groups
-						, next
+						, pred
 						, m_config
+						, m_groups
+						, m_trstream
 						, m_visited );
 				}
-
-				m_groups.write( m_streams );
 			}
 
 			void visitFramePassNode( FramePassNode const * node )override
 			{
-				m_visited.insert( node );
-				auto & nexts = node->getNext();
-
-				for ( auto & next : nexts )
+				for ( auto & transition : node->getImageTransitions() )
 				{
-					printEdge( node, next );
+					displayAttachPass( transition.outputAttach, m_groups, m_config );
+					displayAttachPass( transition.inputAttach, m_groups, m_config );
+				}
 
-					if ( m_visited.end() == m_visited.find( next ) )
+				for ( auto & transition : node->getBufferTransitions() )
+				{
+					displayAttachPass( transition.outputAttach, m_groups, m_config );
+					displayAttachPass( transition.inputAttach, m_groups, m_config );
+				}
+
+				for ( auto & transition : node->getImageTransitions() )
+				{
+					displayTransitionEdge( m_trstream, imgColour, transition, m_groups, m_config );
+				}
+
+				for ( auto & transition : node->getBufferTransitions() )
+				{
+					displayTransitionEdge( m_trstream, bufColour, transition, m_groups, m_config );
+				}
+
+				m_visited.insert( node );
+
+				for ( auto & pred : node->getPredecessors() )
+				{
+					if ( m_visited.end() == m_visited.find( pred ) )
 					{
-						submit( next );
+						submit( pred );
 					}
 				}
 			}
@@ -796,49 +718,32 @@ namespace crg::dot
 		private:
 			DisplayResult & m_streams;
 			FramePassGroupStreams & m_groups;
+			std::stringstream & m_trstream;
 			Config const & m_config;
 			std::set< GraphNode const * > & m_visited;
 		};
-	}
 
-	DisplayResult displayPasses( RunnableGraph const & value
-		, Config const & config )
-	{
-		DisplayResult result;
-		dotexp::FramePassGroupStreams groups{ config };
-		dotexp::DotOutVisitor::submit( result, groups, value.getGraph(), config );
-		return result;
+		static std::string applyRemove( std::string const & text, Config const & config )
+		{
+			if ( config.toRemove.empty() )
+				return text;
+
+			auto result = text;
+			size_t startPos = 0u;
+
+			while ( ( startPos = result.find( config.toRemove, startPos ) ) != std::string::npos )
+				result.replace( startPos, config.toRemove.length(), "" );
+
+			return result;
+		}
 	}
 
 	DisplayResult displayTransitions( RunnableGraph const & value
 		, Config const & config )
 	{
 		DisplayResult result;
-		dotexp::DotOutVisitor::submit( result, value.getTransitions(), config );
+		dotexp::DotTransitionsVisitor::submit( result, value.getGraph(), config );
 		return result;
-	}
-
-	void displayPasses( std::ostream & stream
-		, RunnableGraph const & value
-		, Config const & config )
-	{
-		auto result = displayPasses( value, config );
-
-		if ( config.splitGroups )
-		{
-			for ( auto const & [name, strm] : result )
-			{
-				if ( !name.empty() )
-				{
-					stream << strm.str();
-				}
-			}
-		}
-		else
-		{
-			auto it = result.find( std::string{} );
-			stream << it->second.str();
-		}
 	}
 
 	void displayTransitions( std::ostream & stream
@@ -847,9 +752,20 @@ namespace crg::dot
 	{
 		auto result = displayTransitions( value, config );
 
-		for ( auto const & [_, strm] : result )
+		if ( config.splitGroups )
 		{
-			stream << strm.str();
+			for ( auto const & [name, strm] : result )
+			{
+				if ( !name.empty() )
+				{
+					stream << dotexp::applyRemove( strm.str(), config );
+				}
+			}
+		}
+		else
+		{
+			auto it = result.find( std::string{} );
+			stream << dotexp::applyRemove( it->second.str(), config );
 		}
 	}
 }

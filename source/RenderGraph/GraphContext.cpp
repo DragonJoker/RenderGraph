@@ -55,6 +55,8 @@ namespace crg
 		DECL_vkFunction( FreeDescriptorSets );
 		DECL_vkFunction( CreateBuffer );
 		DECL_vkFunction( DestroyBuffer );
+		DECL_vkFunction( CreateBufferView );
+		DECL_vkFunction( DestroyBufferView );
 		DECL_vkFunction( GetBufferMemoryRequirements );
 		DECL_vkFunction( GetImageMemoryRequirements );
 		DECL_vkFunction( AllocateMemory );

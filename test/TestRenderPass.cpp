@@ -9,7 +9,7 @@
 
 namespace
 {
-	void testLog( test::TestCounts & testCounts )
+	TEST( FramePass, Log )
 	{
 		testBegin( "testLog" )
 		auto callback = []( std::string_view msg, bool newLine )noexcept
@@ -36,10 +36,28 @@ namespace
 		crg::Logger::logWarning( "warningCoinNL" );
 		crg::Logger::logError( "errorCoinNoNL ", false );
 		crg::Logger::logError( "errorCoinNL" );
+
+		crg::Logger::setTraceCallback( nullptr );
+		crg::Logger::setDebugCallback( nullptr );
+		crg::Logger::setInfoCallback( nullptr );
+		crg::Logger::setWarningCallback( nullptr );
+		crg::Logger::setErrorCallback( nullptr );
+
+		crg::Logger::logTrace( "No callback traceCoinNoNL ", false );
+		crg::Logger::logTrace( "No callback traceCoinNL" );
+		crg::Logger::logDebug( "No callback debugCoinNoNL ", false );
+		crg::Logger::logDebug( "No callback debugCoinNL" );
+		crg::Logger::logInfo( "No callback infoCoinNoNL ", false );
+		crg::Logger::logInfo( "No callback infoCoinNL" );
+		crg::Logger::logWarning( "No callback warningCoinNoNL ", false );
+		crg::Logger::logWarning( "No callback warningCoinNL" );
+		crg::Logger::logError( "No callback errorCoinNoNL ", false );
+		crg::Logger::logError( "No callback errorCoinNL" );
+
 		testEnd()
 	}
 
-	void testRenderPass_1C( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_1C )
 	{
 		testBegin( "testRenderPass_1C" )
 		crg::ResourceHandler handler;
@@ -47,15 +65,15 @@ namespace
 		auto & pass = graph.createPass( "1C", crg::RunnablePassCreator{} );
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		pass.addOutputColourView( rtv );
+		pass.addOutputColourTarget( rtv );
 
 		check( pass.getName() == "1C" )
-		check( pass.images.size() == 1u )
-		check( pass.images[0].view() == rtv )
+		check( pass.targets.size() == 1u )
+		check( pass.targets[0]->view() == rtv )
 		testEnd()
 	}
 
-	void testRenderPass_2C( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_2C )
 	{
 		testBegin( "testRenderPass_2C" )
 		crg::ResourceHandler handler;
@@ -63,20 +81,20 @@ namespace
 		auto & pass = graph.createPass( "2C", crg::RunnablePassCreator{} );
 		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
-		pass.addOutputColourView( rtv1 );
+		pass.addOutputColourTarget( rtv1 );
 
 		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
-		pass.addOutputColourView( rtv2 );
+		pass.addOutputColourTarget( rtv2 );
 
 		check( pass.getName() == "2C" )
-		check( pass.images.size() == 2u )
-		check( pass.images[0].view() == rtv1 )
-		check( pass.images[1].view() == rtv2 )
+		check( pass.targets.size() == 2u )
+		check( pass.targets[0]->view() == rtv1 )
+		check( pass.targets[1]->view() == rtv2 )
 		testEnd()
 	}
 
-	void testRenderPass_0C_1I( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_0C_1I )
 	{
 		testBegin( "testRenderPass_0C_1I" )
 		crg::ResourceHandler handler;
@@ -84,15 +102,16 @@ namespace
 		auto & pass = graph.createPass( "0C_1I", crg::RunnablePassCreator{} );
 		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
-		pass.addSampledView( inv, 1u );
+		auto attach = crg::Attachment::createDefault( inv );
+		pass.addInputSampled( attach, 1u );
 
 		check( pass.getName() == "0C_1I" )
-		check( pass.images.size() == 1u )
-		check( pass.images[0].view() == inv )
+		check( pass.sampled.size() == 1u )
+		check( pass.sampled.begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
-	void testRenderPass_0C_2I( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_0C_2I )
 	{
 		testBegin( "testRenderPass_0C_2I" )
 		crg::ResourceHandler handler;
@@ -100,20 +119,22 @@ namespace
 		auto & pass = graph.createPass( "0C_2I", crg::RunnablePassCreator{} );
 		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
-		pass.addSampledView( inv1, 1u );
+		auto attach1 = crg::Attachment::createDefault( inv1 );
+		pass.addInputSampled( attach1, 1u );
 
 		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
-		pass.addSampledView( inv2, 2u );
+		auto attach2 = crg::Attachment::createDefault( inv2 );
+		pass.addInputSampled( attach2, 2u );
 
 		check( pass.getName() == "0C_2I" )
-		check( pass.images.size() == 2u )
-		check( pass.images[0].view() == inv1 )
-		check( pass.images[1].view() == inv2 )
+		check( pass.sampled.size() == 2u )
+		check( pass.sampled.begin()->second.attach->view() == inv1 )
+		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
-	void testRenderPass_1C_1I( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_1C_1I )
 	{
 		testBegin( "testRenderPass_1C_1I" )
 		crg::ResourceHandler handler;
@@ -121,20 +142,22 @@ namespace
 		auto & pass = graph.createPass( "1C_1I", crg::RunnablePassCreator{} );
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		pass.addOutputColourView( rtv );
+		pass.addOutputColourTarget( rtv );
 
 		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
-		pass.addSampledView( inv, 1u );
+		auto attach = crg::Attachment::createDefault( inv );
+		pass.addInputSampled( attach, 1u );
 
 		check( pass.getName() == "1C_1I" )
-		check( pass.images.size() == 2u )
-		check( pass.images[0].view() == rtv )
-		check( pass.images[1].view() == inv )
+		check( pass.targets.size() == 1u )
+		check( pass.targets[0]->view() == rtv )
+		check( pass.sampled.size() == 1u )
+		check( pass.sampled.begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
-	void testRenderPass_1C_2I( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_1C_2I )
 	{
 		testBegin( "testRenderPass_1C_2I" )
 		crg::ResourceHandler handler;
@@ -142,25 +165,28 @@ namespace
 		auto & pass = graph.createPass( "1C_2I", crg::RunnablePassCreator{} );
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		pass.addOutputColourView( rtv );
+		pass.addOutputColourTarget( rtv );
 
 		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
-		pass.addSampledView( inv1, 1u );
+		auto attach1 = crg::Attachment::createDefault( inv1 );
+		pass.addInputSampled( attach1, 1u );
 
 		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
-		pass.addSampledView( inv2, 2u );
+		auto attach2 = crg::Attachment::createDefault( inv2 );
+		pass.addInputSampled( attach2, 2u );
 
 		check( pass.getName() == "1C_2I" )
-		check( pass.images.size() == 3u )
-		check( pass.images[0].view() == rtv )
-		check( pass.images[1].view() == inv1 )
-		check( pass.images[2].view() == inv2 )
+		check( pass.targets.size() == 1u )
+		check( pass.targets[0]->view() == rtv )
+		check( pass.sampled.size() == 2u )
+		check( pass.sampled.begin()->second.attach->view() == inv1 )
+		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
-	void testRenderPass_2C_1I( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_2C_1I )
 	{
 		testBegin( "testRenderPass_2C_1I" )
 		crg::ResourceHandler handler;
@@ -168,25 +194,27 @@ namespace
 		auto & pass = graph.createPass( "2C_1I", crg::RunnablePassCreator{} );
 		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
-		pass.addOutputColourView( rtv1 );
+		pass.addOutputColourTarget( rtv1 );
 
 		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
-		pass.addOutputColourView( rtv2 );
+		pass.addOutputColourTarget( rtv2 );
 
 		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
-		pass.addSampledView( inv, 1u );
+		auto attach = crg::Attachment::createDefault( inv );
+		pass.addInputSampled( attach, 1u );
 
 		check( pass.getName() == "2C_1I" )
-		check( pass.images.size() == 3u )
-		check( pass.images[0].view() == rtv1 )
-		check( pass.images[1].view() == rtv2 )
-		check( pass.images[2].view() == inv )
+		check( pass.targets.size() == 2u )
+		check( pass.targets[0]->view() == rtv1 )
+		check( pass.targets[1]->view() == rtv2 )
+		check( pass.sampled.size() == 1u )
+		check( pass.sampled.begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
-	void testRenderPass_2C_2I( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_2C_2I )
 	{
 		testBegin( "testRenderPass_2C_2I" )
 		crg::ResourceHandler handler;
@@ -194,30 +222,33 @@ namespace
 		auto & pass = graph.createPass( "2C_2I", crg::RunnablePassCreator{} );
 		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
-		pass.addOutputColourView( rtv1 );
+		pass.addOutputColourTarget( rtv1 );
 
 		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
-		pass.addOutputColourView( rtv2 );
+		pass.addOutputColourTarget( rtv2 );
 
 		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
-		pass.addSampledView( inv1, 1u );
+		auto attach1 = crg::Attachment::createDefault( inv1 );
+		pass.addInputSampled( attach1, 1u );
 
 		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
-		pass.addSampledView( inv2, 2u );
+		auto attach2 = crg::Attachment::createDefault( inv2 );
+		pass.addInputSampled( attach2, 2u );
 
 		check( pass.getName() == "2C_2I" )
-		check( pass.images.size() == 4u )
-		check( pass.images[0].view() == rtv1 )
-		check( pass.images[1].view() == rtv2 )
-		check( pass.images[2].view() == inv1 )
-		check( pass.images[3].view() == inv2 )
+		check( pass.targets.size() == 2u )
+		check( pass.targets[0]->view() == rtv1 )
+		check( pass.targets[1]->view() == rtv2 )
+		check( pass.sampled.size() == 2u )
+		check( pass.sampled.begin()->second.attach->view() == inv1 )
+		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 	
-	void testRenderPass_0C_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_0C_DS )
 	{
 		testBegin( "testRenderPass_0C_DS" )
 		crg::ResourceHandler handler;
@@ -225,15 +256,15 @@ namespace
 		auto & pass = graph.createPass( "0C_DS", crg::RunnablePassCreator{} );
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "0C_DS" )
-		check( pass.images.size() == 1u )
-		check( pass.images[0].view() == dsv )
+		check( pass.targets.size() == 1u )
+		check( pass.targets[0]->view() == dsv )
 		testEnd()
 	}
 
-	void testRenderPass_1C_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_1C_DS )
 	{
 		testBegin( "testRenderPass_1C_DS" )
 		crg::ResourceHandler handler;
@@ -241,20 +272,20 @@ namespace
 		auto & pass = graph.createPass( "1C_DS", crg::RunnablePassCreator{} );
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		pass.addOutputColourView( rtv );
+		pass.addOutputColourTarget( rtv );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "1C_DS" )
-		check( pass.images.size() == 2u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == rtv )
+		check( pass.targets.size() == 2u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.targets[1]->view() == rtv )
 		testEnd()
 	}
 
-	void testRenderPass_2C_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_2C_DS )
 	{
 		testBegin( "testRenderPass_2C_DS" )
 		crg::ResourceHandler handler;
@@ -262,25 +293,25 @@ namespace
 		auto & pass = graph.createPass( "2C_DS", crg::RunnablePassCreator{} );
 		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
-		pass.addOutputColourView( rtv1 );
+		pass.addOutputColourTarget( rtv1 );
 
 		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
-		pass.addOutputColourView( rtv2 );
+		pass.addOutputColourTarget( rtv2 );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "2C_DS" )
-		check( pass.images.size() == 3u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == rtv1 )
-		check( pass.images[2].view() == rtv2 )
+		check( pass.targets.size() == 3u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.targets[1]->view() == rtv1 )
+		check( pass.targets[2]->view() == rtv2 )
 		testEnd()
 	}
 	
-	void testRenderPass_0C_1I_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_0C_1I_DS )
 	{
 		testBegin( "testRenderPass_0C_1I_DS" )
 		crg::ResourceHandler handler;
@@ -288,20 +319,22 @@ namespace
 		auto & pass = graph.createPass( "0C_1I_DS", crg::RunnablePassCreator{} );
 		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
-		pass.addSampledView( inv, 1u );
+		auto attach = crg::Attachment::createDefault( inv );
+		pass.addInputSampled( attach, 1u );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "0C_1I_DS" )
-		check( pass.images.size() == 2u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == inv )
+		check( pass.targets.size() == 1u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.sampled.size() == 1u )
+		check( pass.sampled.begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
-	void testRenderPass_0C_2I_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_0C_2I_DS )
 	{
 		testBegin( "testRenderPass_0C_2I_DS" )
 		crg::ResourceHandler handler;
@@ -309,25 +342,28 @@ namespace
 		auto & pass = graph.createPass( "0C_2I_DS", crg::RunnablePassCreator{} );
 		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
-		pass.addSampledView( inv1, 1u );
+		auto attach1 = crg::Attachment::createDefault( inv1 );
+		pass.addInputSampled( attach1, 1u );
 
 		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
-		pass.addSampledView( inv2, 2u );
+		auto attach2 = crg::Attachment::createDefault( inv2 );
+		pass.addInputSampled( attach2, 2u );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "0C_2I_DS" )
-		check( pass.images.size() == 3u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == inv1 )
-		check( pass.images[2].view() == inv2 )
+		check( pass.targets.size() == 1u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.sampled.size() == 2u )
+		check( pass.sampled.begin()->second.attach->view() == inv1 )
+		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
-	void testRenderPass_1C_1I_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_1C_1I_DS )
 	{
 		testBegin( "testRenderPass_1C_1I_DS" )
 		crg::ResourceHandler handler;
@@ -335,25 +371,27 @@ namespace
 		auto & pass = graph.createPass( "1C_1I_DS", crg::RunnablePassCreator{} );
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		pass.addOutputColourView( rtv );
+		pass.addOutputColourTarget( rtv );
 
 		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
-		pass.addSampledView( inv, 1u );
+		auto attach = crg::Attachment::createDefault( inv );
+		pass.addInputSampled( attach, 1u );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "1C_1I_DS" )
-		check( pass.images.size() == 3u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == rtv )
-		check( pass.images[2].view() == inv )
+		check( pass.targets.size() == 2u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.targets[1]->view() == rtv )
+		check( pass.sampled.size() == 1u )
+		check( pass.sampled.begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
-	void testRenderPass_1C_2I_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_1C_2I_DS )
 	{
 		testBegin( "testRenderPass_1C_2I_DS" )
 		crg::ResourceHandler handler;
@@ -361,30 +399,33 @@ namespace
 		auto & pass = graph.createPass( "1C_2I_DS", crg::RunnablePassCreator{} );
 		auto rt = graph.createImage( test::createImage( "rt", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv = graph.createView( test::createView( "rtv", rt ) );
-		pass.addOutputColourView( rtv );
+		pass.addOutputColourTarget( rtv );
 
 		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
-		pass.addSampledView( inv1, 1u );
+		auto attach1 = crg::Attachment::createDefault( inv1 );
+		pass.addInputSampled( attach1, 1u );
 
 		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
-		pass.addSampledView( inv2, 2u );
+		auto attach2 = crg::Attachment::createDefault( inv2 );
+		pass.addInputSampled( attach2, 2u );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "1C_2I_DS" )
-		check( pass.images.size() == 4u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == rtv )
-		check( pass.images[2].view() == inv1 )
-		check( pass.images[3].view() == inv2 )
+		check( pass.targets.size() == 2u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.targets[1]->view() == rtv )
+		check( pass.sampled.size() == 2u )
+		check( pass.sampled.begin()->second.attach->view() == inv1 )
+		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
-	void testRenderPass_2C_1I_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_2C_1I_DS )
 	{
 		testBegin( "testRenderPass_2C_1I_DS" )
 		crg::ResourceHandler handler;
@@ -392,30 +433,32 @@ namespace
 		auto & pass = graph.createPass( "2C_1I_DS", crg::RunnablePassCreator{} );
 		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
-		pass.addOutputColourView( rtv1 );
+		pass.addOutputColourTarget( rtv1 );
 
 		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
-		pass.addOutputColourView( rtv2 );
+		pass.addOutputColourTarget( rtv2 );
 
 		auto in = graph.createImage( test::createImage( "in", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv = graph.createView( test::createView( "inv", in ) );
-		pass.addSampledView( inv, 1u );
+		auto attach = crg::Attachment::createDefault( inv );
+		pass.addInputSampled( attach, 1u );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "2C_1I_DS" )
-		check( pass.images.size() == 4u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == rtv1 )
-		check( pass.images[2].view() == rtv2 )
-		check( pass.images[3].view() == inv )
+		check( pass.targets.size() == 3u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.targets[1]->view() == rtv1 )
+		check( pass.targets[2]->view() == rtv2 )
+		check( pass.sampled.size() == 1u )
+		check( pass.sampled.begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
-	void testRenderPass_2C_2I_DS( test::TestCounts & testCounts )
+	TEST( FramePass, RenderPass_2C_2I_DS )
 	{
 		testBegin( "testRenderPass_2C_2I_DS" )
 		crg::ResourceHandler handler;
@@ -423,55 +466,36 @@ namespace
 		auto & pass = graph.createPass( "2C_2I_DS", crg::RunnablePassCreator{} );
 		auto rt1 = graph.createImage( test::createImage( "rt1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv1 = graph.createView( test::createView( "rtv1", rt1 ) );
-		pass.addOutputColourView( rtv1 );
+		pass.addOutputColourTarget( rtv1 );
 
 		auto rt2 = graph.createImage( test::createImage( "rt2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto rtv2 = graph.createView( test::createView( "rtv2", rt2 ) );
-		pass.addOutputColourView( rtv2 );
+		pass.addOutputColourTarget( rtv2 );
 
 		auto in1 = graph.createImage( test::createImage( "in1", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv1 = graph.createView( test::createView( "inv1", in1 ) );
-		pass.addSampledView( inv1, 1u );
+		auto attach1 = crg::Attachment::createDefault( inv1 );
+		pass.addInputSampled( attach1, 1u );
 
 		auto in2 = graph.createImage( test::createImage( "in2", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
 		auto inv2 = graph.createView( test::createView( "inv2", in2 ) );
-		pass.addSampledView( inv2, 2u );
+		auto attach2 = crg::Attachment::createDefault( inv2 );
+		pass.addInputSampled( attach2, 2u );
 
 		auto ds = graph.createImage( test::createImage( "ds", crg::PixelFormat::eD32_SFLOAT ) );
 		auto dsv = graph.createView( test::createView( "dsv", ds ) );
-		pass.addOutputDepthStencilView( dsv );
+		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "2C_2I_DS" )
-		check( pass.images.size() == 5u )
-		check( pass.images[0].view() == dsv )
-		check( pass.images[1].view() == rtv1 )
-		check( pass.images[2].view() == rtv2 )
-		check( pass.images[3].view() == inv1 )
-		check( pass.images[4].view() == inv2 )
+		check( pass.targets.size() == 3u )
+		check( pass.targets[0]->view() == dsv )
+		check( pass.targets[1]->view() == rtv1 )
+		check( pass.targets[2]->view() == rtv2 )
+		check( pass.sampled.size() == 2u )
+		check( pass.sampled.begin()->second.attach->view() == inv1 )
+		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 }
 
-int main( int argc, char ** argv )
-{
-	testSuiteBegin( "TestRenderPass" )
-	testLog( testCounts );
-	testRenderPass_1C( testCounts );
-	testRenderPass_2C( testCounts );
-	testRenderPass_0C_1I( testCounts );
-	testRenderPass_0C_2I( testCounts );
-	testRenderPass_1C_1I( testCounts );
-	testRenderPass_1C_2I( testCounts );
-	testRenderPass_2C_1I( testCounts );
-	testRenderPass_2C_2I( testCounts );
-	testRenderPass_0C_DS( testCounts );
-	testRenderPass_1C_DS( testCounts );
-	testRenderPass_2C_DS( testCounts );
-	testRenderPass_0C_1I_DS( testCounts );
-	testRenderPass_0C_2I_DS( testCounts );
-	testRenderPass_1C_1I_DS( testCounts );
-	testRenderPass_1C_2I_DS( testCounts );
-	testRenderPass_2C_1I_DS( testCounts );
-	testRenderPass_2C_2I_DS( testCounts );
-	testSuiteEnd()
-}
+testSuiteMain()

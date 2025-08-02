@@ -15,12 +15,12 @@ namespace crg
 	CRG_API std::string_view getName( MipmapMode v );
 	CRG_API std::string_view getName( WrapMode v );
 
-	CRG_API bool operator==( Buffer const & lhs, Buffer const & rhs );
-
 	CRG_API ImageCreateFlags getImageCreateFlags( ImageId const & image )noexcept;
 	CRG_API ImageCreateFlags getImageCreateFlags( ImageViewId const & image )noexcept;
 	CRG_API Extent3D const & getExtent( ImageId const & image )noexcept;
 	CRG_API Extent3D const & getExtent( ImageViewId const & image )noexcept;
+	CRG_API DeviceSize getSize( BufferId const & image )noexcept;
+	CRG_API DeviceSize getSize( BufferViewId const & image )noexcept;
 	CRG_API Extent3D getMipExtent( ImageViewId const & image )noexcept;
 	CRG_API PixelFormat getFormat( ImageId const & image )noexcept;
 	CRG_API PixelFormat getFormat( ImageViewId const & image )noexcept;
@@ -32,7 +32,8 @@ namespace crg
 	CRG_API uint32_t getArrayLayers( ImageId const & image )noexcept;
 	CRG_API uint32_t getArrayLayers( ImageViewId const & image )noexcept;
 	CRG_API ImageAspectFlags getAspectFlags( ImageViewId const & image )noexcept;
-	CRG_API ImageSubresourceRange const & getSubresourceRange( ImageViewId const & format )noexcept;
+	CRG_API ImageSubresourceRange const & getSubresourceRange( ImageViewId const & image )noexcept;
+	CRG_API BufferSubresourceRange const & getSubresourceRange( BufferViewId const & buffer )noexcept;
 	CRG_API AccessFlags getAccessMask( ImageLayout layout )noexcept;
 	CRG_API PipelineStageFlags getStageMask( ImageLayout layout )noexcept;
 	CRG_API PipelineState getPipelineState( PipelineStageFlags flags )noexcept;
@@ -47,8 +48,10 @@ namespace crg
 		, ImageViewType viewType
 		, ImageSubresourceRange const & range )noexcept;
 	CRG_API bool match( ImageViewId const & lhs, ImageViewId const & rhs )noexcept;
-	CRG_API bool match( Buffer const & lhs, Buffer const & rhs )noexcept;
+	CRG_API bool match( BufferViewId const & lhs, BufferViewId const & rhs )noexcept;
 	CRG_API ImageViewId const & resolveView( ImageViewId const & view
+		, uint32_t passIndex );
+	CRG_API BufferViewId const & resolveView( BufferViewId const & view
 		, uint32_t passIndex );
 
 	CRG_API void convert( SemaphoreWaitArray const & toWait
@@ -223,6 +226,36 @@ namespace crg
 	constexpr AttachmentStoreOp convert( VkAttachmentStoreOp v )noexcept
 	{
 		return AttachmentStoreOp( v );
+	}
+
+	constexpr VkBufferCreateFlags getBufferCreateFlags( BufferCreateFlags v )noexcept
+	{
+		return VkBufferCreateFlags( v );
+	}
+
+	constexpr BufferCreateFlags getBufferCreateFlags( VkBufferCreateFlags v )noexcept
+	{
+		return BufferCreateFlags( v );
+	}
+
+	constexpr VkBufferUsageFlags getBufferUsageFlags( BufferUsageFlags v )noexcept
+	{
+		return VkBufferUsageFlags( v );
+	}
+
+	constexpr BufferUsageFlags getBufferUsageFlags( VkBufferUsageFlags v )noexcept
+	{
+		return BufferUsageFlags( v );
+	}
+
+	constexpr VkMemoryPropertyFlags getMemoryPropertyFlags( MemoryPropertyFlags v )noexcept
+	{
+		return VkMemoryPropertyFlags( v );
+	}
+
+	constexpr MemoryPropertyFlags getMemoryPropertyFlags( VkMemoryPropertyFlags v )noexcept
+	{
+		return MemoryPropertyFlags( v );
 	}
 
 	constexpr VkImageCreateFlags getImageCreateFlags( ImageCreateFlags v )noexcept
@@ -413,6 +446,34 @@ namespace crg
 		VkClearValue result;
 		result.depthStencil = convert( v.depthStencil() );
 		return result;
+	}
+
+	constexpr VkBufferViewCreateInfo convert( BufferViewCreateInfo const & v )noexcept
+	{
+		return VkBufferViewCreateInfo{ VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, nullptr
+			, 0, VkBuffer{}, convert( v.format )
+			, v.subresourceRange.offset, v.subresourceRange.size };
+	}
+
+	constexpr BufferViewCreateInfo convert( VkBufferViewCreateInfo const & v )noexcept
+	{
+		return BufferViewCreateInfo{ convert( v.format )
+			, { v.offset, v.range } };
+	}
+
+	constexpr VkBufferCreateInfo convert( BufferCreateInfo const & v )noexcept
+	{
+		return VkBufferCreateInfo{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO, nullptr
+			, getBufferCreateFlags( v.flags ), v.size
+			, getBufferUsageFlags( v.usage )
+			, VK_SHARING_MODE_EXCLUSIVE, 0u, nullptr };
+	}
+
+	constexpr BufferCreateInfo convert( VkBufferCreateInfo const & v )noexcept
+	{
+		return BufferCreateInfo{ getBufferCreateFlags( v.flags )
+			, v.size
+			, getBufferUsageFlags( v.usage ) };
 	}
 
 	constexpr VkImageViewCreateInfo convert( ImageViewCreateInfo const & v )noexcept

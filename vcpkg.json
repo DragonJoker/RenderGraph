@@ -1,0 +1,17 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "rendergraph",
+  "version": "1.4.1",
+  "builtin-baseline": "e140b1fde236eb682b0d47f905e65008a191800f",
+  "dependencies": [
+    "vulkan-headers"
+  ],
+  "features": {
+    "tests": {
+      "description": "Unit tests.",
+      "dependencies": [
+        "gtest"
+      ]
+    }
+  }
+}

@@ -4,7 +4,6 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/GenerateMipmaps.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -45,13 +44,20 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto viewId{ m_pass.images.front().view( index ) };
+		for ( auto [_, view] : m_pass.inouts )
+			doProcessImageView( context, commandBuffer, view->view( index ) );
+	}
+
+	void GenerateMipmaps::doProcessImageView( RecordContext & context
+		, VkCommandBuffer commandBuffer
+		, ImageViewId viewId )
+	{
 		auto imageId{ viewId.data->image };
 		auto image{ m_graph.createImage( imageId ) };
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );
-		auto baseArrayLayer = viewId.data->info.subresourceRange.baseArrayLayer;
-		auto layerCount = viewId.data->info.subresourceRange.layerCount;
+		auto baseArrayLayer = getSubresourceRange( viewId ).baseArrayLayer;
+		auto layerCount = getSubresourceRange( viewId ).layerCount;
 		auto mipLevels = imageId.data->info.mipLevels;
 		auto nextLayoutState = m_graph.getNextLayoutState( context
 			, *this

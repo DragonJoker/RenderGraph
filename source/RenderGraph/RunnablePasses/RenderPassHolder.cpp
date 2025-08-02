@@ -5,7 +5,6 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Attachment.hpp"
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/Log.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
@@ -81,12 +80,6 @@ namespace crg
 				, separateDepthStencilLayouts );
 		}
 
-		static bool operator==( PipelineState const & lhs, PipelineState const & rhs )
-		{
-			return lhs.access == rhs.access
-				&& lhs.pipelineStage == rhs.pipelineStage;
-		}
-
 		static bool operator!=( LayoutState const & lhs, LayoutState const & rhs )
 		{
 			return lhs.layout != rhs.layout
@@ -98,8 +91,7 @@ namespace crg
 			, std::vector< RenderPassHolder::Entry > const & attaches
 			, uint32_t passIndex )
 		{
-			auto it = std::find_if( attaches.begin()
-				, attaches.end()
+			auto it = std::find_if( attaches.begin(), attaches.end()
 				, [&context, passIndex]( RenderPassHolder::Entry const & lookup )
 				{
 					auto layout = context.getLayoutState( resolveView( lookup.view, passIndex ) );
@@ -163,8 +155,6 @@ namespace crg
 		, crg::RunnablePass const & runnable
 		, uint32_t passIndex )
 	{
-		using rpHolder::operator==;
-
 		auto & data = m_passes[passIndex];
 		auto previousState = context.getPrevPipelineState();
 		auto nextState = context.getNextPipelineState();
@@ -245,46 +235,41 @@ namespace crg
 		auto & data = m_passes[passIndex];
 		m_blendAttachs.clear();
 
-		for ( auto & attach : m_pass.images )
+		for ( auto attach : m_pass.targets )
 		{
-			if ( attach.isDepthAttach()
-				|| attach.isStencilAttach()
-				|| attach.isColourAttach() )
-			{
-				auto view = attach.view( passIndex );
-				auto resolved = resolveView( view, passIndex );
-				auto currentLayout = m_graph.getCurrentLayoutState( context, resolved );
-				auto nextLayout = m_graph.getNextLayoutState( context, runnable, resolved );
-				auto from = ( !attach.isInput()
-					? crg::makeLayoutState( ImageLayout::eUndefined )
-					: currentLayout );
-				checkUndefinedInput( "RenderPass", attach, resolved, from.layout );
+			auto view = attach->view( passIndex );
+			auto resolved = resolveView( view, passIndex );
+			auto currentLayout = m_graph.getCurrentLayoutState( context, resolved );
+			auto nextLayout = m_graph.getNextLayoutState( context, runnable, resolved );
+			auto from = ( !attach->isInput()
+				? crg::makeLayoutState( ImageLayout::eUndefined )
+				: currentLayout );
+			checkUndefinedInput( "RenderPass", *attach, resolved, from.layout );
 
-				if ( attach.isDepthAttach() || attach.isStencilAttach() )
-				{
-					depthReference = rpHolder::addAttach( context
-						, attach
-						, view
-						, attaches
-						, data.attaches
-						, data.clearValues
-						, from
-						, nextLayout
-						, m_context.separateDepthStencilLayouts );
-				}
-				else if ( attach.isColourAttach() )
-				{
-					colorReferences.push_back( rpHolder::addAttach( context
-						, attach
-						, view
-						, attaches
-						, data.attaches
-						, data.clearValues
-						, m_blendAttachs
-						, from
-						, nextLayout
-						, m_context.separateDepthStencilLayouts ) );
-				}
+			if ( attach->isDepthImageTarget() || attach->isStencilImageTarget() )
+			{
+				depthReference = rpHolder::addAttach( context
+					, *attach
+					, view
+					, attaches
+					, data.attaches
+					, data.clearValues
+					, from
+					, nextLayout
+					, m_context.separateDepthStencilLayouts );
+			}
+			else if ( attach->isColourImageTarget() )
+			{
+				colorReferences.push_back( rpHolder::addAttach( context
+					, *attach
+					, view
+					, attaches
+					, data.attaches
+					, data.clearValues
+					, m_blendAttachs
+					, from
+					, nextLayout
+					, m_context.separateDepthStencilLayouts ) );
 			}
 		}
 
@@ -356,21 +341,16 @@ namespace crg
 		m_passes[index].attachments.clear();
 		m_layers = 1u;
 
-		for ( auto & attach : m_pass.images )
+		for ( auto attach : m_pass.targets )
 		{
-			if ( attach.isColourAttach()
-				|| attach.isDepthAttach()
-				|| attach.isStencilAttach() )
-			{
-				auto view = attach.view();
-				m_passes[index].attachments.push_back( &attach );
-				width = std::max( width
-					, view.data->image.data->info.extent.width >> view.data->info.subresourceRange.baseMipLevel );
-				height = std::max( height
-					, view.data->image.data->info.extent.height >> view.data->info.subresourceRange.baseMipLevel );
-				m_layers = std::max( m_layers
-					, view.data->info.subresourceRange.layerCount );
-			}
+			auto view = attach->view();
+			m_passes[index].attachments.push_back( attach );
+			width = std::max( width
+				, view.data->image.data->info.extent.width >> getSubresourceRange( view ).baseMipLevel );
+			height = std::max( height
+				, view.data->image.data->info.extent.height >> getSubresourceRange( view ).baseMipLevel );
+			m_layers = std::max( m_layers
+				, getSubresourceRange( view ).layerCount );
 		}
 
 		m_passes[index].renderArea.extent.width = width;

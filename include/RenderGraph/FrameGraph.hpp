@@ -5,6 +5,8 @@ See LICENSE file in root folder.
 #pragma once
 
 #include "Attachment.hpp"
+#include "BufferData.hpp"
+#include "BufferViewData.hpp"
 #include "FramePassGroup.hpp"
 #include "GraphNode.hpp"
 #include "ImageData.hpp"
@@ -39,8 +41,41 @@ namespace crg
 		*	Resource creation.
 		*/
 		/**@{*/
+		CRG_API BufferId createBuffer( BufferData const & img );
+		CRG_API BufferViewId createView( BufferViewData const & view );
 		CRG_API ImageId createImage( ImageData const & img );
 		CRG_API ImageViewId createView( ImageViewData const & view );
+		/**@}*/
+		/**
+		*\name
+		*	Views merging.
+		*/
+		/**@{*/
+		/**
+		*\brief
+		*	Creates a view which represents the given views merging.
+		*/
+		CRG_API ImageViewId mergeViews( ImageViewIdArray const & views
+			, bool mergeMipLevels = true
+			, bool mergeArrayLayers = true );
+		/**
+		*\brief
+		*	Creates a view which represents the given views merging.
+		*/
+		CRG_API BufferViewId mergeViews( BufferViewIdArray const & views );
+		/**@}*/
+		/**
+		*\name
+		*	Attachments merging.
+		*/
+		/**@{*/
+		/**
+		*\brief
+		*	Creates a view which represents the given views merging.
+		*/
+		CRG_API Attachment const * mergeAttachments( AttachmentArray const & attachments
+			, bool mergeMipLevels = true
+			, bool mergeArrayLayers = true );
 		/**@}*/
 		/**
 		*\name
@@ -78,7 +113,9 @@ namespace crg
 			, ImageSubresourceRange const & range )const;
 		CRG_API LayoutState getFinalLayoutState( ImageViewId view
 			, uint32_t passIndex = 0u )const;
-		CRG_API AccessState const & getFinalAccessState( Buffer const & buffer
+		CRG_API AccessState const & getFinalAccessState( BufferId buffer
+			, BufferSubresourceRange const & range )const;
+		CRG_API AccessState const & getFinalAccessState( BufferViewId view
 			, uint32_t passIndex = 0u )const;
 		CRG_API void addInput( ImageId image
 			, ImageViewType viewType
@@ -135,8 +172,8 @@ namespace crg
 		ResourceHandler & m_handler;
 		std::string m_name;
 		FramePassGroupPtr m_defaultGroup;
-		ImageIdAliasMap m_imageAliases;
-		ImageViewIdAliasMap m_imageViewAliases;
+		std::set< BufferId > m_buffers;
+		std::set< BufferViewId > m_bufferViews;
 		std::set< ImageId > m_images;
 		std::set< ImageViewId > m_imageViews;
 		std::map< std::string, ImageViewId, std::less<> > m_attachViews;
@@ -144,5 +181,6 @@ namespace crg
 		FrameGraphArray m_depends;
 		LayerLayoutStatesHandler m_inputs;
 		LayerLayoutStatesHandler m_outputs;
+		std::unordered_map< size_t, AttachmentPtr > m_mergedAttachments;
 	};
 }

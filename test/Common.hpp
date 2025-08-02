@@ -9,11 +9,23 @@
 
 namespace test
 {
+	crg::BufferData createBuffer( std::string name );
+	crg::BufferViewData createView( std::string name
+		, crg::BufferId buffer
+		, crg::PixelFormat format = crg::PixelFormat::eUNDEFINED );
+	crg::BufferViewData createView( std::string name
+		, crg::BufferId buffer
+		, crg::DeviceSize offset, crg::DeviceSize size
+		, crg::PixelFormat format = crg::PixelFormat::eUNDEFINED );
 	crg::ImageData createImage( std::string name
 		, crg::PixelFormat format
 		, uint32_t mipLevels = 1u
 		, uint32_t arrayLayers = 1u );
 	crg::ImageData createImage1D( std::string name
+		, crg::PixelFormat format
+		, uint32_t mipLevels = 1u
+		, uint32_t arrayLayers = 1u );
+	crg::ImageData createImage3D( std::string name
 		, crg::PixelFormat format
 		, uint32_t mipLevels = 1u
 		, uint32_t arrayLayers = 1u );
@@ -35,10 +47,10 @@ namespace test
 		, uint32_t baseArrayLayer = 0u
 		, uint32_t layerCount = 1u );
 	crg::GraphContext & getDummyContext();
-	std::stringstream checkRunnable( TestCounts & testCounts
+	std::string checkRunnable( TestCounts & testCounts
 		, crg::RunnableGraph * runnable );
 
-	inline std::stringstream checkRunnable( TestCounts & testCounts
+	inline std::string checkRunnable( TestCounts & testCounts
 		, crg::RunnableGraphPtr const & runnable )
 	{
 		return checkRunnable( testCounts, runnable.get() );
@@ -98,9 +110,22 @@ namespace test
 		, crg::RunnableGraph & runGraph
 		, crg::PipelineStageFlags pipelineStageFlags
 		, crg::ru::Config config = {} );
+	crg::RunnablePassPtr createDummyNoRecord( crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, crg::PipelineStageFlags pipelineStageFlags
+		, crg::ru::Config config = {} );
 	void checkDummy( test::TestCounts & testCounts
 		, crg::FramePass const & framePass
 		, crg::RunnableGraph const & graph
 		, crg::RecordContext const & context
 		, uint32_t index );
+}
+
+namespace crg
+{
+	std::ostream & operator<<( std::ostream & stream, AccessFlags const & v );
+	std::ostream & operator<<( std::ostream & stream, ImageLayout const & v );
+	std::ostream & operator<<( std::ostream & stream, AttachmentLoadOp const & v );
+	std::ostream & operator<<( std::ostream & stream, AttachmentStoreOp const & v );
 }

@@ -59,17 +59,15 @@ namespace crg
 
 				for ( auto & [curLayout, curStates] : currentLayout.second )
 				{
-					auto nxtLayerIt = nxtLayout.find( curLayout );
-
-					if ( nxtLayerIt != nxtLayout.end() )
+					if ( auto nxtLayerIt = nxtLayout.find( curLayout );
+						nxtLayerIt != nxtLayout.end() )
 					{
 						auto resLayerIt = result.try_emplace( curLayout ).first;
 
 						for ( auto & [curLevel, _] : curStates )
 						{
-							auto nxtLevelIt = nxtLayerIt->second.find( curLevel );
-
-							if ( nxtLevelIt != nxtLayerIt->second.end() )
+							if ( auto nxtLevelIt = nxtLayerIt->second.find( curLevel );
+								nxtLevelIt != nxtLayerIt->second.end() )
 							{
 								resLayerIt->second.emplace( *nxtLevelIt );
 							}
@@ -149,21 +147,49 @@ namespace crg
 			return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		}
 
-		static WriteDescriptorSet getWrite( BufferAttachment const & attach
+		static WriteDescriptorSet getWrite( ImageAttachment const & attach
+			, SamplerDesc const & samplerDesc
 			, uint32_t binding
 			, uint32_t count
-			, uint32_t index )
+			, uint32_t index
+			, RunnableGraph & graph )
 		{
 			WriteDescriptorSet result{ binding
 				, 0u
 				, count
 				, getDescriptorType( attach ) };
-			VkDescriptorBufferInfo info{ attach.buffer.buffer( index ), attach.range.offset, attach.range.size };
+			VkSampler sampler = attach.isSampledView()
+				? graph.createSampler( samplerDesc )
+				: VkSampler{};
+			VkImageLayout layout = attach.isSampledView()
+				? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+				: VK_IMAGE_LAYOUT_GENERAL;
+			VkDescriptorImageInfo info{ sampler
+				, graph.createImageView( attach.view( index ) )
+				, layout };
+			result.imageInfo.push_back( info );
+			return result;
+		}
+
+		static WriteDescriptorSet getWrite( BufferAttachment const & attach
+			, uint32_t binding
+			, uint32_t count
+			, uint32_t index
+			, RunnableGraph & graph )
+		{
+			WriteDescriptorSet result{ binding
+				, 0u
+				, count
+				, getDescriptorType( attach ) };
+			auto bufferViewId = attach.buffer( index );
+			VkDescriptorBufferInfo info{ graph.createBuffer( bufferViewId.data->buffer )
+				, getSubresourceRange( bufferViewId ).offset
+				, getSubresourceRange( bufferViewId ).size };
 
 			if ( attach.isView() )
 			{
 				result.bufferViewInfo.push_back( info );
-				result.texelBufferView.push_back( attach.view );
+				result.texelBufferView.push_back( graph.createBufferView( bufferViewId ) );
 			}
 			else
 			{
@@ -204,14 +230,12 @@ namespace crg
 	//************************************************************************************************
 
 	RunnableGraph::RunnableGraph( FrameGraph & graph
-		, AttachmentTransitions transitions
 		, GraphNodePtrArray nodes
 		, RootNode rootNode
 		, GraphContext & context )
 		: m_graph{ graph }
 		, m_context{ context }
 		, m_resources{ m_graph.getHandler(), m_context }
-		, m_transitions{ std::move( transitions ) }
 		, m_nodes{ std::move( nodes ) }
 		, m_rootNode{ std::move( rootNode ) }
 		, m_timerQueries{ m_context
@@ -434,6 +458,16 @@ namespace crg
 			, m_graph.getFinalStates().getCurrPipelineState().pipelineStage } };
 	}
 
+	VkBuffer RunnableGraph::createBuffer( BufferId const & buffer )
+	{
+		return m_resources.createBuffer( buffer );
+	}
+
+	VkBufferView RunnableGraph::createBufferView( BufferViewId const & view )
+	{
+		return m_resources.createBufferView( view );
+	}
+
 	VkImage RunnableGraph::createImage( ImageId const & image )
 	{
 		return m_resources.createImage( image );
@@ -494,7 +528,7 @@ namespace crg
 		return getCurrentLayoutState( context
 			, view.data->image
 			, view.data->info.viewType
-			, view.data->info.subresourceRange );
+			, getSubresourceRange( view ) );
 	}
 
 	LayoutState RunnableGraph::getNextLayoutState( RecordContext const & context
@@ -530,9 +564,16 @@ namespace crg
 		return rungrf::getDescriptorType( attach.bufferAttach );
 	}
 
-	WriteDescriptorSet RunnableGraph::getBufferWrite( Attachment const & attach, uint32_t index )const
+	WriteDescriptorSet RunnableGraph::getDescriptorWrite( Attachment const & attach, uint32_t binding, uint32_t index )
 	{
-		assert( attach.isBuffer() );
-		return rungrf::getWrite( attach.bufferAttach, attach.binding, 1u, index );
+		if ( attach.isImage() )
+			return rungrf::getWrite( attach.imageAttach, SamplerDesc{}, binding, 1u, index, *this );
+		return rungrf::getWrite( attach.bufferAttach, binding, 1u, index, *this );
+	}
+
+	WriteDescriptorSet RunnableGraph::getDescriptorWrite( Attachment const & attach, SamplerDesc const & samplerDesc, uint32_t binding, uint32_t index )
+	{
+		assert( attach.isImage() );
+		return rungrf::getWrite( attach.imageAttach, samplerDesc, binding, 1u, index, *this );
 	}
 }

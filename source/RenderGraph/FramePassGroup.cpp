@@ -47,7 +47,8 @@ namespace crg
 
 	FramePassGroup::FramePassGroup( FrameGraph & graph
 		, uint32_t pid
-		, std::string const & name )
+		, std::string const & name
+		, Token )
 		: id{ pid }
 		, m_name{ name }
 		, m_graph{ graph }
@@ -56,7 +57,8 @@ namespace crg
 
 	FramePassGroup::FramePassGroup( FramePassGroup & pparent
 		, uint32_t pid
-		, std::string const & name )
+		, std::string const & name
+		, Token )
 		: id{ pid }
 		, parent{ &pparent }
 		, m_name{ name }
@@ -94,7 +96,7 @@ namespace crg
 		if ( it == groups.end() )
 		{
 			auto count = group::countGroups( group::getOutermost( this ) );
-			groups.emplace_back( new FramePassGroup{ *this, count + 1u, groupName } );
+			groups.emplace_back( std::make_unique< FramePassGroup >( *this, count + 1u, groupName, Token{} ) );
 			it = std::next( groups.begin(), ptrdiff_t( groups.size() - 1u ) );
 		}
 
@@ -138,6 +140,16 @@ namespace crg
 		, uint32_t passIndex )const
 	{
 		return m_graph.getFinalLayoutState( view, passIndex );
+	}
+
+	BufferId FramePassGroup::createBuffer( BufferData const & img )const
+	{
+		return m_graph.createBuffer( img );
+	}
+
+	BufferViewId FramePassGroup::createView( BufferViewData const & view )const
+	{
+		return m_graph.createView( view );
 	}
 
 	ImageId FramePassGroup::createImage( ImageData const & img )const
@@ -195,5 +207,28 @@ namespace crg
 		return ( &m_graph.getDefaultGroup() == this )
 			? m_graph.getName()
 			: parent->getFullName() + "/" + getName();
+	}
+
+	ImageViewId FramePassGroup::mergeViews( ImageViewIdArray const & views
+		, bool mergeMipLevels
+		, bool mergeArrayLayers )
+	{
+		return m_graph.mergeViews( views
+			, mergeMipLevels
+			, mergeArrayLayers );
+	}
+
+	BufferViewId FramePassGroup::mergeViews( BufferViewIdArray const & views )
+	{
+		return m_graph.mergeViews( views );
+	}
+
+	Attachment const * FramePassGroup::mergeAttachments( AttachmentArray const & attachments
+		, bool mergeMipLevels
+		, bool mergeArrayLayers )
+	{
+		return m_graph.mergeAttachments( attachments
+			, mergeMipLevels
+			, mergeArrayLayers );
 	}
 }

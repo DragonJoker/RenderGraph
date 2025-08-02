@@ -11,6 +11,64 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	namespace pphdr
+	{
+		static bool isDescriptor( Attachment const & attach )
+		{
+			return attach.isStorageImageView() || attach.isSampledImageView()
+				|| attach.isUniformBuffer() || attach.isStorageBuffer()
+				|| attach.isUniformBufferView() || attach.isStorageBufferView();
+		}
+
+		static void createDescriptorWrites( std::map< uint32_t, FramePass::SampledAttachment > const & attaches
+			, uint32_t index
+			, RunnableGraph & graph
+			, WriteDescriptorSetArray & writes )
+		{
+			for ( auto & [binding, attach] : attaches )
+				writes.push_back( graph.getDescriptorWrite( *attach.attach, attach.sampler, binding, index ) );
+		}
+		
+		static void createDescriptorWrites( std::map< uint32_t, Attachment const * > const & attaches
+			, uint32_t index
+			, RunnableGraph & graph
+			, WriteDescriptorSetArray & writes )
+		{
+			for ( auto & [binding, attach] : attaches )
+			{
+				if ( isDescriptor( *attach ) )
+					writes.push_back( graph.getDescriptorWrite( *attach, binding, index ) );
+			}
+		}
+
+		static void createDescriptorBindings( std::map< uint32_t, FramePass::SampledAttachment > const & attaches
+			, VkShaderStageFlags shaderStage
+			, RunnableGraph const & graph
+			, VkDescriptorSetLayoutBindingArray & descriptorBindings )
+		{
+			for ( auto & [binding, attach] : attaches )
+			{
+				descriptorBindings.push_back( { binding
+					, graph.getDescriptorType( *attach.attach )
+					, 1u, shaderStage, nullptr } );
+			}
+		}
+
+		static void createDescriptorBindings( std::map< uint32_t, Attachment const * > const & attaches
+			, VkShaderStageFlags shaderStage
+			, RunnableGraph const & graph
+			, VkDescriptorSetLayoutBindingArray & descriptorBindings )
+		{
+			for ( auto & [binding, attach] : attaches )
+			{
+				if ( isDescriptor( *attach ) )
+					descriptorBindings.push_back( { binding
+						, graph.getDescriptorType( *attach )
+						, 1u, shaderStage, nullptr } );
+			}
+		}
+	}
+
 	PipelineHolder::PipelineHolder( FramePass const & pass
 		, GraphContext & context
 		, RunnableGraph & graph
@@ -20,10 +78,10 @@ namespace crg
 		: m_pass{ pass }
 		, m_context{ context }
 		, m_graph{ graph }
-		, m_baseConfig{ config.m_programs ? std::move( *config.m_programs ) : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > >
-			, config.m_programCreator ? std::move( *config.m_programCreator ) : defaultV< ProgramCreator >
-			, config.m_layouts ? std::move( *config.m_layouts ) : defaultV< std::vector< VkDescriptorSetLayout > >
-			, config.m_pushConstants ? std::move( *config.m_pushConstants ) : defaultV< std::vector< VkPushConstantRange > > }
+		, m_baseConfig{ config.m_programs ? *config.m_programs : defaultV< std::vector< VkPipelineShaderStageCreateInfoArray > >
+			, config.m_programCreator ? *config.m_programCreator : defaultV< ProgramCreator >
+			, config.m_layouts ? *config.m_layouts : defaultV< std::vector< VkDescriptorSetLayout > >
+			, config.m_pushConstants ? *config.m_pushConstants : defaultV< std::vector< VkPushConstantRange > > }
 		, m_bindingPoint{ bindingPoint }
 	{
 		if ( m_baseConfig.m_programCreator.create )
@@ -239,33 +297,11 @@ namespace crg
 			return;
 		}
 
-		for ( auto & attach : m_pass.images )
-		{
-			if ( attach.isSampledView() )
-			{
-				descriptorSet.writes.emplace_back( attach.binding
-					, 0u
-					, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER
-					, VkDescriptorImageInfo{ m_graph.createSampler( attach.getSamplerDesc() )
-						, m_graph.createImageView( attach.view( index ) )
-						, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } );
-			}
-			else if ( attach.isStorageView() )
-			{
-				descriptorSet.writes.emplace_back( attach.binding
-					, 0u
-					, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE
-					, VkDescriptorImageInfo{ VkSampler{}
-						, m_graph.createImageView( attach.view( index ) )
-						, VK_IMAGE_LAYOUT_GENERAL } );
-			}
-		}
-
-		for ( auto & buffer : m_pass.buffers )
-		{
-			if ( buffer.isStorageBuffer() || buffer.isUniformBuffer() )
-				descriptorSet.writes.push_back( m_graph.getBufferWrite( buffer, index ) );
-		}
+		pphdr::createDescriptorWrites( m_pass.uniforms, index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.sampled, index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.inputs, index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.inouts, index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.outputs, index, m_graph, descriptorSet.writes );
 
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
 			, nullptr
@@ -302,30 +338,11 @@ namespace crg
 				| VK_SHADER_STAGE_GEOMETRY_BIT
 				| VK_SHADER_STAGE_FRAGMENT_BIT ) );
 
-		for ( auto & attach : m_pass.images )
-		{
-			if ( attach.isSampledView() || attach.isStorageView() )
-			{
-				m_descriptorBindings.push_back( { attach.binding
-					, m_graph.getDescriptorType( attach )
-					, 1u
-					, shaderStage
-					, nullptr } );
-			}
-		}
-
-		for ( auto & attach : m_pass.buffers )
-		{
-			if ( attach.isUniformBuffer() || attach.isStorageBuffer()
-				|| attach.isUniformBufferView() || attach.isStorageBufferView() )
-			{
-				m_descriptorBindings.push_back( { attach.binding
-					, m_graph.getDescriptorType( attach )
-					, 1u
-					, shaderStage
-					, nullptr } );
-			}
-		}
+		pphdr::createDescriptorBindings( m_pass.uniforms, shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.sampled, shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.inputs, shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.inouts, shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.outputs, shaderStage, m_graph, m_descriptorBindings );
 	}
 
 	void PipelineHolder::doCreateDescriptorSetLayout()

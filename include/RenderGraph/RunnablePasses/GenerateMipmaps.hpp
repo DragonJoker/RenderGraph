@@ -23,6 +23,9 @@ namespace crg
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
 			, uint32_t index );
+		void doProcessImageView( RecordContext & context
+			, VkCommandBuffer commandBuffer
+			, ImageViewId viewId );
 
 	private:
 		LayoutState m_outputLayout;

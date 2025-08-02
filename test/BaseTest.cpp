@@ -1,5 +1,7 @@
 #include "BaseTest.hpp"
 
+#include <RenderGraph/Log.hpp>
+
 #if defined( _WIN32 )
 #	include <Windows.h>
 #elif defined( __APPLE__ )
@@ -21,6 +23,8 @@
 
 namespace test
 {
+	using StringArray = std::vector< std::string >;
+
 	//*********************************************************************************************
 
 	namespace
@@ -159,6 +163,25 @@ namespace test
 		{
 			return path.substr( 0, path.find_last_of( PathSeparator ) );
 		}
+
+		std::string findMissing( StringArray const & lhsLines
+			, StringArray const & rhsLines
+			, std::string const & op )
+		{
+			std::string result;
+
+			for ( auto & lhsLine : lhsLines )
+			{
+				if ( rhsLines.end() == std::find( rhsLines.begin()
+					, rhsLines.end()
+					, lhsLine ) )
+				{
+					result += op + lhsLine + "\n";
+				}
+			}
+
+			return result;
+		}
 	}
 
 	//*********************************************************************************************
@@ -228,47 +251,6 @@ namespace test
 
 	//*********************************************************************************************
 
-	void TestCounts::initialise( std::string const & name )
-	{
-		suiteName = name;
-		tclog = std::make_unique< test::LogStreambuf< test::DebugLogStreambufTraits > >( name, std::clog );
-		tcout = std::make_unique< test::LogStreambuf< test::InfoLogStreambufTraits > >( name, std::cout );
-		tcerr = std::make_unique< test::LogStreambuf< test::ErrorLogStreambufTraits > >( name, std::cerr );
-	}
-
-	void TestCounts::cleanup()
-	{
-		tclog.reset();
-		tcout.reset();
-		tcerr.reset();
-	}
-
-	void TestCounts::updateName( std::string const & name )
-	{
-		std::stringstream stream;
-		++testId;
-		stream << "test" << std::setw( 3 ) << std::setfill( '0' ) << testId << "-" << name;
-		this->testName = stream.str();
-	}
-
-	using StringArray = std::vector< std::string >;
-
-	std::string replace( std::string const & value
-		, std::string const & lookup
-		, std::string const & repl )
-	{
-		auto result = value;
-		size_t startPos = 0u;
-
-		while ( ( startPos = result.find( lookup, startPos ) ) != std::string::npos )
-		{
-			result.replace( startPos, lookup.length(), repl );
-			startPos += repl.length();
-		}
-
-		return result;
-	}
-
 	StringArray splitInLines( std::string const & value )
 	{
 		StringArray lines;
@@ -284,29 +266,10 @@ namespace test
 		return lines;
 	}
 
-	std::string findMissing( StringArray const & lhsLines
-		, StringArray const & rhsLines
-		, std::string const & op )
-	{
-		std::string result;
-
-		for ( auto & lhsLine : lhsLines )
-		{
-			if ( rhsLines.end() == std::find( rhsLines.begin()
-				, rhsLines.end()
-				, lhsLine ) )
-			{
-				result += op + lhsLine + "\n";
-			}
-		}
-
-		return result;
-	}
-
 	std::string TestCounts::diffLines( std::string const & check
 		, std::string const & ref )
 	{
-		auto checkLines = splitInLines( replace( check, testName + "/", "" ) );
+		auto checkLines = splitInLines( check );
 		auto refLines = splitInLines( ref );
 		std::string result;
 		result += findMissing( checkLines, refLines, "+" );
@@ -314,50 +277,52 @@ namespace test
 		return result;
 	}
 
-	int reportTestSuite( TestCounts const & testCounts )
+	//*********************************************************************************************
+
+	TestSuite::TestSuite( std::string const & name )
+		: tclog{ std::make_unique< test::LogStreambuf< test::DebugLogStreambufTraits > >( name, std::clog ) }
+		, tcout{ std::make_unique< test::LogStreambuf< test::InfoLogStreambufTraits > >( name, std::cout ) }
+		, tcerr{ std::make_unique< test::LogStreambuf< test::ErrorLogStreambufTraits > >( name, std::cerr ) }
 	{
-		int result;
-
-		if ( testCounts.errorCount )
-		{
-			std::cout << "********************************************************************************" << std::endl;
-			std::cout << "Test suite ended with some failures." << std::endl;
-			std::cout << "Total checks count: " << testCounts.totalCount << std::endl;
-			std::cout << "Failed checks count: " << testCounts.errorCount << std::endl;
-			result = EXIT_FAILURE;
-		}
-		else
-		{
-			std::cout << "********************************************************************************" << std::endl;
-			std::cout << "Test suite ended cleanly." << std::endl;
-			std::cout << "Total checks count: " << testCounts.totalCount << std::endl;
-			result = EXIT_SUCCESS;
-		}
-
-		return result;
+		crg::Logger::setTraceCallback( []( std::string_view, bool )noexcept
+			{
+				// Don't log trace
+			} );
+		crg::Logger::setDebugCallback( []( std::string_view msg, bool newLine )noexcept
+			{
+				std::clog << msg.data();
+				if ( newLine )
+					std::clog << "\n";
+			} );
+		crg::Logger::setInfoCallback( []( std::string_view msg, bool newLine )noexcept
+			{
+				std::cout << msg.data();
+				if ( newLine )
+					std::cout << "\n";
+			} );
+		crg::Logger::setWarningCallback( []( std::string_view msg, bool newLine )noexcept
+			{
+				std::cout << msg.data();
+				if ( newLine )
+					std::cout << "\n";
+			} );
+		crg::Logger::setErrorCallback( []( std::string_view msg, bool newLine )noexcept
+			{
+				std::cerr << msg.data();
+				if ( newLine )
+					std::cerr << "\n";
+			} );
 	}
 
-	void reportSuccess( TestCounts & testCounts
-		, MessageData const & data )
-	{
-		std::cout << "In " << data.function << ":" << data.line << ":" << std::endl;
-		std::cout << "Success for " << data.target << "( " << data.message << " )" << std::endl;
-	}
+	//*********************************************************************************************
 
-	void reportFailure( TestCounts & testCounts
-		, MessageData const & data )
+	int testsMain( int argc, char ** argv, std::string_view testSuiteName )
 	{
-		std::cout << "In " << data.function << ":" << data.line << ":" << std::endl;
-		std::cout << "Failure for " << data.target << "( " << data.error << "( " << data.message << " ) )" << std::endl;
-		++testCounts.errorCount;
-	}
-
-	void reportUnhandled( TestCounts & testCounts
-		, MessageData const & data )
-	{
-		std::cout << "In " << data.function << ":" << data.line << ":" << std::endl;
-		std::cout << "Unhandled Exception for " << data.target << "( " << data.error << "( " << data.message << " ) )" << std::endl;
-		++testCounts.errorCount;
+		std::locale::global( std::locale{ "C" } );
+		testing::InitGoogleTest( &argc, argv );
+		auto suite = new test::TestSuite{ std::string{ testSuiteName } };
+		testing::AddGlobalTestEnvironment( suite );
+		return RUN_ALL_TESTS();
 	}
 
 	std::string sortLines( std::string const & value )

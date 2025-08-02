@@ -26,11 +26,12 @@ namespace crg
 			, uint32_t mipLevels = 1u
 			, uint32_t arrayLayers = 1u
 			, SampleCount samples = SampleCount::e1
-			, ImageTiling tiling = ImageTiling::eOptimal )
+			, ImageTiling tiling = ImageTiling::eOptimal
+			, MemoryPropertyFlags memory = MemoryPropertyFlags::eDeviceLocal )
 			: name{ std::move( name ) }
 			, info{ flags, imageType, format
 				, extent, mipLevels, arrayLayers, samples
-				, tiling, usage }
+				, tiling, usage, memory }
 		{
 		}
 

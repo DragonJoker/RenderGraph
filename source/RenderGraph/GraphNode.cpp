@@ -17,7 +17,7 @@ namespace crg
 		, id{ rhs.id }
 		, name{ std::move( rhs.name ) }
 		, group{ rhs.group }
-		, next{ std::move( rhs.next ) }
+		, prev{ std::move( rhs.prev ) }
 	{
 		rhs.kind = Kind::Undefined;
 		rhs.id = 0u;
@@ -34,63 +34,10 @@ namespace crg
 	{
 	}
 
-	void GraphNode::addAttaches( ConstGraphAdjacentNode prev
-		, AttachmentTransitions inAttaches )
+	void GraphNode::attachNode( GraphNode & child )
 	{
-		bool dirty = false;
-		auto * mine = &this->inputAttaches[prev];
-
-		for ( auto & attach : inAttaches.viewTransitions )
-		{
-			auto it = std::find( mine->viewTransitions.begin()
-				, mine->viewTransitions.end()
-				, attach );
-
-			if ( it == mine->viewTransitions.end() )
-			{
-				mine->viewTransitions.push_back( std::move( attach ) );
-				dirty = true;
-			}
-		}
-
-		for ( auto & attach : inAttaches.bufferTransitions )
-		{
-			auto it = std::find( mine->bufferTransitions.begin()
-				, mine->bufferTransitions.end()
-				, attach );
-
-			if ( it == mine->bufferTransitions.end() )
-			{
-				mine->bufferTransitions.push_back( std::move( attach ) );
-				dirty = true;
-			}
-		}
-
-		if ( dirty )
-		{
-			*mine = mergeIdenticalTransitions( std::move( *mine ) );
-		}
-	}
-
-	void GraphNode::attachNode( GraphAdjacentNode nextNode
-		, AttachmentTransitions nextInputAttaches )
-	{
-		if ( auto it = std::find( next.begin()
-			, next.end()
-			, nextNode ); it == next.end() )
-		{
-			this->next.push_back( nextNode );
-		}
-
-		nextNode->addAttaches( this
-			, std::move( nextInputAttaches ) );
-	}
-
-	AttachmentTransitions const & GraphNode::getInputAttaches( ConstGraphAdjacentNode const pred )const
-	{
-		auto it = inputAttaches.find( pred );
-		assert( it != inputAttaches.end() );
-		return it->second;
+		if ( prev.end() == std::find( prev.begin(), prev.end(), &child ) )
+			prev.push_back( &child );
 	}
 
 	//*********************************************************************************************

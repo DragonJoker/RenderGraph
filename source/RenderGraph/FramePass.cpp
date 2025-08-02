@@ -11,134 +11,11 @@ See LICENSE file in root folder.
 
 namespace crg
 {
+	inline uint32_t constexpr ImplicitOffset = 1024U;
+	inline uint32_t constexpr TransferOffset = 4096U;
+
 	namespace fpass
 	{
-		static AttachmentArray splitAttach( Attachment const & attach )
-		{
-			AttachmentArray result;
-
-			if ( attach.view().data->source.empty() )
-			{
-				result.push_back( attach );
-			}
-			else
-			{
-				for ( auto & view : attach.view().data->source )
-				{
-					result.emplace_back( view, attach );
-				}
-			}
-
-			return result;
-		}
-
-		static ImageViewIdArray splitView( ImageViewId const & view )
-		{
-			ImageViewIdArray result;
-
-			if ( view.data->source.empty() )
-			{
-				result.push_back( view );
-			}
-			else
-			{
-				for ( auto & subview : view.data->source )
-				{
-					result.push_back( subview );
-				}
-			}
-
-			return result;
-		}
-
-		template< typename PredT >
-		static bool matchView( Attachment const & lhs
-			, ImageViewId const & rhs
-			, PredT predicate )
-		{
-			auto lhsAttaches = splitAttach( lhs );
-			auto rhsViews = splitView( rhs );
-
-			for ( auto & lhsAttach : lhsAttaches )
-			{
-				for ( auto & rhsView : rhsViews )
-				{
-					if ( predicate( lhsAttach, rhsView ) )
-					{
-						return true;
-					}
-				}
-			}
-
-			return false;
-		}
-
-		static bool isInOutputs( FramePass const & pass
-			, ImageViewId const & view )
-		{
-			auto it = std::find_if( pass.images.begin()
-				, pass.images.end()
-				, [&view]( Attachment const & lookup )
-				{
-					return matchView( lookup
-							, view
-							, []( Attachment const & lhs
-								, ImageViewId const & rhs )
-							{
-								return lhs.isOutput() && match( lhs.view(), rhs );
-							} );
-				} );
-
-			return it != pass.images.end();
-		}
-
-		static bool isInInputs( FramePass const & pass
-			, ImageViewId const & view )
-		{
-			auto it = std::find_if( pass.images.begin()
-				, pass.images.end()
-				, [&view]( Attachment const & lookup )
-				{
-					return matchView( lookup
-						, view
-						, []( Attachment const & lhs
-							, ImageViewId const & rhs )
-						{
-							return lhs.isInput() && match( lhs.view(), rhs );
-						} );
-				} );
-
-			return it != pass.images.end();
-		}
-
-		static bool isInOutputs( FramePass const & pass
-			, Buffer const & buffer )
-		{
-			auto it = std::find_if( pass.buffers.begin()
-				, pass.buffers.end()
-				, [&buffer]( Attachment const & lookup )
-				{
-					return lookup.isStorageBuffer()
-						&& lookup.bufferAttach.buffer == buffer;
-				} );
-
-			return it != pass.buffers.end();
-		}
-
-		static bool isInInputs( FramePass const & pass
-			, Buffer const & buffer )
-		{
-			auto it = std::find_if( pass.buffers.begin()
-				, pass.buffers.end()
-				, [&buffer]( Attachment const & lookup )
-				{
-					return lookup.isStorageBuffer()
-						&& lookup.bufferAttach.buffer == buffer;
-				} );
-
-			return it != pass.buffers.end();
-		}
-
 		static std::string adjustName( FramePass const & pass
 			, std::string const & dataName )
 		{
@@ -151,88 +28,6 @@ namespace crg
 			}
 
 			return result.substr( index );
-		}
-
-		static size_t makeHash( FramePass const & pass
-			, ImageViewId const & view )
-		{
-			if constexpr ( sizeof( size_t ) == sizeof( uint64_t ) )
-			{
-				return size_t( pass.id ) << 32u
-					| size_t( view.id );
-			}
-			else
-			{
-				return size_t( pass.id ) << 16u
-					| size_t( view.id );
-			}
-		}
-
-		static size_t makeHash( FramePass const & pass
-			, Buffer const & buffer )
-		{
-			if constexpr ( sizeof( size_t ) == sizeof( uint64_t ) )
-			{
-				return size_t( pass.id ) << 32u
-					| ( ptrdiff_t( buffer.buffer() ) & 0xFFFFFFFF );
-			}
-			else
-			{
-				return size_t( pass.id ) << 16u
-					| ( ptrdiff_t( buffer.buffer() ) & 0x0000FFFF );
-			}
-		}
-
-		static void mergeViewData( ImageViewId const & view
-			, bool mergeMipLevels
-			, bool mergeArrayLayers
-			, ImageViewData & data )
-		{
-			if ( data.image.id == 0 )
-			{
-				data.image = view.data->image;
-				data.name = data.image.data->name;
-				data.info.flags = view.data->info.flags;
-				data.info.format = view.data->info.format;
-				data.info.viewType = view.data->info.viewType;
-				data.info.subresourceRange = view.data->info.subresourceRange;
-			}
-			else
-			{
-				assert( data.image == view.data->image );
-
-				if ( mergeMipLevels )
-				{
-					auto maxLevel = std::max( data.info.subresourceRange.levelCount + data.info.subresourceRange.baseMipLevel
-						, view.data->info.subresourceRange.levelCount + view.data->info.subresourceRange.baseMipLevel );
-					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
-						, data.info.subresourceRange.baseMipLevel );
-					data.info.subresourceRange.levelCount = maxLevel - data.info.subresourceRange.baseMipLevel;
-				}
-				else
-				{
-					data.info.subresourceRange.baseMipLevel = std::min( view.data->info.subresourceRange.baseMipLevel
-						, data.info.subresourceRange.baseMipLevel );
-					data.info.subresourceRange.levelCount = 1u;
-				}
-
-				if ( mergeArrayLayers )
-				{
-					auto maxLayer = std::max( data.info.subresourceRange.layerCount + data.info.subresourceRange.baseArrayLayer
-						, view.data->info.subresourceRange.layerCount + view.data->info.subresourceRange.baseArrayLayer );
-					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
-						, data.info.subresourceRange.baseArrayLayer );
-					data.info.subresourceRange.layerCount = maxLayer - data.info.subresourceRange.baseArrayLayer;
-				}
-				else
-				{
-					data.info.subresourceRange.baseArrayLayer = std::min( view.data->info.subresourceRange.baseArrayLayer
-						, data.info.subresourceRange.baseArrayLayer );
-					data.info.subresourceRange.layerCount = 1u;
-				}
-			}
-
-			data.source.push_back( view );
 		}
 	}
 
@@ -249,730 +44,657 @@ namespace crg
 	{
 	}
 
-	bool FramePass::dependsOn( FramePass const & pass
-		, ImageViewId const & view
-		, PassDependencyCache & cache )const
+	Attachment const * FramePass::getParentAttachment( Attachment const & attach )const
 	{
-		auto & passCache = cache.try_emplace( this ).first->second;
-		auto [rit, res] = passCache.emplace( fpass::makeHash( pass, view ), false );
-
-		if ( res )
-		{
-			auto it = std::find_if( passDepends.begin()
-				, passDepends.end()
-				, [&pass, &view, &cache]( FramePass const * lookup )
-				{
-					bool result = false;
-
-					if ( fpass::isInOutputs( *lookup, view ) )
-					{
-						result = ( pass.id == lookup->id );
-					}
-					else if ( !fpass::isInInputs( *lookup, view ) )
-					{
-						result = lookup->dependsOn( pass, view, cache );
-					}
-
-					return result;
-				} );
-			rit->second = it != passDepends.end();
-		}
-
-		return rit->second;
+		auto it = m_ownAttaches.find( &attach );
+		return it != m_ownAttaches.end()
+			? it->second.parent
+			: nullptr;
 	}
 
-	bool FramePass::dependsOn( FramePass const & pass
-		, Buffer const & buffer
-		, PassDependencyCache & cache )const
+	void FramePass::addInputUniformBuffer( BufferViewIdArray buffers
+		, uint32_t binding )
 	{
-		auto & passCache = cache.try_emplace( this ).first->second;
-		auto [rit, res] = passCache.emplace( fpass::makeHash( pass, buffer ), false );
-
-		if ( res )
-		{
-			auto it = std::find_if( passDepends.begin()
-				, passDepends.end()
-				, [&pass, &buffer, &cache]( FramePass const * lookup )
-				{
-					bool result = false;
-
-					if ( fpass::isInOutputs( *lookup, buffer ) )
-					{
-						result = ( pass.id == lookup->id );
-					}
-					else if ( !fpass::isInInputs( *lookup, buffer ) )
-					{
-						result = lookup->dependsOn( pass, buffer, cache );
-					}
-
-					return result;
-				} );
-			rit->second = it != passDepends.end();
-		}
-
-		return rit->second;
-	}
-
-	bool FramePass::dependsOn( FramePass const & pass )const
-	{
-		auto it = std::find_if( passDepends.begin()
-			, passDepends.end()
-			, [&pass]( FramePass const * lookup )
-			{
-				return pass.id == lookup->id;
-			} );
-		return it != passDepends.end();
-	}
-
-	void FramePass::addImplicitBuffer( Buffer buffer
-		, DeviceSize offset
-		, DeviceSize range
-		, AccessState wantedAccess )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ImplB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
+		auto attachName = fpass::adjustName( *this, buffers.front().data->name ) + "/UB";
+		auto attach = addOwnAttach( std::move( buffers )
 			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transition )
-			, std::move( buffer )
-			, offset
-			, range
-			, std::move( wantedAccess ) } );
-	}
-
-	void FramePass::addUniformBuffer( Buffer buffer
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/UB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
-			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
+			, AccessState{}
+			, nullptr );
+		uniforms.try_emplace( binding, attach );
 	}
 
-	void FramePass::addInputStorageBuffer( Buffer buffer
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ISB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addOutputStorageBuffer( Buffer buffer
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addClearableOutputStorageBuffer( Buffer buffer
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSB";
-		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
-				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addInOutStorageBuffer( Buffer buffer
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOSB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addImplicitBufferView( Buffer buffer
-		, VkBufferView view
-		, DeviceSize offset
-		, DeviceSize range
-		, AccessState wantedAccess )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ImplBV";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::TransitionView )
-			, std::move( buffer )
-			, view
-			, offset
-			, range
-			, std::move( wantedAccess ) } );
-	}
-
-	void FramePass::addUniformBufferView( Buffer buffer
-		, VkBufferView view
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/UBV";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::UniformView )
-			, std::move( buffer )
-			, view
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addInputStorageBufferView( Buffer buffer
-		, VkBufferView view
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ISBV";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
-			, std::move( buffer )
-			, view
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addOutputStorageBufferView( Buffer buffer
-		, VkBufferView view
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSBV";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
-			, std::move( buffer )
-			, view
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addClearableOutputStorageBufferView( Buffer buffer
-		, VkBufferView view
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OSBV";
-		buffers.push_back( Attachment{ ( Attachment::FlagKind( Attachment::Flag::Output )
-				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
-			, std::move( buffer )
-			, view
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addInOutStorageBufferView( Buffer buffer
-		, VkBufferView view
-		, uint32_t binding
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOSBV";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::InOut )
-			, *this
-			, binding
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::StorageView )
-			, std::move( buffer )
-			, view
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addTransferInputBuffer( Buffer buffer
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/ITB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addTransferOutputBuffer( Buffer buffer
-		, DeviceSize offset
-		, DeviceSize range )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/OTB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, InvalidBindingId
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	void FramePass::addTransferInOutBuffer( Buffer buffer
-		, DeviceSize offset
-		, DeviceSize range
-		, Attachment::Flag flag )
-	{
-		auto attachName = fpass::adjustName( *this, buffer.name ) + "/IOTB";
-		buffers.push_back( Attachment{ Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
-			, *this
-			, InvalidBindingId
-			, std::move( attachName )
-			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
-			, std::move( buffer )
-			, offset
-			, range
-			, AccessState{} } );
-	}
-
-	ImageViewId FramePass::mergeViews( ImageViewIdArray const & views
-		, bool mergeMipLevels
-		, bool mergeArrayLayers )
-	{
-		ImageViewData data;
-		for ( auto & view : views )
-			fpass::mergeViewData( view, mergeMipLevels, mergeArrayLayers, data );
-
-		if ( data.info.subresourceRange.layerCount > 1u )
-		{
-			switch ( data.info.viewType )
-			{
-			case ImageViewType::e1D:
-				data.info.viewType = ImageViewType::e1DArray;
-				break;
-			case ImageViewType::e2D:
-				if ( checkFlag( data.image.data->info.flags, ImageCreateFlags::eCubeCompatible )
-					&& ( data.info.subresourceRange.layerCount % 6u ) == 0u
-					&& data.info.subresourceRange.baseArrayLayer == 0u )
-				{
-					if ( data.info.subresourceRange.layerCount > 6u )
-					{
-						data.info.viewType = ImageViewType::eCubeArray;
-					}
-					else
-					{
-						data.info.viewType = ImageViewType::eCube;
-					}
-				}
-				else
-				{
-					data.info.viewType = ImageViewType::e2DArray;
-				}
-				break;
-			case ImageViewType::eCube:
-				if ( data.info.subresourceRange.layerCount > 6u )
-				{
-					data.info.viewType = ImageViewType::eCubeArray;
-				}
-				break;
-			default:
-				break;
-			}
-		}
-
-		return graph.createView( data );
-	}
-
-	void FramePass::addSampledView( ImageViewIdArray views
+	void FramePass::addInputSampledImage( ImageViewIdArray views
 		, uint32_t binding
 		, SamplerDesc samplerDesc )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Spl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
+		auto attach = addOwnAttach( std::move( views )
 			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, std::move( samplerDesc )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
 			, ClearValue{}
 			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eShaderReadOnly } );
+			, ImageLayout::eShaderReadOnly
+			, nullptr );
+		sampled.try_emplace( binding, attach, std::move( samplerDesc ) );
 	}
 
-	void FramePass::addImplicitColourView( ImageViewIdArray views
-		, ImageLayout wantedLayout )
+	void FramePass::addInputUniform( Attachment const & attachment
+		, uint32_t binding )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
+		auto attachName = fpass::adjustName( *this, attachment.buffer().data->name ) + "/UB";
+		auto attach = addOwnAttach( attachment.bufferAttach.buffers
 			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{}
-			, PipelineColorBlendAttachmentState{}
-			, wantedLayout } );
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
+			, AccessState{}
+			, &attachment );
+		uniforms.try_emplace( binding, attach );
 	}
 
-	void FramePass::addImplicitDepthView( ImageViewIdArray views
-		, ImageLayout wantedLayout )
+	void FramePass::addInputSampled( Attachment const & attachment
+		, uint32_t binding
+		, SamplerDesc samplerDesc )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
+		auto attachName = fpass::adjustName( *this, attachment.view( 0 ).data->name ) + "/Spl";
+		auto attach = addOwnAttach( attachment.imageAttach.views
 			, std::move( attachName )
-			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::Depth ) )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Sampled )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
 			, ClearValue{}
 			, PipelineColorBlendAttachmentState{}
-			, wantedLayout } );
+			, ImageLayout::eShaderReadOnly
+			, &attachment );
+		sampled.try_emplace( binding, attach, std::move( samplerDesc ) );
 	}
 
-	void FramePass::addImplicitDepthStencilView( ImageViewIdArray views
-		, ImageLayout wantedLayout )
+	void FramePass::addInputStorageBuffer( BufferViewIdArray buffers
+			, uint32_t binding )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Impl";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
+		auto attachName = fpass::adjustName( *this, buffers.front().data->name ) + "/SB";
+		auto attach = addOwnAttach( std::move( buffers )
 			, std::move( attachName )
-			, ( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition )
-				| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{}
-			, PipelineColorBlendAttachmentState{}
-			, wantedLayout } );
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
+			, AccessState{}
+		, nullptr );
+		inputs.try_emplace( binding, attach );
 	}
 
-	void FramePass::addInputStorageView( ImageViewIdArray views
+	void FramePass::addInputStorageImage( ImageViewIdArray views
 		, uint32_t binding )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IStr";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, binding
+		auto attach = addOwnAttach( std::move( views )
 			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
 			, ClearValue{}
 			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eGeneral } );
+			, ImageLayout::eGeneral
+			, nullptr );
+		inputs.try_emplace( binding, attach );
 	}
 
-	void FramePass::addOutputStorageView( ImageViewIdArray views
+	void FramePass::addInputStorage( Attachment const & attachment
+		, uint32_t binding )
+	{
+		if ( attachment.isImage() )
+		{
+			auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IStr";
+			auto attach = addOwnAttach( attachment.imageAttach.views
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::Flag::Input )
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, ClearValue{}
+				, PipelineColorBlendAttachmentState{}
+				, ImageLayout::eGeneral
+				, &attachment );
+			inputs.try_emplace( binding, attach );
+		}
+		else
+		{
+			auto attachName = fpass::adjustName( *this, attachment.buffer().data->name ) + "/IStr";
+			auto attach = addOwnAttach( attachment.bufferAttach.buffers
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::Flag::Input )
+				, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
+				, AccessState{}
+			, &attachment );
+			inputs.try_emplace( binding, attach );
+		}
+	}
+
+	Attachment const * FramePass::addInOutStorage( Attachment const & attachment
+		, uint32_t binding )
+	{
+		Attachment const * result{};
+
+		if ( attachment.isImage() )
+		{
+			auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IOStr";
+			result = addOwnAttach( attachment.imageAttach.views
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::Flag::InOut )
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, ClearValue{}
+				, PipelineColorBlendAttachmentState{}
+				, ImageLayout::eGeneral
+				, &attachment );
+			inouts.try_emplace( binding, result );
+		}
+		else
+		{
+			auto attachName = fpass::adjustName( *this, attachment.buffer().data->name ) + "/IOStr";
+			result = addOwnAttach( attachment.bufferAttach.buffers
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::Flag::InOut )
+				, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
+				, AccessState{}
+			, &attachment );
+			inouts.try_emplace( binding, result );
+		}
+
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputStorageBuffer( BufferViewIdArray buffers
+		, uint32_t binding )
+	{
+		auto attachName = fpass::adjustName( *this, buffers.front().data->name ) + "/OSB";
+		auto result = addOwnAttach( std::move( buffers )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
+			, AccessState{}
+		, nullptr );
+		outputs.try_emplace( binding, result );
+		return result;
+	}
+
+	Attachment const * FramePass::addClearableOutputStorageBuffer( BufferViewIdArray buffers
+		, uint32_t binding )
+	{
+		auto attachName = fpass::adjustName( *this, buffers.front().data->name ) + "/OSB";
+		auto result = addOwnAttach( std::move( buffers )
+			, std::move( attachName )
+			, ( Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( Attachment::Flag::Clearable ) )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
+			, AccessState{}
+		, nullptr );
+		outputs.try_emplace( binding, result );
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputStorageImage( ImageViewIdArray views
 		, uint32_t binding )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/OStr";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, binding
+		auto result = addOwnAttach( std::move( views )
 			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
 			, ClearValue{}
 			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eGeneral } );
+			, ImageLayout::eGeneral
+			, nullptr );
+		outputs.try_emplace( binding, result );
+		return result;
 	}
 
-	void FramePass::addClearableOutputStorageView( ImageViewIdArray views
-		, uint32_t binding )
+	Attachment const * FramePass::addClearableOutputStorageImage( ImageViewIdArray views
+		, uint32_t binding
+		, ClearValue clearValue )
 	{
 		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/COStr";
-		images.push_back( { ( Attachment::FlagKind( Attachment::Flag::Output )
-				| Attachment::FlagKind( Attachment::Flag::Clearable ) )
-			, *this
-			, binding
+		auto result = addOwnAttach( std::move( views )
 			, std::move( attachName )
+			, ( Attachment::FlagKind( Attachment::Flag::Output ) | Attachment::FlagKind( Attachment::Flag::Clearable ) )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{}
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, std::move( clearValue )
 			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eGeneral } );
+			, ImageLayout::eGeneral
+			, nullptr );
+		outputs.try_emplace( binding, result );
+		return result;
 	}
 
-	void FramePass::addInOutStorageView( ImageViewIdArray views
-		, uint32_t binding )
+	void FramePass::addInputTransferBuffer( BufferViewIdArray views )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IOStr";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::InOut )
-			, *this
-			, binding
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/ITrf";
+		auto attach = addOwnAttach( std::move( views )
 			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Storage )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{}
-			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eGeneral } );
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+			, AccessState{}
+			, nullptr );
+		inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
 	}
 
-	void FramePass::addTransferInputView( ImageViewIdArray views )
+	void FramePass::addInputTransferImage( ImageViewIdArray views )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/It";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Input )
-			, *this
-			, InvalidBindingId
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/ITrf";
+		auto attach = addOwnAttach( std::move( views )
 			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
 			, ClearValue{}
 			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eTransferSrc } );
+			, ImageLayout::eTransferSrc
+			, nullptr );
+		inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
 	}
 
-	void FramePass::addTransferOutputView( ImageViewIdArray views )
+	void FramePass::addInputTransfer( Attachment const & attachment )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/Ot";
-		images.push_back( { Attachment::FlagKind( Attachment::Flag::Output )
-			, *this
-			, InvalidBindingId
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{}
-			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eTransferDst } );
+		if ( attachment.isImage() )
+		{
+			auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/ITrf";
+			auto attach = addOwnAttach( attachment.imageAttach.views
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::Flag::Input )
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, ClearValue{}
+				, PipelineColorBlendAttachmentState{}
+				, ImageLayout::eTransferSrc
+				, & attachment );
+			inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
+		}
+		else
+		{
+			auto attachName = fpass::adjustName( *this, attachment.buffer().data->name ) + "/ITrf";
+			auto attach = addOwnAttach( attachment.bufferAttach.buffers
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::Flag::Input )
+				, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+				, AccessState{}
+				, &attachment );
+			inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
+		}
 	}
 
-	void FramePass::addTransferInOutView( ImageViewIdArray views
-		, crg::Attachment::Flag flag )
+	Attachment const * FramePass::addInOutTransfer( Attachment const & attachment
+			, Attachment::Flag flag )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IOt";
-		images.push_back( { Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
-			, *this
-			, InvalidBindingId
-			, std::move( attachName )
-			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
-			, std::move( views )
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{}
-			, PipelineColorBlendAttachmentState{}
-			, ImageLayout::eTransferSrc } );
+		Attachment const * result{};
+
+		if ( attachment.isImage() )
+		{
+			auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IOTrf";
+			result = addOwnAttach( attachment.imageAttach.views
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
+				, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+				, ClearValue{}
+				, PipelineColorBlendAttachmentState{}
+				, ImageLayout::eTransferSrc
+				, &attachment );
+			inouts.try_emplace( TransferOffset + uint32_t( inouts.size() ), result );
+		}
+		else
+		{
+			auto attachName = fpass::adjustName( *this, attachment.buffer().data->name ) + "/IOTrf";
+			result = addOwnAttach( attachment.bufferAttach.buffers
+				, std::move( attachName )
+				, Attachment::FlagKind( Attachment::FlagKind( Attachment::Flag::InOut ) | Attachment::FlagKind( flag ) )
+				, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+				, AccessState{}
+			, &attachment );
+			inouts.try_emplace( TransferOffset + uint32_t( inouts.size() ), result );
+		}
+
+		return result;
 	}
 
-	void FramePass::addColourView( std::string const & pname
-		, crg::Attachment::FlagKind flags
-		, ImageViewIdArray views
-		, AttachmentLoadOp loadOp
-		, AttachmentStoreOp storeOp
-		, ImageLayout wantedLayout
-		, ClearColorValue clearValue
+	Attachment const * FramePass::addOutputTransferBuffer( BufferViewIdArray buffers )
+	{
+		auto attachName = fpass::adjustName( *this, buffers.front().data->name ) + "/OTB";
+		auto result = addOwnAttach( std::move( buffers )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
+			, AccessState{}
+		, nullptr );
+		outputs.try_emplace( TransferOffset + uint32_t( outputs.size() ), result );
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputTransferImage( ImageViewIdArray views )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/OT";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Transfer )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eTransferDst
+			, nullptr );
+		outputs.try_emplace( TransferOffset + uint32_t( outputs.size() ), result );
+		return result;
+	}
+
+	void FramePass::addInputColourTargetImage( ImageViewIdArray views )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IRcl";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearColorValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eColorAttachment
+			, nullptr );
+		targets.emplace_back( result );
+	}
+
+	void FramePass::addInputDepthTargetImage( ImageViewIdArray views )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IRdp";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, nullptr );
+		targets.emplace_back( result );
+	}
+
+	void FramePass::addInputStencilTargetImage( ImageViewIdArray views )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IRst";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, nullptr );
+		targets.emplace_back( result );
+	}
+
+	void FramePass::addInputDepthStencilTargetImage( ImageViewIdArray views )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/IRds";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, nullptr );
+		targets.emplace_back( result );
+	}
+
+	void FramePass::addInputColourTarget( Attachment const & attachment )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IRcl";
+		auto result = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearColorValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eColorAttachment
+			, &attachment );
+		targets.emplace_back( result );
+	}
+
+	void FramePass::addInputDepthTarget( Attachment const & attachment )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IRdp";
+		auto attach = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, &attachment );
+		targets.emplace_back( attach );
+	}
+
+	void FramePass::addInputStencilTarget( Attachment const & attachment )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IRst";
+		auto attach = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, &attachment );
+		targets.emplace_back( attach );
+	}
+
+	void FramePass::addInputDepthStencilTarget( Attachment const & attachment )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IRds";
+		auto attach = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, &attachment );
+		targets.emplace_back( attach );
+	}
+
+	Attachment const * FramePass::addInOutColourTarget( Attachment const & attachment
 		, PipelineColorBlendAttachmentState blendState )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
-		images.push_back( { flags
-			, *this
-			, uint32_t{}
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IORcl";
+		auto result = addOwnAttach( attachment.imageAttach.views
 			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::InOut )
 			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
-			, std::move( views )
-			, loadOp
-			, storeOp
-			, AttachmentLoadOp::eDontCare
-			, AttachmentStoreOp::eDontCare
-			, SamplerDesc{}
-			, ClearValue{ std::move( clearValue ) }
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eStore
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearColorValue{} }
 			, std::move( blendState )
-			, wantedLayout } );
+			, ImageLayout::eColorAttachment
+			, &attachment );
+		targets.emplace_back( result );
+		return result;
 	}
 
-	void FramePass::addDepthView( std::string const & pname
-		, crg::Attachment::FlagKind flags
-		, ImageViewIdArray views
-		, AttachmentLoadOp loadOp
-		, AttachmentStoreOp storeOp
-		, AttachmentLoadOp stencilLoadOp
-		, AttachmentStoreOp stencilStoreOp
-		, ImageLayout wantedLayout
-		, ClearDepthStencilValue clearValue )
+	Attachment const * FramePass::addInOutDepthTarget( Attachment const & attachment )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
-		images.insert( images.begin()
-			, { flags
-				, *this
-				, uint32_t{}
-				, std::move( attachName )
-				, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
-				, std::move( views )
-				, loadOp
-				, storeOp
-				, stencilLoadOp
-				, stencilStoreOp
-				, SamplerDesc{}
-				, ClearValue{ std::move( clearValue ) }
-				, PipelineColorBlendAttachmentState{}
-				, wantedLayout } );
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IORdp";
+		auto result = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::InOut )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eStore
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, &attachment );
+		targets.emplace_back( result );
+		return result;
 	}
 
-	void FramePass::addStencilView( std::string const & pname
-		, crg::Attachment::FlagKind flags
-		, ImageAttachment::FlagKind stencilFlags
-		, ImageViewIdArray views
-		, AttachmentLoadOp loadOp
-		, AttachmentStoreOp storeOp
-		, AttachmentLoadOp stencilLoadOp
-		, AttachmentStoreOp stencilStoreOp
-		, ImageLayout wantedLayout
-		, ClearDepthStencilValue clearValue )
+	Attachment const * FramePass::addInOutStencilTarget( Attachment const & attachment )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
-		images.insert( images.begin()
-			, { flags
-				, *this
-				, uint32_t{}
-				, std::move( attachName )
-				, ImageAttachment::FlagKind( stencilFlags
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
-				, std::move( views )
-				, loadOp
-				, storeOp
-				, stencilLoadOp
-				, stencilStoreOp
-				, SamplerDesc{}
-				, ClearValue{ std::move( clearValue ) }
-				, PipelineColorBlendAttachmentState{}
-				, wantedLayout } );
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IORst";
+		auto result = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::InOut )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInOut ) | ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eStore
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, &attachment );
+		targets.emplace_back( result );
+		return result;
 	}
 
-	void FramePass::addDepthStencilView( std::string const & pname
-		, crg::Attachment::FlagKind flags
-		, ImageAttachment::FlagKind stencilFlags
-		, ImageViewIdArray views
-		, AttachmentLoadOp loadOp
-		, AttachmentStoreOp storeOp
-		, AttachmentLoadOp stencilLoadOp
-		, AttachmentStoreOp stencilStoreOp
-		, ImageLayout wantedLayout
+	Attachment const * FramePass::addInOutDepthStencilTarget( Attachment const & attachment )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/IORds";
+		auto result = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::InOut )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::StencilInOut ) | ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil )
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eStore
+			, AttachmentLoadOp::eLoad, AttachmentStoreOp::eStore
+			, ClearValue{ ClearDepthStencilValue{} }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, &attachment );
+		targets.emplace_back( result );
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputColourTarget( ImageViewIdArray views
+		, ClearColorValue clearValue )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/ORcl";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::None )
+			, AttachmentLoadOp::eClear, AttachmentStoreOp::eStore
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ std::move( clearValue ) }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eColorAttachment
+			, nullptr );
+		targets.emplace_back( result );
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputDepthTarget( ImageViewIdArray views
 		, ClearDepthStencilValue clearValue )
 	{
-		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/" + pname;
-		images.insert( images.begin()
-			, { flags
-				, *this
-				, uint32_t{}
-				, std::move( attachName )
-				, ImageAttachment::FlagKind( stencilFlags
-					| ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
-				, std::move( views )
-				, loadOp
-				, storeOp
-				, stencilLoadOp
-				, stencilStoreOp
-				, SamplerDesc{}
-				, ClearValue{ std::move( clearValue ) }
-				, PipelineColorBlendAttachmentState{}
-				, wantedLayout } );
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/ORdp";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, ImageAttachment::FlagKind( ImageAttachment::Flag::Depth )
+			, AttachmentLoadOp::eClear, AttachmentStoreOp::eStore
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{ std::move( clearValue ) }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthAttachment
+			, nullptr );
+		targets.emplace( targets.begin(), result );
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputStencilTarget( ImageViewIdArray views
+		, ClearDepthStencilValue clearValue )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/ORst";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, ImageAttachment::FlagKind( ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::Stencil ) )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eClear, AttachmentStoreOp::eStore
+			, ClearValue{ std::move( clearValue ) }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eStencilAttachment
+			, nullptr );
+		targets.emplace( targets.begin(), result );
+		return result;
+	}
+
+	Attachment const * FramePass::addOutputDepthStencilTarget( ImageViewIdArray views
+		, ClearDepthStencilValue clearValue )
+	{
+		auto attachName = fpass::adjustName( *this, views.front().data->name ) + "/ORds";
+		auto result = addOwnAttach( std::move( views )
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Output )
+			, ImageAttachment::FlagKind( ImageAttachment::FlagKind( ImageAttachment::Flag::StencilOutput ) | ImageAttachment::FlagKind( ImageAttachment::Flag::DepthStencil ) )
+			, AttachmentLoadOp::eClear, AttachmentStoreOp::eStore
+			, AttachmentLoadOp::eClear, AttachmentStoreOp::eStore
+			, ClearValue{ std::move( clearValue ) }
+			, PipelineColorBlendAttachmentState{}
+			, ImageLayout::eDepthStencilAttachment
+			, nullptr );
+		targets.emplace( targets.begin(), result );
+		return result;
+	}
+
+	void FramePass::addImplicit( Attachment const & attachment
+		, AccessState wantedAccess )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.buffer().data->name ) + "/Impl";
+		auto attach = addOwnAttach( attachment.bufferAttach.buffers
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, BufferAttachment::FlagKind( BufferAttachment::FlagKind( BufferAttachment::Flag::Transition ) | attachment.bufferAttach.getFormatFlags() )
+			, std::move( wantedAccess )
+			, &attachment );
+		inputs.try_emplace( ImplicitOffset + uint32_t( inputs.size() ), attach );
+	}
+
+	void FramePass::addImplicit( Attachment const & attachment
+		, ImageLayout wantedLayout )
+	{
+		auto attachName = fpass::adjustName( *this, attachment.view().data->name ) + "/Impl";
+		auto attach = addOwnAttach( attachment.imageAttach.views
+			, std::move( attachName )
+			, Attachment::FlagKind( Attachment::Flag::Input )
+			, ImageAttachment::FlagKind( ImageAttachment::FlagKind( ImageAttachment::Flag::Transition ) | attachment.imageAttach.getFormatFlags() )
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, AttachmentLoadOp::eDontCare, AttachmentStoreOp::eDontCare
+			, ClearValue{}
+			, PipelineColorBlendAttachmentState{}
+			, wantedLayout
+			, &attachment );
+		inputs.try_emplace( ImplicitOffset + uint32_t( inputs.size() ), attach );
 	}
 
 	RunnablePassPtr FramePass::createRunnable( GraphContext & context
@@ -989,5 +711,172 @@ namespace crg
 	std::string FramePass::getGroupName()const
 	{
 		return group.getName() + "/" + getName();
+	}
+
+	Attachment const * FramePass::addOwnAttach( ImageViewIdArray views, std::string attachName
+		, Attachment::FlagKind flags, ImageAttachment::FlagKind imageFlags
+		, AttachmentLoadOp loadOp, AttachmentStoreOp storeOp
+		, AttachmentLoadOp stencilLoadOp, AttachmentStoreOp stencilStoreOp
+		, ClearValue clearValue, PipelineColorBlendAttachmentState blendState
+		, ImageLayout wantedLayout
+		, Attachment const * parent )
+	{
+		if ( views.front().data->source.empty() )
+			return addOwnAttach( new Attachment{ flags
+					, *this, std::move( attachName )
+					, imageFlags
+					, std::move( views )
+					, loadOp, storeOp
+					, stencilLoadOp, stencilStoreOp
+					, std::move( clearValue )
+					, std::move( blendState )
+					, wantedLayout
+					, Attachment::Token{} }
+				, parent );
+
+		// Dispatch merged views sources in source attachs views
+		std::vector< ImageViewIdArray > sourceAttachsViews;
+		sourceAttachsViews.resize( views.front().data->source.size() );
+		for ( auto view : views )
+		{
+			for ( uint32_t i = 0u; i < view.data->source.size(); ++i )
+				sourceAttachsViews[i].push_back( view.data->source[i] );
+		}
+
+		// Use these views to create attachs
+		uint32_t index{};
+		std::vector< AttachmentPtr > sources;
+		for ( auto & sourceViews : sourceAttachsViews )
+		{
+			sources.push_back( std::make_unique< Attachment >( flags
+				, *this, attachName + std::to_string( index )
+				, imageFlags
+				, std::move( sourceViews )
+				, loadOp, storeOp
+				, stencilLoadOp, stencilStoreOp
+				, clearValue, blendState
+				, wantedLayout
+				, Attachment::Token{} ) );
+			++index;
+		}
+
+		// Create the resulting attach
+		auto result = addOwnAttach( new Attachment{ flags
+				, *this, std::move( attachName )
+				, imageFlags
+				, std::move( views )
+				, loadOp, storeOp
+				, stencilLoadOp, stencilStoreOp
+				, std::move( clearValue )
+				, std::move( blendState )
+				, wantedLayout
+				, Attachment::Token{} }
+			, parent );
+		result->pass = nullptr;
+
+		// And set its sources
+		if ( !parent || parent->source.empty() )
+		{
+			for ( auto & sourceAttach : sources )
+				result->source.emplace_back( std::move( sourceAttach ) );
+		}
+		else
+		{
+			// If parent has sources, link the new attachment sources to the parent ones
+			assert( parent->source.size() == sources.size() );
+			for ( uint32_t i = 0; i < sources.size(); ++i )
+			{
+				auto source = addOwnAttach( sources[i].release()
+					, ( parent->source[i].parent
+						? parent->source[i].parent
+						: parent->source[i].attach.get() ) );
+				result->source.emplace_back( parent->source[i].attach.get(), source->pass, source->imageAttach );
+			}
+
+			result->initSources();
+		}
+
+		return result;
+	}
+
+	Attachment const * FramePass::addOwnAttach( BufferViewIdArray views, std::string attachName
+		, Attachment::FlagKind flags, BufferAttachment::FlagKind bufferFlags
+		, AccessState access
+		, Attachment const * parent )
+	{
+		if ( views.front().data->source.empty() )
+			return addOwnAttach( new Attachment{ flags
+					, *this, std::move( attachName )
+					, bufferFlags
+					, std::move( views )
+					, std::move( access )
+					, Attachment::Token{} }
+				, parent );
+
+		// Dispatch merged views sources in source attachs views
+		std::vector< BufferViewIdArray > sourceAttachsViews;
+		sourceAttachsViews.resize( views.front().data->source.size() );
+		for ( auto view : views )
+		{
+			for ( uint32_t i = 0u; i < view.data->source.size(); ++i )
+				sourceAttachsViews[i].push_back( view.data->source[i] );
+		}
+
+		// Use these views to create attachs
+		uint32_t index{};
+		std::vector< AttachmentPtr > sources;
+		for ( auto & sourceViews : sourceAttachsViews )
+		{
+			sources.push_back( std::make_unique< Attachment >( flags
+				, *this, attachName + std::to_string( index )
+				, bufferFlags
+				, std::move( sourceViews )
+				, access
+				, Attachment::Token{} ) );
+			++index;
+		}
+
+		// Create the resulting attach
+		auto result = addOwnAttach( new Attachment{ flags
+				, *this, std::move( attachName )
+				, bufferFlags
+				, std::move( views )
+				, std::move( access )
+				, Attachment::Token{} }
+			, parent );
+		result->pass = nullptr;
+
+		// And set its sources
+		if ( !parent || parent->source.empty() )
+		{
+			for ( auto & sourceAttach : sources )
+				result->source.emplace_back( std::move( sourceAttach ) );
+		}
+		else
+		{
+			// If parent has sources, link the new attachment sources to the parent ones
+			assert( parent->source.size() == sources.size() );
+			for ( uint32_t i = 0; i < sources.size(); ++i )
+			{
+				auto source = addOwnAttach( sources[i].release()
+					, ( parent->source[i].parent
+						? parent->source[i].parent
+						: parent->source[i].attach.get() ) );
+				result->source.emplace_back( parent->source[i].attach.get(), source->pass, source->bufferAttach );
+			}
+
+			result->initSources();
+		}
+
+		return result;
+	}
+
+	Attachment * FramePass::addOwnAttach( Attachment * mine
+		, Attachment const * parent )
+	{
+		auto & own = m_ownAttaches.try_emplace( mine ).first->second;
+		own.mine.reset( mine );
+		own.parent = parent;
+		return mine;
 	}
 }

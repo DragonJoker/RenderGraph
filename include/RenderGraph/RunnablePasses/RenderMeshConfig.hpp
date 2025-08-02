@@ -291,22 +291,4 @@ namespace crg
 			return result;
 		}
 	};
-
-	template<>
-	struct DefaultValueGetterT< VertexBuffer >
-	{
-		static VertexBuffer get()
-		{
-			return VertexBuffer{};
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< IndexBuffer >
-	{
-		static IndexBuffer get()
-		{
-			return IndexBuffer{};
-		}
-	};
 }

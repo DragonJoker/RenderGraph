@@ -11,11 +11,6 @@ namespace crg
 	template< typename TypeT >
 	struct Id
 	{
-		friend struct Attachment;
-		friend struct ImageViewData;
-		friend struct ImageData;
-		friend class FrameGraph;
-
 		uint32_t id;
 		TypeT const * data;
 

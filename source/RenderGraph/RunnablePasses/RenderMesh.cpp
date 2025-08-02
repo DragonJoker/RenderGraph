@@ -23,7 +23,8 @@ namespace crg
 				, true /*resettable*/
 				, ruConfig.prePassActions
 				, ruConfig.postPassActions
-				, ruConfig.implicitActions } }
+				, ruConfig.implicitImageActions
+				, ruConfig.implicitBufferActions } }
 		, m_renderMesh{ pass
 			, context
 			, graph

@@ -14,10 +14,8 @@ namespace crg
 		CRG_API ImageBlit( FramePass const & pass
 			, GraphContext & context
 			, RunnableGraph & graph
-			, Offset3D const & blitSrcOffset
-			, Extent3D const & blitSrcSize
-			, Offset3D const & blitDstOffset
-			, Extent3D const & blitDstSize
+			, Rect3D const & blitSrc
+			, Rect3D const & blitDst
 			, FilterMode filter
 			, ru::Config ruConfig = {}
 			, GetPassIndexCallback passIndex = GetPassIndexCallback( [](){ return 0u; } )

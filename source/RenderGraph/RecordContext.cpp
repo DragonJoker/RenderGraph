@@ -25,10 +25,17 @@ namespace crg
 	namespace recctx
 	{
 		static ImageSubresourceRange adaptRange( GraphContext const & context
+			, ImageType type
 			, PixelFormat format
 			, ImageSubresourceRange const & subresourceRange )
 		{
 			ImageSubresourceRange result = subresourceRange;
+
+			if ( type == ImageType::e3D )
+			{
+				result.baseArrayLayer = 0;
+				result.layerCount = 1;
+			}
 
 			if ( !context.separateDepthStencilLayouts
 				&& isDepthStencilFormat( format )
@@ -37,44 +44,6 @@ namespace crg
 				result.aspectMask = ImageAspectFlags::eDepthStencil;
 
 			return result;
-		}
-
-		static void clearAttachment( RecordContext & recContext
-			, VkCommandBuffer commandBuffer
-			, ImageViewId dstView
-			, ClearColorValue const & clearValue
-			, ImageLayout finalLayout )
-		{
-			auto & resources = recContext.getResources();
-			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
-			auto subresourceRange = convert( getSubresourceRange( dstView ) );
-			assert( isColourFormat( getFormat( dstView ) ) );
-			auto vkClearValue = convert( clearValue );
-			resources->vkCmdClearColorImage( commandBuffer
-				, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-				, &vkClearValue, 1u, &subresourceRange );
-
-			if ( finalLayout != ImageLayout::eUndefined )
-				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
-		}
-
-		static void clearAttachment( RecordContext & recContext
-			, VkCommandBuffer commandBuffer
-			, ImageViewId dstView
-			, ClearDepthStencilValue const & clearValue
-			, ImageLayout finalLayout )
-		{
-			auto & resources = recContext.getResources();
-			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
-			auto subresourceRange = convert( getSubresourceRange( dstView ) );
-			assert( isDepthOrStencilFormat( getFormat( dstView ) ) );
-			auto vkClearValue = convert( clearValue );
-			resources->vkCmdClearDepthStencilImage( commandBuffer
-				, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-				, &vkClearValue, 1u, &subresourceRange );
-
-			if ( finalLayout != ImageLayout::eUndefined )
-				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
 		}
 	}
 
@@ -165,33 +134,45 @@ namespace crg
 	}
 
 	void RecordContext::registerImplicitTransition( RunnablePass const & pass
-			, ImageViewId view
-			, RecordContext::ImplicitAction action )
+		, ImageViewId view
+		, RecordContext::ImplicitAction action )
 	{
 		registerImplicitTransition( { &pass, view, std::move( action ) } );
 	}
 
-	void RecordContext::registerImplicitTransition( ImplicitTransition transition )
+	void RecordContext::registerImplicitTransition( RunnablePass const & pass
+		, BufferViewId view
+		, RecordContext::ImplicitAction action )
 	{
-		m_implicitTransitions.emplace_back( std::move( transition ) );
+		registerImplicitTransition( { &pass, view, std::move( action ) } );
+	}
+
+	void RecordContext::registerImplicitTransition( ImplicitImageTransition transition )
+	{
+		m_implicitImageTransitions.emplace_back( std::move( transition ) );
+	}
+
+	void RecordContext::registerImplicitTransition( ImplicitBufferTransition transition )
+	{
+		m_implicitBufferTransitions.emplace_back( std::move( transition ) );
 	}
 
 	void RecordContext::runImplicitTransition( VkCommandBuffer commandBuffer
 		, uint32_t index
 		, ImageViewId view )
 	{
-		auto it = std::find_if( m_implicitTransitions.begin()
-			, m_implicitTransitions.end()
-			, [&view]( ImplicitTransition const & lookup )
+		auto it = std::find_if( m_implicitImageTransitions.begin()
+			, m_implicitImageTransitions.end()
+			, [&view]( ImplicitImageTransition const & lookup )
 			{
 				return lookup.view == view;
 			} );
 
-		if ( it != m_implicitTransitions.end() )
+		if ( it != m_implicitImageTransitions.end() )
 		{
 			auto pass = it->pass;
 			auto action = it->action;
-			m_implicitTransitions.erase( it );
+			m_implicitImageTransitions.erase( it );
 
 			if ( !pass->isEnabled() )
 			{
@@ -200,17 +181,52 @@ namespace crg
 		}
 	}
 
-	void RecordContext::setAccessState( VkBuffer buffer
-		, [[maybe_unused]] BufferSubresourceRange const & subresourceRange
-		, AccessState const & layoutState )
+	void RecordContext::runImplicitTransition( VkCommandBuffer commandBuffer
+		, uint32_t index
+		, BufferViewId view )
 	{
-		m_buffers.insert_or_assign( buffer, layoutState );
+		auto it = std::find_if( m_implicitBufferTransitions.begin()
+			, m_implicitBufferTransitions.end()
+			, [&view]( ImplicitBufferTransition const & lookup )
+			{
+				return lookup.view == view;
+			} );
+
+		if ( it != m_implicitBufferTransitions.end() )
+		{
+			auto pass = it->pass;
+			auto action = it->action;
+			m_implicitBufferTransitions.erase( it );
+
+			if ( !pass->isEnabled() )
+			{
+				action( *this, commandBuffer, index );
+			}
+		}
 	}
 
-	AccessState const & RecordContext::getAccessState( VkBuffer buffer
+	void RecordContext::setAccessState( BufferViewId buffer
+		, AccessState const & accessState )
+	{
+		return setAccessState( buffer.data->buffer, getSubresourceRange( buffer ), accessState );
+	}
+
+	AccessState RecordContext::getAccessState( BufferViewId buffer )const
+	{
+		return getAccessState( buffer.data->buffer, getSubresourceRange( buffer ) );
+	}
+
+	void RecordContext::setAccessState( BufferId buffer
+		, [[maybe_unused]] BufferSubresourceRange const & subresourceRange
+		, AccessState const & accessState )
+	{
+		m_buffers.insert_or_assign( buffer.id, accessState );
+	}
+
+	AccessState const & RecordContext::getAccessState( BufferId buffer
 		, [[maybe_unused]] BufferSubresourceRange const & subresourceRange )const
 	{
-		if ( auto bufferIt = m_buffers.find( buffer ); bufferIt != m_buffers.end() )
+		if ( auto bufferIt = m_buffers.find( buffer.id ); bufferIt != m_buffers.end() )
 		{
 			return bufferIt->second;
 		}
@@ -228,7 +244,7 @@ namespace crg
 		memoryBarrier( commandBuffer
 			, view.data->image
 			, view.data->info.viewType
-			, view.data->info.subresourceRange
+			, getSubresourceRange( view )
 			, initialLayout
 			, wantedState
 			, force );
@@ -259,6 +275,7 @@ namespace crg
 		, bool force )
 	{
 		auto range = recctx::adaptRange( *m_resources
+				, image.data->info.imageType
 				, image.data->info.format
 				, subresourceRange );
 		auto from = getLayoutState( image
@@ -311,7 +328,7 @@ namespace crg
 		memoryBarrier( commandBuffer
 			, view.data->image
 			, view.data->info.viewType
-			, view.data->info.subresourceRange
+			, getSubresourceRange( view )
 			, wantedState
 			, force );
 	}
@@ -347,26 +364,23 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-		, VkBuffer buffer
-		, BufferSubresourceRange const & subresourceRange
+		, BufferViewId view
 		, AccessState const & initialState
 		, AccessState const & wantedState
 		, bool force )
 	{
 		memoryBarrier( commandBuffer
-			, buffer
-			, subresourceRange
-			, initialState.access
-			, initialState.pipelineStage
+			, view.data->buffer
+			, getSubresourceRange( view )
+			, initialState
 			, wantedState
 			, force );
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-		, VkBuffer buffer
+		, BufferId buffer
 		, BufferSubresourceRange const & subresourceRange
-		, AccessFlags initialMask
-		, PipelineStageFlags initialStage
+		, AccessState const & initialState
 		, AccessState const & wantedState
 		, bool force )
 	{
@@ -375,21 +389,21 @@ namespace crg
 
 		if ( checkFlag( from.pipelineStage, PipelineStageFlags::eBottomOfPipe ) )
 		{
-			from = { initialMask, initialStage };
+			from = initialState;
 		}
 
 		if ( force
 			|| ( from.access != wantedState.access
 				|| from.pipelineStage != wantedState.pipelineStage ) )
 		{
-			auto const & resources = getResources();
+			auto & resources = getResources();
 			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
 				, nullptr
 				, getAccessFlags( from.access )
 				, getAccessFlags( wantedState.access )
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
-				, buffer
+				, resources.createBuffer( buffer )
 				, subresourceRange.offset
 				, subresourceRange.size };
 			resources->vkCmdPipelineBarrier( commandBuffer
@@ -409,7 +423,7 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-		, VkBuffer buffer
+		, BufferId buffer
 		, BufferSubresourceRange const & subresourceRange
 		, AccessState const & wantedState
 		, bool force )
@@ -417,8 +431,19 @@ namespace crg
 		memoryBarrier( commandBuffer
 			, buffer
 			, subresourceRange
-			, AccessFlags::eNone
-			, PipelineStageFlags::eBottomOfPipe
+			, { AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
+			, wantedState
+			, force );
+	}
+
+	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
+		, BufferViewId view
+		, AccessState const & wantedState
+		, bool force )
+	{
+		memoryBarrier( commandBuffer
+			, view.data->buffer
+			, getSubresourceRange( view )
 			, wantedState
 			, force );
 	}
@@ -439,6 +464,132 @@ namespace crg
 		return *m_resources;
 	}
 
+	void RecordContext::copyImage( VkCommandBuffer commandBuffer
+		, uint32_t index
+		, ImageViewId srcView
+		, ImageViewId dstView
+		, Extent2D const & extent
+		, ImageLayout finalLayout )
+	{
+		runImplicitTransition( commandBuffer, index, srcView );
+		auto & srcSubresource = getSubresourceRange( srcView );
+		auto & dstSubresource = getSubresourceRange( dstView );
+		VkImageCopy region{ getSubresourceLayer( srcSubresource ), VkOffset3D{ 0u, 0u, 0u }
+			, getSubresourceLayer( dstSubresource ), VkOffset3D{ 0u, 0u, 0u }
+		, { extent.width, extent.height, 1u } };
+		memoryBarrier( commandBuffer, srcView, makeLayoutState( ImageLayout::eTransferSrc ) );
+		memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
+		auto & resources = getResources();
+		resources->vkCmdCopyImage( commandBuffer
+			, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, 1u, &region );
+
+		if ( finalLayout != ImageLayout::eUndefined )
+			memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
+	}
+
+	void RecordContext::blitImage( VkCommandBuffer commandBuffer
+		, uint32_t index
+		, ImageViewId srcView
+		, ImageViewId dstView
+		, Rect2D const & srcRect
+		, Rect2D const & dstRect
+		, FilterMode filter
+		, ImageLayout finalLayout )
+	{
+		runImplicitTransition( commandBuffer, index, srcView );
+		auto & srcSubresource = getSubresourceRange( srcView );
+		auto & dstSubresource = getSubresourceRange( dstView );
+		memoryBarrier( commandBuffer, srcView, makeLayoutState( ImageLayout::eTransferSrc ) );
+		memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
+		auto & resources = getResources();
+		VkImageBlit region{ getSubresourceLayer( srcSubresource ), { VkOffset3D{ srcRect.offset.x, srcRect.offset.y, 0u }, VkOffset3D{ int32_t( srcRect.extent.width ), int32_t( srcRect.extent.height ), 1 } }
+			, getSubresourceLayer( dstSubresource ), { VkOffset3D{ dstRect.offset.x, dstRect.offset.y, 0u }, VkOffset3D{ int32_t( dstRect.extent.width ), int32_t( dstRect.extent.height ), 1 } } };
+		resources->vkCmdBlitImage( commandBuffer
+			, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, 1u, &region, convert( filter ) );
+
+		if ( finalLayout != ImageLayout::eUndefined )
+			memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
+	}
+
+	void RecordContext::clearAttachment( VkCommandBuffer commandBuffer
+		, ImageViewId dstView
+		, ClearColorValue const & clearValue
+		, ImageLayout finalLayout )
+	{
+		auto & resources = getResources();
+		memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
+		auto subresourceRange = convert( getSubresourceRange( dstView ) );
+		assert( isColourFormat( getFormat( dstView ) ) );
+		auto vkClearValue = convert( clearValue );
+		resources->vkCmdClearColorImage( commandBuffer
+			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, &vkClearValue, 1u, &subresourceRange );
+
+		if ( finalLayout != ImageLayout::eUndefined )
+			memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
+	}
+
+	void RecordContext::clearAttachment( VkCommandBuffer commandBuffer
+		, ImageViewId dstView
+		, ClearDepthStencilValue const & clearValue
+		, ImageLayout finalLayout )
+	{
+		auto & resources = getResources();
+		memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
+		auto subresourceRange = convert( getSubresourceRange( dstView ) );
+		assert( isDepthOrStencilFormat( getFormat( dstView ) ) );
+		auto vkClearValue = convert( clearValue );
+		resources->vkCmdClearDepthStencilImage( commandBuffer
+			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, &vkClearValue, 1u, &subresourceRange );
+
+		if ( finalLayout != ImageLayout::eUndefined )
+			memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
+	}
+
+	void RecordContext::copyBuffer( VkCommandBuffer commandBuffer
+		, uint32_t index
+		, BufferViewId srcView
+		, BufferViewId dstView
+		, DeviceSize srcOffset, DeviceSize dstOffset
+		, DeviceSize size
+		, AccessState const & finalState )
+	{
+		runImplicitTransition( commandBuffer, index, srcView );
+		memoryBarrier( commandBuffer, srcView, { AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
+		memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
+		auto & resources = getResources();
+		VkBufferCopy region{ srcOffset, dstOffset, size };
+		resources->vkCmdCopyBuffer( commandBuffer
+			, resources.createBuffer( srcView.data->buffer )
+			, resources.createBuffer( dstView.data->buffer )
+			, 1u, &region );
+
+		if ( finalState != AccessState{} )
+			memoryBarrier( commandBuffer, dstView, finalState );
+	}
+
+	void RecordContext::clearBuffer( VkCommandBuffer commandBuffer
+		, BufferViewId dstView
+		, uint32_t clearValue
+		, AccessState const & finalState )
+	{
+		auto & resources = getResources();
+		memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
+		auto subresourceRange = getSubresourceRange( dstView );
+		resources->vkCmdFillBuffer( commandBuffer
+			, resources.createBuffer( dstView.data->buffer )
+			, subresourceRange.offset, subresourceRange.size
+			, clearValue );
+
+		if ( finalState != AccessState{} )
+			memoryBarrier( commandBuffer, dstView, finalState );
+	}
+
 	RecordContext::ImplicitAction RecordContext::copyImage( ImageViewId srcView
 		, ImageViewId dstView
 		, Extent2D const & extent
@@ -448,22 +599,7 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
-			recContext.runImplicitTransition( commandBuffer, index, srcView );
-			auto & srcSubresource = srcView.data->info.subresourceRange;
-			auto & dstSubresource = dstView.data->info.subresourceRange;
-			VkImageCopy region{ getSubresourceLayer( srcSubresource ), VkOffset3D{ 0u, 0u, 0u }
-				, getSubresourceLayer( dstSubresource ), VkOffset3D{ 0u, 0u, 0u }
-				, { extent.width, extent.height, 1u } };
-			recContext.memoryBarrier( commandBuffer, srcView, makeLayoutState( ImageLayout::eTransferSrc ) );
-			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
-			auto & resources = recContext.getResources();
-			resources->vkCmdCopyImage( commandBuffer
-				, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-				, 1u, &region );
-
-			if ( finalLayout != ImageLayout::eUndefined )
-				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
+			recContext.copyImage( commandBuffer, index, srcView, dstView, extent, finalLayout );
 		};
 	}
 
@@ -478,36 +614,22 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
-			recContext.runImplicitTransition( commandBuffer, index, srcView );
-			auto & srcSubresource = srcView.data->info.subresourceRange;
-			auto & dstSubresource = dstView.data->info.subresourceRange;
-			VkImageBlit region{ getSubresourceLayer( srcSubresource ), { VkOffset3D{ srcRect.offset.x, srcRect.offset.y, 0u }, VkOffset3D{ int32_t( srcRect.extent.width ), int32_t( srcRect.extent.height ), 1 } }
-				, getSubresourceLayer( dstSubresource ), { VkOffset3D{ dstRect.offset.x, dstRect.offset.y, 0u }, VkOffset3D{ int32_t( dstRect.extent.width ), int32_t( dstRect.extent.height ), 1 } } };
-			recContext.memoryBarrier( commandBuffer, srcView, makeLayoutState( ImageLayout::eTransferSrc ) );
-			recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
-			auto & resources = recContext.getResources();
-			resources->vkCmdBlitImage( commandBuffer
-				, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
-				, 1u, &region, convert( filter ) );
-
-			if ( finalLayout != ImageLayout::eUndefined )
-				recContext.memoryBarrier( commandBuffer, dstView, makeLayoutState( finalLayout ) );
+			recContext.blitImage( commandBuffer, index, srcView, dstView, srcRect, dstRect, filter, finalLayout );
 		};
 	}
 
 	RecordContext::ImplicitAction RecordContext::clearAttachment( Attachment const & attach
 		, ImageLayout finalLayout )
 	{
-		return [attach, finalLayout]( RecordContext & recContext
+		return [&attach, finalLayout]( RecordContext & recContext
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
 			auto dstView = attach.view( index );
 			if ( isColourFormat( getFormat( dstView ) ) )
-				recctx::clearAttachment( recContext, commandBuffer, dstView, getClearColorValue( attach.getClearValue() ), finalLayout );
+				recContext.clearAttachment( commandBuffer, dstView, getClearColorValue( attach.getClearValue() ), finalLayout );
 			else
-				recctx::clearAttachment( recContext, commandBuffer, dstView, getClearDepthStencilValue( attach.getClearValue() ), finalLayout );
+				recContext.clearAttachment( commandBuffer, dstView, getClearDepthStencilValue( attach.getClearValue() ), finalLayout );
 		};
 	}
 
@@ -519,7 +641,7 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, [[maybe_unused]] uint32_t index )
 			{
-				recctx::clearAttachment( recContext, commandBuffer, dstView, clearValue, finalLayout );
+				recContext.clearAttachment( commandBuffer, dstView, clearValue, finalLayout );
 			};
 	}
 
@@ -531,7 +653,39 @@ namespace crg
 			, VkCommandBuffer commandBuffer
 			, [[maybe_unused]] uint32_t index )
 			{
-				recctx::clearAttachment( recContext, commandBuffer, dstView, clearValue, finalLayout );
+				recContext.clearAttachment( commandBuffer, dstView, clearValue, finalLayout );
+			};
+	}
+
+	RecordContext::ImplicitAction RecordContext::clearBuffer( BufferViewId dstView
+		, AccessState const & finalState )
+	{
+		return clearBuffer( dstView, 0u, finalState );
+	}
+
+	RecordContext::ImplicitAction RecordContext::clearBuffer( BufferViewId dstView
+		, uint32_t clearValue
+		, AccessState const & finalState )
+	{
+		return [clearValue, dstView, finalState]( RecordContext & recContext
+			, VkCommandBuffer commandBuffer
+			, [[maybe_unused]] uint32_t index )
+			{
+				recContext.clearBuffer( commandBuffer, dstView, clearValue, finalState );
+			};
+	}
+
+	RecordContext::ImplicitAction RecordContext::copyBuffer( BufferViewId srcView
+		, BufferViewId dstView
+		, DeviceSize srcOffset, DeviceSize dstOffset
+		, DeviceSize size
+		, AccessState const & finalState )
+	{
+		return [srcOffset, dstOffset, size, srcView, dstView, finalState]( RecordContext & recContext
+			, VkCommandBuffer commandBuffer
+			, uint32_t index )
+			{
+				recContext.copyBuffer( commandBuffer, index, srcView, dstView, srcOffset, dstOffset, size, finalState );
 			};
 	}
 

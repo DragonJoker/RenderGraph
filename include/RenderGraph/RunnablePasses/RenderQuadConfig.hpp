@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
+#include "RenderGraph/BufferViewData.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 #include "RenderGraph/RunnablePasses/PipelineConfig.hpp"
 
@@ -194,7 +195,7 @@ namespace crg
 			RawTypeT< RunnablePass::RecordCallback > recordInto;
 			RawTypeT< RunnablePass::RecordCallback > end;
 			RawTypeT< uint32_t > m_instances;
-			RawTypeT< IndirectBuffer > indirectBuffer{ Buffer{ VkBuffer{}, std::string{} }, 0u };
+			RawTypeT< IndirectBuffer > indirectBuffer{ BufferViewId{}, 0u };
 		};
 
 		using Config = ConfigT< std::optional >;

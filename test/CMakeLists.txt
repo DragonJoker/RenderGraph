@@ -1,5 +1,8 @@
 enable_testing()
 
+set( GTest_DIR ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/gtest )
+find_package( GTest CONFIG REQUIRED GTest::gtest GTest::gtest_main )
+
 set( TEST_NAME TestCommon )
 
 set( ${TEST_NAME}_HEADER_FILES
@@ -27,6 +30,7 @@ target_sources( ${TEST_NAME}
 target_link_libraries( ${TEST_NAME}
 	PUBLIC
 		crg::RenderGraph
+		GTest::gtest
 )
 target_include_directories( ${TEST_NAME}
 	PUBLIC
@@ -59,6 +63,11 @@ foreach ( TEST_FILE ${TEST_FILES} )
 		PROPERTIES
 			CXX_STANDARD 20
 			FOLDER "Tests/${MAIN_PROJECT_NAME}"
+	)
+	target_compile_definitions( ${TEST_NAME}
+		PRIVATE
+			CRG_TestSuiteName=${TEST_NAME}
+			CRG_TestSuiteNameString="${TEST_NAME}"
 	)
 	target_include_directories( ${TEST_NAME}
 		PRIVATE

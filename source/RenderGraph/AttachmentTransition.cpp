@@ -20,9 +20,8 @@ namespace crg
 
 			for ( auto & transition : transitions )
 			{
-				auto it = std::find( result.begin(), result.end(), transition );
-
-				if ( it == result.end() )
+				if ( auto it = std::find( result.begin(), result.end(), transition );
+					it == result.end() )
 				{
 					result.push_back( transition );
 				}
@@ -32,15 +31,10 @@ namespace crg
 		}
 	}
 
-	bool operator==( Buffer const & lhs, Buffer const & rhs )
-	{
-		return lhs.m_buffers == rhs.m_buffers;
-	}
-
 	AttachmentTransitions mergeIdenticalTransitions( AttachmentTransitions transitions )
 	{
 		AttachmentTransitions result{};
-		result.viewTransitions = attTran::mergeIdenticalTransitionsT( std::move( transitions.viewTransitions ) );
+		result.imageTransitions = attTran::mergeIdenticalTransitionsT( std::move( transitions.imageTransitions ) );
 		result.bufferTransitions = attTran::mergeIdenticalTransitionsT( std::move( transitions.bufferTransitions ) );
 		return result;
 	}

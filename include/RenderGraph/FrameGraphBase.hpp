@@ -34,10 +34,10 @@ namespace crg
 {
 	struct Attachment;
 	struct AttachmentTransitions;
-	struct Buffer;
+	struct BufferData;
+	struct BufferViewData;
 	struct FramePass;
 	struct FramePassGroup;
-	struct FramePassTransitions;
 	struct GraphContext;
 	struct GraphNode;
 	struct ImageData;
@@ -82,6 +82,8 @@ namespace crg
 	template< typename TypeT >
 	struct RawTyperT;
 
+	using BufferId = Id< BufferData >;
+	using BufferViewId = Id< BufferViewData >;
 	using ImageId = Id< ImageData >;
 	using ImageViewId = Id< ImageViewData >;
 	using AccessState = PipelineState;
@@ -89,6 +91,7 @@ namespace crg
 	using PassDependencyCache = std::unordered_map< FramePass const *, DependencyCache >;
 	using DeviceSize = VkDeviceSize;
 
+	using AttachmentPtr = std::unique_ptr< Attachment >;
 	using FramePassPtr = std::unique_ptr< FramePass >;
 	using FramePassGroupPtr = std::unique_ptr< FramePassGroup >;
 	using GraphNodePtr = std::unique_ptr< GraphNode >;
@@ -103,16 +106,17 @@ namespace crg
 	*\brief
 	*	The transition between two states of an image view.
 	*/
-	using ViewTransition = DataTransitionT< ImageViewId >;
-	using ViewTransitionArray = DataTransitionArrayT< ImageViewId >;
+	using ImageTransition = DataTransitionT< ImageViewId >;
+	using ImageTransitionArray = DataTransitionArrayT< ImageViewId >;
 	/**
 	*\brief
-	*	The transition between two states of a storage buffer.
+	*	The transition between two states of a buffer.
 	*/
-	using BufferTransition = DataTransitionT< Buffer >;
-	using BufferTransitionArray = DataTransitionArrayT< Buffer >;
+	using BufferTransition = DataTransitionT< BufferViewId >;
+	using BufferTransitionArray = DataTransitionArrayT< BufferViewId >;
 
-	using AttachmentArray = std::vector< Attachment >;
+	using AttachmentArray = std::vector< Attachment const * >;
+	using BufferViewIdArray = std::vector< BufferViewId >;
 	using FramePassPtrArray = std::vector< FramePassPtr >;
 	using FramePassGroupPtrArray = std::vector< FramePassGroupPtr >;
 	using FrameGraphArray = std::vector< FrameGraph const * >;
@@ -120,22 +124,19 @@ namespace crg
 	using GraphAdjacentNodeArray = std::vector< GraphAdjacentNode >;
 	using ConstGraphAdjacentNodeArray = std::vector< ConstGraphAdjacentNode >;
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
-	using FramePassDependencies = std::vector< FramePassTransitions >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitions >;
+	using BufferMemoryMap = std::map< BufferId, std::pair< VkBuffer, VkDeviceMemory > >;
+	using BufferViewMap = std::map< BufferViewId, VkBufferView >;
 	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;
 	using ImageViewMap = std::map< ImageViewId, VkImageView >;
-	using ImageIdArray = std::vector< ImageId >;
 	using ImageViewIdArray = std::vector< ImageViewId >;
 	using SemaphoreWaitArray = std::vector< SemaphoreWait >;
 
 	template< typename DataT >
-	using IdAliasMap = std::map< Id< DataT >, Id< DataT > >;
-	using ImageIdAliasMap = IdAliasMap< ImageData >;
-	using ImageViewIdAliasMap = IdAliasMap< ImageViewData >;
-
-	template< typename DataT >
 	using IdDataOwnerCont = std::map< Id< DataT >, std::unique_ptr< DataT > >;
+	using BufferIdDataOwnerCont = IdDataOwnerCont< BufferData >;
+	using BufferViewIdDataOwnerCont = IdDataOwnerCont< BufferViewData >;
 	using ImageIdDataOwnerCont = IdDataOwnerCont< ImageData >;
 	using ImageViewIdDataOwnerCont = IdDataOwnerCont< ImageViewData >;
 
@@ -162,7 +163,7 @@ namespace crg
 	using LayerLayoutStates = std::map< uint32_t, MipLayoutStates >;
 	using LayoutStateMap = std::unordered_map< uint32_t, LayerLayoutStates >;
 	using LayerLayoutStatesMap = std::map< uint32_t, LayerLayoutStates >;
-	using AccessStateMap = std::unordered_map< VkBuffer, AccessState >;
+	using AccessStateMap = std::unordered_map< uint32_t, AccessState >;
 	using ViewsLayout = LayoutStateMap;
 	using BuffersLayout = AccessStateMap;
 	using ViewsLayoutPtr = std::unique_ptr< ViewsLayout >;

@@ -5,7 +5,6 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/ImageToBufferCopy.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -38,22 +37,32 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcAttach{ m_pass.images.back().view( index ) };
-		auto dstBuffer{ m_pass.buffers.front().buffer( index ) };
-		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
-		// Copy source to target.
-		auto range = getSubresourceLayers( srcAttach.data->info.subresourceRange );
-		VkBufferImageCopy copyRegion{ 0ULL
-			, 0u
-			, 0u
-			, range
-			, m_copyOffset
-			, m_copySize };
-		context->vkCmdCopyImageToBuffer( commandBuffer
-			, srcImage
-			, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, dstBuffer
-			, 1u
-			, &copyRegion );
+		auto srcIt = m_pass.inputs.begin();
+		auto dstIt = m_pass.outputs.begin();
+
+		while ( srcIt != m_pass.inputs.end()
+			&& dstIt != m_pass.outputs.end() )
+		{
+			auto srcAttach{ srcIt->second->view( index ) };
+			auto dstAttach{ dstIt->second->buffer( index ) };
+			auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
+			auto dstBuffer{ m_graph.createBuffer( dstAttach.data->buffer ) };
+			// Copy source to target.
+			auto range = getSubresourceLayers( getSubresourceRange( srcAttach ) );
+			VkBufferImageCopy copyRegion{ 0ULL
+				, 0u
+				, 0u
+				, range
+				, m_copyOffset
+				, m_copySize };
+			context->vkCmdCopyImageToBuffer( commandBuffer
+				, srcImage
+				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+				, dstBuffer
+				, 1u
+				, &copyRegion );
+			++srcIt;
+			++dstIt;
+		}
 	}
 }

@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 */
 #pragma once
 
+#include "BufferViewData.hpp"
 #include "ImageViewData.hpp"
 
 #include <limits>
@@ -98,6 +99,11 @@ namespace crg
 			return flags;
 		}
 
+		FlagKind getFormatFlags()const
+		{
+			return FlagKind( flags & FlagKind( Flag::DepthStencil ) );
+		}
+
 		uint32_t getViewCount()const
 		{
 			return uint32_t( views.size() );
@@ -128,42 +134,42 @@ namespace crg
 			return hasFlag( Flag::Transition );
 		}
 
-		bool isDepthAttach()const
+		bool isDepthTarget()const
 		{
 			return hasFlag( Flag::Depth ) && !isTransitionView();
 		}
 
-		bool isStencilAttach()const
+		bool isStencilTarget()const
 		{
 			return hasFlag( Flag::Stencil ) && !isTransitionView();
 		}
 
-		bool isDepthStencilAttach()const
+		bool isDepthStencilTarget()const
 		{
-			return isDepthAttach() && isStencilAttach();
+			return isDepthTarget() && isStencilTarget();
 		}
 
-		bool isColourAttach()const
+		bool isColourTarget()const
 		{
 			return !isSampledView()
 				&& !isTransitionView()
 				&& !isStorageView()
 				&& !isTransferView()
-				&& !isDepthAttach()
-				&& !isStencilAttach();
+				&& !isDepthTarget()
+				&& !isStencilTarget();
 		}
 
-		bool isStencilClearingAttach()const
+		bool isStencilClearingTarget()const
 		{
 			return hasFlag( Flag::StencilClearing );
 		}
 
-		bool isStencilInputAttach()const
+		bool isStencilInputTarget()const
 		{
 			return hasFlag( Flag::StencilInput );
 		}
 
-		bool isStencilOutputAttach()const
+		bool isStencilOutputTarget()const
 		{
 			return hasFlag( Flag::StencilOutput );
 		}
@@ -175,21 +181,19 @@ namespace crg
 		AttachmentStoreOp storeOp{};
 		AttachmentLoadOp stencilLoadOp{};
 		AttachmentStoreOp stencilStoreOp{};
-		SamplerDesc samplerDesc{};
 		ClearValue clearValue{};
 		PipelineColorBlendAttachmentState blendState = DefaultBlendState;
 		ImageLayout wantedLayout{};
 
 	private:
 		CRG_API ImageAttachment() = default;
-		CRG_API explicit ImageAttachment( ImageViewId view );
+		CRG_API explicit ImageAttachment( ImageViewIdArray view );
 		CRG_API ImageAttachment( FlagKind flags
 			, ImageViewIdArray views
 			, AttachmentLoadOp loadOp
 			, AttachmentStoreOp storeOp
 			, AttachmentLoadOp stencilLoadOp
 			, AttachmentStoreOp stencilStoreOp
-			, SamplerDesc samplerDesc
 			, ClearValue clearValue
 			, PipelineColorBlendAttachmentState blendState
 			, ImageLayout wantedLayout );
@@ -205,16 +209,10 @@ namespace crg
 				&& lhs.storeOp == rhs.storeOp
 				&& lhs.stencilLoadOp == rhs.stencilLoadOp
 				&& lhs.stencilStoreOp == rhs.stencilStoreOp
-				&& lhs.samplerDesc == rhs.samplerDesc
 				&& lhs.clearValue == rhs.clearValue
 				&& lhs.blendState == rhs.blendState;
 		}
 
-	};
-	struct BufferSubresourceRange
-	{
-		DeviceSize offset{};
-		DeviceSize size{};
 	};
 	/**
 	*\brief
@@ -242,23 +240,26 @@ namespace crg
 			TransitionView = Transition | View,
 		};
 
+		CRG_API BufferViewId buffer( uint32_t index = 0u )const;
 		CRG_API AccessFlags getAccessMask( bool isInput
 			, bool isOutput )const;
 		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
+
+		CRG_API uint32_t getBufferCount()const;
 
 		FlagKind getFlags()const
 		{
 			return flags;
 		}
 
+		FlagKind getFormatFlags()const
+		{
+			return FlagKind( flags & FlagKind( Flag::View ) );
+		}
+
 		bool hasFlag( Flag flag )const
 		{
 			return Flag( flags & FlagKind( flag ) ) == flag;
-		}
-
-		uint32_t getBufferCount()const
-		{
-			return uint32_t( buffer.getCount() );
 		}
 
 		bool isUniform()const
@@ -301,23 +302,14 @@ namespace crg
 			return isTransition() && isView();
 		}
 
-		Buffer buffer{ {}, std::string{} };
-		VkBufferView view{};
-		BufferSubresourceRange range{};
+	public:
+		BufferViewIdArray buffers;
 
 	private:
 		CRG_API BufferAttachment() = default;
-		CRG_API explicit BufferAttachment( Buffer buffer );
+		CRG_API explicit BufferAttachment( BufferViewIdArray view );
 		CRG_API BufferAttachment( FlagKind flags
-			, Buffer buffer
-			, DeviceSize offset
-			, DeviceSize range
-			, AccessState access = {} );
-		CRG_API BufferAttachment( FlagKind flags
-			, Buffer buffer
-			, VkBufferView view
-			, DeviceSize offset
-			, DeviceSize range
+			, BufferViewIdArray views
 			, AccessState access = {} );
 
 		FlagKind flags{};
@@ -326,10 +318,7 @@ namespace crg
 		friend bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs )
 		{
 			return lhs.flags == rhs.flags
-				&& lhs.buffer == rhs.buffer
-				&& lhs.view == rhs.view
-				&& lhs.range.offset == rhs.range.offset
-				&& lhs.range.size == rhs.range.size;
+				&& lhs.buffers == rhs.buffers;
 		}
 	};
 	/**
@@ -338,7 +327,16 @@ namespace crg
 	*/
 	struct Attachment
 	{
+		class Token
+		{
+			friend struct Attachment;
+			friend struct FramePass;
+
+		private:
+			Token() noexcept = default;
+		};
 		friend struct FramePass;
+		friend class FrameGraph;
 		/**
 		*\brief
 		*	The flags qualifying an Attachment.
@@ -355,6 +353,11 @@ namespace crg
 			Clearable = 0x01 << 5,
 			InOut = Input | Output,
 		};
+
+		CRG_API Attachment( Attachment const & rhs );
+		CRG_API Attachment & operator=( Attachment const & rhs );
+		CRG_API Attachment( Attachment && rhs )noexcept = default;
+		CRG_API Attachment & operator=( Attachment && rhs )noexcept = default;
 		/**
 		*\name
 		*	Getters.
@@ -363,10 +366,11 @@ namespace crg
 		CRG_API uint32_t getViewCount()const;
 		CRG_API uint32_t getBufferCount()const;
 		CRG_API ImageViewId view( uint32_t index = 0u )const;
-		CRG_API VkBuffer buffer( uint32_t index = 0u )const;
+		CRG_API BufferViewId buffer( uint32_t index = 0u )const;
 		CRG_API ImageLayout getImageLayout( bool separateDepthStencilLayouts )const;
 		CRG_API AccessFlags getAccessMask()const;
 		CRG_API PipelineStageFlags getPipelineStageFlags( bool isCompute )const;
+		CRG_API Attachment const * getSource( uint32_t index )const;
 
 		FlagKind getFlags()const
 		{
@@ -477,139 +481,134 @@ namespace crg
 			return isBuffer() && bufferAttach.isView();
 		}
 
-		bool isSampledView()const
+		bool isSampledImageView()const
 		{
 			return isImage() && imageAttach.isSampledView();
 		}
 
-		bool isStorageView()const
+		bool isStorageImageView()const
 		{
 			return isImage() && imageAttach.isStorageView();
 		}
 
-		bool isTransferView()const
+		bool isTransferImageView()const
 		{
 			return isImage() && imageAttach.isTransferView();
 		}
 
-		bool isTransitionView()const
+		bool isTransitionImageView()const
 		{
 			return isImage() && imageAttach.isTransitionView();
 		}
 
-		bool isDepthAttach()const
+		bool isDepthImageTarget()const
 		{
-			return isImage() && imageAttach.isDepthAttach();
+			return isImage() && imageAttach.isDepthTarget();
 		}
 
-		bool isStencilAttach()const
+		bool isStencilImageTarget()const
 		{
-			return isImage() && imageAttach.isStencilAttach();
+			return isImage() && imageAttach.isStencilTarget();
 		}
 
-		bool isColourAttach()const
+		bool isColourImageTarget()const
 		{
-			return !isSampledView()
-				&& !isTransitionView()
-				&& !isStorageView()
-				&& !isTransferView()
-				&& !isDepthAttach()
-				&& !isStencilAttach();
+			return !isSampledImageView()
+				&& !isTransitionImageView()
+				&& !isStorageImageView()
+				&& !isTransferImageView()
+				&& !isDepthImageTarget()
+				&& !isStencilImageTarget();
 		}
 
-		bool isColourInputAttach()const
+		bool isColourInputImageTarget()const
 		{
-			return isInput() && isColourAttach();
+			return isInput() && isColourImageTarget();
 		}
 
-		bool isColourOutputAttach()const
+		bool isColourOutputImageTarget()const
 		{
-			return isOutput() && isColourAttach();
+			return isOutput() && isColourImageTarget();
 		}
 
-		bool isColourInOutAttach()const
+		bool isColourInOutImageTarget()const
 		{
-			return isInput() && isOutput() && isColourAttach();
+			return isInput() && isOutput() && isColourImageTarget();
 		}
 
-		bool isDepthInputAttach()const
+		bool isDepthInputImageTarget()const
 		{
-			return isInput() && isDepthAttach();
+			return isInput() && isDepthImageTarget();
 		}
 
-		bool isDepthOutputAttach()const
+		bool isDepthOutputImageTarget()const
 		{
-			return isOutput() && isDepthAttach();
+			return isOutput() && isDepthImageTarget();
 		}
 
-		bool isDepthInOutAttach()const
+		bool isDepthInOutImageTarget()const
 		{
-			return isInput() && isOutput() && isDepthAttach();
+			return isInput() && isOutput() && isDepthImageTarget();
 		}
 
-		bool isStencilClearingAttach()const
+		bool isStencilClearingImageTarget()const
 		{
-			return isImage() && imageAttach.isStencilClearingAttach();
+			return isImage() && imageAttach.isStencilClearingTarget();
 		}
 
-		bool isStencilInputAttach()const
+		bool isStencilInputImageTarget()const
 		{
-			return isImage() && imageAttach.isStencilInputAttach();
+			return isImage() && imageAttach.isStencilInputTarget();
 		}
 
-		bool isStencilOutputAttach()const
+		bool isStencilOutputImageTarget()const
 		{
-			return isImage() && imageAttach.isStencilOutputAttach();
+			return isImage() && imageAttach.isStencilOutputTarget();
 		}
 
-		bool isStencilInOutAttach()const
+		bool isStencilInOutImageTarget()const
 		{
-			return isStencilInputAttach() && isStencilOutputAttach();
+			return isStencilInputImageTarget() && isStencilOutputImageTarget();
 		}
 
-		bool isDepthStencilInputAttach()const
+		bool isDepthStencilInputImageTarget()const
 		{
-			return isDepthInputAttach() && isStencilInputAttach();
+			return isDepthInputImageTarget() && isStencilInputImageTarget();
 		}
 
-		bool isDepthStencilOutputAttach()const
+		bool isDepthStencilOutputImageTarget()const
 		{
-			return isDepthOutputAttach() && isStencilOutputAttach();
+			return isDepthOutputImageTarget() && isStencilOutputImageTarget();
 		}
 
-		bool isDepthStencilInOutAttach()const
+		bool isDepthStencilInOutImageTarget()const
 		{
-			return isDepthInOutAttach() && isStencilInOutAttach();
+			return isDepthInOutImageTarget() && isStencilInOutImageTarget();
 		}
 
-		bool isTransferInputView()const
+		bool isTransferInputImageView()const
 		{
-			return isInput() && isTransferView();
+			return isInput() && isTransferImageView();
 		}
 
-		bool isTransferOutputView()const
+		bool isTransferOutputImageView()const
 		{
-			return isOutput() && isTransferView();
+			return isOutput() && isTransferImageView();
 		}
 
-		bool isStorageInputView()const
+		bool isStorageInputImageView()const
 		{
-			return isInput() && isStorageView();
+			return isInput() && isStorageImageView();
 		}
 
-		bool isStorageOutputView()const
+		bool isStorageOutputImageView()const
 		{
-			return isOutput() && isStorageView();
+			return isOutput() && isStorageImageView();
 		}
 
 		BufferSubresourceRange const & getBufferRange()const
 		{
-			return bufferAttach.range;
-		}
-
-		SamplerDesc const & getSamplerDesc()const
-		{
-			return imageAttach.samplerDesc;
+			return getSubresourceRange( bufferAttach.buffer() );
 		}
 
 		ClearValue const & getClearValue()const
@@ -646,35 +645,87 @@ namespace crg
 		*\brief
 		*	Creates a default empty attachment.
 		*/
+		static Attachment createDefault( ImageViewIdArray views )
+		{
+			return Attachment{ std::move( views ) };
+		}
+		static Attachment createDefault( BufferViewIdArray views )
+		{
+			return Attachment{ std::move( views ) };
+		}
 		static Attachment createDefault( ImageViewId view )
 		{
-			return Attachment{ std::move( view ) };
+			return createDefault( ImageViewIdArray{ view } );
 		}
-		static Attachment createDefault( Buffer buffer )
+		static Attachment createDefault( BufferViewId view )
 		{
-			return Attachment{ std::move( buffer ) };
+			return createDefault( BufferViewIdArray{ view } );
 		}
 		/**
 		*\name
 		*	Members.
 		*/
 		/**@[*/
-		FramePass * pass{};
-		uint32_t binding{};
+		FramePass const * pass{};
 		std::string name{};
 		ImageAttachment imageAttach{};
 		BufferAttachment bufferAttach{};
+		struct Source
+		{
+			Source( Attachment const * parent
+				, FramePass const * pass
+				, ImageAttachment const & attach )
+				: parent{ parent }
+				, pass{ pass }
+				, imageAttach{ &attach }
+			{
+			}
+
+			Source( Attachment const * parent
+				, FramePass const * pass
+				, BufferAttachment const & attach )
+				: parent{ parent }
+				, pass{ pass }
+				, bufferAttach{ &attach }
+			{
+			}
+
+			explicit Source( AttachmentPtr sourceAttach )
+				: pass{ sourceAttach->pass }
+				, imageAttach{ sourceAttach->isImage() ? &sourceAttach->imageAttach : nullptr }
+				, bufferAttach{ sourceAttach->isBuffer() ? &sourceAttach->bufferAttach : nullptr }
+				, attach{ std::move( sourceAttach ) }
+			{
+			}
+
+			Attachment const * parent{};
+			FramePass const * pass{};
+			ImageAttachment const * imageAttach{};
+			BufferAttachment const * bufferAttach{};
+			AttachmentPtr attach;
+		};
+		std::vector< Source > source{};
 		/**@}*/
 
 		CRG_API Attachment( ImageViewId view
 			, Attachment const & origin );
+		CRG_API Attachment( BufferViewId view
+			, Attachment const & origin );
+		CRG_API explicit Attachment( ImageViewIdArray view );
+		CRG_API explicit Attachment( BufferViewIdArray view );
 
-	private:
-		CRG_API explicit Attachment( ImageViewId view );
-		CRG_API explicit Attachment( Buffer buffer );
-		CRG_API Attachment( FlagKind flags
-			, FramePass & pass
-			, uint32_t binding
+		Attachment( FlagKind flags
+			, std::string name
+			, FramePass const * pass
+			, ImageAttachment attach
+			, Token token );
+		Attachment( FlagKind flags
+			, std::string name
+			, FramePass const * pass
+			, BufferAttachment attach
+			, Token token );
+		Attachment( FlagKind flags
+			, FramePass const & pass
 			, std::string name
 			, ImageAttachment::FlagKind imageFlags
 			, ImageViewIdArray views
@@ -682,29 +733,21 @@ namespace crg
 			, AttachmentStoreOp storeOp
 			, AttachmentLoadOp stencilLoadOp
 			, AttachmentStoreOp stencilStoreOp
-			, SamplerDesc samplerDesc
 			, ClearValue clearValue
 			, PipelineColorBlendAttachmentState blendState
-			, ImageLayout wantedLayout );
-		CRG_API Attachment( FlagKind flags
-			, FramePass & pass
-			, uint32_t binding
+			, ImageLayout wantedLayout
+			, Token token );
+		Attachment( FlagKind flags
+			, FramePass const & pass
 			, std::string name
 			, BufferAttachment::FlagKind bufferFlags
-			, Buffer buffer
-			, DeviceSize offset
-			, DeviceSize range
-			, AccessState wantedAccess );
-		CRG_API Attachment( FlagKind flags
-			, FramePass & pass
-			, uint32_t binding
-			, std::string name
-			, BufferAttachment::FlagKind bufferFlags
-			, Buffer buffer
-			, VkBufferView view
-			, DeviceSize offset
-			, DeviceSize range
-			, AccessState wantedAccess );
+			, BufferViewIdArray views
+			, AccessState wantedAccess
+			, Token token );
+
+	private:
+
+		void initSources();
 
 		FlagKind flags{};
 

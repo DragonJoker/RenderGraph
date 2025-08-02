@@ -5,7 +5,6 @@ See LICENSE file in root folder.
 
 #include "RenderGraph/Attachment.hpp"
 #include "RenderGraph/GraphContext.hpp"
-#include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -21,21 +20,15 @@ namespace crg
 
 		for ( auto & binding : bindings )
 		{
-			auto it = std::find_if( result.begin()
-				, result.end()
+			auto it = std::find_if( result.begin(), result.end()
 				, [&binding]( VkDescriptorPoolSize const & lookup )
 				{
 					return binding.descriptorType == lookup.type;
 				} );
-
 			if ( it == result.end() )
-			{
 				result.push_back( { binding.descriptorType, binding.descriptorCount * maxSets } );
-			}
 			else
-			{
 				it->descriptorCount += binding.descriptorCount * maxSets;
-			}
 		}
 
 		return result;

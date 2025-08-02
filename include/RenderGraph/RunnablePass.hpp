@@ -83,10 +83,21 @@ namespace crg
 			auto & implicitAction( ImageViewId view
 				, RecordContext::ImplicitAction action )
 			{
-				implicitActions.try_emplace( view, action );
+				implicitImageActions.try_emplace( view, action );
 				return *this;
 			}
-
+			/**
+			*\param[in] view
+			*	The action's target viex.
+			*\param[in] action
+			*	The implicit action.
+			*/
+			auto & implicitAction( BufferViewId view
+				, RecordContext::ImplicitAction action )
+			{
+				implicitBufferActions.try_emplace( view, action );
+				return *this;
+			}
 			/**
 			*\param[in] action
 			*	The action to run before the pass recording.
@@ -96,7 +107,6 @@ namespace crg
 				prePassActions.emplace_back( action );
 				return *this;
 			}
-
 			/**
 			*\param[in] action
 			*	The action to run after the pass recording.
@@ -111,7 +121,8 @@ namespace crg
 			bool resettable{ false };
 			std::vector< RecordContext::ImplicitAction > prePassActions{};
 			std::vector< RecordContext::ImplicitAction > postPassActions{};
-			std::map< ImageViewId, RecordContext::ImplicitAction > implicitActions{};
+			std::map< ImageViewId, RecordContext::ImplicitAction > implicitImageActions{};
+			std::map< BufferViewId, RecordContext::ImplicitAction > implicitBufferActions{};
 		};
 	}
 
@@ -304,7 +315,7 @@ namespace crg
 
 	private:
 		using LayoutTransitionMap = std::map< ImageViewId, LayoutTransition >;
-		using AccessTransitionMap = std::map< VkBuffer, AccessTransition >;
+		using AccessTransitionMap = std::map< BufferViewId, AccessTransition >;
 
 		struct PassData
 		{
