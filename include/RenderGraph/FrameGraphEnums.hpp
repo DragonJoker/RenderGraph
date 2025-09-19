@@ -21,7 +21,7 @@ namespace crg
 	{
 #define RGPF_ENUM_VALUE( name, value, components, alpha, colour, depth, stencil, compressed ) e##name = value,
 #define RGPF_ENUM_NON_VALUE( name, value ) e##name = value,
-#include "PixelFormat.enum"
+#include "PixelFormat.inl"
 	};
 
 	enum class ImageType : int32_t
