@@ -23,63 +23,63 @@ namespace crg
 			*\param[in] config
 			*	The pipeline program.
 			*/
-			auto & program( VkPipelineShaderStageCreateInfoArray config )
+			auto & program( VkPipelineShaderStageCreateInfoArray const & config )
 			{
-				m_baseConfig.program( std::move( config ) );
+				m_baseConfig.program( config );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The pipeline programs.
 			*/
-			auto & programs( std::vector< VkPipelineShaderStageCreateInfoArray > config )
+			auto & programs( std::vector< VkPipelineShaderStageCreateInfoArray > const & config )
 			{
-				m_baseConfig.programs( std::move( config ) );
+				m_baseConfig.programs( config );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The pipeline program creator.
 			*/
-			auto & programCreator( ProgramCreator config )
+			auto & programCreator( ProgramCreator const & config )
 			{
-				m_baseConfig.programCreator( std::move( config ) );
+				m_baseConfig.programCreator( config );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The descriptor set layout.
 			*/
-			auto & layout( VkDescriptorSetLayout config )
+			auto & layout( VkDescriptorSetLayout const & config )
 			{
-				m_baseConfig.layout( std::move( config ) );
+				m_baseConfig.layout( config );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The descriptor set layouts.
 			*/
-			auto & layouts( std::vector< VkDescriptorSetLayout > config )
+			auto & layouts( std::vector< VkDescriptorSetLayout > const & config )
 			{
-				m_baseConfig.layouts( std::move( config ) );
+				m_baseConfig.layouts( config );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The push constants range.
 			*/
-			auto & pushConstants( VkPushConstantRange config )
+			auto & pushConstants( VkPushConstantRange const & config )
 			{
-				m_baseConfig.pushConstants( std::move( config ) );
+				m_baseConfig.pushConstants( config );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The push constants range.
 			*/
-			auto & pushConstants( VkPushConstantRangeArray config )
+			auto & pushConstants( VkPushConstantRangeArray const & config )
 			{
-				m_baseConfig.pushConstants( std::move( config ) );
+				m_baseConfig.pushConstants( config );
 				return *this;
 			}
 			/**

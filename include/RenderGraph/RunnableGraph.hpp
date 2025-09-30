@@ -87,6 +87,18 @@ namespace crg
 		CRG_API WriteDescriptorSet getDescriptorWrite( Attachment const & attach, uint32_t binding, uint32_t index = 0u );
 		CRG_API WriteDescriptorSet getDescriptorWrite( Attachment const & attach, SamplerDesc const & samplerDesc, uint32_t binding, uint32_t index = 0u );
 
+		template< typename EnumT >
+		WriteDescriptorSet getDescriptorWriteT( Attachment const & attach, EnumT binding, uint32_t index = 0u )
+		{
+			return getDescriptorWrite( attach, uint32_t( binding ), index );
+		}
+
+		template< typename EnumT >
+		WriteDescriptorSet getDescriptorWriteT( Attachment const & attach, SamplerDesc const & samplerDesc, EnumT binding, uint32_t index = 0u )
+		{
+			return getDescriptorWrite( attach, samplerDesc, uint32_t( binding ), index );
+		}
+
 		ConstGraphAdjacentNode getNodeGraph()const noexcept
 		{
 			return &m_rootNode;

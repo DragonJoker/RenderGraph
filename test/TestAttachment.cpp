@@ -9,6 +9,13 @@ namespace
 {
 	constexpr crg::SamplerDesc defaultSamplerDesc{};
 
+	enum class Binding
+	{
+		eUniform,
+		eSampled,
+		eStorage,
+	};
+
 	TEST( Attachment, SampledAttachment )
 	{
 		testBegin( "testSampledAttachment" )
@@ -50,6 +57,47 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, SampledAttachmentT )
+	{
+		testBegin( "testSampledAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto tmpAttach1 = crg::Attachment::createDefault( view );
+		auto tmpAttach2 = crg::Attachment::createDefault( view );
+		tmpAttach2 = std::move( tmpAttach1 );
+		tmpAttach1 = tmpAttach2;
+		auto viewAttach = std::move( tmpAttach2 );
+		pass.addInputSampledT( viewAttach, Binding::eSampled );
+		require( pass.getSampled().size() == 1u )
+		auto attachIt = pass.getSampled().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment.attach->isImage() )
+		check( attachment.attach->isInput() )
+		check( !attachment.attach->isOutput() )
+		check( !attachment.attach->isClearable() )
+		check( !attachment.attach->isTransitionImageView() )
+		check( !attachment.attach->isTransferImageView() )
+		check( !attachment.attach->imageAttach.isDepthStencilTarget() )
+		check( !attachment.attach->imageAttach.isDepthTarget() )
+		check( !attachment.attach->imageAttach.isStencilTarget() )
+		check( !attachment.attach->imageAttach.isStencilInputTarget() )
+		check( !attachment.attach->imageAttach.isStencilOutputTarget() )
+		check( attachment.attach->name == pass.getGroupName() + "/" + view.data->name + "/Spl" )
+		checkEqual( attachment.attach->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment.attach->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment.attach->view() == view )
+		check( attachIt->first == uint32_t( Binding::eSampled ) )
+		check( attachment.sampler == defaultSamplerDesc )
+		checkEqual( attachment.attach->getImageLayout( false ), crg::ImageLayout::eShaderReadOnly )
+		checkEqual( attachment.attach->getImageLayout( true ), crg::ImageLayout::eShaderReadOnly )
+		testEnd()
+	}
+
 	TEST( Attachment, SampledImage )
 	{
 		testBegin( "testSampledImage" )
@@ -80,6 +128,42 @@ namespace
 		checkEqual( attachment.attach->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
 		check( attachment.attach->view() == view )
 		check( attachIt->first == 1u )
+		check( attachment.sampler == defaultSamplerDesc )
+		checkEqual( attachment.attach->getImageLayout( false ), crg::ImageLayout::eShaderReadOnly )
+		checkEqual( attachment.attach->getImageLayout( true ), crg::ImageLayout::eShaderReadOnly )
+		testEnd()
+	}
+
+	TEST( Attachment, SampledImageT )
+	{
+		testBegin( "testSampledImageT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputSampledImageT( view, Binding::eSampled );
+		require( pass.getSampled().size() == 1u )
+		auto attachIt = pass.getSampled().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment.attach->isImage() )
+		check( attachment.attach->isInput() )
+		check( !attachment.attach->isOutput() )
+		check( !attachment.attach->isClearable() )
+		check( !attachment.attach->isTransitionImageView() )
+		check( !attachment.attach->isTransferImageView() )
+		check( !attachment.attach->imageAttach.isDepthStencilTarget() )
+		check( !attachment.attach->imageAttach.isDepthTarget() )
+		check( !attachment.attach->imageAttach.isStencilTarget() )
+		check( !attachment.attach->imageAttach.isStencilInputTarget() )
+		check( !attachment.attach->imageAttach.isStencilOutputTarget() )
+		check( attachment.attach->name == pass.getGroupName() + "/" + view.data->name + "/Spl" )
+		checkEqual( attachment.attach->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment.attach->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment.attach->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment.attach->view() == view )
+		check( attachIt->first == uint32_t( Binding::eSampled ) )
 		check( attachment.sampler == defaultSamplerDesc )
 		checkEqual( attachment.attach->getImageLayout( false ), crg::ImageLayout::eShaderReadOnly )
 		checkEqual( attachment.attach->getImageLayout( true ), crg::ImageLayout::eShaderReadOnly )
@@ -232,6 +316,42 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, InStorageAttachmentT )
+	{
+		testBegin( "testInStorageAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInputStorageT( viewAttach, Binding::eStorage );
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
+		testEnd()
+	}
+
 	TEST( Attachment, InStorageImage )
 	{
 		testBegin( "testInStorageImage" )
@@ -267,6 +387,41 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, InStorageImageT )
+	{
+		testBegin( "testInStorageImageT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputStorageImageT( view, Binding::eStorage );
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
+		testEnd()
+	}
+
 	TEST( Attachment, InStorageBuffer )
 	{
 		testBegin( "testInStorageBuffer" )
@@ -290,6 +445,97 @@ namespace
 		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/SB" )
 		check( attachment->buffer() == view )
 		check( attachIt->first == 1u )
+		testEnd()
+	}
+
+	TEST( Attachment, InStorageBufferT )
+	{
+		testBegin( "testInStorageBufferT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto view = graph.createView( test::createView( "Test", buffer ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addInputStorageBufferT( view, Binding::eStorage );
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->bufferAttach.isStorage() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/SB" )
+		check( attachment->buffer() == view )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
+		testEnd()
+	}
+
+	TEST( Attachment, UniformAttachment )
+	{
+		testBegin( "testUniformAttachment" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto view = graph.createView( test::createView( "Test", buffer ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		check( &pass.getGraph() == &graph )
+		auto tmpAttach1 = crg::Attachment::createDefault( view );
+		auto tmpAttach2 = crg::Attachment::createDefault( view );
+		tmpAttach2 = std::move( tmpAttach1 );
+		tmpAttach1 = tmpAttach2;
+		auto viewAttach = std::move( tmpAttach2 );
+		pass.addInputUniform( viewAttach, 1u );
+		require( pass.getUniforms().size() == 1u )
+		auto attachIt = pass.getUniforms().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->isStorageBuffer() )
+		check( attachment->isUniformBuffer() )
+		check( !attachment->bufferAttach.isStorage() )
+		check( attachment->bufferAttach.isUniform() )
+		check( attachment->name == pass.getGroupName() + "/" + view.data->name + "/UB" )
+		check( attachIt->first == 1u )
+		testEnd()
+	}
+
+	TEST( Attachment, UniformAttachmentT )
+	{
+		testBegin( "testUniformAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto view = graph.createView( test::createView( "Test", buffer ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto tmpAttach1 = crg::Attachment::createDefault( view );
+		auto tmpAttach2 = crg::Attachment::createDefault( view );
+		tmpAttach2 = std::move( tmpAttach1 );
+		tmpAttach1 = tmpAttach2;
+		auto viewAttach = std::move( tmpAttach2 );
+		pass.addInputUniformT( viewAttach, Binding::eUniform );
+		require( pass.getUniforms().size() == 1u )
+		auto attachIt = pass.getUniforms().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->isStorageBuffer() )
+		check( attachment->isUniformBuffer() )
+		check( !attachment->bufferAttach.isStorage() )
+		check( attachment->bufferAttach.isUniform() )
+		check( attachment->name == pass.getGroupName() + "/" + view.data->name + "/UB" )
+		check( attachIt->first == uint32_t( Binding::eUniform ) )
 		testEnd()
 	}
 
@@ -323,6 +569,41 @@ namespace
 		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
 		check( attachment->view() == view )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
+		testEnd()
+	}
+
+	TEST( Attachment, OutStorageAttachmentT )
+	{
+		testBegin( "testOutStorageAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addOutputStorageImageT( view, Binding::eStorage );
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/OStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
 		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
 		testEnd()
@@ -363,6 +644,41 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, ClearOutStorageAttachmentT )
+	{
+		testBegin( "testClearOutStorageAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		pass.addClearableOutputStorageImageT( view, Binding::eStorage );
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/COStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
+		testEnd()
+	}
+
 	TEST( Attachment, InOutStorageAttachment )
 	{
 		testBegin( "testInOutStorageAttachment" )
@@ -394,6 +710,42 @@ namespace
 		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
 		check( attachment->view() == view )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
+		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
+		testEnd()
+	}
+
+	TEST( Attachment, InOutStorageAttachmentT )
+	{
+		testBegin( "testInOutStorageAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createView( test::createView( "Test", image ) );
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto viewAttach = crg::Attachment::createDefault( view );
+		pass.addInOutStorageT( viewAttach, Binding::eStorage );
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isImage() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isClearable() )
+		check( !attachment->isTransitionImageView() )
+		check( !attachment->isTransferImageView() )
+		check( !attachment->imageAttach.isDepthStencilTarget() )
+		check( !attachment->imageAttach.isDepthTarget() )
+		check( !attachment->imageAttach.isStencilTarget() )
+		check( !attachment->imageAttach.isStencilInputTarget() )
+		check( !attachment->imageAttach.isStencilOutputTarget() )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + view.data->name + "/IOStr" )
+		checkEqual( attachment->getLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		checkEqual( attachment->getStencilLoadOp(), crg::AttachmentLoadOp::eDontCare )
+		checkEqual( attachment->getStencilStoreOp(), crg::AttachmentStoreOp::eDontCare )
+		check( attachment->view() == view )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->getImageLayout( false ), crg::ImageLayout::eGeneral )
 		checkEqual( attachment->getImageLayout( true ), crg::ImageLayout::eGeneral )
 		testEnd()
@@ -1278,6 +1630,37 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, UniformBufferAttachmentT )
+	{
+		testBegin( "testUniformBufferAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addInputUniformBufferT( bufferv, Binding::eUniform );
+		require( pass.getUniforms().size() == 1u )
+		auto attachIt = pass.getUniforms().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eUniform ) )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/UB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
 	TEST( Attachment, InputStorageBufferAttachment )
 	{
 		testBegin( "testInputStorageBufferAttachment" )
@@ -1304,6 +1687,38 @@ namespace
 		check( !attachment->isTransitionBuffer() )
 		check( !attachment->isTransitionBufferView() )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, InputStorageBufferAttachmentT )
+	{
+		testBegin( "testInputStorageBufferAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInputStorageT( bufferAttach, Binding::eStorage );
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IStr" )
 		check( attachment->buffer() == bufferv )
 		check( attachment->bufferAttach.buffer() == bufferv )
@@ -1341,6 +1756,37 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, OutputStorageBufferAttachmentT )
+	{
+		testBegin( "testOutputStorageBufferAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addOutputStorageBufferT( bufferv, Binding::eStorage );
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
 	TEST( Attachment, ClearableOutputStorageBufferAttachment )
 	{
 		testBegin( "testClearableOutputStorageBufferAttachment" )
@@ -1366,6 +1812,37 @@ namespace
 		check( !attachment->isTransitionBuffer() )
 		check( !attachment->isTransitionBufferView() )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, ClearableOutputStorageBufferAttachmentT )
+	{
+		testBegin( "testClearableOutputStorageBufferAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		pass.addClearableOutputStorageBufferT( bufferv, Binding::eStorage );
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
 		check( attachment->buffer() == bufferv )
 		check( attachment->bufferAttach.buffer() == bufferv )
@@ -1398,6 +1875,38 @@ namespace
 		check( !attachment->isTransitionBuffer() )
 		check( !attachment->isTransitionBufferView() )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, InOutStorageBufferAttachmentT )
+	{
+		testBegin( "testInOutStorageBufferAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInOutStorageT( bufferAttach, Binding::eStorage );
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( !attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOStr" )
 		check( attachment->buffer() == bufferv )
 		check( attachment->bufferAttach.buffer() == bufferv )
@@ -1466,6 +1975,37 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, UniformBufferViewAttachmentT )
+	{
+		testBegin( "testUniformBufferViewAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		pass.addInputUniformBufferT( bufferv, Binding::eUniform );
+		require( !pass.getUniforms().empty() )
+		auto attachIt = pass.getUniforms().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( !attachment->isStorageBuffer() )
+		check( !attachment->isStorageBufferView() )
+		check( attachment->isUniformBuffer() )
+		check( attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eUniform ) )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/UB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
 	TEST( Attachment, InputStorageBufferViewAttachment )
 	{
 		testBegin( "testInputStorageBufferViewAttachment" )
@@ -1492,6 +2032,38 @@ namespace
 		check( !attachment->isTransitionBuffer() )
 		check( !attachment->isTransitionBufferView() )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, InputStorageBufferViewAttachmentT )
+	{
+		testBegin( "testInputStorageBufferViewAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInputStorageT( bufferAttach, Binding::eStorage );
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( !attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IStr" )
 		check( attachment->buffer() == bufferv )
 		check( attachment->bufferAttach.buffer() == bufferv )
@@ -1529,6 +2101,37 @@ namespace
 		testEnd()
 	}
 
+	TEST( Attachment, OutputStorageBufferViewAttachmentT )
+	{
+		testBegin( "testOutputStorageBufferViewAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		pass.addOutputStorageBufferT( bufferv, Binding::eStorage );
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
 	TEST( Attachment, ClearableOutputStorageBufferViewAttachment )
 	{
 		testBegin( "testClearableOutputStorageBufferViewAttachment" )
@@ -1554,6 +2157,37 @@ namespace
 		check( !attachment->isTransitionBuffer() )
 		check( !attachment->isTransitionBufferView() )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, ClearableOutputStorageBufferViewAttachmentT )
+	{
+		testBegin( "testClearableOutputStorageBufferViewAttachmentT" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		pass.addClearableOutputStorageBufferT( bufferv, Binding::eStorage );
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( !attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/OSB" )
 		check( attachment->buffer() == bufferv )
 		check( attachment->bufferAttach.buffer() == bufferv )
@@ -1586,6 +2220,38 @@ namespace
 		check( !attachment->isTransitionBuffer() )
 		check( !attachment->isTransitionBufferView() )
 		check( attachIt->first == 1u )
+		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOStr" )
+		check( attachment->buffer() == bufferv )
+		check( attachment->bufferAttach.buffer() == bufferv )
+		testEnd()
+	}
+
+	TEST( Attachment, InOutStorageBufferViewAttachmentT )
+	{
+		testBegin( "testInOutStorageBufferViewAttachment" )
+		crg::ResourceHandler handler;
+		crg::FrameGraph graph{ handler, testCounts.testName };
+		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
+		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto bufferAttach = crg::Attachment::createDefault( bufferv );
+		pass.addInOutStorageT( bufferAttach, Binding::eStorage );
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
+		auto const & attachment = attachIt->second;
+		check( attachment->isBuffer() )
+		check( attachment->isInput() )
+		check( attachment->isOutput() )
+		check( attachment->isBufferView() )
+		check( !attachment->isTransferBuffer() )
+		check( !attachment->isClearableBuffer() )
+		check( attachment->isStorageBuffer() )
+		check( attachment->isStorageBufferView() )
+		check( !attachment->isUniformBuffer() )
+		check( !attachment->isUniformBufferView() )
+		check( !attachment->isTransitionBuffer() )
+		check( !attachment->isTransitionBufferView() )
+		check( attachIt->first == uint32_t( Binding::eStorage ) )
 		checkEqual( attachment->name, pass.getGroupName() + "/" + buffer.data->name + "/IOStr" )
 		check( attachment->buffer() == bufferv )
 		check( attachment->bufferAttach.buffer() == bufferv )

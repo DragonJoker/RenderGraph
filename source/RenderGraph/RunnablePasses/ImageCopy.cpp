@@ -59,7 +59,7 @@ namespace crg
 
 	void ImageCopy::doRecordInto( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		if ( getPass().getInputs().size() == getPass().getOutputs().size() )
 			doRecordMultiToMulti( context, commandBuffer, index );
@@ -71,7 +71,7 @@ namespace crg
 
 	void ImageCopy::doRecordMultiToMulti( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		auto srcIt = getPass().getInputs().begin();
 		auto dstIt = getPass().getOutputs().begin();
@@ -111,7 +111,7 @@ namespace crg
 
 	void ImageCopy::doRecordMultiToSingle( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		std::vector< VkImageCopy > copyRegions;
 		auto dstIt = getPass().getOutputs().begin();
@@ -166,7 +166,7 @@ namespace crg
 
 	void ImageCopy::doRecordSingleToMulti( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		std::vector< VkImageCopy > copyRegions;
 		auto srcIt = getPass().getInputs().begin();

@@ -22,10 +22,10 @@ namespace crg
 	private:
 		void doRecordInto( RecordContext & context
 			, VkCommandBuffer commandBuffer
-			, uint32_t index );
+			, uint32_t index )const;
 		void doProcessImageView( RecordContext & context
 			, VkCommandBuffer commandBuffer
-			, ImageViewId viewId );
+			, ImageViewId viewId )const;
 
 	private:
 		LayoutState m_outputLayout;

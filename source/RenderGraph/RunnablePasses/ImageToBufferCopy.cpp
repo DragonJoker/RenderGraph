@@ -35,7 +35,7 @@ namespace crg
 
 	void ImageToBufferCopy::doRecordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
 		auto srcIt = getPass().getInputs().begin();
 		auto dstIt = getPass().getOutputs().begin();

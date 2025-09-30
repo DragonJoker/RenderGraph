@@ -346,7 +346,7 @@ TEST( RenderGraph, SharedDependencies )
 			return createDummy( testCounts
 				, framePass, context, runGraph, crg::PipelineStageFlags::eFragmentShader );
 		} );
-	pass0.addOutputStorageBuffer( bufv1, 0 );
+	auto attach = pass0.addOutputStorageBuffer( bufv1, 0 );
 	pass0.addOutputDepthTarget( dstv1 );
 	auto d0a = pass0.addOutputColourTarget( d0v );
 
@@ -383,6 +383,23 @@ TEST( RenderGraph, SharedDependencies )
 
 	auto runnable = graph.compile( getContext() );
 	auto stream = test::checkRunnable( testCounts, runnable );
+	runnable->getDescriptorWriteT( *attach, 0u );
+	runnable->getContext();
+	{
+		crg::RunnableGraph const & rn = *runnable;
+		auto const & fence = rn.getFence();
+		fence.getInternal();
+		auto const & timer = rn.getTimer();
+		timer.getName();
+	}
+	{
+		crg::RunnableGraph & rn = *runnable;
+		auto & fence = rn.getFence();
+		fence.reset();
+		auto & timer = rn.getTimer();
+		timer.reset();
+	}
+	check( runnable->getName() == graph.getName() )
 	std::string ref = R"(digraph {
   "pass2" [ shape=ellipse ];
   "pass1" [ shape=ellipse ];
@@ -2173,12 +2190,15 @@ TEST( RenderGraph, EnvironmentMap )
 	mipsGen.addInputTransfer( *graph.mergeAttachments( colourViews ) );
 	mipsGen.addInputTransfer( *graph.mergeAttachments( cubeViews ) );
 	mipsGen.addInputTransfer( *graph.mergeAttachments( cubesViews ) );
-	mipsGen.addOutputTransferImage( colourv );
+	auto attach = mipsGen.addOutputTransferImage( colourv );
 	mipsGen.addOutputTransferImage( cubev );
 	mipsGen.addOutputTransferImage( cubesv );
 
 	auto runnable = graph.compile( getContext() );
 	test::checkRunnable( testCounts, runnable );
+
+	runnable->getDescriptorWriteT( *attach, crg::SamplerDesc{}, 0u, 0u );
+
 	testEnd()
 }
 
