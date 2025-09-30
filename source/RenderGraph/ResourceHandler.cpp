@@ -92,36 +92,39 @@ namespace crg
 
 	ResourceHandler::~ResourceHandler()noexcept
 	{
-		std::array< char, 1024u > buffer;
-
 		for ( auto const & [data, _] : m_bufferViews )
 		{
-			snprintf( buffer.data(), buffer.size(), "Leaked [VkBufferView](%.900s)", data.data->name.c_str() );
-			Logger::logError( buffer.data() );
+			std::stringstream stream;
+			stream << "Leaked [VkBufferView](" << data.data->name << ")";
+			Logger::logError( stream.str() );
 		}
 
 		for ( auto const & [data, _] : m_buffers )
 		{
-			snprintf( buffer.data(), buffer.size(), "Leaked [VkBuffer](%.900s)", data.data->name.c_str() );
-			Logger::logError( buffer.data() );
+			std::stringstream stream;
+			stream << "Leaked [VkBuffer](" << data.data->name << ")";
+			Logger::logError( stream.str() );
 		}
 
 		for ( auto const & [data, _] : m_imageViews )
 		{
-			snprintf( buffer.data(), buffer.size(), "Leaked [VkImageView](%.900s)", data.data->name.c_str() );
-			Logger::logError( buffer.data() );
+			std::stringstream stream;
+			stream << "Leaked [VkImageView](" << data.data->name << ")";
+			Logger::logError( stream.str() );
 		}
 
 		for ( auto const & [data, _] : m_images )
 		{
-			snprintf( buffer.data(), buffer.size(), "Leaked [VkImage](%.900s)", data.data->name.c_str() );
-			Logger::logError( buffer.data() );
+			std::stringstream stream;
+			stream << "Leaked [VkImage](" << data.data->name << ")";
+			Logger::logError( stream.str() );
 		}
 
 		for ( auto const & [_, data] : m_samplers )
 		{
-			snprintf( buffer.data(), buffer.size(), "Leaked [VkSampler](%.900s)", data.name.c_str() );
-			Logger::logError( buffer.data() );
+			std::stringstream stream;
+			stream << "Leaked [VkSampler](" << data.name << ")";
+			Logger::logError( stream.str() );
 		}
 	}
 
@@ -460,9 +463,9 @@ namespace crg
 					auto realMinV = float( config.invertV ? maxV : minV );
 					auto realMaxV = float( config.invertV ? minV : maxV );
 					std::array<reshdl::Quad::Vertex, 3u > vertexData
-					{ reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, -3.0f }, reshdl::Quad::Data{ realMinU, realMinV } }
+						{ reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, -3.0f }, reshdl::Quad::Data{ realMinU, realMinV } }
 						, reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, +1.0f }, reshdl::Quad::Data{ realMinU, realMaxV } }
-					, reshdl::Quad::Vertex{ reshdl::Quad::Data{ +3.0f, +1.0f }, reshdl::Quad::Data{ realMaxU, realMaxV } } };
+						, reshdl::Quad::Vertex{ reshdl::Quad::Data{ +3.0f, +1.0f }, reshdl::Quad::Data{ realMaxU, realMaxV } } };
 					std::copy( vertexData.begin(), vertexData.end(), buffer );
 
 					VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE

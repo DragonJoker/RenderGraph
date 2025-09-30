@@ -87,7 +87,7 @@ namespace crg
 		CRG_API WriteDescriptorSet getDescriptorWrite( Attachment const & attach, uint32_t binding, uint32_t index = 0u );
 		CRG_API WriteDescriptorSet getDescriptorWrite( Attachment const & attach, SamplerDesc const & samplerDesc, uint32_t binding, uint32_t index = 0u );
 
-		ConstGraphAdjacentNode getGraph()const noexcept
+		ConstGraphAdjacentNode getNodeGraph()const noexcept
 		{
 			return &m_rootNode;
 		}

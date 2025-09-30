@@ -127,6 +127,7 @@ namespace crg::dot
 				}
 				catch ( ... )
 				{
+					// What to do here ?
 				}
 			}
 
@@ -185,16 +186,6 @@ namespace crg::dot
 
 		inline void addIndent( std::ios_base & ios, long val );
 
-		struct Indent
-		{
-			explicit Indent( long i )
-				: indent( i )
-			{
-			}
-
-			long indent;
-		};
-
 		inline long & indentValue( std::ios_base & ios )
 		{
 			static int indentIndex = std::ios_base::xalloc();
@@ -230,21 +221,32 @@ namespace crg::dot
 			}
 		}
 
-		template< typename CharType >
-		inline std::basic_ostream< CharType > & operator<<( std::basic_ostream< CharType > & stream, Indent const & ind )
+		struct Indent
 		{
-			auto sbuf = dynamic_cast< BasicIndentBuffer< CharType > * >( stream.rdbuf() );
-
-			if ( !sbuf )
+			explicit Indent( long i )
+				: indent( i )
 			{
-				sbuf = installIndentBuffer( stream );
-				stream.register_callback( callback< CharType >, 0 );
 			}
 
-			addIndent( stream, ind.indent );
-			sbuf->indent( ind.indent );
-			return stream;
-		}
+			long indent;
+
+		private:
+			template< typename CharType >
+			friend std::basic_ostream< CharType > & operator<<( std::basic_ostream< CharType > & stream, Indent const & ind )
+			{
+				auto sbuf = dynamic_cast< BasicIndentBuffer< CharType > * >( stream.rdbuf() );
+
+				if ( !sbuf )
+				{
+					sbuf = installIndentBuffer( stream );
+					stream.register_callback( callback< CharType >, 0 );
+				}
+
+				addIndent( stream, ind.indent );
+				sbuf->indent( ind.indent );
+				return stream;
+			}
+		};
 
 		static std::string_view constexpr imgColour{ "#8b008b" };
 		static std::string_view constexpr bufColour{ "#458b00" };
@@ -272,14 +274,14 @@ namespace crg::dot
 
 				assert( group != nullptr );
 
-				if ( group->parent == m_group )
+				if ( group->getParent() == m_group )
 				{
 					m_children.emplace_back( std::make_unique< FramePassGroupStreams >( m_config, this, group ) );
 					streams = m_children.back().get();
 				}
 				else
 				{
-					streams = emplace( group->parent ).first;
+					streams = emplace( group->getParent() ).first;
 					streams = streams->emplace( group ).first;
 				}
 
@@ -306,92 +308,103 @@ namespace crg::dot
 					: result;
 			}
 
-			void write( DisplayResult & streams
-				, std::stringstream const & global = std::stringstream{} )const
+			void doWriteSplitted( DisplayResult & streams
+				, std::stringstream const & global )const
 			{
-				if ( m_config.splitGroups )
+				if ( m_group )
 				{
-					if ( m_group )
-					{
-						auto & stream = streams.try_emplace( m_group->getName() ).first->second;
-						stream << "digraph \"" << m_group->getName() << "\" {\n";
-						stream << m_stream.str();
-						stream << "}\n";
-					}
+					auto & stream = streams.try_emplace( m_group->getName() ).first->second;
+					stream << "digraph \"" << m_group->getName() << "\" {\n";
+					stream << m_stream.str();
+					stream << "}\n";
+				}
 
-					for ( auto & group : m_children )
+				for ( auto & group : m_children )
+					group->write( streams );
+			}
+
+			void doWriteUnsplittedWithGroups( DisplayResult & streams
+				, std::stringstream const & global )const
+			{
+				auto & stream = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
+
+				if ( m_group )
+				{
+					stream << "subgraph cluster_" << m_group->getId() << " {\n";
+					stream << "  label=\"" << m_group->getName() << "\";\n";
+
+					if ( m_config.withColours )
 					{
-						group->write( streams );
+						static std::vector< std::string_view > colours
+						{
+							{ "#FFFFFF" },
+							{ "#EEEEEE" },
+							{ "#DDDDDD" },
+							{ "#CCCCCC" },
+							{ "#BBBBBB" },
+							{ "#AAAAAA" },
+							{ "#999999" },
+							{ "#888888" },
+						};
+						stream << "  style=filled;\n";
+						stream << "  fillcolor=\"" << colours[std::min( size_t( getLevel() ), colours.size() - 1u )] << "\";\n";
+						stream << "  color=black;\n";
 					}
 				}
 				else
 				{
-					auto & stream = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
-
-					if ( m_group )
-					{
-						if ( m_config.withGroups )
-						{
-							static std::vector< std::string_view > colours
-							{
-								{ "#FFFFFF" },
-								{ "#EEEEEE" },
-								{ "#DDDDDD" },
-								{ "#CCCCCC" },
-								{ "#BBBBBB" },
-								{ "#AAAAAA" },
-								{ "#999999" },
-								{ "#888888" },
-							};
-							stream << "subgraph cluster_" << m_group->id << " {\n";
-							stream << "  label=\"" << m_group->getName() << "\";\n";
-
-							if ( m_config.withColours )
-							{
-								stream << "  style=filled;\n";
-								stream << "  fillcolor=\"" << colours[std::min( size_t( getLevel() ), colours.size() - 1u )] << "\";\n";
-								stream << "  color=black;\n";
-							}
-						}
-					}
-					else
-					{
-						stream << "digraph {\n";
-					}
-
-					if ( m_config.withGroups )
-					{
-						stream << Indent{ 2 };
-					}
-
-					for ( auto & group : m_children )
-					{
-						group->write( streams );
-						stream << streams.find( group->getName() )->second.str();
-					}
-
-					auto & stream2 = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
-
-					if ( m_config.withGroups )
-					{
-						stream2 << Indent{ -2 };
-					}
-
-					stream2 << m_stream.str();
-
-					if ( !m_group )
-					{
-						stream2 << global.str();
-						stream2 << "}\n";
-					}
-					else
-					{
-						if ( m_config.withGroups )
-						{
-							stream2 << "}\n";
-						}
-					}
+					stream << "digraph {\n";
 				}
+
+				stream << Indent{ 2 };
+
+				for ( auto & group : m_children )
+				{
+					group->write( streams );
+					stream << streams.find( group->getName() )->second.str();
+				}
+
+				auto & stream2 = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
+				stream2 << Indent{ -2 };
+				stream2 << m_stream.str();
+				if ( !m_group )
+					stream2 << global.str();
+				stream2 << "}\n";
+			}
+
+			void doWriteUnsplitted( DisplayResult & streams
+				, std::stringstream const & global )const
+			{
+				auto & stream = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
+
+				if ( !m_group )
+					stream << "digraph {\n";
+
+				for ( auto & group : m_children )
+				{
+					group->write( streams );
+					stream << streams.find( group->getName() )->second.str();
+				}
+
+				auto & stream2 = streams.try_emplace( m_group ? m_group->getName() : std::string{} ).first->second;
+				stream2 << m_stream.str();
+
+				if ( !m_group )
+				{
+					stream2 << global.str();
+					stream2 << "}\n";
+				}
+			}
+
+			void write( DisplayResult & streams
+				, std::stringstream const & global = std::stringstream{} )const
+			{
+				if ( m_config.splitGroups )
+					doWriteSplitted( streams, global );
+				else if ( m_config.withGroups )
+					doWriteUnsplittedWithGroups( streams, global );
+				else
+					doWriteUnsplitted( streams, global );
 			}
 
 			std::string const & getName()const
@@ -412,11 +425,11 @@ namespace crg::dot
 
 			uint32_t getLevel()const
 			{
-				return ( m_parent
-					? ( m_parent->m_parent
+				if ( m_parent )
+					return ( m_parent->m_parent
 						? 1u + m_parent->getLevel()
-						: m_parent->getLevel() )
-					: 0u );
+						: m_parent->getLevel() );
+				return 0u;
 			}
 
 			std::stringstream & getStream()const
@@ -528,9 +541,9 @@ namespace crg::dot
 
 			if ( attach.pass )
 			{
-				nodeId = attach.pass->id;
+				nodeId = attach.pass->getId();
 				node = attach.pass->getGroupName();
-				group = &attach.pass->group;
+				group = &attach.pass->getGroup();
 				colour = passColour;
 			}
 
@@ -585,13 +598,13 @@ namespace crg::dot
 			if ( transition.outputAttach.pass )
 			{
 				srcNode = transition.outputAttach.pass->getGroupName();
-				srcStream = groups.find( &transition.outputAttach.pass->group );
+				srcStream = groups.find( &transition.outputAttach.pass->getGroup() );
 			}
 
 			if ( transition.inputAttach.pass )
 			{
 				dstNode = transition.inputAttach.pass->getGroupName();
-				dstStream = groups.find( &transition.inputAttach.pass->group );
+				dstStream = groups.find( &transition.inputAttach.pass->getGroup() );
 			}
 
 			std::string name{ "Transition to\\n" + dstName };
@@ -742,7 +755,7 @@ namespace crg::dot
 		, Config const & config )
 	{
 		DisplayResult result;
-		dotexp::DotTransitionsVisitor::submit( result, value.getGraph(), config );
+		dotexp::DotTransitionsVisitor::submit( result, value.getNodeGraph(), config );
 		return result;
 	}
 

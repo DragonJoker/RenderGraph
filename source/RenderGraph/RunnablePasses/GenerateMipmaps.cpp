@@ -44,7 +44,7 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		for ( auto [_, view] : m_pass.inouts )
+		for ( auto [_, view] : getPass().getInouts() )
 			doProcessImageView( context, commandBuffer, view->view( index ) );
 	}
 
@@ -53,13 +53,13 @@ namespace crg
 		, ImageViewId viewId )
 	{
 		auto imageId{ viewId.data->image };
-		auto image{ m_graph.createImage( imageId ) };
+		auto image{ getGraph().createImage( imageId ) };
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );
 		auto baseArrayLayer = getSubresourceRange( viewId ).baseArrayLayer;
 		auto layerCount = getSubresourceRange( viewId ).layerCount;
 		auto mipLevels = imageId.data->info.mipLevels;
-		auto nextLayoutState = m_graph.getNextLayoutState( context
+		auto nextLayoutState = getGraph().getNextLayoutState( context
 			, *this
 			, viewId );
 
@@ -89,7 +89,7 @@ namespace crg
 			imageBlit.dstOffsets[1].z = genMips::getSubresourceDimension( depth, mipSubRange.baseMipLevel );
 
 			// Transition first mip level to transfer source for read in next iteration
-			auto firstLayoutState = m_graph.getCurrentLayoutState( context
+			auto firstLayoutState = getGraph().getCurrentLayoutState( context
 				, imageId
 				, viewId.data->info.viewType
 				, mipSubRange );
@@ -121,7 +121,7 @@ namespace crg
 					, makeLayoutState( ImageLayout::eTransferDst ) );
 
 				// Perform blit
-				m_context.vkCmdBlitImage( commandBuffer 
+				context->vkCmdBlitImage( commandBuffer 
 					, image
 					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
 					, image

@@ -184,6 +184,7 @@ namespace crg
 		ClearValue clearValue{};
 		PipelineColorBlendAttachmentState blendState = DefaultBlendState;
 		ImageLayout wantedLayout{};
+		FlagKind flags{};
 
 	private:
 		CRG_API ImageAttachment() = default;
@@ -198,10 +199,8 @@ namespace crg
 			, PipelineColorBlendAttachmentState blendState
 			, ImageLayout wantedLayout );
 
-		FlagKind flags{};
-
 		friend bool operator==( ImageAttachment const & lhs
-			, ImageAttachment const & rhs )
+			, ImageAttachment const & rhs )noexcept
 		{
 			return lhs.flags == rhs.flags
 				&& lhs.views == rhs.views
@@ -304,6 +303,8 @@ namespace crg
 
 	public:
 		BufferViewIdArray buffers;
+		FlagKind flags{};
+		AccessState wantedAccess{};
 
 	private:
 		CRG_API BufferAttachment() = default;
@@ -312,10 +313,8 @@ namespace crg
 			, BufferViewIdArray views
 			, AccessState access = {} );
 
-		FlagKind flags{};
-		AccessState wantedAccess{};
-
-		friend bool operator==( BufferAttachment const & lhs, BufferAttachment const & rhs )
+		friend bool operator==( BufferAttachment const & lhs
+			, BufferAttachment const & rhs )noexcept
 		{
 			return lhs.flags == rhs.flags
 				&& lhs.buffers == rhs.buffers;
@@ -327,6 +326,9 @@ namespace crg
 	*/
 	struct Attachment
 	{
+		friend struct FramePass;
+		friend class FrameGraph;
+
 		class Token
 		{
 			friend struct Attachment;
@@ -335,8 +337,41 @@ namespace crg
 		private:
 			Token() noexcept = default;
 		};
-		friend struct FramePass;
-		friend class FrameGraph;
+
+		struct Source
+		{
+			Source( Attachment const * parent
+				, FramePass const * pass
+				, ImageAttachment const & attach )
+				: parent{ parent }
+				, pass{ pass }
+				, imageAttach{ &attach }
+			{
+			}
+
+			Source( Attachment const * parent
+				, FramePass const * pass
+				, BufferAttachment const & attach )
+				: parent{ parent }
+				, pass{ pass }
+				, bufferAttach{ &attach }
+			{
+			}
+
+			explicit Source( AttachmentPtr sourceAttach )
+				: pass{ sourceAttach->pass }
+				, imageAttach{ sourceAttach->isImage() ? &sourceAttach->imageAttach : nullptr }
+				, bufferAttach{ sourceAttach->isBuffer() ? &sourceAttach->bufferAttach : nullptr }
+				, attach{ std::move( sourceAttach ) }
+			{
+			}
+
+			Attachment const * parent{};
+			FramePass const * pass{};
+			ImageAttachment const * imageAttach{};
+			BufferAttachment const * bufferAttach{};
+			AttachmentPtr attach;
+		};
 		/**
 		*\brief
 		*	The flags qualifying an Attachment.
@@ -670,41 +705,8 @@ namespace crg
 		std::string name{};
 		ImageAttachment imageAttach{};
 		BufferAttachment bufferAttach{};
-		struct Source
-		{
-			Source( Attachment const * parent
-				, FramePass const * pass
-				, ImageAttachment const & attach )
-				: parent{ parent }
-				, pass{ pass }
-				, imageAttach{ &attach }
-			{
-			}
-
-			Source( Attachment const * parent
-				, FramePass const * pass
-				, BufferAttachment const & attach )
-				: parent{ parent }
-				, pass{ pass }
-				, bufferAttach{ &attach }
-			{
-			}
-
-			explicit Source( AttachmentPtr sourceAttach )
-				: pass{ sourceAttach->pass }
-				, imageAttach{ sourceAttach->isImage() ? &sourceAttach->imageAttach : nullptr }
-				, bufferAttach{ sourceAttach->isBuffer() ? &sourceAttach->bufferAttach : nullptr }
-				, attach{ std::move( sourceAttach ) }
-			{
-			}
-
-			Attachment const * parent{};
-			FramePass const * pass{};
-			ImageAttachment const * imageAttach{};
-			BufferAttachment const * bufferAttach{};
-			AttachmentPtr attach;
-		};
 		std::vector< Source > source{};
+		FlagKind flags{};
 		/**@}*/
 
 		CRG_API Attachment( ImageViewId view
@@ -746,10 +748,7 @@ namespace crg
 			, Token token );
 
 	private:
-
 		void initSources();
-
-		FlagKind flags{};
 
 		friend bool operator==( Attachment const & lhs
 			, Attachment const & rhs )

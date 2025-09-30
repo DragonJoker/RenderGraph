@@ -14,6 +14,8 @@
 #	include <pwd.h>
 #endif
 
+#include <fmt/base.h>
+
 #include <array>
 #include <functional>
 #include <iomanip>
@@ -45,7 +47,7 @@ namespace test
 			LogStreambuf( LogStreambuf && ) = delete;
 			LogStreambuf & operator=( LogStreambuf && ) = delete;
 
-			explicit inline LogStreambuf( std::string const & name
+			explicit LogStreambuf( std::string const & name
 				, std::ostream & stream )
 				: m_stream{ stream }
 				, m_fstream{ getExecutableDirectory() + name + ".log" }
@@ -53,12 +55,19 @@ namespace test
 				m_old = m_stream.rdbuf( this );
 			}
 
-			inline ~LogStreambuf()override
+			~LogStreambuf()noexcept override
 			{
-				m_stream.rdbuf( m_old );
+				try
+				{
+					m_stream.rdbuf( m_old );
+				}
+				catch ( ... )
+				{
+					// What to do here ?
+				}
 			}
 
-			inline int_type overflow( int_type c = traits_type::eof() )override
+			int_type overflow( int_type c = traits_type::eof() )override
 			{
 				if ( traits_type::eq_int_type( c, traits_type::eof() ) )
 				{
@@ -81,14 +90,14 @@ namespace test
 				return c;
 			}
 
-			inline int do_sync()
+			int do_sync()
 			{
 				LogStreambufTraits::log( m_fstream, m_buffer );
 				m_buffer.clear();
 				return 0;
 			}
 
-			inline int do_sync_no_nl()
+			int do_sync_no_nl()
 			{
 				LogStreambufTraits::logNoNL( m_fstream, m_buffer );
 				m_buffer.clear();
@@ -104,69 +113,69 @@ namespace test
 
 		struct DebugLogStreambufTraits
 		{
-			static inline void log( std::ostream & stream
+			static void log( std::ostream & stream
 				, std::string const & text )
 			{
 				stream << "DEBUG: " << text << std::endl;
-				printf( "%s\n", text.c_str() );
+				fmt::print( "{}\n", text );
 			}
 
-			static inline void logNoNL( std::ostream & stream
+			static void logNoNL( std::ostream & stream
 				, std::string const & text )
 			{
 				stream << "DEBUG: " << text;
-				printf( "%s", text.c_str() );
+				fmt::print( "{}\n", text );
 			}
 		};
 
 		struct InfoLogStreambufTraits
 		{
-			static inline void log( std::ostream & stream
+			static void log( std::ostream & stream
 				, std::string const & text )
 			{
 				stream << text << std::endl;
-				printf( "%s\n", text.c_str() );
+				fmt::print( "{}\n", text );
 			}
 
-			static inline void logNoNL( std::ostream & stream
+			static void logNoNL( std::ostream & stream
 				, std::string const & text )
 			{
 				stream << text;
-				printf( "%s", text.c_str() );
+				fmt::print( "{}\n", text );
 			}
 		};
 
 		struct ErrorLogStreambufTraits
 		{
-			static inline void log( std::ostream & stream
+			static void log( std::ostream & stream
 				, std::string const & text )
 			{
 				stream << "ERROR: " << text << std::endl;
-				printf( "%s\n", text.c_str() );
+				fmt::print( "{}\n", text );
 			}
 
-			static inline void logNoNL( std::ostream & stream
+			static void logNoNL( std::ostream & stream
 				, std::string const & text )
 			{
 				stream << "ERROR: " << text;
-				printf( "%s", text.c_str() );
+				fmt::print( "{}\n", text );
 			}
 		};
 
 #if defined( _WIN32 )
-		static char constexpr PathSeparator = '\\';
+		char constexpr PathSeparator = '\\';
 #else
-		static char constexpr PathSeparator = '/';
+		char constexpr PathSeparator = '/';
 #endif
 
-		std::string getPath( std::string const & path )
+		std::string getPath( std::string_view path )
 		{
-			return path.substr( 0, path.find_last_of( PathSeparator ) );
+			return std::string{ path.substr( 0, path.find_last_of( PathSeparator ) ) };
 		}
 
 		std::string findMissing( StringArray const & lhsLines
 			, StringArray const & rhsLines
-			, std::string const & op )
+			, std::string_view const & op )
 		{
 			std::string result;
 
@@ -176,7 +185,7 @@ namespace test
 					, rhsLines.end()
 					, lhsLine ) )
 				{
-					result += op + lhsLine + "\n";
+					result += std::string{ op } + lhsLine + "\n";
 				}
 			}
 
@@ -192,11 +201,10 @@ namespace test
 	{
 		std::string result;
 		std::array< char, FILENAME_MAX > path{};
-		DWORD res = ::GetModuleFileNameA( nullptr
-			, path.data()
-			, sizeof( path ) );
 
-		if ( res != 0 )
+		if ( DWORD res = ::GetModuleFileNameA( nullptr
+			, path.data()
+			, sizeof( path ) ) )
 		{
 			result = path.data();
 		}
@@ -320,15 +328,15 @@ namespace test
 	{
 		std::locale::global( std::locale{ "C" } );
 		testing::InitGoogleTest( &argc, argv );
-		auto suite = new test::TestSuite{ std::string{ testSuiteName } };
-		testing::AddGlobalTestEnvironment( suite );
+		auto suite = std::make_unique< test::TestSuite >( std::string{ testSuiteName } );
+		testing::AddGlobalTestEnvironment( suite.release() );
 		return RUN_ALL_TESTS();
 	}
 
 	std::string sortLines( std::string const & value )
 	{
 		std::stringstream stream{ value };
-		std::multiset< std::string > sorted;
+		std::multiset< std::string, std::less<> > sorted;
 		std::string line;
 
 		while ( std::getline( stream, line ) )

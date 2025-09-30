@@ -81,135 +81,135 @@ namespace crg
 			*\param[in] config
 			*	Tells if disabled pass should record render pass begin/end.
 			*/
-			auto & baseConfig( pp::Config config )
+			auto & baseConfig( pp::Config const & config )
 			{
-				m_baseConfig = std::move( config );
+				m_baseConfig = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The render area size.
 			*/
-			auto & renderSize( Extent2D config )
+			auto & renderSize( Extent2D const & config )
 			{
-				m_renderSize = std::move( config );
+				m_renderSize = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The render position.
 			*/
-			auto & renderPosition( Offset2D config )
+			auto & renderPosition( Offset2D const & config )
 			{
-				m_renderPosition = std::move( config );
+				m_renderPosition = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The depth stencil state.
 			*/
-			auto & depthStencilState( VkPipelineDepthStencilStateCreateInfo config )
+			auto & depthStencilState( VkPipelineDepthStencilStateCreateInfo const & config )
 			{
-				m_depthStencilState = std::move( config );
+				m_depthStencilState = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The pass index callback.
 			*/
-			auto & getPassIndex( RunnablePass::GetPassIndexCallback config )
+			auto & getPassIndex( RunnablePass::GetPassIndexCallback const & config )
 			{
-				m_getPassIndex = std::move( config );
+				m_getPassIndex = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback checking the enable status of the pass.
 			*/
-			auto & isEnabled( RunnablePass::IsEnabledCallback config )
+			auto & isEnabled( RunnablePass::IsEnabledCallback const & config )
 			{
-				m_isEnabled = std::move( config );
+				m_isEnabled = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback recording the pass.
 			*/
-			auto & recordInto( RunnablePass::RecordCallback config )
+			auto & recordInto( RunnablePass::RecordCallback const & config )
 			{
-				m_recordInto = std::move( config );
+				m_recordInto = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback ending the pass.
 			*/
-			auto & end( RunnablePass::RecordCallback config )
+			auto & end( RunnablePass::RecordCallback const & config )
 			{
-				m_end = std::move( config );
+				m_end = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The vertex buffer.
 			*/
-			auto & vertexBuffer( VertexBuffer config )
+			auto & vertexBuffer( VertexBuffer const & config )
 			{
-				m_vertexBuffer = std::move( config );
+				m_vertexBuffer = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The index buffer.
 			*/
-			auto & indexBuffer( IndexBuffer config )
+			auto & indexBuffer( IndexBuffer const & config )
 			{
-				m_indexBuffer = std::move( config );
+				m_indexBuffer = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The indirect buffer.
 			*/
-			auto & indirectBuffer( IndirectBuffer config )
+			auto & indirectBuffer( IndirectBuffer const & config )
 			{
-				m_indirectBuffer = std::move( config );
+				m_indirectBuffer = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The primitive count retrieval callback.
 			*/
-			auto & getPrimitiveCount( GetPrimitiveCountCallback config )
+			auto & getPrimitiveCount( GetPrimitiveCountCallback const & config )
 			{
-				m_getPrimitiveCount = std::move( config );
+				m_getPrimitiveCount = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The vertex count retrieval callback.
 			*/
-			auto & getVertexCount( GetVertexCountCallback config )
+			auto & getVertexCount( GetVertexCountCallback const & config )
 			{
-				m_getVertexCount = std::move( config );
+				m_getVertexCount = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The index type retrieval callback.
 			*/
-			auto & getIndexType( GetIndexTypeCallback config )
+			auto & getIndexType( GetIndexTypeCallback const & config )
 			{
-				m_getIndexType = std::move( config );
+				m_getIndexType = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The rasterizer cull mode.
 			*/
-			auto & getCullMode( GetCullModeCallback config )
+			auto & getCullMode( GetCullModeCallback const & config )
 			{
-				m_getCullMode = std::move( config );
+				m_getCullMode = config;
 				return *this;
 			}
 

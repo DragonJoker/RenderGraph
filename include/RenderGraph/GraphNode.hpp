@@ -28,9 +28,8 @@ namespace crg
 
 		GraphNode( GraphNode const & ) = delete;
 		GraphNode & operator=( GraphNode const & ) = delete;
-		GraphNode & operator=( GraphNode && rhs )noexcept = delete;
+		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept = default;
 		CRG_API virtual ~GraphNode()noexcept = default;
-
 		CRG_API GraphNode( GraphNode && rhs )noexcept;
 
 		CRG_API void attachNode( GraphNode & child );
@@ -68,7 +67,7 @@ namespace crg
 
 		FramePassGroup const & getGroup()const noexcept
 		{
-			return group;
+			return *group;
 		}
 
 		uint32_t getId()const noexcept
@@ -106,7 +105,7 @@ namespace crg
 		Kind kind{};
 		uint32_t id{};
 		std::string name{};
-		FramePassGroup const & group;
+		FramePassGroup const * group;
 		GraphAdjacentNodeArray prev{};
 		AttachmentTransitions m_transitions{};
 	};

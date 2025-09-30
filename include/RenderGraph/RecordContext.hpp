@@ -72,10 +72,10 @@ namespace crg
 
 		CRG_API void registerImplicitTransition( RunnablePass const & pass
 			, crg::ImageViewId view
-			, ImplicitAction action = []( RecordContext &, VkCommandBuffer, uint32_t ){} );
+			, ImplicitAction action = []( RecordContext const &, VkCommandBuffer, uint32_t ){} );
 		CRG_API void registerImplicitTransition( RunnablePass const & pass
 			, crg::BufferViewId view
-			, ImplicitAction action = []( RecordContext &, VkCommandBuffer, uint32_t ){} );
+			, ImplicitAction action = []( RecordContext const &, VkCommandBuffer, uint32_t ){} );
 		CRG_API void registerImplicitTransition( ImplicitImageTransition transition );
 		CRG_API void registerImplicitTransition( ImplicitBufferTransition transition );
 		CRG_API void runImplicitTransition( VkCommandBuffer commandBuffer

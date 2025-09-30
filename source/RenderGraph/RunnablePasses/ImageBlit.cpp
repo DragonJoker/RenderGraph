@@ -35,23 +35,23 @@ namespace crg
 		, m_dstSize{ convert( blitDst.extent ) }
 		, m_filter{ filter }
 	{
-		assert( m_pass.inputs.size() == m_pass.outputs.size() );
+		assert( getPass().getInputs().size() == getPass().getOutputs().size() );
 	}
 
 	void ImageBlit::doRecordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcIt = m_pass.inputs.begin();
-		auto dstIt = m_pass.outputs.begin();
+		auto srcIt = getPass().getInputs().begin();
+		auto dstIt = getPass().getOutputs().begin();
 
-		while ( srcIt != m_pass.inputs.end()
-			&& dstIt != m_pass.outputs.end() )
+		while ( srcIt != getPass().getInputs().end()
+			&& dstIt != getPass().getOutputs().end() )
 		{
 			auto srcAttach{ srcIt->second->view( index ) };
 			auto dstAttach{ dstIt->second->view( index ) };
-			auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
-			auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+			auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
+			auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
 			VkImageBlit blitRegion{ getSubresourceLayers( getSubresourceRange( srcAttach ) )
 				, { m_srcOffset, VkOffset3D{ int32_t( m_srcSize.width ), int32_t( m_srcSize.height ), int32_t( m_srcSize.depth ) } }
 				, getSubresourceLayers( getSubresourceRange( dstAttach ) )

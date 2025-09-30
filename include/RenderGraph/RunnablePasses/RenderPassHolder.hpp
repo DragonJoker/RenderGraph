@@ -12,6 +12,15 @@ namespace crg
 	public:
 		struct Entry
 		{
+			Entry( crg::ImageViewId pview
+				, LayoutState pinput
+				, LayoutState poutput )
+				: view{ std::move( pview ) }
+				, input{ std::move( pinput ) }
+				, output{ std::move( poutput ) }
+			{
+			}
+
 			crg::ImageViewId view;
 			LayoutState input;
 			LayoutState output;

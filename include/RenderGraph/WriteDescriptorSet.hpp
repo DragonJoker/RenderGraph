@@ -52,7 +52,7 @@ namespace crg
 		{
 		}
 
-		void update( VkDescriptorSet descriptorSet )const
+		void update( VkDescriptorSet descriptorSet )const noexcept
 		{
 			if ( needsUpdate )
 			{
@@ -63,17 +63,17 @@ namespace crg
 			}
 		}
 
-		operator VkWriteDescriptorSet const & ()const
+		explicit operator VkWriteDescriptorSet const & ()const noexcept
 		{
 			return vk;
 		}
 
-		inline VkWriteDescriptorSet const * operator->()const
+		VkWriteDescriptorSet const * operator->()const noexcept
 		{
 			return &vk;
 		}
 
-		inline VkWriteDescriptorSet * operator->()
+		VkWriteDescriptorSet * operator->()noexcept
 		{
 			return &vk;
 		}

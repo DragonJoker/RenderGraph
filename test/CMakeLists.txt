@@ -2,6 +2,7 @@ enable_testing()
 
 set( GTest_DIR ${VCPKG_INSTALLED_DIR}/${VCPKG_TARGET_TRIPLET}/share/gtest )
 find_package( GTest CONFIG REQUIRED GTest::gtest GTest::gtest_main )
+find_package( fmt CONFIG REQUIRED )
 
 set( TEST_NAME TestCommon )
 
@@ -31,6 +32,7 @@ target_link_libraries( ${TEST_NAME}
 	PUBLIC
 		crg::RenderGraph
 		GTest::gtest
+		fmt::fmt
 )
 target_include_directories( ${TEST_NAME}
 	PUBLIC

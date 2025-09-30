@@ -126,18 +126,36 @@ namespace crg
 
 		CRG_API std::string getFullName()const;
 
-		std::string const & getName()const
+		std::string const & getName()const noexcept
 		{
 			return m_name;
 		}
 
-	public:
-		uint32_t id;
-		FramePassPtrArray passes;
-		FramePassGroupPtrArray groups;
-		FramePassGroup * parent{};
+		FramePassGroupPtrArray const & getGroups()const noexcept
+		{
+			return m_groups;
+		}
+
+		FramePassPtrArray const & getPasses()const noexcept
+		{
+			return m_passes;
+		}
+
+		FramePassGroup const * getParent()const noexcept
+		{
+			return m_parent;
+		}
+
+		uint32_t getId()const noexcept
+		{
+			return m_id;
+		}
 
 	private:
+		uint32_t m_id;
+		FramePassPtrArray m_passes;
+		FramePassGroupPtrArray m_groups;
+		FramePassGroup * m_parent{};
 		std::string m_name;
 		FrameGraph & m_graph;
 		std::unordered_set< uint32_t > m_inputs;

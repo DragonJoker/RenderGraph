@@ -47,10 +47,10 @@ namespace test
 		, uint32_t baseArrayLayer = 0u
 		, uint32_t layerCount = 1u );
 	crg::GraphContext & getDummyContext();
-	std::string checkRunnable( TestCounts & testCounts
+	std::string checkRunnable( TestCounts const & testCounts
 		, crg::RunnableGraph * runnable );
 
-	inline std::string checkRunnable( TestCounts & testCounts
+	inline std::string checkRunnable( TestCounts const & testCounts
 		, crg::RunnableGraphPtr const & runnable )
 	{
 		return checkRunnable( testCounts, runnable.get() );
@@ -69,7 +69,7 @@ namespace test
 		, bool withGroups = {} );
 
 	template< typename TypeT >
-	crg::Id< TypeT > makeId( TypeT const & data )
+	crg::Id< TypeT > makeId( [[maybe_unused]] TypeT const & data )
 	{
 		return { 0u, nullptr };
 	}
@@ -115,7 +115,7 @@ namespace test
 		, crg::RunnableGraph & runGraph
 		, crg::PipelineStageFlags pipelineStageFlags
 		, crg::ru::Config config = {} );
-	void checkDummy( test::TestCounts & testCounts
+	void checkDummy( test::TestCounts const & testCounts
 		, crg::FramePass const & framePass
 		, crg::RunnableGraph const & graph
 		, crg::RecordContext const & context

@@ -297,11 +297,11 @@ namespace crg
 			return;
 		}
 
-		pphdr::createDescriptorWrites( m_pass.uniforms, index, m_graph, descriptorSet.writes );
-		pphdr::createDescriptorWrites( m_pass.sampled, index, m_graph, descriptorSet.writes );
-		pphdr::createDescriptorWrites( m_pass.inputs, index, m_graph, descriptorSet.writes );
-		pphdr::createDescriptorWrites( m_pass.inouts, index, m_graph, descriptorSet.writes );
-		pphdr::createDescriptorWrites( m_pass.outputs, index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.getUniforms(), index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.getSampled(), index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.getInputs(), index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.getInouts(), index, m_graph, descriptorSet.writes );
+		pphdr::createDescriptorWrites( m_pass.getOutputs(), index, m_graph, descriptorSet.writes );
 
 		VkDescriptorSetAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO
 			, nullptr
@@ -338,11 +338,11 @@ namespace crg
 				| VK_SHADER_STAGE_GEOMETRY_BIT
 				| VK_SHADER_STAGE_FRAGMENT_BIT ) );
 
-		pphdr::createDescriptorBindings( m_pass.uniforms, shaderStage, m_graph, m_descriptorBindings );
-		pphdr::createDescriptorBindings( m_pass.sampled, shaderStage, m_graph, m_descriptorBindings );
-		pphdr::createDescriptorBindings( m_pass.inputs, shaderStage, m_graph, m_descriptorBindings );
-		pphdr::createDescriptorBindings( m_pass.inouts, shaderStage, m_graph, m_descriptorBindings );
-		pphdr::createDescriptorBindings( m_pass.outputs, shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.getUniforms(), shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.getSampled(), shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.getInputs(), shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.getInouts(), shaderStage, m_graph, m_descriptorBindings );
+		pphdr::createDescriptorBindings( m_pass.getOutputs(), shaderStage, m_graph, m_descriptorBindings );
 	}
 
 	void PipelineHolder::doCreateDescriptorSetLayout()

@@ -7,6 +7,8 @@
 #include <RenderGraph/Log.hpp>
 #include <RenderGraph/ResourceHandler.hpp>
 
+#include <fmt/base.h>
+
 namespace
 {
 	TEST( FramePass, Log )
@@ -15,9 +17,9 @@ namespace
 		auto callback = []( std::string_view msg, bool newLine )noexcept
 			{
 				if ( newLine )
-					printf( "%s Callback\n", msg.data() );
+					fmt::print( "{} Callback\n", msg.data() );
 				else
-					printf( "%s Callback ", msg.data() );
+					fmt::print( "{} Callback ", msg.data() );
 			};
 
 		crg::Logger::setTraceCallback( callback );
@@ -68,8 +70,8 @@ namespace
 		pass.addOutputColourTarget( rtv );
 
 		check( pass.getName() == "1C" )
-		check( pass.targets.size() == 1u )
-		check( pass.targets[0]->view() == rtv )
+		check( pass.getTargets().size() == 1u )
+		check( pass.getTargets()[0]->view() == rtv )
 		testEnd()
 	}
 
@@ -88,9 +90,9 @@ namespace
 		pass.addOutputColourTarget( rtv2 );
 
 		check( pass.getName() == "2C" )
-		check( pass.targets.size() == 2u )
-		check( pass.targets[0]->view() == rtv1 )
-		check( pass.targets[1]->view() == rtv2 )
+		check( pass.getTargets().size() == 2u )
+		check( pass.getTargets()[0]->view() == rtv1 )
+		check( pass.getTargets()[1]->view() == rtv2 )
 		testEnd()
 	}
 
@@ -106,8 +108,8 @@ namespace
 		pass.addInputSampled( attach, 1u );
 
 		check( pass.getName() == "0C_1I" )
-		check( pass.sampled.size() == 1u )
-		check( pass.sampled.begin()->second.attach->view() == inv )
+		check( pass.getSampled().size() == 1u )
+		check( pass.getSampled().begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
@@ -128,9 +130,9 @@ namespace
 		pass.addInputSampled( attach2, 2u );
 
 		check( pass.getName() == "0C_2I" )
-		check( pass.sampled.size() == 2u )
-		check( pass.sampled.begin()->second.attach->view() == inv1 )
-		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
+		check( pass.getSampled().size() == 2u )
+		check( pass.getSampled().begin()->second.attach->view() == inv1 )
+		check( pass.getSampled().rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
@@ -150,10 +152,10 @@ namespace
 		pass.addInputSampled( attach, 1u );
 
 		check( pass.getName() == "1C_1I" )
-		check( pass.targets.size() == 1u )
-		check( pass.targets[0]->view() == rtv )
-		check( pass.sampled.size() == 1u )
-		check( pass.sampled.begin()->second.attach->view() == inv )
+		check( pass.getTargets().size() == 1u )
+		check( pass.getTargets()[0]->view() == rtv )
+		check( pass.getSampled().size() == 1u )
+		check( pass.getSampled().begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
@@ -178,11 +180,11 @@ namespace
 		pass.addInputSampled( attach2, 2u );
 
 		check( pass.getName() == "1C_2I" )
-		check( pass.targets.size() == 1u )
-		check( pass.targets[0]->view() == rtv )
-		check( pass.sampled.size() == 2u )
-		check( pass.sampled.begin()->second.attach->view() == inv1 )
-		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
+		check( pass.getTargets().size() == 1u )
+		check( pass.getTargets()[0]->view() == rtv )
+		check( pass.getSampled().size() == 2u )
+		check( pass.getSampled().begin()->second.attach->view() == inv1 )
+		check( pass.getSampled().rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
@@ -206,11 +208,11 @@ namespace
 		pass.addInputSampled( attach, 1u );
 
 		check( pass.getName() == "2C_1I" )
-		check( pass.targets.size() == 2u )
-		check( pass.targets[0]->view() == rtv1 )
-		check( pass.targets[1]->view() == rtv2 )
-		check( pass.sampled.size() == 1u )
-		check( pass.sampled.begin()->second.attach->view() == inv )
+		check( pass.getTargets().size() == 2u )
+		check( pass.getTargets()[0]->view() == rtv1 )
+		check( pass.getTargets()[1]->view() == rtv2 )
+		check( pass.getSampled().size() == 1u )
+		check( pass.getSampled().begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
@@ -239,12 +241,12 @@ namespace
 		pass.addInputSampled( attach2, 2u );
 
 		check( pass.getName() == "2C_2I" )
-		check( pass.targets.size() == 2u )
-		check( pass.targets[0]->view() == rtv1 )
-		check( pass.targets[1]->view() == rtv2 )
-		check( pass.sampled.size() == 2u )
-		check( pass.sampled.begin()->second.attach->view() == inv1 )
-		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
+		check( pass.getTargets().size() == 2u )
+		check( pass.getTargets()[0]->view() == rtv1 )
+		check( pass.getTargets()[1]->view() == rtv2 )
+		check( pass.getSampled().size() == 2u )
+		check( pass.getSampled().begin()->second.attach->view() == inv1 )
+		check( pass.getSampled().rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 	
@@ -259,8 +261,8 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "0C_DS" )
-		check( pass.targets.size() == 1u )
-		check( pass.targets[0]->view() == dsv )
+		check( pass.getTargets().size() == 1u )
+		check( pass.getTargets()[0]->view() == dsv )
 		testEnd()
 	}
 
@@ -279,9 +281,9 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "1C_DS" )
-		check( pass.targets.size() == 2u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.targets[1]->view() == rtv )
+		check( pass.getTargets().size() == 2u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getTargets()[1]->view() == rtv )
 		testEnd()
 	}
 
@@ -304,10 +306,10 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "2C_DS" )
-		check( pass.targets.size() == 3u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.targets[1]->view() == rtv1 )
-		check( pass.targets[2]->view() == rtv2 )
+		check( pass.getTargets().size() == 3u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getTargets()[1]->view() == rtv1 )
+		check( pass.getTargets()[2]->view() == rtv2 )
 		testEnd()
 	}
 	
@@ -327,10 +329,10 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "0C_1I_DS" )
-		check( pass.targets.size() == 1u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.sampled.size() == 1u )
-		check( pass.sampled.begin()->second.attach->view() == inv )
+		check( pass.getTargets().size() == 1u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getSampled().size() == 1u )
+		check( pass.getSampled().begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
@@ -355,11 +357,11 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "0C_2I_DS" )
-		check( pass.targets.size() == 1u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.sampled.size() == 2u )
-		check( pass.sampled.begin()->second.attach->view() == inv1 )
-		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
+		check( pass.getTargets().size() == 1u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getSampled().size() == 2u )
+		check( pass.getSampled().begin()->second.attach->view() == inv1 )
+		check( pass.getSampled().rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
@@ -383,11 +385,11 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "1C_1I_DS" )
-		check( pass.targets.size() == 2u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.targets[1]->view() == rtv )
-		check( pass.sampled.size() == 1u )
-		check( pass.sampled.begin()->second.attach->view() == inv )
+		check( pass.getTargets().size() == 2u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getTargets()[1]->view() == rtv )
+		check( pass.getSampled().size() == 1u )
+		check( pass.getSampled().begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
@@ -416,12 +418,12 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "1C_2I_DS" )
-		check( pass.targets.size() == 2u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.targets[1]->view() == rtv )
-		check( pass.sampled.size() == 2u )
-		check( pass.sampled.begin()->second.attach->view() == inv1 )
-		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
+		check( pass.getTargets().size() == 2u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getTargets()[1]->view() == rtv )
+		check( pass.getSampled().size() == 2u )
+		check( pass.getSampled().begin()->second.attach->view() == inv1 )
+		check( pass.getSampled().rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 
@@ -449,12 +451,12 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "2C_1I_DS" )
-		check( pass.targets.size() == 3u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.targets[1]->view() == rtv1 )
-		check( pass.targets[2]->view() == rtv2 )
-		check( pass.sampled.size() == 1u )
-		check( pass.sampled.begin()->second.attach->view() == inv )
+		check( pass.getTargets().size() == 3u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getTargets()[1]->view() == rtv1 )
+		check( pass.getTargets()[2]->view() == rtv2 )
+		check( pass.getSampled().size() == 1u )
+		check( pass.getSampled().begin()->second.attach->view() == inv )
 		testEnd()
 	}
 
@@ -487,13 +489,13 @@ namespace
 		pass.addOutputDepthStencilTarget( dsv );
 
 		check( pass.getName() == "2C_2I_DS" )
-		check( pass.targets.size() == 3u )
-		check( pass.targets[0]->view() == dsv )
-		check( pass.targets[1]->view() == rtv1 )
-		check( pass.targets[2]->view() == rtv2 )
-		check( pass.sampled.size() == 2u )
-		check( pass.sampled.begin()->second.attach->view() == inv1 )
-		check( pass.sampled.rbegin()->second.attach->view() == inv2 )
+		check( pass.getTargets().size() == 3u )
+		check( pass.getTargets()[0]->view() == dsv )
+		check( pass.getTargets()[1]->view() == rtv1 )
+		check( pass.getTargets()[2]->view() == rtv2 )
+		check( pass.getSampled().size() == 2u )
+		check( pass.getSampled().begin()->second.attach->view() == inv1 )
+		check( pass.getSampled().rbegin()->second.attach->view() == inv2 )
 		testEnd()
 	}
 }

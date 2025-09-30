@@ -10,6 +10,7 @@
     "tests": {
       "description": "Unit tests.",
       "dependencies": [
+        "fmt",
         "gtest"
       ]
     }

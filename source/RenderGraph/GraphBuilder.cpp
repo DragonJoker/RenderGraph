@@ -30,11 +30,11 @@ namespace crg::builder
 		{
 			for ( auto pass : passes )
 			{
-				for ( auto & [binding, attach] : pass->inouts )
+				for ( auto & [binding, attach] : pass->getInouts() )
 					addAttach( *attach, result );
-				for ( auto & [binding, attach] : pass->outputs )
+				for ( auto & [binding, attach] : pass->getOutputs() )
 					addAttach( *attach, result );
-				for ( auto & attach : pass->targets )
+				for ( auto & attach : pass->getTargets() )
 					if ( attach->isOutput() )
 						addAttach( *attach, result );
 			}
@@ -146,11 +146,11 @@ namespace crg::builder
 
 		static bool hasOutput( FramePass const & pass )
 		{
-			auto result = ( !pass.outputs.empty() || !pass.inouts.empty() );
+			auto result = ( !pass.getOutputs().empty() || !pass.getInouts().empty() );
 
 			if ( !result )
 			{
-				for ( auto & attach : pass.targets )
+				for ( auto & attach : pass.getTargets() )
 					result = result || attach->isOutput();
 			}
 
@@ -160,13 +160,13 @@ namespace crg::builder
 		static void addPassInputs( FramePass const & pass
 			, AttachmentArray & result )
 		{
-			for ( auto & [_, attach] : pass.inputs )
+			for ( auto & [_, attach] : pass.getInputs() )
 				addAttach( *attach, result );
-			for ( auto & [_, attach] : pass.uniforms )
+			for ( auto & [_, attach] : pass.getUniforms() )
 				addAttach( *attach, result );
-			for ( auto & [_, attach] : pass.sampled )
+			for ( auto & [_, attach] : pass.getSampled() )
 				result.push_back( attach.attach );
-			for ( auto & attach : pass.targets )
+			for ( auto & attach : pass.getTargets() )
 				if ( attach->isInput() )
 					addAttach( *attach, result );
 		}
@@ -184,11 +184,11 @@ namespace crg::builder
 		static AttachmentArray listPassOutputs( FramePass const & pass )
 		{
 			AttachmentArray result;
-			for ( auto & [_, attach] : pass.outputs )
+			for ( auto & [_, attach] : pass.getOutputs() )
 				addAttach( *attach, result );
-			for ( auto & [_, attach] : pass.inouts )
+			for ( auto & [_, attach] : pass.getInouts() )
 				addAttach( *attach, result );
-			for ( auto & attach : pass.targets )
+			for ( auto & attach : pass.getTargets() )
 				if ( attach->isOutput() )
 					addAttach( *attach, result );
 			return result;
@@ -408,12 +408,12 @@ namespace crg::builder
 					{
 						auto & node = static_cast< FramePassNode & >( *nodes.emplace_back( std::make_unique< FramePassNode >( *pass ) ) );
 						AttachmentTransitions transitions;
-						traversePassAttach( node, pass->targets, Attachment::Flag::InOut, transitions, nodes );
-						traversePassAttach( node, pass->inouts, transitions, nodes );
-						traversePassAttach( node, pass->uniforms, transitions, nodes );
-						traversePassAttach( node, pass->sampled, transitions, nodes );
-						traversePassAttach( node, pass->inputs, transitions, nodes );
-						traversePassAttach( node, pass->targets, Attachment::Flag::Input, transitions, nodes );
+						traversePassAttach( node, pass->getTargets(), Attachment::Flag::InOut, transitions, nodes );
+						traversePassAttach( node, pass->getInouts(), transitions, nodes );
+						traversePassAttach( node, pass->getUniforms(), transitions, nodes );
+						traversePassAttach( node, pass->getSampled(), transitions, nodes );
+						traversePassAttach( node, pass->getInputs(), transitions, nodes );
+						traversePassAttach( node, pass->getTargets(), Attachment::Flag::Input, transitions, nodes );
 						node.setTransitions( mergeIdenticalTransitions( std::move( transitions ) ) );
 						parent.attachNode( node );
 					}
@@ -495,7 +495,7 @@ namespace crg::builder
 			auto it = std::find_if( sourceGraph.begin(), sourceGraph.end()
 				, [&node]( GraphNodePtr const & lookup )
 				{
-				return &node == lookup.get();
+					return &node == lookup.get();
 				} );
 			if ( sourceGraph.end() != it )
 			{
