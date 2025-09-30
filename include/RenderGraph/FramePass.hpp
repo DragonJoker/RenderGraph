@@ -68,10 +68,30 @@ namespace crg
 		*\brief
 		*	Creates a uniform buffer single-pass attachment.
 		*/
+		template< typename EnumT >
+		void addInputUniformBufferT( BufferViewIdArray buffers
+			, EnumT binding )
+		{
+			addInputUniformBuffer( std::move( buffers ), uint32_t( binding ) );
+		}
+		/**
+		*\brief
+		*	Creates a uniform buffer single-pass attachment.
+		*/
 		void addInputUniformBuffer( BufferViewId buffer
 			, uint32_t binding )
 		{
 			addInputUniformBuffer( BufferViewIdArray{ buffer }, binding );
+		}
+		/**
+		*\brief
+		*	Creates a uniform buffer single-pass attachment.
+		*/
+		template< typename EnumT >
+		void addInputUniformBufferT( BufferViewId buffer
+			, EnumT binding )
+		{
+			addInputUniformBufferT( BufferViewIdArray{ buffer }, binding );
 		}
 		/**
 		*\brief
@@ -84,11 +104,33 @@ namespace crg
 		*\brief
 		*	Creates a sampled image single-pass attachment.
 		*/
+		template< typename EnumT >
+		void addInputSampledImageT( ImageViewIdArray views
+			, EnumT binding
+			, SamplerDesc samplerDesc = SamplerDesc{} )
+		{
+			addInputSampledImage( std::move( views ), uint32_t( binding ), std::move( samplerDesc ) );
+		}
+		/**
+		*\brief
+		*	Creates a sampled image single-pass attachment.
+		*/
 		void addInputSampledImage( ImageViewId view
 			, uint32_t binding
 			, SamplerDesc samplerDesc = SamplerDesc{} )
 		{
 			addInputSampledImage( ImageViewIdArray{ view }, binding, std::move( samplerDesc ) );
+		}
+		/**
+		*\brief
+		*	Creates a sampled image single-pass attachment.
+		*/
+		template< typename EnumT >
+		void addInputSampledImageT( ImageViewId view
+			, EnumT binding
+			, SamplerDesc samplerDesc = SamplerDesc{} )
+		{
+			addInputSampledImageT( ImageViewIdArray{ view }, binding, std::move( samplerDesc ) );
 		}
 		/**
 		*\brief
@@ -98,11 +140,32 @@ namespace crg
 			, uint32_t binding );
 		/**
 		*\brief
+		*	Creates an input uniform attachment.
+		*/
+		template< typename EnumT >
+		void addInputUniformT( Attachment const & attach
+			, EnumT binding )
+		{
+			addInputUniform( attach, uint32_t( binding ) );
+		}
+		/**
+		*\brief
 		*	Creates a sampled image attachment.
 		*/
 		CRG_API void addInputSampled( Attachment const & attach
 			, uint32_t binding
 			, SamplerDesc samplerDesc = SamplerDesc{} );
+		/**
+		*\brief
+		*	Creates a sampled image attachment.
+		*/
+		template< typename EnumT >
+		void addInputSampledT( Attachment const & attach
+			, EnumT binding
+			, SamplerDesc samplerDesc = SamplerDesc{} )
+		{
+			addInputSampled( attach, uint32_t( binding ), std::move( samplerDesc ) );
+		}
 		/**@}*/
 #	pragma endregion
 #	pragma region Storage
@@ -119,6 +182,16 @@ namespace crg
 			, uint32_t binding );
 		/**
 		*\brief
+		*	Creates a storage buffer multi-pass attachment.
+		*/
+		template< typename EnumT >
+		void addInputStorageBufferT( BufferViewIdArray buffers
+			, EnumT binding )
+		{
+			addInputStorageBuffer( std::move( buffers ), uint32_t( binding ) );
+		}
+		/**
+		*\brief
 		*	Creates a storage buffer single-pass attachment.
 		*/
 		void addInputStorageBuffer( BufferViewId buffer
@@ -128,10 +201,30 @@ namespace crg
 		}
 		/**
 		*\brief
+		*	Creates a storage buffer single-pass attachment.
+		*/
+		template< typename EnumT >
+		void addInputStorageBufferT( BufferViewId buffer
+			, EnumT binding )
+		{
+			addInputStorageBufferT( BufferViewIdArray{ buffer }, binding );
+		}
+		/**
+		*\brief
 		*	Creates an input storage attachment.
 		*/
 		CRG_API void addInputStorageImage( ImageViewIdArray views
 			, uint32_t binding );
+		/**
+		*\brief
+		*	Creates an input storage attachment.
+		*/
+		template< typename EnumT >
+		void addInputStorageImageT( ImageViewIdArray views
+			, EnumT binding )
+		{
+			addInputStorageImage( std::move( views ), uint32_t( binding ) );
+		}
 		/**
 		*\brief
 		*	Creates an input storage attachment.
@@ -145,8 +238,28 @@ namespace crg
 		*\brief
 		*	Creates an input storage attachment.
 		*/
+		template< typename EnumT >
+		void addInputStorageImageT( ImageViewId view
+			, EnumT binding )
+		{
+			addInputStorageImageT( ImageViewIdArray{ view }, binding );
+		}
+		/**
+		*\brief
+		*	Creates an input storage attachment.
+		*/
 		CRG_API void addInputStorage( Attachment const & attach
 			, uint32_t binding );
+		/**
+		*\brief
+		*	Creates an input storage attachment.
+		*/
+		template< typename EnumT >
+		void addInputStorageT( Attachment const & attach
+			, EnumT binding )
+		{
+			addInputStorage( attach, uint32_t( binding ) );
+		}
 		/**
 		*\brief
 		*	Creates an input/output storage attachment.
@@ -155,10 +268,30 @@ namespace crg
 			, uint32_t binding );
 		/**
 		*\brief
+		*	Creates an input/output storage attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addInOutStorageT( Attachment const & attach
+			, EnumT binding )
+		{
+			return addInOutStorage( attach, uint32_t( binding ) );
+		}
+		/**
+		*\brief
 		*	Creates an output storage buffer multi-pass attachment.
 		*/
 		CRG_API Attachment const * addOutputStorageBuffer( BufferViewIdArray buffers
 			, uint32_t binding );
+		/**
+		*\brief
+		*	Creates an output storage buffer multi-pass attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addOutputStorageBufferT( BufferViewIdArray buffers
+			, EnumT binding )
+		{
+			return addOutputStorageBuffer( std::move( buffers ), uint32_t( binding ) );
+		}
 		/**
 		*\brief
 		*	Creates an output storage buffer single-pass attachment.
@@ -170,10 +303,30 @@ namespace crg
 		}
 		/**
 		*\brief
+		*	Creates an output storage buffer single-pass attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addOutputStorageBufferT( BufferViewId buffer
+			, EnumT binding )
+		{
+			return addOutputStorageBufferT( BufferViewIdArray{ buffer }, binding );
+		}
+		/**
+		*\brief
 		*	Creates a storage buffer multi-pass attachment that will be cleared a the beginning of the pass.
 		*/
 		CRG_API Attachment const * addClearableOutputStorageBuffer( BufferViewIdArray buffers
 			, uint32_t binding );
+		/**
+		*\brief
+		*	Creates a storage buffer multi-pass attachment that will be cleared a the beginning of the pass.
+		*/
+		template< typename EnumT >
+		Attachment const * addClearableOutputStorageBufferT( BufferViewIdArray buffers
+			, EnumT binding )
+		{
+			return addClearableOutputStorageBuffer( std::move( buffers ), uint32_t( binding ) );
+		}
 		/**
 		*\brief
 		*	Creates a storage buffer single-pass attachment that will be cleared a the beginning of the pass.
@@ -185,10 +338,30 @@ namespace crg
 		}
 		/**
 		*\brief
+		*	Creates a storage buffer single-pass attachment that will be cleared a the beginning of the pass.
+		*/
+		template< typename EnumT >
+		Attachment const * addClearableOutputStorageBufferT( BufferViewId buffer
+			, EnumT binding )
+		{
+			return addClearableOutputStorageBufferT( BufferViewIdArray{ buffer }, binding );
+		}
+		/**
+		*\brief
 		*	Creates a storage image multi-pass attachment.
 		*/
 		CRG_API Attachment const * addOutputStorageImage( ImageViewIdArray view
 			, uint32_t binding );
+		/**
+		*\brief
+		*	Creates a storage image multi-pass attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addOutputStorageImageT( ImageViewIdArray views
+			, EnumT binding )
+		{
+			return addOutputStorageImage( std::move( views ), uint32_t( binding ) );
+		}
 		/**
 		*\brief
 		*	Creates a storage image single-pass attachment.
@@ -196,16 +369,38 @@ namespace crg
 		Attachment const * addOutputStorageImage( ImageViewId view
 			, uint32_t binding )
 		{
-			return addOutputStorageImage( ImageViewIdArray{ view }
-			, binding );
+			return addOutputStorageImage( ImageViewIdArray{ view }, binding );
+		}
+		/**
+		*\brief
+		*	Creates a storage image single-pass attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addOutputStorageImageT( ImageViewId view
+			, EnumT binding )
+		{
+			return addOutputStorageImageT( ImageViewIdArray{ view }, binding );
 		}
 		/**
 		*\brief
 		*	Creates a storage image multi-pass attachment.
 		*/
-		CRG_API Attachment const * addClearableOutputStorageImage( ImageViewIdArray view
+		CRG_API Attachment const * addClearableOutputStorageImage( ImageViewIdArray views
 			, uint32_t binding
 			, ClearValue clearValue = ClearValue{} );
+		/**
+		*\brief
+		*	Creates a storage image multi-pass attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addClearableOutputStorageImageT( ImageViewIdArray views
+			, EnumT binding
+			, ClearValue clearValue = ClearValue{} )
+		{
+			return addClearableOutputStorageImage( std::move( views )
+				, uint32_t( binding )
+				, std::move( clearValue ) );
+		}
 		/**
 		*\brief
 		*	Creates a storage image single-pass attachment.
@@ -215,6 +410,19 @@ namespace crg
 			, ClearValue clearValue = ClearValue{} )
 		{
 			return addClearableOutputStorageImage( ImageViewIdArray{ view }
+				, binding
+				, std::move( clearValue ) );
+		}
+		/**
+		*\brief
+		*	Creates a storage image single-pass attachment.
+		*/
+		template< typename EnumT >
+		Attachment const * addClearableOutputStorageImageT( ImageViewId view
+			, EnumT binding
+			, ClearValue clearValue = ClearValue{} )
+		{
+			return addClearableOutputStorageImageT( ImageViewIdArray{ view }
 				, binding
 				, std::move( clearValue ) );
 		}

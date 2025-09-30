@@ -91,6 +91,9 @@ TEST( Bases, BaseFuncs )
 	auto vb1 = crg::VertexBuffer{ handler.createViewId( test::createView( "vtx1", handler.createBufferId( test::createBuffer( "vtx1" ) ) ) ) };
 	auto vb2 = crg::VertexBuffer{ handler.createViewId( test::createView( "vtx2", handler.createBufferId( test::createBuffer( "vtx2" ) ) ) ) };
 	vb2 = std::move( vb1 );
+	vb1 = vb2;
+	crg::VertexBuffer vb3{ vb1 };
+	crg::VertexBuffer vb4{ std::move( vb1 ) };
 
 	crg::GetPrimitiveCountCallback cb0;
 	crg::GetPrimitiveCountCallback cb1;

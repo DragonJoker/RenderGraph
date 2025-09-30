@@ -741,8 +741,7 @@ namespace crg
 		return newLayout;
 	}
 
-	static void gatherSubresourceRangeLayoutMips( LayerLayoutStates const & ranges
-		, ImageSubresourceRange const & range
+	static void gatherSubresourceRangeLayoutMips( ImageSubresourceRange const & range
 		, MipLayoutStates const & layers
 		, std::map< ImageLayout, LayoutState > & states )
 	{
@@ -776,7 +775,7 @@ namespace crg
 				layerIt != ranges.end() )
 			{
 				auto & layers = layerIt->second;
-				gatherSubresourceRangeLayoutMips( ranges, range, layers, states );
+				gatherSubresourceRangeLayoutMips( range, layers, states );
 			}
 		}
 

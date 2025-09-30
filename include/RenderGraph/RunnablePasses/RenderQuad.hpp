@@ -146,7 +146,7 @@ namespace crg
 			, RunnableGraph & graph
 			, ru::Config ruConfig = {} )
 		{
-			m_config.baseConfig( std::move( this->m_baseConfig ) );
+			m_config.baseConfig( std::move( this->getBaseConfig() ) );
 			return std::make_unique< RenderQuad >( pass
 				, context
 				, graph

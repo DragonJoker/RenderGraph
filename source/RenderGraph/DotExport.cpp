@@ -308,8 +308,7 @@ namespace crg::dot
 					: result;
 			}
 
-			void doWriteSplitted( DisplayResult & streams
-				, std::stringstream const & global )const
+			void doWriteSplitted( DisplayResult & streams )const
 			{
 				if ( m_group )
 				{
@@ -400,7 +399,7 @@ namespace crg::dot
 				, std::stringstream const & global = std::stringstream{} )const
 			{
 				if ( m_config.splitGroups )
-					doWriteSplitted( streams, global );
+					doWriteSplitted( streams );
 				else if ( m_config.withGroups )
 					doWriteUnsplittedWithGroups( streams, global );
 				else

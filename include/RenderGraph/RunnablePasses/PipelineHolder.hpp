@@ -99,37 +99,42 @@ namespace crg
 		*\param[in] config
 		*	The pipeline program.
 		*/
-		BuilderT & program( VkPipelineShaderStageCreateInfoArray config )
+		BuilderT & program( VkPipelineShaderStageCreateInfoArray const & config )
 		{
-			m_baseConfig.programs( { std::move( config ) } );
+			m_baseConfig.programs( { config } );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
 		*\param[in] config
 		*	The pipeline programs.
 		*/
-		BuilderT & programs( std::vector< VkPipelineShaderStageCreateInfoArray > config )
+		BuilderT & programs( std::vector< VkPipelineShaderStageCreateInfoArray > const & config )
 		{
-			m_baseConfig.programs( std::move( config ) );
+			m_baseConfig.programs( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
 		*\param[in] config
 		*	The pipeline program creator.
 		*/
-		BuilderT & programCreator( ProgramCreator config )
+		BuilderT & programCreator( ProgramCreator const & config )
 		{
-			m_baseConfig.programCreator( std::move( config ) );
+			m_baseConfig.programCreator( config );
 			return static_cast< BuilderT & >( *this );
 		}
 		/**
 		*\param[in] config
 		*	The push constants range for the pipeline.
 		*/
-		auto & pushConstants( VkPushConstantRange config )
+		auto & pushConstants( VkPushConstantRange const & config )
 		{
-			m_baseConfig.pushConstants( std::move( config ) );
+			m_baseConfig.pushConstants( config );
 			return static_cast< BuilderT & >( *this );
+		}
+
+		pp::Config const & getBaseConfig()const noexcept
+		{
+			return m_baseConfig;
 		}
 
 	private:

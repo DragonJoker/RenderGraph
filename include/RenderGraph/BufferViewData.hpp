@@ -46,16 +46,58 @@ namespace crg
 			, vertexAttribs{ std::move( pvertexAttribs ) }
 			, vertexBindings{ std::move( pvertexBindings ) }
 		{
-			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
-			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
-			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
-			inputState.pVertexBindingDescriptions = vertexBindings.data();
+			doUpdateState();
+		}
+
+		VertexBuffer( VertexBuffer const & rhs )
+			: buffer{ rhs.buffer }
+			, vertexAttribs{ rhs.vertexAttribs }
+			, vertexBindings{ rhs.vertexBindings }
+		{
+			doUpdateState();
+		}
+
+		VertexBuffer( VertexBuffer && rhs )noexcept
+			: buffer{ std::move( rhs.buffer ) }
+			, vertexAttribs{ std::move( rhs.vertexAttribs ) }
+			, vertexBindings{ std::move( rhs.vertexBindings ) }
+		{
+			doUpdateState();
+		}
+
+		VertexBuffer & operator=( VertexBuffer const & rhs )
+		{
+			buffer = rhs.buffer;
+			vertexAttribs = rhs.vertexAttribs;
+			vertexBindings = rhs.vertexBindings;
+			doUpdateState();
+
+			return *this;
+		}
+
+		VertexBuffer & operator=( VertexBuffer && rhs )noexcept
+		{
+			buffer = std::move( rhs.buffer );
+			vertexAttribs = std::move( rhs.vertexAttribs );
+			vertexBindings = std::move( rhs.vertexBindings );
+			doUpdateState();
+
+			return *this;
 		}
 
 		BufferViewId buffer;
 		VkVertexInputAttributeDescriptionArray vertexAttribs;
 		VkVertexInputBindingDescriptionArray vertexBindings;
 		VkPipelineVertexInputStateCreateInfo inputState{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, nullptr, {}, {}, {}, {}, {} };
+
+	private:
+		void doUpdateState()
+		{
+			inputState.vertexAttributeDescriptionCount = uint32_t( vertexAttribs.size() );
+			inputState.pVertexAttributeDescriptions = vertexAttribs.data();
+			inputState.vertexBindingDescriptionCount = uint32_t( vertexBindings.size() );
+			inputState.pVertexBindingDescriptions = vertexBindings.data();
+		}
 	};
 
 	struct IndexBuffer

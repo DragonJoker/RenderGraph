@@ -42,15 +42,15 @@ namespace crg
 
 	void GenerateMipmaps::doRecordInto( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, uint32_t index )
+		, uint32_t index )const
 	{
-		for ( auto [_, view] : getPass().getInouts() )
+		for ( auto const & [_, view] : getPass().getInouts() )
 			doProcessImageView( context, commandBuffer, view->view( index ) );
 	}
 
 	void GenerateMipmaps::doProcessImageView( RecordContext & context
 		, VkCommandBuffer commandBuffer
-		, ImageViewId viewId )
+		, ImageViewId viewId )const
 	{
 		auto imageId{ viewId.data->image };
 		auto image{ getGraph().createImage( imageId ) };
