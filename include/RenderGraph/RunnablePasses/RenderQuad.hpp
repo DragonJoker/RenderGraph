@@ -154,7 +154,7 @@ namespace crg
 				, m_config );
 		}
 
-	protected:
+	private:
 		ConfigT m_config;
 	};
 

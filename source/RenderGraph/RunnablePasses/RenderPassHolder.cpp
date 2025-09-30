@@ -39,7 +39,7 @@ namespace crg
 				, convert( attach.getStencilStoreOp() )
 				, convert( initialLayout.layout )
 				, convert( finalLayout.layout ) } );
-			viewAttaches.push_back( { view, initialLayout, finalLayout } );
+			viewAttaches.emplace_back( view, initialLayout, finalLayout );
 			clearValues.push_back( convert( attach.getClearValue() ) );
 
 			if ( view.data->source.empty() )
@@ -235,7 +235,7 @@ namespace crg
 		auto & data = m_passes[passIndex];
 		m_blendAttachs.clear();
 
-		for ( auto attach : m_pass.targets )
+		for ( auto attach : m_pass.getTargets() )
 		{
 			auto view = attach->view( passIndex );
 			auto resolved = resolveView( view, passIndex );
@@ -341,7 +341,7 @@ namespace crg
 		m_passes[index].attachments.clear();
 		m_layers = 1u;
 
-		for ( auto attach : m_pass.targets )
+		for ( auto attach : m_pass.getTargets() )
 		{
 			auto view = attach->view();
 			m_passes[index].attachments.push_back( attach );

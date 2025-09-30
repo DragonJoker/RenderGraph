@@ -20,7 +20,7 @@ namespace test
 		{
 		}
 
-		std::string diffLines( std::string const & check
+		static std::string diffLines( std::string const & check
 			, std::string const & ref );
 
 		std::string testName;
@@ -37,7 +37,7 @@ namespace test
 		: public ::testing::Environment
 	{
 	public:
-		TestSuite( std::string const & name );
+		explicit TestSuite( std::string const & name );
 
 	private:
 		std::unique_ptr< std::streambuf > tclog;
@@ -86,7 +86,7 @@ namespace test
 #define checkEqualSortedLines( x, y )\
 	try\
 	{\
-		auto diff = testCounts.diffLines( test::sortLines( x ), test::sortLines( y ) );\
+		auto diff = test::TestCounts::diffLines( test::sortLines( x ), test::sortLines( y ) );\
 		if ( !diff.empty() )\
 		{\
 			throw test::Exception{ "LHS(\n" + std::string{ x } + " )\nRHS(\n" + std::string{ y } + " )\nDIFF(\n" + diff + " )" };\

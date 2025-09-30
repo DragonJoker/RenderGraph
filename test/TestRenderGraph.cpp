@@ -22,7 +22,7 @@ namespace
 		, crg::RecordContext const & context
 		, uint32_t index )
 	{
-		for ( auto attach : framePass.targets )
+		for ( auto attach : framePass.getTargets() )
 		{
 			auto view = attach->view( index );
 
@@ -43,7 +43,7 @@ namespace
 		, crg::RecordContext const & context
 		, uint32_t index )
 	{
-		for ( auto & [binding, attach] : framePass.sampled )
+		for ( auto & [binding, attach] : framePass.getSampled() )
 		{
 			auto view = attach.attach->view( index );
 			checkEqual( context.getLayoutState( crg::resolveView( view, index ) ).layout, crg::ImageLayout::eShaderReadOnly )
@@ -1222,7 +1222,7 @@ TYPED_TEST( RenderGraphT, Render )
 	auto d = graph.createImage( test::createImage( "d", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 	auto dtv = graph.createView( test::createView( "dtv", d, crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
 	auto ld = graph.createImage( test::createImage( "ld", crg::PixelFormat::eR32_SFLOAT ) );
-	auto ldv = graph.createView( test::createView( "ldv", d, crg::PixelFormat::eR32_SFLOAT ) );
+	auto ldv = graph.createView( test::createView( "ldv", ld, crg::PixelFormat::eR32_SFLOAT ) );
 	crg::Attachment const * dta{};
 	crg::Attachment const * lda{};
 

@@ -274,7 +274,7 @@ namespace crg
 		, LayoutState const & wantedState
 		, bool force )
 	{
-		auto range = recctx::adaptRange( *m_resources
+		auto range = recctx::adaptRange( m_resources->getContext()
 				, image.data->info.imageType
 				, image.data->info.format
 				, subresourceRange );
@@ -450,7 +450,7 @@ namespace crg
 
 	GraphContext & RecordContext::getContext()const
 	{
-		return getResources();
+		return getResources().getContext();
 	}
 
 	ContextResourcesCache & RecordContext::getResources()const

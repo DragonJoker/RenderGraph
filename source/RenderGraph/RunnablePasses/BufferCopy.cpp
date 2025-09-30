@@ -31,25 +31,25 @@ namespace crg
 		, m_copyOffset{ copyOffset }
 		, m_copyRange{ copyRange }
 	{
-		assert( m_pass.inputs.size() == m_pass.outputs.size() );
+		assert( getPass().getInputs().size() == getPass().getOutputs().size() );
 	}
 
 	void BufferCopy::doRecordInto( RecordContext & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )const
 	{
-		auto srcIt = m_pass.inputs.begin();
-		auto dstIt = m_pass.outputs.begin();
+		auto srcIt = getPass().getInputs().begin();
+		auto dstIt = getPass().getOutputs().begin();
 
-		while ( srcIt != m_pass.inputs.end()
-			&& dstIt != m_pass.outputs.end() )
+		while ( srcIt != getPass().getInputs().end()
+			&& dstIt != getPass().getOutputs().end() )
 		{
 			auto srcView{ srcIt->second->buffer( index ) };
 			auto dstView{ dstIt->second->buffer( index ) };
 			auto srcBufferRange{ getSubresourceRange( srcView ) };
 			auto dstBufferRange{ getSubresourceRange( dstView ) };
-			auto srcBuffer{ m_graph.createBuffer( srcView.data->buffer ) };
-			auto dstBuffer{ m_graph.createBuffer( dstView.data->buffer ) };
+			auto srcBuffer{ getGraph().createBuffer( srcView.data->buffer ) };
+			auto dstBuffer{ getGraph().createBuffer( dstView.data->buffer ) };
 			// Copy source to target.
 			VkBufferCopy copyRegion{ srcBufferRange.offset + m_copyOffset
 				, dstBufferRange.offset + m_copyOffset

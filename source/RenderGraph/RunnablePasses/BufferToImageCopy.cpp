@@ -31,23 +31,23 @@ namespace crg
 		, m_copyOffset{ convert( copyOffset ) }
 		, m_copySize{ convert( copySize ) }
 	{
-		assert( m_pass.inputs.size() == m_pass.outputs.size() );
+		assert( getPass().getInputs().size() == getPass().getOutputs().size() );
 	}
 
 	void BufferToImageCopy::doRecordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )const
 	{
-		auto srcIt = m_pass.inputs.begin();
-		auto dstIt = m_pass.outputs.begin();
+		auto srcIt = getPass().getInputs().begin();
+		auto dstIt = getPass().getOutputs().begin();
 
-		while ( srcIt != m_pass.inputs.end()
-			&& dstIt != m_pass.outputs.end() )
+		while ( srcIt != getPass().getInputs().end()
+			&& dstIt != getPass().getOutputs().end() )
 		{
 			auto srcAttach{ srcIt->second->buffer( index ) };
 			auto dstAttach{ dstIt->second->view( index ) };
-			auto srcBuffer{ m_graph.createBuffer( srcAttach.data->buffer ) };
-			auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+			auto srcBuffer{ getGraph().createBuffer( srcAttach.data->buffer ) };
+			auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
 			// Copy source to target.
 			auto range = getSubresourceLayers( getSubresourceRange( dstAttach ) );
 			VkBufferImageCopy copyRegion{ 0ULL

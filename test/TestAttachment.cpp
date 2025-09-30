@@ -23,8 +23,8 @@ namespace
 		tmpAttach1 = tmpAttach2;
 		auto viewAttach = std::move( tmpAttach2 );
 		pass.addInputSampled( viewAttach, 1u );
-		require( pass.sampled.size() == 1u )
-		auto attachIt = pass.sampled.begin();
+		require( pass.getSampled().size() == 1u )
+		auto attachIt = pass.getSampled().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment.attach->isImage() )
 		check( attachment.attach->isInput() )
@@ -59,8 +59,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputSampledImage( view, 1u );
-		require( pass.sampled.size() == 1u )
-		auto attachIt = pass.sampled.begin();
+		require( pass.getSampled().size() == 1u )
+		auto attachIt = pass.getSampled().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment.attach->isImage() )
 		check( attachment.attach->isInput() )
@@ -99,8 +99,8 @@ namespace
 		auto viewAttach = crg::Attachment::createDefault( view );
 		auto imageLayout = crg::ImageLayout::eShaderReadOnly;
 		pass.addImplicit( viewAttach, imageLayout );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -135,8 +135,8 @@ namespace
 		auto viewAttach = crg::Attachment::createDefault( view );
 		auto imageLayout = crg::ImageLayout::ePreinitialized;
 		pass.addImplicit( viewAttach, imageLayout );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -171,8 +171,8 @@ namespace
 		auto viewAttach = crg::Attachment::createDefault( view );
 		auto imageLayout = crg::ImageLayout::eShaderReadOnly;
 		pass.addImplicit( viewAttach, imageLayout );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -206,8 +206,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputStorage( viewAttach, 1u );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -241,8 +241,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageImage( view, 1u );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -276,8 +276,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageBuffer( view, 1u );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -302,8 +302,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStorageImage( view, 1u );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
@@ -337,8 +337,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addClearableOutputStorageImage( view, 1u );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
@@ -373,8 +373,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutStorage( viewAttach, 1u );
-		require( pass.inouts.size() == 1u )
-		auto attachIt = pass.inouts.begin();
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -409,8 +409,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputTransfer( viewAttach );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -443,8 +443,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputTransferImage( view );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -477,8 +477,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputTransferBuffer( view );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -501,8 +501,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputTransferImage( view );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
@@ -536,8 +536,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutTransfer( viewAttach );
-		require( pass.inouts.size() == 1u )
-		auto attachIt = pass.inouts.begin();
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isImage() )
 		check( attachment->isInput() )
@@ -571,8 +571,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputColourTarget( viewAttach );
-		require( pass.targets.size() == 1u )
-		auto const & attachment = pass.targets[0];
+		require( pass.getTargets().size() == 1u )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -609,8 +609,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputColourTargetImage( view );
-		require( pass.targets.size() == 1u )
-		auto const & attachment = pass.targets[0];
+		require( pass.getTargets().size() == 1u )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -647,8 +647,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputColourTarget( view );
-		require( pass.targets.size() == 1u )
-		auto const & attachment = pass.targets[0];
+		require( pass.getTargets().size() == 1u )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
 		check( attachment->isOutput() )
@@ -686,8 +686,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutColourTarget( viewAttach );
-		require( pass.targets.size() == 1u )
-		auto const & attachment = pass.targets[0];
+		require( pass.getTargets().size() == 1u )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( attachment->isOutput() )
@@ -725,8 +725,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputDepthTarget( viewAttach );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -763,8 +763,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthTargetImage( view );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -801,8 +801,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthTarget( view );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
 		check( attachment->isOutput() )
@@ -840,8 +840,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutDepthTarget( viewAttach );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( attachment->isOutput() )
@@ -879,8 +879,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputDepthStencilTarget( viewAttach );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -917,8 +917,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthStencilTargetImage( view );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -955,8 +955,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthStencilTarget( view );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
 		check( attachment->isOutput() )
@@ -994,8 +994,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutDepthStencilTarget( viewAttach );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( attachment->isOutput() )
@@ -1033,8 +1033,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputStencilTarget( viewAttach );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -1071,8 +1071,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStencilTargetImage( view );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( !attachment->isOutput() )
@@ -1109,8 +1109,8 @@ namespace
 		auto view = graph.createView( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStencilTarget( view );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( !attachment->isInput() )
 		check( attachment->isOutput() )
@@ -1148,8 +1148,8 @@ namespace
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutStencilTarget( viewAttach );
-		require( !pass.targets.empty() )
-		auto const & attachment = pass.targets[0];
+		require( !pass.getTargets().empty() )
+		auto const & attachment = pass.getTargets()[0];
 		check( attachment->isImage() )
 		check( attachment->isInput() )
 		check( attachment->isOutput() )
@@ -1222,8 +1222,8 @@ namespace
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		crg::AccessState accessState{};
 		pass.addImplicit( bufferAttach, accessState );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		checkEqual( getSize( buffer ), 1024u )
 		checkEqual( getSize( bufferv ), 1024u )
@@ -1256,8 +1256,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		pass.addInputUniformBuffer( bufferv, 1u );
-		require( pass.uniforms.size() == 1u )
-		auto attachIt = pass.uniforms.begin();
+		require( pass.getUniforms().size() == 1u )
+		auto attachIt = pass.getUniforms().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1288,8 +1288,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputStorage( bufferAttach, 1u );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1319,8 +1319,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		pass.addOutputStorageBuffer( bufferv, 1u );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( !attachment->isInput() )
@@ -1350,8 +1350,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		pass.addClearableOutputStorageBuffer( bufferv, 1u );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( !attachment->isInput() )
@@ -1382,8 +1382,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutStorage( bufferAttach, 1u );
-		require( pass.inouts.size() == 1u )
-		auto attachIt = pass.inouts.begin();
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1414,8 +1414,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addImplicit( bufferAttach, crg::AccessState{} );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1444,8 +1444,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addInputUniformBuffer( bufferv, 1u );
-		require( !pass.uniforms.empty() )
-		auto attachIt = pass.uniforms.begin();
+		require( !pass.getUniforms().empty() )
+		auto attachIt = pass.getUniforms().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1476,8 +1476,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputStorage( bufferAttach, 1u );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1507,8 +1507,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addOutputStorageBuffer( bufferv, 1u );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( !attachment->isInput() )
@@ -1538,8 +1538,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addClearableOutputStorageBuffer( bufferv, 1u );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( !attachment->isInput() )
@@ -1570,8 +1570,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutStorage( bufferAttach, 1u );
-		require( pass.inouts.size() == 1u )
-		auto attachIt = pass.inouts.begin();
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1602,8 +1602,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputTransfer( bufferAttach );
-		require( pass.inputs.size() == 1u )
-		auto attachIt = pass.inputs.begin();
+		require( pass.getInputs().size() == 1u )
+		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1632,8 +1632,8 @@ namespace
 		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		pass.addOutputTransferBuffer( bufferv );
-		require( pass.outputs.size() == 1u )
-		auto attachIt = pass.outputs.begin();
+		require( pass.getOutputs().size() == 1u )
+		auto attachIt = pass.getOutputs().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( !attachment->isInput() )
@@ -1663,8 +1663,8 @@ namespace
 		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutTransfer( bufferAttach );
-		require( pass.inouts.size() == 1u )
-		auto attachIt = pass.inouts.begin();
+		require( pass.getInouts().size() == 1u )
+		auto attachIt = pass.getInouts().begin();
 		auto const & attachment = attachIt->second;
 		check( attachment->isBuffer() )
 		check( attachment->isInput() )
@@ -1727,20 +1727,20 @@ namespace
 		{
 			// Single buffer attachment in list
 			auto attachment = crg::Attachment::createDefault( buffer1v );
-			checkThrow( attachment.getSource( 1u ), crg::Exception );
-			check( attachment.getSource( 0u ) == &attachment );
-			check( graph.mergeAttachments( { &attachment } ) == &attachment );
+			checkThrow( attachment.getSource( 1u ), crg::Exception )
+			check( attachment.getSource( 0u ) == &attachment )
+			check( graph.mergeAttachments( { &attachment } ) == &attachment )
 		}
 		{
 			// Single image attachment in list
 			auto attachment = crg::Attachment::createDefault( image1v );
-			check( graph.mergeAttachments( { &attachment } ) == &attachment );
+			check( graph.mergeAttachments( { &attachment } ) == &attachment )
 		}
 		{
 			// Mixed attachments in list
 			auto attachment1 = crg::Attachment::createDefault( image1v );
 			auto attachment2 = crg::Attachment::createDefault( buffer1v );
-			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception )
 		}
 		{
 			// Empty image attachments in list
@@ -1748,7 +1748,7 @@ namespace
 			attachment1.imageAttach.views.clear();
 			auto attachment2 = crg::Attachment::createDefault( image2v );
 			attachment2.imageAttach.views.clear();
-			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception )
 		}
 		{
 			// Empty buffer attachments in list
@@ -1756,27 +1756,27 @@ namespace
 			attachment1.bufferAttach.buffers.clear();
 			auto attachment2 = crg::Attachment::createDefault( buffer2v );
 			attachment2.bufferAttach.buffers.clear();
-			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception )
 		}
 		{
 			// Image attachments with different pass count
 			auto attachment1 = crg::Attachment::createDefault( image1v );
 			auto attachment2 = crg::Attachment::createDefault( image2v );
 			attachment2.imageAttach.views.clear();
-			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception )
 		}
 		{
 			// Buffer attachments with different pass count
 			auto attachment1 = crg::Attachment::createDefault( buffer1v );
 			auto attachment2 = crg::Attachment::createDefault( buffer2v );
 			attachment2.bufferAttach.buffers.clear();
-			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception );
+			checkThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ), crg::Exception )
 		}
 		{
 			// Image attachments
 			auto attachment1 = crg::Attachment::createDefault( image1v );
 			auto attachment2 = crg::Attachment::createDefault( image2v );
-			checkNoThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ) );
+			checkNoThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ) )
 			auto & attachment = *graph.mergeAttachments( { &attachment1, &attachment2 } );
 			check( attachment.isImage() )
 			check( !attachment.isInput() )
@@ -1809,7 +1809,7 @@ namespace
 			// Buffer attachments
 			auto attachment1 = crg::Attachment::createDefault( buffer1v );
 			auto attachment2 = crg::Attachment::createDefault( buffer2v );
-			checkNoThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ) );
+			checkNoThrow( graph.mergeAttachments( { &attachment1, &attachment2 } ) )
 			auto & attachment = *graph.mergeAttachments( { &attachment1, &attachment2 } );
 			check( attachment.isBuffer() )
 			check( !attachment.isInput() )

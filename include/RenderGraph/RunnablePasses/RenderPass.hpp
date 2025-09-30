@@ -18,7 +18,7 @@ namespace crg
 
 		for ( auto const & element : input )
 		{
-			result.emplace_back( element );
+			result.emplace_back( static_cast< VkType const & >( element ) );
 		}
 
 		return result;

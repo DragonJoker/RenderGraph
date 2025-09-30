@@ -92,27 +92,17 @@ namespace crg
 		static void swap( SignalConnection & lhs, SignalConnection & rhs )
 		{
 			if ( lhs.m_signal )
-			{
 				lhs.m_signal->remConnection( lhs );
-			}
-
 			if ( rhs.m_signal )
-			{
 				rhs.m_signal->remConnection( rhs );
-			}
 
 			std::swap( lhs.m_signal, rhs.m_signal );
 			std::swap( lhs.m_connection, rhs.m_connection );
 
 			if ( lhs.m_signal )
-			{
 				lhs.m_signal->addConnection( lhs );
-			}
-
 			if ( rhs.m_signal )
-			{
 				rhs.m_signal->addConnection( rhs );
-			}
 		}
 
 	private:

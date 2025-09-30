@@ -23,6 +23,10 @@ namespace crg
 	{
 		using CallbackT = std::function< ValueT() >;
 
+		GetValueCallbackT( GetValueCallbackT && )noexcept = default;
+		GetValueCallbackT & operator=( GetValueCallbackT && )noexcept = default;
+		GetValueCallbackT( GetValueCallbackT const & ) = default;
+		GetValueCallbackT & operator=( GetValueCallbackT const & ) = default;
 		explicit GetValueCallbackT( CallbackT callback = {} )
 			: m_callback{ std::move( callback ) }
 		{
@@ -59,7 +63,7 @@ namespace crg
 		CRG_API void reset();
 		CRG_API VkResult wait( uint64_t timeout );
 
-		operator VkFence()const
+		VkFence getInternal()const noexcept
 		{
 			return m_fence;
 		}
@@ -271,6 +275,11 @@ namespace crg
 			return m_pass;
 		}
 
+		RunnableGraph & getGraph()const
+		{
+			return m_graph;
+		}
+
 		FramePassTimer const & getTimer()const
 		{
 			return m_timer;
@@ -353,7 +362,7 @@ namespace crg
 			bool initialised{};
 		};
 
-	protected:
+	private:
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;

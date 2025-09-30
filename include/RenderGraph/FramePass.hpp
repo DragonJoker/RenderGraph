@@ -19,19 +19,18 @@ namespace crg
 
 	struct FramePass
 	{
-	protected:
-		friend struct FramePassGroup;
-		/**
-		*\name
-		*	Construction.
-		*/
-		/**@{*/
-		CRG_API FramePass( FramePassGroup const & group
-			, FrameGraph & graph
-			, uint32_t id
-			, std::string const & name
-			, RunnablePassCreator runnableCreator );
-		/**@}*/
+	public:
+		struct SampledAttachment
+		{
+			SampledAttachment( Attachment const * attach, SamplerDesc sampler )noexcept
+				: attach{ attach }
+				, sampler{ std::move( sampler ) }
+			{
+			}
+
+			Attachment const * attach;
+			SamplerDesc sampler;
+		};
 
 	public:
 		/**
@@ -511,27 +510,64 @@ namespace crg
 			return m_ownAttaches.cend();
 		}
 
-		FramePassGroup const & group;
-		FrameGraph & graph;
-		uint32_t id;
-		struct SampledAttachment
+		FramePassGroup const & getGroup()const noexcept
 		{
-			SampledAttachment( Attachment const * attach, SamplerDesc sampler )noexcept
-				: attach{ attach }
-				, sampler{ std::move( sampler ) }
-			{
-			}
+			return m_group;
+		}
 
-			Attachment const * attach;
-			SamplerDesc sampler;
-		};
-		std::map< uint32_t, Attachment const * > uniforms;
-		std::map< uint32_t, SampledAttachment > sampled;
-		std::map< uint32_t, Attachment const * > inputs;
-		std::map< uint32_t, Attachment const * > inouts;
-		std::map< uint32_t, Attachment const * > outputs;
-		std::vector< Attachment const * > targets;
-		RunnablePassCreator runnableCreator;
+		FrameGraph const & getGraph()const noexcept
+		{
+			return m_graph;
+		}
+
+		uint32_t getId()const noexcept
+		{
+			return m_id;
+		}
+
+		std::map< uint32_t, Attachment const * > const & getUniforms()const noexcept
+		{
+			return m_uniforms;
+		}
+
+		std::map< uint32_t, SampledAttachment > const & getSampled()const noexcept
+		{
+			return m_sampled;
+		}
+
+		std::map< uint32_t, Attachment const * > const & getInputs()const noexcept
+		{
+			return m_inputs;
+		}
+
+		std::map< uint32_t, Attachment const * > const & getInouts()const noexcept
+		{
+			return m_inouts;
+		}
+
+		std::map< uint32_t, Attachment const * > const & getOutputs()const noexcept
+		{
+			return m_outputs;
+		}
+
+		std::vector< Attachment const * > const & getTargets()const noexcept
+		{
+			return m_targets;
+		}
+
+	protected:
+		friend struct FramePassGroup;
+		/**
+		*\name
+		*	Construction.
+		*/
+		/**@{*/
+		CRG_API FramePass( FramePassGroup const & group
+			, FrameGraph & graph
+			, uint32_t id
+			, std::string const & name
+			, RunnablePassCreator runnableCreator );
+		/**@}*/
 
 	private:
 		CRG_API Attachment const * addColourTarget( std::string const & name
@@ -590,6 +626,16 @@ namespace crg
 			, Attachment const * parent );
 
 	private:
+		FramePassGroup const & m_group;
+		FrameGraph & m_graph;
+		uint32_t m_id;
+		std::map< uint32_t, Attachment const * > m_uniforms;
+		std::map< uint32_t, SampledAttachment > m_sampled;
+		std::map< uint32_t, Attachment const * > m_inputs;
+		std::map< uint32_t, Attachment const * > m_inouts;
+		std::map< uint32_t, Attachment const * > m_outputs;
+		std::vector< Attachment const * > m_targets;
+		RunnablePassCreator m_runnableCreator;
 		std::string m_name;
 		struct OwnAttachment
 		{

@@ -97,7 +97,7 @@ namespace crg
 
 		if ( m_cpConfig.indirectBuffer != defaultV< IndirectBuffer > )
 		{
-			auto indirectBuffer = m_graph.createBuffer( m_cpConfig.indirectBuffer.buffer.data->buffer );
+			auto indirectBuffer = getGraph().createBuffer( m_cpConfig.indirectBuffer.buffer.data->buffer );
 			context->vkCmdDispatchIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_cpConfig.indirectBuffer.buffer ).offset );
 		}
 		else

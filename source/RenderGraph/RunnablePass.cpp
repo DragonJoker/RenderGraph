@@ -74,26 +74,26 @@ namespace crg
 			, AccessStateMap & bufferAccesses )
 		{
 			bool isComputePass = callbacks.isComputePass();
-			for ( auto & [binding, attach] : pass.uniforms )
+			for ( auto & [binding, attach] : pass.getUniforms() )
 				registerBuffer( *attach, isComputePass, bufferAccesses );
-			for ( auto & [binding, attach] : pass.sampled )
+			for ( auto & [binding, attach] : pass.getSampled() )
 				registerImage( *attach.attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
-			for ( auto & [binding, attach] : pass.inputs )
+			for ( auto & [binding, attach] : pass.getInputs() )
 				if ( attach->isImage() )
 					registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
 				else
 					registerBuffer( *attach, isComputePass, bufferAccesses );
-			for ( auto & [binding, attach] : pass.inouts )
+			for ( auto & [binding, attach] : pass.getInouts() )
 				if ( attach->isImage() )
 					registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
 				else
 					registerBuffer( *attach, isComputePass, bufferAccesses );
-			for ( auto & [binding, attach] : pass.outputs )
+			for ( auto & [binding, attach] : pass.getOutputs() )
 				if ( attach->isImage() )
 					registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
 				else
 					registerBuffer( *attach, isComputePass, bufferAccesses );
-			for ( auto attach : pass.targets )
+			for ( auto attach : pass.getTargets() )
 				registerImage( *attach, isComputePass, graphContext.separateDepthStencilLayouts, imageLayouts );
 		}
 
@@ -206,28 +206,28 @@ namespace crg
 			, RunnableGraph & graph
 			, FramePass const & pass
 			, RunnablePass::Callbacks const & callbacks
-			, GraphContext & graphContext )
+			, GraphContext const & graphContext )
 		{
-			for ( auto & [binding, attach] : pass.sampled )
+			for ( auto & [binding, attach] : pass.getSampled() )
 				prepareImage( commandBuffer, index, *attach.attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
-			for ( auto & [binding, attach] : pass.uniforms )
+			for ( auto & [binding, attach] : pass.getUniforms() )
 				prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
-			for ( auto & [binding, attach] : pass.inputs )
+			for ( auto & [binding, attach] : pass.getInputs() )
 				if ( attach->isImage() )
 					prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
 				else
 					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
-			for ( auto & [binding, attach] : pass.inouts )
+			for ( auto & [binding, attach] : pass.getInouts() )
 				if ( attach->isImage() )
 					prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
 				else
 					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
-			for ( auto & [binding, attach] : pass.outputs )
+			for ( auto & [binding, attach] : pass.getOutputs() )
 				if ( attach->isImage() )
 					prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
 				else
 					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
-			for ( auto & attach : pass.targets )
+			for ( auto & attach : pass.getTargets() )
 				prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
 		}
 	}
@@ -554,7 +554,7 @@ namespace crg
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wrestrict"
 			m_context.vkCmdBeginDebugBlock( commandBuffer
-				, { "[" + std::to_string( m_pass.id ) + "] " + m_pass.getGroupName()
+				, { "[" + std::to_string( m_pass.getId() ) + "] " + m_pass.getGroupName()
 				, m_context.getNextRainbowColour() } );
 #pragma GCC diagnostic pop
 			m_timer.beginPass( commandBuffer );

@@ -232,26 +232,15 @@ namespace crg
 				if ( checkFlag( data.image.data->info.flags, ImageCreateFlags::eCubeCompatible )
 					&& ( data.info.subresourceRange.layerCount % 6u ) == 0u
 					&& data.info.subresourceRange.baseArrayLayer == 0u )
-				{
-					if ( data.info.subresourceRange.layerCount > 6u )
-					{
-						data.info.viewType = ImageViewType::eCubeArray;
-					}
-					else
-					{
-						data.info.viewType = ImageViewType::eCube;
-					}
-				}
+					data.info.viewType = ( data.info.subresourceRange.layerCount > 6u )
+						? ImageViewType::eCubeArray
+						: ImageViewType::eCube;
 				else
-				{
 					data.info.viewType = ImageViewType::e2DArray;
-				}
 				break;
 			case ImageViewType::eCube:
 				if ( data.info.subresourceRange.layerCount > 6u )
-				{
 					data.info.viewType = ImageViewType::eCubeArray;
-				}
 				break;
 			default:
 				break;

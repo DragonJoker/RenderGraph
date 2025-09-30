@@ -131,7 +131,7 @@ namespace crg
 			return &m_context;
 		}
 
-		operator GraphContext & ()const noexcept
+		GraphContext & getContext()const noexcept
 		{
 			return m_context;
 		}

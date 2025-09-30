@@ -8,6 +8,7 @@
 #include <RenderGraph/RunnableGraph.hpp>
 #include <RenderGraph/RunnablePass.hpp>
 #include <RenderGraph/RunnablePasses/GenerateMipmaps.hpp>
+#include <RenderGraph/RunnablePasses/RenderMeshConfig.hpp>
 
 #include <sstream>
 #include <thread>
@@ -76,20 +77,24 @@ TEST( Bases, BaseFuncs )
 	check( crg::getStageMask( crg::ImageLayout::eTransferDst ) == crg::PipelineStageFlags::eTransfer )
 
 	for ( uint32_t i = 0; i <= uint32_t( crg::PixelFormat::eASTC_12x12_SRGB_BLOCK ); ++i )
-		checkNoThrow( getName( crg::PixelFormat( i ) ) );
+		checkNoThrow( getName( crg::PixelFormat( i ) ) )
 
 	for ( uint32_t i = 0; i <= uint32_t( crg::FilterMode::eLinear ); ++i )
-		checkNoThrow( getName( crg::FilterMode( i ) ) );
+		checkNoThrow( getName( crg::FilterMode( i ) ) )
 
 	for ( uint32_t i = 0; i <= uint32_t( crg::MipmapMode::eLinear ); ++i )
-		checkNoThrow( getName( crg::MipmapMode( i ) ) );
+		checkNoThrow( getName( crg::MipmapMode( i ) ) )
 
 	for ( uint32_t i = 0; i <= uint32_t( crg::WrapMode::eMirrorClampToEdge ); ++i )
-		checkNoThrow( getName( crg::WrapMode( i ) ) );
+		checkNoThrow( getName( crg::WrapMode( i ) ) )
 
 	auto vb1 = crg::VertexBuffer{ handler.createViewId( test::createView( "vtx1", handler.createBufferId( test::createBuffer( "vtx1" ) ) ) ) };
 	auto vb2 = crg::VertexBuffer{ handler.createViewId( test::createView( "vtx2", handler.createBufferId( test::createBuffer( "vtx2" ) ) ) ) };
 	vb2 = std::move( vb1 );
+
+	crg::GetPrimitiveCountCallback cb0;
+	crg::GetPrimitiveCountCallback cb1;
+	cb1 = cb0;
 
 	testEnd()
 }
@@ -102,64 +107,64 @@ TEST( Bases, ClearValues )
 	crg::ClearColorValue clearColorFloat32{ std::array< float, 4u >{ 1.0f, 2.0f, 3.0f, 4.0f } };
 	crg::ClearDepthStencilValue clearDepthStencil{ 1.0f, 255u };
 
-	checkNoThrow( getClearDepthStencilValue( crg::ClearValue{ clearColorFloat32 } ) );
-	checkNoThrow( getClearColorValue( crg::ClearValue{ clearDepthStencil } ) );
-	checkNoThrow( getClearColorValue( crg::ClearValue{ clearColorFloat32 } ) );
-	checkNoThrow( getClearDepthStencilValue( crg::ClearValue{ clearDepthStencil } ) );
-	checkNoThrow( convert( crg::ClearValue{ clearColorFloat32 } ) );
-	checkNoThrow( convert( crg::ClearValue{ clearDepthStencil } ) );
-	check( clearColorFloat32.isFloat32() );
-	check( !clearColorFloat32.isInt32() );
-	check( !clearColorFloat32.isUInt32() );
-	check( !clearColorUInt32.isFloat32() );
-	check( !clearColorUInt32.isInt32() );
-	check( clearColorUInt32.isUInt32() );
-	check( !clearColorInt32.isFloat32() );
-	check( clearColorInt32.isInt32() );
-	check( !clearColorInt32.isUInt32() );
-	check( crg::ClearValue{ clearColorFloat32 }.isColor() );
-	check( !crg::ClearValue{ clearColorFloat32 }.isDepthStencil() );
-	check( !crg::ClearValue{ clearDepthStencil }.isColor() );
-	check( crg::ClearValue{ clearDepthStencil }.isDepthStencil() );
+	checkNoThrow( getClearDepthStencilValue( crg::ClearValue{ clearColorFloat32 } ) )
+	checkNoThrow( getClearColorValue( crg::ClearValue{ clearDepthStencil } ) )
+	checkNoThrow( getClearColorValue( crg::ClearValue{ clearColorFloat32 } ) )
+	checkNoThrow( getClearDepthStencilValue( crg::ClearValue{ clearDepthStencil } ) )
+	checkNoThrow( convert( crg::ClearValue{ clearColorFloat32 } ) )
+	checkNoThrow( convert( crg::ClearValue{ clearDepthStencil } ) )
+	check( clearColorFloat32.isFloat32() )
+	check( !clearColorFloat32.isInt32() )
+	check( !clearColorFloat32.isUInt32() )
+	check( !clearColorUInt32.isFloat32() )
+	check( !clearColorUInt32.isInt32() )
+	check( clearColorUInt32.isUInt32() )
+	check( !clearColorInt32.isFloat32() )
+	check( clearColorInt32.isInt32() )
+	check( !clearColorInt32.isUInt32() )
+	check( crg::ClearValue{ clearColorFloat32 }.isColor() )
+	check( !crg::ClearValue{ clearColorFloat32 }.isDepthStencil() )
+	check( !crg::ClearValue{ clearDepthStencil }.isColor() )
+	check( crg::ClearValue{ clearDepthStencil }.isDepthStencil() )
 	{
 		auto vkClearColorFloat32 = crg::convert( clearColorFloat32 );
 		for ( uint32_t i = 0; i < 4u; ++i )
-			check( vkClearColorFloat32.float32[i] == clearColorFloat32.float32()[i] );
+			check( vkClearColorFloat32.float32[i] == clearColorFloat32.float32()[i] )
 	}
 	{
 		auto vkClearColorFloat32 = crg::convert( crg::ClearValue{ clearColorFloat32 } );
 		for ( uint32_t i = 0; i < 4u; ++i )
-			check( vkClearColorFloat32.color.float32[i] == clearColorFloat32.float32()[i] );
+			check( vkClearColorFloat32.color.float32[i] == clearColorFloat32.float32()[i] )
 	}
 	{
 		auto vkClearColorInt32 = crg::convert( clearColorInt32 );
 		for ( uint32_t i = 0; i < 4u; ++i )
-			check( vkClearColorInt32.int32[i] == clearColorInt32.int32()[i] );
+			check( vkClearColorInt32.int32[i] == clearColorInt32.int32()[i] )
 	}
 	{
 		auto vkClearColorInt32 = crg::convert( crg::ClearValue{ clearColorInt32 } );
 		for ( uint32_t i = 0; i < 4u; ++i )
-			check( vkClearColorInt32.color.int32[i] == clearColorInt32.int32()[i] );
+			check( vkClearColorInt32.color.int32[i] == clearColorInt32.int32()[i] )
 	}
 	{
 		auto vkClearColorUInt32 = crg::convert( clearColorUInt32 );
 		for ( uint32_t i = 0; i < 4u; ++i )
-			check( vkClearColorUInt32.uint32[i] == clearColorUInt32.uint32()[i] );
+			check( vkClearColorUInt32.uint32[i] == clearColorUInt32.uint32()[i] )
 	}
 	{
 		auto vkClearColorUInt32 = crg::convert( crg::ClearValue{ clearColorUInt32 } );
 		for ( uint32_t i = 0; i < 4u; ++i )
-			check( vkClearColorUInt32.color.uint32[i] == clearColorUInt32.uint32()[i] );
+			check( vkClearColorUInt32.color.uint32[i] == clearColorUInt32.uint32()[i] )
 	}
 	{
 		auto vkClearDepthStencil = crg::convert( clearDepthStencil );
-		check( vkClearDepthStencil.depth == clearDepthStencil.depth );
-		check( vkClearDepthStencil.stencil == clearDepthStencil.stencil );
+		check( vkClearDepthStencil.depth == clearDepthStencil.depth )
+		check( vkClearDepthStencil.stencil == clearDepthStencil.stencil )
 	}
 	{
 		auto vkClearDepthStencil = crg::convert( crg::ClearValue{ clearDepthStencil } );
-		check( vkClearDepthStencil.depthStencil.depth == clearDepthStencil.depth );
-		check( vkClearDepthStencil.depthStencil.stencil == clearDepthStencil.stencil );
+		check( vkClearDepthStencil.depthStencil.depth == clearDepthStencil.depth )
+		check( vkClearDepthStencil.depthStencil.stencil == clearDepthStencil.stencil )
 	}
 
 	testEnd()
@@ -243,7 +248,6 @@ TEST( Bases, Signal )
 TEST( Bases, Exception )
 {
 	testBegin( "testException" )
-	auto & context = getContext();
 	try
 	{
 		CRG_Exception( "Coin !!" );
@@ -287,6 +291,11 @@ TEST( Bases, FramePassTimer )
 			return res;
 		} );
 	testPass.addClearableOutputStorageBuffer( bufferv, 1u );
+
+	crg::FramePassNode node1{ testPass };
+	crg::FramePassNode node2{ testPass };
+	node2 = std::move( node1 );
+
 	checkThrow( crg::checkVkResult( VK_ERROR_VALIDATION_FAILED_EXT, std::string{ "Test" } ), crg::Exception )
 	auto runnable = graph.compile( getContext() );
 	test::checkRunnable( testCounts, runnable );
@@ -300,10 +309,10 @@ TEST( Bases, FramePassTimer )
 		timer.retrieveGpuTime();
 		auto end = timer.getCpuTime();
 		auto total = ( end - save ) + timer.getGpuTime();
-		check( total >= std::chrono::milliseconds{ 10u } );
+		check( total >= std::chrono::milliseconds{ 10u } )
 		timer.reset();
-		check( timer.getCpuTime() >= std::chrono::milliseconds{ 0u } );
-		check( timer.getGpuTime() >= std::chrono::milliseconds{ 0u } );
+		check( timer.getCpuTime() >= std::chrono::milliseconds{ 0u } )
+		check( timer.getGpuTime() >= std::chrono::milliseconds{ 0u } )
 	}
 	{
 		crg::FramePassTimer timer{ getContext(), "test", crg::TimerScope::eUpdate };
@@ -316,10 +325,10 @@ TEST( Bases, FramePassTimer )
 		timer.retrieveGpuTime();
 		auto end = timer.getCpuTime();
 		auto total = ( end - save ) + timer.getGpuTime();
-		check( total >= std::chrono::milliseconds{ 10u } );
+		check( total >= std::chrono::milliseconds{ 10u } )
 		timer.reset();
-		check( timer.getCpuTime() >= std::chrono::milliseconds{ 0u } );
-		check( timer.getGpuTime() >= std::chrono::milliseconds{ 0u } );
+		check( timer.getCpuTime() >= std::chrono::milliseconds{ 0u } )
+		check( timer.getGpuTime() >= std::chrono::milliseconds{ 0u } )
 	}
 	{
 		auto timer = std::make_unique< crg::FramePassTimer >( getContext(), "test", crg::TimerScope::eUpdate );
@@ -365,7 +374,7 @@ TEST( Bases, ImplicitActions )
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph )
 		{
-			auto depthIt = framePass.targets.begin();
+			auto depthIt = framePass.getTargets().begin();
 			auto colourIt = std::next( depthIt );
 			auto extent3D = getExtent( colour2v );
 			auto extent2D = crg::Extent2D{ extent3D.width, extent3D.height };
@@ -444,7 +453,7 @@ TEST( Bases, PrePassActions )
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph )
 		{
-			auto depthIt = framePass.targets.begin();
+			auto depthIt = framePass.getTargets().begin();
 			auto colourIt = std::next( depthIt );
 			auto extent3D = getExtent( colour2v );
 			auto extent2D = crg::Extent2D{ extent3D.width, extent3D.height };
@@ -511,7 +520,7 @@ TEST( Bases, PostPassActions )
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph )
 		{
-			auto depthIt = framePass.targets.begin();
+			auto depthIt = framePass.getTargets().begin();
 			auto colourIt = std::next( depthIt );
 			auto extent3D = getExtent( colour2v );
 			auto extent2D = crg::Extent2D{ extent3D.width, extent3D.height };
@@ -578,7 +587,7 @@ TEST( Bases, GraphDeps )
 		} );
 	auto coloura = testPass1.addOutputColourTarget( colourv );
 	auto iocoloura = testPass1.addOutputColourTarget( iocolourv );
-	auto bufferAttach = testPass1.addOutputStorageBuffer( bufferv, 0u );
+	testPass1.addOutputStorageBuffer( bufferv, 0u );
 	graph1.addOutput( colourv, crg::makeLayoutState( crg::ImageLayout::eShaderReadOnly ) );
 	graph1.addOutput( iocolourv, crg::makeLayoutState( crg::ImageLayout::eColorAttachment ) );
 	check( graph1.getOutputLayoutState( colourv ).layout == crg::ImageLayout::eShaderReadOnly )
@@ -843,7 +852,7 @@ TEST( Bases, GraphNodes )
 	crg::RootNode root{ graph };
 	check( getFramePass( root ) == nullptr )
 
-	auto & testPass = graph.createPass( "testPass"
+	auto const & testPass = graph.createPass( "testPass"
 		, [&testCounts]( crg::FramePass const & framePass
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph )

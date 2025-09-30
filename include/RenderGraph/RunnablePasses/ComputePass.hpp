@@ -66,11 +66,29 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRange config )
+			{
+				m_baseConfig.pushConstants( std::move( config ) );
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRangeArray config )
+			{
+				m_baseConfig.pushConstants( std::move( config ) );
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	Tells if disabled pass should record render pass begin/end.
 			*/
-			auto & baseConfig( pp::Config config )
+			auto & baseConfig( pp::Config const & config )
 			{
-				m_baseConfig = std::move( config );
+				m_baseConfig = config;
 				return *this;
 			}
 			/**
@@ -98,45 +116,45 @@ namespace crg
 			*\param[in] config
 			*	The pass index callback.
 			*/
-			auto & getPassIndex( RunnablePass::GetPassIndexCallback config )
+			auto & getPassIndex( RunnablePass::GetPassIndexCallback const & config )
 			{
-				m_getPassIndex = std::move( config );
+				m_getPassIndex = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback checking the enable status of the pass.
 			*/
-			auto & isEnabled( RunnablePass::IsEnabledCallback config )
+			auto & isEnabled( RunnablePass::IsEnabledCallback const & config )
 			{
-				m_isEnabled = std::move( config );
+				m_isEnabled = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback recording the pass.
 			*/
-			auto & recordInto( RunnablePass::RecordCallback config )
+			auto & recordInto( RunnablePass::RecordCallback const & config )
 			{
-				m_recordInto = std::move( config );
+				m_recordInto = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback initialising the pass.
 			*/
-			auto & initialise( RunnablePass::InitialiseCallback config )
+			auto & initialise( RunnablePass::InitialiseCallback const & config )
 			{
-				m_initialise = std::move( config );
+				m_initialise = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback ending the pass.
 			*/
-			auto & end( RunnablePass::RecordCallback config )
+			auto & end( RunnablePass::RecordCallback const & config )
 			{
-				m_end = std::move( config );
+				m_end = config;
 				return *this;
 			}
 			/**
@@ -170,54 +188,36 @@ namespace crg
 			*\param[in] config
 			*	The callback to retrieve the X dispatch groups count.
 			*/
-			auto & getGroupCountX( GetGroupCountCallback config )
+			auto & getGroupCountX( GetGroupCountCallback const & config )
 			{
-				m_getGroupCountX = std::move( config );
+				m_getGroupCountX = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback to retrieve the Y dispatch groups count.
 			*/
-			auto & getGroupCountY( GetGroupCountCallback config )
+			auto & getGroupCountY( GetGroupCountCallback const & config )
 			{
-				m_getGroupCountY = std::move( config );
+				m_getGroupCountY = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The callback to retrieve the Z dispatch groups count.
 			*/
-			auto & getGroupCountZ( GetGroupCountCallback config )
+			auto & getGroupCountZ( GetGroupCountCallback const & config )
 			{
-				m_getGroupCountZ = std::move( config );
+				m_getGroupCountZ = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The buffer used during indirect compute.
 			*/
-			auto & indirectBuffer( IndirectBuffer config )
+			auto & indirectBuffer( IndirectBuffer const & config )
 			{
-				m_indirectBuffer = std::move( config );
-				return *this;
-			}
-			/**
-			*\param[in] config
-			*	The push constants range.
-			*/
-			auto & pushConstants( VkPushConstantRange config )
-			{
-				m_baseConfig.pushConstants( std::move( config ) );
-				return *this;
-			}
-			/**
-			*\param[in] config
-			*	The push constants range.
-			*/
-			auto & pushConstants( VkPushConstantRangeArray config )
-			{
-				m_baseConfig.m_pushConstants( std::move( config ) );
+				m_indirectBuffer = config;
 				return *this;
 			}
 

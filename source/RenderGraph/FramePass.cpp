@@ -31,16 +31,16 @@ namespace crg
 		}
 	}
 
-	FramePass::FramePass( FramePassGroup const & pgroup
-		, FrameGraph & pgraph
-		, uint32_t pid
-		, std::string const & pname
-		, RunnablePassCreator prunnableCreator )
-		: group{ pgroup }
-		, graph{ pgraph }
-		, id{ pid }
-		, runnableCreator{ std::move( prunnableCreator ) }
-		, m_name{ pname }
+	FramePass::FramePass( FramePassGroup const & group
+		, FrameGraph & graph
+		, uint32_t id
+		, std::string const & name
+		, RunnablePassCreator runnableCreator )
+		: m_group{ group }
+		, m_graph{ graph }
+		, m_id{ id }
+		, m_runnableCreator{ std::move( runnableCreator ) }
+		, m_name{ name }
 	{
 	}
 
@@ -62,7 +62,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
 			, AccessState{}
 			, nullptr );
-		uniforms.try_emplace( binding, attach );
+		m_uniforms.try_emplace( binding, attach );
 	}
 
 	void FramePass::addInputSampledImage( ImageViewIdArray views
@@ -80,7 +80,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eShaderReadOnly
 			, nullptr );
-		sampled.try_emplace( binding, attach, std::move( samplerDesc ) );
+		m_sampled.try_emplace( binding, attach, std::move( samplerDesc ) );
 	}
 
 	void FramePass::addInputUniform( Attachment const & attachment
@@ -93,7 +93,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Uniform )
 			, AccessState{}
 			, &attachment );
-		uniforms.try_emplace( binding, attach );
+		m_uniforms.try_emplace( binding, attach );
 	}
 
 	void FramePass::addInputSampled( Attachment const & attachment
@@ -111,7 +111,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eShaderReadOnly
 			, &attachment );
-		sampled.try_emplace( binding, attach, std::move( samplerDesc ) );
+		m_sampled.try_emplace( binding, attach, std::move( samplerDesc ) );
 	}
 
 	void FramePass::addInputStorageBuffer( BufferViewIdArray buffers
@@ -124,7 +124,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, AccessState{}
 		, nullptr );
-		inputs.try_emplace( binding, attach );
+		m_inputs.try_emplace( binding, attach );
 	}
 
 	void FramePass::addInputStorageImage( ImageViewIdArray views
@@ -141,7 +141,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral
 			, nullptr );
-		inputs.try_emplace( binding, attach );
+		m_inputs.try_emplace( binding, attach );
 	}
 
 	void FramePass::addInputStorage( Attachment const & attachment
@@ -160,7 +160,7 @@ namespace crg
 				, PipelineColorBlendAttachmentState{}
 				, ImageLayout::eGeneral
 				, &attachment );
-			inputs.try_emplace( binding, attach );
+			m_inputs.try_emplace( binding, attach );
 		}
 		else
 		{
@@ -171,7 +171,7 @@ namespace crg
 				, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 				, AccessState{}
 			, &attachment );
-			inputs.try_emplace( binding, attach );
+			m_inputs.try_emplace( binding, attach );
 		}
 	}
 
@@ -193,7 +193,7 @@ namespace crg
 				, PipelineColorBlendAttachmentState{}
 				, ImageLayout::eGeneral
 				, &attachment );
-			inouts.try_emplace( binding, result );
+			m_inouts.try_emplace( binding, result );
 		}
 		else
 		{
@@ -204,7 +204,7 @@ namespace crg
 				, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 				, AccessState{}
 			, &attachment );
-			inouts.try_emplace( binding, result );
+			m_inouts.try_emplace( binding, result );
 		}
 
 		return result;
@@ -220,7 +220,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, AccessState{}
 		, nullptr );
-		outputs.try_emplace( binding, result );
+		m_outputs.try_emplace( binding, result );
 		return result;
 	}
 
@@ -234,7 +234,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Storage )
 			, AccessState{}
 		, nullptr );
-		outputs.try_emplace( binding, result );
+		m_outputs.try_emplace( binding, result );
 		return result;
 	}
 
@@ -252,7 +252,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral
 			, nullptr );
-		outputs.try_emplace( binding, result );
+		m_outputs.try_emplace( binding, result );
 		return result;
 	}
 
@@ -271,7 +271,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eGeneral
 			, nullptr );
-		outputs.try_emplace( binding, result );
+		m_outputs.try_emplace( binding, result );
 		return result;
 	}
 
@@ -284,7 +284,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 			, AccessState{}
 			, nullptr );
-		inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
+		m_inputs.try_emplace( TransferOffset + uint32_t( m_inputs.size() ), attach );
 	}
 
 	void FramePass::addInputTransferImage( ImageViewIdArray views )
@@ -300,7 +300,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eTransferSrc
 			, nullptr );
-		inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
+		m_inputs.try_emplace( TransferOffset + uint32_t( m_inputs.size() ), attach );
 	}
 
 	void FramePass::addInputTransfer( Attachment const & attachment )
@@ -318,7 +318,7 @@ namespace crg
 				, PipelineColorBlendAttachmentState{}
 				, ImageLayout::eTransferSrc
 				, & attachment );
-			inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
+			m_inputs.try_emplace( TransferOffset + uint32_t( m_inputs.size() ), attach );
 		}
 		else
 		{
@@ -329,7 +329,7 @@ namespace crg
 				, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 				, AccessState{}
 				, &attachment );
-			inputs.try_emplace( TransferOffset + uint32_t( inputs.size() ), attach );
+			m_inputs.try_emplace( TransferOffset + uint32_t( m_inputs.size() ), attach );
 		}
 	}
 
@@ -351,7 +351,7 @@ namespace crg
 				, PipelineColorBlendAttachmentState{}
 				, ImageLayout::eTransferSrc
 				, &attachment );
-			inouts.try_emplace( TransferOffset + uint32_t( inouts.size() ), result );
+			m_inouts.try_emplace( TransferOffset + uint32_t( m_inouts.size() ), result );
 		}
 		else
 		{
@@ -362,7 +362,7 @@ namespace crg
 				, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 				, AccessState{}
 			, &attachment );
-			inouts.try_emplace( TransferOffset + uint32_t( inouts.size() ), result );
+			m_inouts.try_emplace( TransferOffset + uint32_t( m_inouts.size() ), result );
 		}
 
 		return result;
@@ -377,7 +377,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::Flag::Transfer )
 			, AccessState{}
 		, nullptr );
-		outputs.try_emplace( TransferOffset + uint32_t( outputs.size() ), result );
+		m_outputs.try_emplace( TransferOffset + uint32_t( m_outputs.size() ), result );
 		return result;
 	}
 
@@ -394,7 +394,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eTransferDst
 			, nullptr );
-		outputs.try_emplace( TransferOffset + uint32_t( outputs.size() ), result );
+		m_outputs.try_emplace( TransferOffset + uint32_t( m_outputs.size() ), result );
 		return result;
 	}
 
@@ -411,7 +411,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eColorAttachment
 			, nullptr );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 	}
 
 	void FramePass::addInputDepthTargetImage( ImageViewIdArray views )
@@ -427,7 +427,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, nullptr );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 	}
 
 	void FramePass::addInputStencilTargetImage( ImageViewIdArray views )
@@ -443,7 +443,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, nullptr );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 	}
 
 	void FramePass::addInputDepthStencilTargetImage( ImageViewIdArray views )
@@ -459,7 +459,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, nullptr );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 	}
 
 	void FramePass::addInputColourTarget( Attachment const & attachment )
@@ -475,7 +475,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eColorAttachment
 			, &attachment );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 	}
 
 	void FramePass::addInputDepthTarget( Attachment const & attachment )
@@ -491,7 +491,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, &attachment );
-		targets.emplace_back( attach );
+		m_targets.emplace_back( attach );
 	}
 
 	void FramePass::addInputStencilTarget( Attachment const & attachment )
@@ -507,7 +507,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, &attachment );
-		targets.emplace_back( attach );
+		m_targets.emplace_back( attach );
 	}
 
 	void FramePass::addInputDepthStencilTarget( Attachment const & attachment )
@@ -523,7 +523,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, &attachment );
-		targets.emplace_back( attach );
+		m_targets.emplace_back( attach );
 	}
 
 	Attachment const * FramePass::addInOutColourTarget( Attachment const & attachment
@@ -540,7 +540,7 @@ namespace crg
 			, std::move( blendState )
 			, ImageLayout::eColorAttachment
 			, &attachment );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 		return result;
 	}
 
@@ -557,7 +557,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, &attachment );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 		return result;
 	}
 
@@ -574,7 +574,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, &attachment );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 		return result;
 	}
 
@@ -591,7 +591,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, &attachment );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 		return result;
 	}
 
@@ -609,7 +609,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eColorAttachment
 			, nullptr );
-		targets.emplace_back( result );
+		m_targets.emplace_back( result );
 		return result;
 	}
 
@@ -627,7 +627,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthAttachment
 			, nullptr );
-		targets.emplace( targets.begin(), result );
+		m_targets.emplace( m_targets.begin(), result );
 		return result;
 	}
 
@@ -645,7 +645,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eStencilAttachment
 			, nullptr );
-		targets.emplace( targets.begin(), result );
+		m_targets.emplace( m_targets.begin(), result );
 		return result;
 	}
 
@@ -663,7 +663,7 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, ImageLayout::eDepthStencilAttachment
 			, nullptr );
-		targets.emplace( targets.begin(), result );
+		m_targets.emplace( m_targets.begin(), result );
 		return result;
 	}
 
@@ -677,7 +677,7 @@ namespace crg
 			, BufferAttachment::FlagKind( BufferAttachment::FlagKind( BufferAttachment::Flag::Transition ) | attachment.bufferAttach.getFormatFlags() )
 			, std::move( wantedAccess )
 			, &attachment );
-		inputs.try_emplace( ImplicitOffset + uint32_t( inputs.size() ), attach );
+		m_inputs.try_emplace( ImplicitOffset + uint32_t( m_inputs.size() ), attach );
 	}
 
 	void FramePass::addImplicit( Attachment const & attachment
@@ -694,23 +694,23 @@ namespace crg
 			, PipelineColorBlendAttachmentState{}
 			, wantedLayout
 			, &attachment );
-		inputs.try_emplace( ImplicitOffset + uint32_t( inputs.size() ), attach );
+		m_inputs.try_emplace( ImplicitOffset + uint32_t( m_inputs.size() ), attach );
 	}
 
 	RunnablePassPtr FramePass::createRunnable( GraphContext & context
 		, RunnableGraph & pgraph )const
 	{
-		return runnableCreator( *this, context, pgraph );
+		return m_runnableCreator( *this, context, pgraph );
 	}
 
 	std::string FramePass::getFullName()const
 	{
-		return group.getFullName() + "/" + getName();
+		return m_group.getFullName() + "/" + getName();
 	}
 
 	std::string FramePass::getGroupName()const
 	{
-		return group.getName() + "/" + getName();
+		return m_group.getName() + "/" + getName();
 	}
 
 	Attachment const * FramePass::addOwnAttach( ImageViewIdArray views, std::string attachName

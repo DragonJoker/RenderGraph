@@ -17,27 +17,6 @@ namespace test
 {
 	namespace
 	{
-		std::ostream & operator<<( std::ostream & stream
-			, std::vector< crg::ImageViewId > const & values )
-		{
-			std::string sep;
-
-			for ( auto & value : values )
-			{
-				stream << sep << value.id;
-				sep = ", ";
-			}
-
-			return stream;
-		}
-
-		std::ostream & operator<<( std::ostream & stream
-			, crg::FramePass const & value )
-		{
-			stream << value.getName();
-			return stream;
-		}
-
 		void displayTransitions( TestCounts const & testCounts
 			, std::ostream & stream
 			, crg::RunnableGraph const & value
@@ -241,16 +220,16 @@ namespace test
 			}();
 		static VkPhysicalDeviceProperties const Properties = []()
 			{
-				std::string_view name{ "Test" };
+				std::string name{ "Test" };
 
 				VkPhysicalDeviceProperties result{};
 #if defined( _MSC_VER )
 				strncpy_s( result.deviceName
-					, name.data()
+					, name.c_str()
 					, std::min( name.size() + 1u, size_t( VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1u ) ) );
 #else
 				strncpy( result.deviceName
-					, name.data()
+					, name.c_str()
 					, std::min( name.size() + 1u, size_t( VK_MAX_PHYSICAL_DEVICE_NAME_SIZE - 1u ) ) );
 #endif
 				result.deviceID = 0u;
@@ -635,7 +614,7 @@ namespace test
 		return context;
 	}
 
-	std::string checkRunnable( TestCounts & testCounts
+	std::string checkRunnable( TestCounts const & testCounts
 		, crg::RunnableGraph * runnable )
 	{
 		std::stringstream result;
@@ -773,92 +752,92 @@ namespace test
 			, VkCommandBuffer commandBuffer
 			, uint32_t index )
 		{
-			for ( auto & [binding, attach] : m_pass.uniforms )
+			for ( auto & [binding, attach] : getPass().getUniforms() )
 			{
 				auto buffer = crg::resolveView( attach->buffer( index ), index );
 				context.setAccessState( buffer
-					, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+					, { attach->getAccessMask(), attach->getPipelineStageFlags( checkFlag( m_pipelineStageFlags, crg::PipelineStageFlags::eComputeShader ) ) } );
 			}
-			for ( auto & [binding, attach] : m_pass.sampled )
+			for ( auto & [binding, attach] : getPass().getSampled() )
 			{
 				auto view = attach.attach->view( index );
 				context.runImplicitTransition( commandBuffer, index, view );
 				context.setLayoutState( crg::resolveView( view, index )
-					, crg::makeLayoutState( attach.attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+					, crg::makeLayoutState( attach.attach->getImageLayout( context->separateDepthStencilLayouts ) ) );
 			}
-			for ( auto & [binding, attach] : m_pass.inputs )
+			for ( auto & [binding, attach] : getPass().getInputs() )
 			{
 				if ( attach->isImage() )
 				{
 					auto view = attach->view( index );
 					context.runImplicitTransition( commandBuffer, index, view );
 					context.setLayoutState( crg::resolveView( view, index )
-						, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+						, crg::makeLayoutState( attach->getImageLayout( context->separateDepthStencilLayouts ) ) );
 				}
 				else
 				{
 					auto buffer = crg::resolveView( attach->buffer( index ), index );
 					context.setAccessState( buffer
-						, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+						, { attach->getAccessMask(), attach->getPipelineStageFlags( checkFlag( m_pipelineStageFlags, crg::PipelineStageFlags::eComputeShader ) ) } );
 				}
 			}
-			for ( auto & [binding, attach] : m_pass.inouts )
+			for ( auto & [binding, attach] : getPass().getInouts() )
 			{
 				if ( attach->isImage() )
 				{
 					auto view = attach->view( index );
 					context.runImplicitTransition( commandBuffer, index, view );
 					context.setLayoutState( crg::resolveView( view, index )
-						, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+						, crg::makeLayoutState( attach->getImageLayout( context->separateDepthStencilLayouts ) ) );
 				}
 				else
 				{
 					auto buffer = crg::resolveView( attach->buffer( index ), index );
 					context.setAccessState( buffer
-						, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+						, { attach->getAccessMask(), attach->getPipelineStageFlags( checkFlag( m_pipelineStageFlags, crg::PipelineStageFlags::eComputeShader ) ) } );
 				}
 			}
-			for ( auto & [binding, attach] : m_pass.outputs )
+			for ( auto & [binding, attach] : getPass().getOutputs() )
 			{
 				if ( attach->isImage() )
 				{
 					auto view = attach->view( index );
 					context.runImplicitTransition( commandBuffer, index, view );
 					context.setLayoutState( crg::resolveView( view, index )
-						, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+						, crg::makeLayoutState( attach->getImageLayout( context->separateDepthStencilLayouts ) ) );
 				}
 				else
 				{
 					auto buffer = crg::resolveView( attach->buffer( index ), index );
 					context.setAccessState( buffer
-						, { attach->getAccessMask(), attach->getPipelineStageFlags( m_pipelineStageFlags == crg::PipelineStageFlags::eComputeShader ) } );
+						, { attach->getAccessMask(), attach->getPipelineStageFlags( checkFlag( m_pipelineStageFlags, crg::PipelineStageFlags::eComputeShader ) ) } );
 				}
 			}
-			for ( auto attach : m_pass.targets )
+			for ( auto attach : getPass().getTargets() )
 			{
 				auto view = attach->view( index );
 				context.runImplicitTransition( commandBuffer, index, view );
 				context.setLayoutState( crg::resolveView( view, index )
-					, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+					, crg::makeLayoutState( attach->getImageLayout( context->separateDepthStencilLayouts ) ) );
 			}
 
 			m_checkViews( m_testCounts
-				, m_pass
-				, m_graph
+				, getPass()
+				, getGraph()
 				, context
 				, index );
 		}
 
 		void doRecordTargetsInto( crg::RecordContext & context
 			, VkCommandBuffer commandBuffer
-			, uint32_t index )
+			, uint32_t index )const
 		{
-			for ( auto attach : m_pass.targets )
+			for ( auto attach : getPass().getTargets() )
 			{
 				auto view = attach->view( index );
 				context.runImplicitTransition( commandBuffer, index, view );
 				context.setLayoutState( crg::resolveView( view, index )
-					, crg::makeLayoutState( attach->getImageLayout( m_context.separateDepthStencilLayouts ) ) );
+					, crg::makeLayoutState( attach->getImageLayout( context->separateDepthStencilLayouts ) ) );
 			}
 		}
 
@@ -974,7 +953,7 @@ namespace test
 			, std::move( config ) );
 	}
 
-	void checkDummy( [[maybe_unused]] test::TestCounts & testCounts
+	void checkDummy( [[maybe_unused]] test::TestCounts const & testCounts
 		, [[maybe_unused]] crg::FramePass const & framePass
 		, [[maybe_unused]] crg::RunnableGraph const & graph
 		, [[maybe_unused]] crg::RecordContext const & context

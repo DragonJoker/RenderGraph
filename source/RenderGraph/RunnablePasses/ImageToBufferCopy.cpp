@@ -37,16 +37,16 @@ namespace crg
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcIt = m_pass.inputs.begin();
-		auto dstIt = m_pass.outputs.begin();
+		auto srcIt = getPass().getInputs().begin();
+		auto dstIt = getPass().getOutputs().begin();
 
-		while ( srcIt != m_pass.inputs.end()
-			&& dstIt != m_pass.outputs.end() )
+		while ( srcIt != getPass().getInputs().end()
+			&& dstIt != getPass().getOutputs().end() )
 		{
 			auto srcAttach{ srcIt->second->view( index ) };
 			auto dstAttach{ dstIt->second->buffer( index ) };
-			auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
-			auto dstBuffer{ m_graph.createBuffer( dstAttach.data->buffer ) };
+			auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
+			auto dstBuffer{ getGraph().createBuffer( dstAttach.data->buffer ) };
 			// Copy source to target.
 			auto range = getSubresourceLayers( getSubresourceRange( srcAttach ) );
 			VkBufferImageCopy copyRegion{ 0ULL

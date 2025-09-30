@@ -131,6 +131,10 @@ namespace crg
 		template< template< typename ValueT > typename WrapperT >
 		struct ConfigT
 		{
+			ConfigT( ConfigT && )noexcept = default;
+			ConfigT & operator=( ConfigT && )noexcept = default;
+			ConfigT( ConfigT const & ) = default;
+			ConfigT & operator=( ConfigT const & ) = default;
 			explicit ConfigT( WrapperT< std::vector< VkPipelineShaderStageCreateInfoArray > > programs = {}
 				, WrapperT< ProgramCreator > programCreator = {}
 				, WrapperT< std::vector< VkDescriptorSetLayout > > layouts = {}
@@ -145,63 +149,63 @@ namespace crg
 			*\param[in] config
 			*	The pipeline program.
 			*/
-			auto & program( VkPipelineShaderStageCreateInfoArray config )
+			auto & program( VkPipelineShaderStageCreateInfoArray const & config )
 			{
-				m_programs = { std::move( config ) };
+				m_programs = { config };
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The pipeline programs.
 			*/
-			auto & programs( std::vector< VkPipelineShaderStageCreateInfoArray > config )
+			auto & programs( std::vector< VkPipelineShaderStageCreateInfoArray > const & config )
 			{
-				m_programs = std::move( config );
+				m_programs = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The pipeline program creator.
 			*/
-			auto & programCreator( ProgramCreator config )
+			auto & programCreator( ProgramCreator const & config )
 			{
-				m_programCreator = std::move( config );
+				m_programCreator = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The descriptor set layout.
 			*/
-			auto & layout( VkDescriptorSetLayout config )
+			auto & layout( VkDescriptorSetLayout const & config )
 			{
-				m_layouts = { std::move( config ) };
+				m_layouts = { config };
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The descriptor set layouts.
 			*/
-			auto & layouts( std::vector< VkDescriptorSetLayout > config )
+			auto & layouts( std::vector< VkDescriptorSetLayout > const & config )
 			{
-				m_layouts = std::move( config );
+				m_layouts = config;
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The push constants range.
 			*/
-			auto & pushConstants( VkPushConstantRange config )
+			auto & pushConstants( VkPushConstantRange const & config )
 			{
-				pushConstants( VkPushConstantRangeArray{ std::move( config ) } );
+				pushConstants( VkPushConstantRangeArray{ config } );
 				return *this;
 			}
 			/**
 			*\param[in] config
 			*	The push constants range.
 			*/
-			auto & pushConstants( VkPushConstantRangeArray config )
+			auto & pushConstants( VkPushConstantRangeArray const & config )
 			{
-				m_pushConstants = std::move( config );
+				m_pushConstants = config;
 				return *this;
 			}
 

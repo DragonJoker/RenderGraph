@@ -71,25 +71,23 @@ namespace crg
 		void doCreateDescriptorPool();
 
 	protected:
+		struct DescriptorSet
+		{
+			WriteDescriptorSetArray writes{};
+			VkDescriptorSet set{};
+		};
+
+	private:
 		FramePass const & m_pass;
 		GraphContext & m_context;
 		RunnableGraph & m_graph;
-
-	protected:
 		pp::ConfigData m_baseConfig;
 		VkPipelineBindPoint m_bindingPoint;
 		VkDescriptorSetLayoutBindingArray m_descriptorBindings;
 		VkDescriptorSetLayout m_descriptorSetLayout{};
 		VkPipelineLayout m_pipelineLayout{};
 		VkDescriptorPool m_descriptorSetPool{};
-		struct DescriptorSet
-		{
-			WriteDescriptorSetArray writes{};
-			VkDescriptorSet set{};
-		};
 		std::vector< DescriptorSet > m_descriptorSets;
-
-	private:
 		std::vector< VkPipeline > m_pipelines{};
 	};
 
@@ -134,7 +132,7 @@ namespace crg
 			return static_cast< BuilderT & >( *this );
 		}
 
-	protected:
+	private:
 		pp::Config m_baseConfig;
 	};
 

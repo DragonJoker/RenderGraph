@@ -47,7 +47,26 @@ namespace crg
 			return result;
 		}
 
-		static LayerLayoutStates mergeRanges( LayerLayoutStatesMap nextLayouts
+		static void mergeMipRanges( LayerLayoutStates const & nextLayout
+			, uint32_t currentLayout
+			, MipLayoutStates const & curStates
+			, LayerLayoutStates & result )
+		{
+			if ( auto nextLayerIt = nextLayout.find( currentLayout );
+				nextLayerIt != nextLayout.end() )
+			{
+				auto resLayerIt = result.try_emplace( currentLayout ).first;
+
+				for ( auto & [curLevel, _] : curStates )
+				{
+					if ( auto nextLevelIt = nextLayerIt->second.find( curLevel );
+						nextLevelIt != nextLayerIt->second.end() )
+						resLayerIt->second.emplace( *nextLevelIt );
+				}
+			}
+		}
+
+		static LayerLayoutStates mergeRanges( LayerLayoutStatesMap const & nextLayouts
 			, LayerLayoutStatesMap::value_type const & currentLayout )
 		{
 			LayerLayoutStates result;
@@ -58,22 +77,7 @@ namespace crg
 				auto & nxtLayout = nextIt->second;
 
 				for ( auto & [curLayout, curStates] : currentLayout.second )
-				{
-					if ( auto nxtLayerIt = nxtLayout.find( curLayout );
-						nxtLayerIt != nxtLayout.end() )
-					{
-						auto resLayerIt = result.try_emplace( curLayout ).first;
-
-						for ( auto & [curLevel, _] : curStates )
-						{
-							if ( auto nxtLevelIt = nxtLayerIt->second.find( curLevel );
-								nxtLevelIt != nxtLayerIt->second.end() )
-							{
-								resLayerIt->second.emplace( *nxtLevelIt );
-							}
-						}
-					}
-				}
+					mergeMipRanges( nxtLayout, curLayout, curStates, result );
 			}
 
 			return result;
@@ -453,7 +457,7 @@ namespace crg
 		m_context.vkQueueSubmit( queue
 			, 1u
 			, &submitInfo
-			, m_fence );
+			, m_fence.getInternal() );
 		return { SemaphoreWait{ m_semaphore
 			, m_graph.getFinalStates().getCurrPipelineState().pipelineStage } };
 	}

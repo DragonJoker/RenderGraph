@@ -31,7 +31,9 @@ namespace crg
 		, m_copySize{ convert( copySize ) }
 		, m_finalOutputLayout{ finalOutputLayout }
 	{
-		assert( m_pass.inputs.size() == m_pass.outputs.size() || m_pass.inputs.size() == 1u || m_pass.outputs.size() == 1u );
+		assert( getPass().getInputs().size() == getPass().getOutputs().size()
+			|| getPass().getInputs().size() == 1u
+			|| getPass().getOutputs().size() == 1u );
 	}
 
 	ImageCopy::ImageCopy( FramePass const & pass
@@ -50,41 +52,37 @@ namespace crg
 			, std::move( passIndex )
 			, std::move( isEnabled ) }
 	{
-		assert( m_pass.inputs.size() == m_pass.outputs.size() || m_pass.inputs.size() == 1u || m_pass.outputs.size() == 1u );
+		assert( getPass().getInputs().size() == getPass().getOutputs().size()
+			|| getPass().getInputs().size() == 1u
+			|| getPass().getOutputs().size() == 1u );
 	}
 
 	void ImageCopy::doRecordInto( RecordContext & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		if ( m_pass.inputs.size() == m_pass.outputs.size() )
-		{
+		if ( getPass().getInputs().size() == getPass().getOutputs().size() )
 			doRecordMultiToMulti( context, commandBuffer, index );
-		}
-		else if ( m_pass.outputs.size() == 1u )
-		{
+		else if ( getPass().getOutputs().size() == 1u )
 			doRecordMultiToSingle( context, commandBuffer, index );
-		}
-		else if ( m_pass.inputs.size() == 1u )
-		{
+		else if ( getPass().getInputs().size() == 1u )
 			doRecordSingleToMulti( context, commandBuffer, index );
-		}
 	}
 
 	void ImageCopy::doRecordMultiToMulti( RecordContext & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )
 	{
-		auto srcIt = m_pass.inputs.begin();
-		auto dstIt = m_pass.outputs.begin();
+		auto srcIt = getPass().getInputs().begin();
+		auto dstIt = getPass().getOutputs().begin();
 
-		while ( srcIt != m_pass.inputs.end()
-			&& dstIt != m_pass.outputs.end() )
+		while ( srcIt != getPass().getInputs().end()
+			&& dstIt != getPass().getOutputs().end() )
 		{
 			auto srcAttach{ srcIt->second->view( index ) };
 			auto dstAttach{ dstIt->second->view( index ) };
-			auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
-			auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+			auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
+			auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
 			// Copy source to target.
 			VkImageCopy copyRegion{ getSubresourceLayers( getSubresourceRange( srcAttach ) )
 				, {}
@@ -116,17 +114,17 @@ namespace crg
 		, uint32_t index )
 	{
 		std::vector< VkImageCopy > copyRegions;
-		auto dstIt = m_pass.outputs.begin();
+		auto dstIt = getPass().getOutputs().begin();
 		auto dstAttach{ dstIt->second->view( index ) };
-		auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+		auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
 		auto dstSubresourceRange = getSubresourceLayers( getSubresourceRange( dstAttach ) );
-		auto prvSrcImage{ m_graph.createImage( m_pass.inputs.begin()->second->view( index ).data->image ) };
+		auto prvSrcImage{ getGraph().createImage( getPass().getInputs().begin()->second->view( index ).data->image ) };
 
-		for ( auto const & [_, attach] : m_pass.inputs )
+		for ( auto const & [_, attach] : getPass().getInputs() )
 		{
 			auto srcAttach{ attach->view( index ) };
 
-			if ( auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
+			if ( auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
 				srcImage != prvSrcImage )
 			{
 				context->vkCmdCopyImage( commandBuffer
@@ -171,17 +169,17 @@ namespace crg
 		, uint32_t index )
 	{
 		std::vector< VkImageCopy > copyRegions;
-		auto srcIt = m_pass.inputs.begin();
+		auto srcIt = getPass().getInputs().begin();
 		auto srcAttach{ srcIt->second->view( index ) };
-		auto srcImage{ m_graph.createImage( srcAttach.data->image ) };
+		auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
 		auto srcSubresourceRange = getSubresourceLayers( getSubresourceRange( srcAttach ) );
-		auto prvDstImage{ m_graph.createImage( m_pass.outputs.begin()->second->view( index ).data->image ) };
+		auto prvDstImage{ getGraph().createImage( getPass().getOutputs().begin()->second->view( index ).data->image ) };
 
-		for ( auto const & [_, attach] : m_pass.outputs )
+		for ( auto const & [_, attach] : getPass().getOutputs() )
 		{
 			auto dstAttach{ attach->view( index ) };
 
-			if ( auto dstImage{ m_graph.createImage( dstAttach.data->image ) };
+			if ( auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
 				dstImage != prvDstImage )
 			{
 				context->vkCmdCopyImage( commandBuffer
@@ -215,7 +213,7 @@ namespace crg
 
 		if ( m_finalOutputLayout != ImageLayout::eUndefined )
 		{
-			for ( auto const & [_, attach] : m_pass.outputs )
+			for ( auto const & [_, attach] : getPass().getOutputs() )
 			{
 				auto dstAttach{ attach->view( index ) };
 				context.memoryBarrier( commandBuffer

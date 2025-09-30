@@ -152,11 +152,9 @@ namespace crg
 #if VK_EXT_debug_utils || VK_EXT_debug_marker
 		for ( auto const & [_, alloc] : m_allocated )
 		{
-			fprintf( stderr
-				, "Leaked [%.20s](%.90s), allocation stack:\n%.900s"
-				, alloc.type.c_str()
-				, alloc.name.c_str()
-				, alloc.callstack.c_str() );
+			std::stringstream stream;
+			stream << "Leaked [" << alloc.type << "](" << alloc.name << "), allocation stack:\n" << alloc.callstack;
+			Logger::logError( stream.str() );
 		}
 #endif
 	}

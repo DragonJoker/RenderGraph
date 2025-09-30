@@ -30,7 +30,7 @@ namespace crg
 		: kind{ pkind }
 		, id{ pid }
 		, name{ std::move( pname ) }
-		, group{ pgroup }
+		, group{ &pgroup }
 	{
 	}
 
@@ -43,7 +43,7 @@ namespace crg
 	//*********************************************************************************************
 
 	FramePassNode::FramePassNode( FramePass const & pass )
-		: GraphNode{ MyKind, pass.id, pass.getGroupName(), pass.group }
+		: GraphNode{ MyKind, pass.getId(), pass.getGroupName(), pass.getGroup() }
 		, pass{ &pass }
 	{
 	}

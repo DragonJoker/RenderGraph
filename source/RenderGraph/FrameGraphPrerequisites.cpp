@@ -741,6 +741,30 @@ namespace crg
 		return newLayout;
 	}
 
+	static void gatherSubresourceRangeLayoutMips( LayerLayoutStates const & ranges
+		, ImageSubresourceRange const & range
+		, MipLayoutStates const & layers
+		, std::map< ImageLayout, LayoutState > & states )
+	{
+		for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
+		{
+			if ( auto it = layers.find( range.baseMipLevel + levelIdx );
+				it != layers.end() )
+			{
+				auto state = it->second;
+				auto [rit, res] = states.emplace( state.layout, state );
+
+				if ( !res )
+				{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+					rit->second.state.access |= state.state.access;
+#pragma GCC diagnostic pop
+				}
+			}
+		}
+	}
+
 	LayoutState getSubresourceRangeLayout( LayerLayoutStates const & ranges
 		, ImageSubresourceRange const & range )
 	{
@@ -752,24 +776,7 @@ namespace crg
 				layerIt != ranges.end() )
 			{
 				auto & layers = layerIt->second;
-
-				for ( uint32_t levelIdx = 0u; levelIdx < range.levelCount; ++levelIdx )
-				{
-					if ( auto it = layers.find( range.baseMipLevel + levelIdx );
-						it != layers.end() )
-					{
-						auto state = it->second;
-						auto [rit, res] = states.emplace( state.layout, state );
-
-						if ( !res )
-						{
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wnull-dereference"
-							rit->second.state.access |= state.state.access;
-#pragma GCC diagnostic pop
-						}
-					}
-				}
+				gatherSubresourceRangeLayoutMips( ranges, range, layers, states );
 			}
 		}
 
