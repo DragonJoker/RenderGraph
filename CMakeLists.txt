@@ -8,10 +8,10 @@ cmake_policy( VERSION 3.10 )
 set( MAIN_PROJECT_NAME "RenderGraph" )
 
 # Set project version numbers
-set( VERSION_MAJOR 1 )
-set( VERSION_MINOR 4 )
-set( VERSION_BUILD 1 )
-set( VERSION_YEAR 2024 )
+set( VERSION_MAJOR 2 )
+set( VERSION_MINOR 1 )
+set( VERSION_BUILD 0 )
+set( VERSION_YEAR 2025 )
 
 set( _PROJECT_VERSION "${VERSION_MAJOR}.${VERSION_MINOR}" )
 set( _PROJECT_SOVERSION "${VERSION_BUILD}" )
@@ -68,6 +68,11 @@ endif ()
 set( PROJECTS_UNITY_BUILD ${CRG_UNITY_BUILD} )
 
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
+	configure_file(
+		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Version.hpp.in
+		${CRG_BINARY_DIR}/include/${PROJECT_NAME}/Version.hpp
+		NEWLINE_STYLE LF
+	)
 	# RenderGraph library
 	project( RenderGraph )
 	set( ${PROJECT_NAME}_HDR_FILES
@@ -102,6 +107,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/RunnablePass.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Signal.hpp
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/WriteDescriptorSet.hpp
+		${CRG_BINARY_DIR}/include/${PROJECT_NAME}/Version.hpp
 		${CRG_SOURCE_DIR}/source/${PROJECT_NAME}/GraphBuilder.hpp
 	)
 	set( ${PROJECT_NAME}_SRC_FILES
@@ -262,6 +268,12 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		ARCHIVE DESTINATION lib
 		LIBRARY DESTINATION lib
 	)
+	install(
+		FILES ${CRG_BINARY_DIR}/include/${PROJECT_NAME}/Version.hpp
+		DESTINATION include/${PROJECT_NAME}
+		COMPONENT ${PROJECT_NAME}
+		CONFIGURATIONS Release
+	)
 	target_install_headers( ${PROJECT_NAME}
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}
 	)
@@ -269,7 +281,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 		COMPONENT ${PROJECT_NAME}
 		FILE ${PROJECT_NAME}Config.cmake
 		NAMESPACE crg::
-		DESTINATION lib/cmake/${PROJECT_NAME}
+		DESTINATION share/${PROJECT_NAME}
 	)
 	include(CMakePackageConfigHelpers)
 	write_basic_package_version_file( ${PROJECT_NAME}ConfigVersion.cmake
