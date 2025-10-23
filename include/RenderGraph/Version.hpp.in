@@ -1,0 +1,11 @@
+/*
+See LICENSE file in root folder
+*/
+#ifndef ___CRG_Version___
+#define ___CRG_Version___
+
+#define CRG_VersionMajor ${VERSION_MAJOR}
+#define CRG_VersionMinor ${VERSION_MINOR}
+#define CRG_VersionBuild ${VERSION_BUILD}
+
+#endif
