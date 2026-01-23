@@ -62,6 +62,24 @@ namespace crg
 			}
 			/**
 			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRange const & config )
+			{
+				m_baseConfig.pushConstants( VkPushConstantRangeArray{ config } );
+				return *this;
+			}
+			/**
+			*\param[in] config
+			*	The push constants range.
+			*/
+			auto & pushConstants( VkPushConstantRangeArray const & config )
+			{
+				m_baseConfig.pushConstants( config );
+				return *this;
+			}
+			/**
+			*\param[in] config
 			*	Tells if disabled pass should record render pass begin/end.
 			*/
 			auto & baseConfig( pp::Config const & config )

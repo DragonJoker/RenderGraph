@@ -258,6 +258,36 @@ namespace crg
 		context->vkCmdBindDescriptorSets( commandBuffer, m_bindingPoint, m_pipelineLayout, 0u, 1u, &m_descriptorSets[index].set, 0u, nullptr );
 	}
 
+	void PipelineHolder::resetPipelineLayout( std::vector< VkDescriptorSetLayout > const & layouts
+		, std::vector< VkPushConstantRange > const & ranges
+		, VkPipelineShaderStageCreateInfoArray const & config )
+	{
+		bool hadPipelineLayout{};
+		if ( m_pipelineLayout )
+		{
+			hadPipelineLayout = true;
+			auto pipelineLayout = m_pipelineLayout;
+			m_context.delQueue.push( [pipelineLayout]( GraphContext & context )
+				{
+					crgUnregisterObject( context, pipelineLayout );
+					context.vkDestroyPipelineLayout( context.device
+						, pipelineLayout
+						, context.allocator );
+				} );
+			m_pipelineLayout = {};
+		}
+
+		m_baseConfig.layouts( layouts );
+		m_baseConfig.pushConstants( ranges );
+
+		if ( hadPipelineLayout )
+			doCreatePipelineLayout();
+
+		auto count = uint32_t( m_pipelines.size() );
+		for ( uint32_t i = 0; i < count; ++i )
+			resetPipeline( config, i );
+	}
+
 	void PipelineHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{

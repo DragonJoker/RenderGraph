@@ -26,6 +26,10 @@ namespace crg
 			, VkRenderPass renderPass
 			, VkPipelineColorBlendStateCreateInfo blendState
 			, uint32_t index );
+		CRG_API void resetPipelineLayout( std::vector< VkDescriptorSetLayout > const & layouts
+			, std::vector< VkPushConstantRange > const & ranges
+			, VkPipelineShaderStageCreateInfoArray const & config
+			, uint32_t index );
 		CRG_API void resetPipeline( VkPipelineShaderStageCreateInfoArray config
 			, uint32_t index );
 		CRG_API void record( RecordContext & context

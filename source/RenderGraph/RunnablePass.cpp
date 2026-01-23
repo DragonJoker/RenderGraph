@@ -589,8 +589,10 @@ namespace crg
 		}
 	}
 
-	void RunnablePass::resetCommandBuffer( uint32_t passIndex )
+	bool RunnablePass::resetCommandBuffer( uint32_t passIndex )
 	{
+		bool result{};
+
 		if ( m_context.device )
 		{
 			assert( m_passes.size() > passIndex );
@@ -598,12 +600,15 @@ namespace crg
 
 			if ( pass.commandBuffer.commandBuffer )
 			{
+				result = true;
 				pass.fence.wait( 0xFFFFFFFFFFFFFFFFULL );
 				pass.commandBuffer.recorded = false;
 				m_context.vkResetCommandBuffer( pass.commandBuffer.commandBuffer
 					, VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT );
 			}
 		}
+
+		return result;
 	}
 
 	void RunnablePass::notifyPassRender()

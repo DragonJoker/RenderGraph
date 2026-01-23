@@ -252,7 +252,7 @@ namespace crg
 		*\brief
 		*	Resets the command buffer to initial state.
 		*/
-		CRG_API void resetCommandBuffer( uint32_t passIndex );
+		CRG_API bool resetCommandBuffer( uint32_t passIndex );
 		CRG_API void notifyPassRender();
 
 		LayoutState getLayoutState( crg::ImageViewId view )const
