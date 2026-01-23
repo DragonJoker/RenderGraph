@@ -38,6 +38,17 @@ namespace crg
 	{
 	}
 
+	void RenderQuad::resetPipelineLayout( std::vector< VkDescriptorSetLayout > const & layouts
+		, std::vector< VkPushConstantRange > const & ranges
+		, VkPipelineShaderStageCreateInfoArray const & config
+		, uint32_t index )
+	{
+		bool hadCommandBuffer = resetCommandBuffer( index );
+		m_renderQuad.resetPipelineLayout( layouts, ranges, config, index );
+		if ( hadCommandBuffer )
+			reRecordCurrent();
+	}
+
 	void RenderQuad::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{

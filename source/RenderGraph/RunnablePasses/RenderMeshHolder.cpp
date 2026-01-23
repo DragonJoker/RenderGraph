@@ -98,6 +98,19 @@ namespace crg
 		doCreatePipeline( index );
 	}
 
+	void RenderMeshHolder::resetPipelineLayout( std::vector< VkDescriptorSetLayout > const & layouts
+		, std::vector< VkPushConstantRange > const & ranges
+		, VkPipelineShaderStageCreateInfoArray const & config
+		, uint32_t index )
+	{
+		m_pipeline.resetPipelineLayout( layouts, ranges, config );
+
+		if ( m_renderPass )
+		{
+			doCreatePipeline( index );
+		}
+	}
+
 	void RenderMeshHolder::resetPipeline( VkPipelineShaderStageCreateInfoArray config
 		, uint32_t index )
 	{
