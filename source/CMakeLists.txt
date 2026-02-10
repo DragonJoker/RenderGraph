@@ -65,6 +65,8 @@ if ( NOT DEFINED CRG_UNITY_BUILD )
 	option( CRG_UNITY_BUILD "Build RenderGraph using Unity (Jumbo) build method" OFF )
 endif ()
 
+set( PROJECTS_UNITY_BUILD ${CRG_UNITY_BUILD} )
+
 if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	configure_file(
 		${CRG_SOURCE_DIR}/include/${PROJECT_NAME}/Version.hpp.in
@@ -178,7 +180,7 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	)
 	source_group( "Header Files\\RunnablePasses" FILES ${${PROJECT_NAME}_FOLDER_HDR_FILES} )
 	source_group( "Source Files\\RunnablePasses" FILES ${${PROJECT_NAME}_FOLDER_SRC_FILES} )
-	if ( ${CRG_UNITY_BUILD} )
+	if ( ${PROJECTS_UNITY_BUILD} )
 		file( GLOB ${PROJECT_NAME}_FOLDER_SRC_FILES
 			${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PROJECT_NAME}.dir/Unity/*.cxx
 		)
@@ -250,13 +252,14 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	target_link_libraries( ${PROJECT_NAME}
 		PRIVATE
 			Vulkan::Headers
-	)	
+	)
+	message( STATUS "PROJECTS_UNITY_BUILD [${PROJECTS_UNITY_BUILD}]" )
 	set_target_properties( ${PROJECT_NAME}
 		PROPERTIES
 			CXX_STANDARD 20
 			FOLDER "${CRG_BASE_DIR}/Core"
 			DEBUG_POSTFIX "d"
-			UNITY_BUILD "${CRG_UNITY_BUILD}"
+			UNITY_BUILD "${PROJECTS_UNITY_BUILD}"
 	)
 	install(
 		TARGETS ${PROJECT_NAME}
