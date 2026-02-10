@@ -119,30 +119,33 @@
 	</Type>
 
 	<Type Name="crg::FramePass">
-		<DisplayString>{group}/{id} {m_name,sb}</DisplayString>
+		<DisplayString>{m_group}/{m_id} {m_name,sb}</DisplayString>
 		<Expand>
-			<Item Name="group">group</Item>
-			<Item Name="id">id</Item>
+			<Item Name="group">m_group</Item>
+			<Item Name="id">m_id</Item>
 			<Item Name="name">m_name</Item>
-			<Item Name="uniforms">uniforms</Item>
-			<Item Name="sampled">sampled</Item>
-			<Item Name="inputs">inputs</Item>
-			<Item Name="inouts">inouts</Item>
-			<Item Name="outputs">outputs</Item>
-			<Item Name="targets">targets</Item>
+			<Item Name="uniforms">m_uniforms</Item>
+			<Item Name="sampled">m_sampled</Item>
+			<Item Name="inputs">m_inputs</Item>
+			<Item Name="inouts">m_inouts</Item>
+			<Item Name="outputs">m_outputs</Item>
+			<Item Name="targets">m_targets</Item>
+			<Item Name="ownAttaches">m_ownAttaches</Item>
 		</Expand>
 	</Type>
 
 	<Type Name="crg::FramePassGroup">
-		<DisplayString Condition="parent == 0">{m_name,sb}</DisplayString>
-		<DisplayString Condition="parent != 0">{*parent}/{m_name,sb}</DisplayString>
+		<DisplayString Condition="m_parent == 0">{m_name,sb}</DisplayString>
+		<DisplayString Condition="m_parent != 0">{*m_parent}/{m_name,sb}</DisplayString>
 		<Expand>
-			<Item Name="id">id</Item>
+			<Item Name="id">m_id</Item>
 			<Item Name="name">m_name</Item>
-			<Item Name="passes">passes</Item>
-			<Item Name="groups">groups</Item>
-			<Item Name="parent">parent</Item>
+			<Item Name="passes">m_passes</Item>
+			<Item Name="groups">m_groups</Item>
+			<Item Name="parent">m_parent</Item>
 			<Item Name="graph">m_graph</Item>
+			<Item Name="inputs">m_inputs</Item>
+			<Item Name="outputs">m_outputs</Item>
 		</Expand>
 	</Type>
 
