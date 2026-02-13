@@ -39,6 +39,7 @@ namespace crg
 		: m_context{ context }
 		, m_scope{ scope }
 		, m_name{ name }
+		, m_colour{ context.getNextRainbowColour() }
 		, m_timerQueries{ timerQueries }
 		, m_queries{ { { baseQueryOffset, false, false }, { baseQueryOffset + 2u, false, false } } }
 	{
@@ -51,6 +52,7 @@ namespace crg
 		: m_context{ context }
 		, m_scope{ scope }
 		, m_name{ name }
+		, m_colour{ context.getNextRainbowColour() }
 		, m_timerQueries{ createQueryPool( context, name, 4u ) }
 		, m_ownPool{ true }
 		, m_queries{ { { 0u, false, false }, { 2u, false, false } } }
@@ -101,8 +103,16 @@ namespace crg
 		m_gpuTime = 0ns;
 	}
 
-	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer )noexcept
+	void FramePassTimer::beginPass( VkCommandBuffer commandBuffer
+		, std::string const & groupName
+		, uint32_t passId )noexcept
 	{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wrestrict"
+		m_context.vkCmdBeginDebugBlock( commandBuffer
+			, { "[" + std::to_string( passId ) + "] " + groupName
+			, m_colour } );
+#pragma GCC diagnostic pop
 		std::swap( m_queries.front(), m_queries.back() );
 		auto const & query = m_queries.front();
 		m_context.vkCmdResetQueryPool( commandBuffer
@@ -123,6 +133,7 @@ namespace crg
 			, m_timerQueries
 			, query.offset + 1u );
 		query.written = true;
+		m_context.vkCmdEndDebugBlock( commandBuffer );
 	}
 
 	void FramePassTimer::retrieveGpuTime()noexcept

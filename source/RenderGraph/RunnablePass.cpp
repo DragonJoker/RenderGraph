@@ -551,13 +551,7 @@ namespace crg
 			}
 
 			auto block( m_timer.start() );
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wrestrict"
-			m_context.vkCmdBeginDebugBlock( commandBuffer
-				, { "[" + std::to_string( m_pass.getId() ) + "] " + m_pass.getGroupName()
-				, m_context.getNextRainbowColour() } );
-#pragma GCC diagnostic pop
-			m_timer.beginPass( commandBuffer );
+			m_timer.beginPass( commandBuffer, m_pass.getGroupName(), m_pass.getId() );
 
 			details::prepareResources( commandBuffer, index, context
 				, m_graph, m_pass, m_callbacks, m_context );
@@ -575,7 +569,6 @@ namespace crg
 			}
 
 			m_timer.endPass( commandBuffer );
-			m_context.vkCmdEndDebugBlock( commandBuffer );
 		}
 
 		for ( auto const & [view, action] : m_ruConfig.implicitImageActions )
