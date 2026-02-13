@@ -17,6 +17,7 @@ namespace crg
 	using FramePassDestroyFunc = std::function< void( FramePassTimer & ) >;
 	using OnFramePassDestroy = Signal< FramePassDestroyFunc >;
 	using OnFramePassDestroyConnection = SignalConnection< OnFramePassDestroy >;
+	using PassColour = std::array< float, 4u >;
 
 	enum class TimerScope
 	{
@@ -104,10 +105,12 @@ namespace crg
 		*	Writes the timestamp for the beginning of the pass.
 		*\param[in] cmd
 		*	The command buffer used to record the begin timestamp.
-		*\param[in] passIndex
-		*	The pass index.
+		*\param[in] passId
+		*	The pass ID.
 		*/
-		CRG_API void beginPass( VkCommandBuffer commandBuffer )noexcept;
+		CRG_API void beginPass( VkCommandBuffer commandBuffer
+			, std::string const & groupName
+			, uint32_t passId )noexcept;
 		/**
 		*\brief
 		*	Writes the timestamp for the end of the pass.
@@ -142,6 +145,11 @@ namespace crg
 			return m_name;
 		}
 
+		PassColour const & getColour()const noexcept
+		{
+			return m_colour;
+		}
+
 		TimerScope getScope()const noexcept
 		{
 			return m_scope;
@@ -157,6 +165,7 @@ namespace crg
 		GraphContext & m_context;
 		TimerScope m_scope{};
 		std::string m_name{};
+		PassColour m_colour;
 		Clock::time_point m_cpuSaveTime{};
 		Nanoseconds m_cpuTime{};
 		Nanoseconds m_gpuTime{};

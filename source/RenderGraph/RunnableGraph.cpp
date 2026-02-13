@@ -384,7 +384,7 @@ namespace crg
 				, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
 				, nullptr };
 			m_context.vkBeginCommandBuffer( m_commandBuffer, &beginInfo );
-			m_timer.beginPass( m_commandBuffer );
+			m_timer.beginPass( m_commandBuffer, getName(), 0u );
 
 			while ( currPass != m_passes.end() )
 			{
