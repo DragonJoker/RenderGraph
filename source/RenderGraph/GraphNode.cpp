@@ -12,6 +12,8 @@ namespace crg
 {
 	//*********************************************************************************************
 
+	GraphNode::~GraphNode()noexcept = default;
+
 	GraphNode::GraphNode( GraphNode && rhs )noexcept
 		: kind{ rhs.kind }
 		, id{ rhs.id }
@@ -26,11 +28,11 @@ namespace crg
 	GraphNode::GraphNode( Kind pkind
 		, uint32_t pid
 		, std::string pname
-		, FramePassGroup const & pgroup )
+		, FramePassGroup const & passGroup )
 		: kind{ pkind }
 		, id{ pid }
 		, name{ std::move( pname ) }
-		, group{ &pgroup }
+		, group{ &passGroup }
 	{
 	}
 
@@ -42,9 +44,11 @@ namespace crg
 
 	//*********************************************************************************************
 
-	FramePassNode::FramePassNode( FramePass const & pass )
-		: GraphNode{ MyKind, pass.getId(), pass.getGroupName(), pass.getGroup() }
-		, pass{ &pass }
+	FramePassNode::~FramePassNode()noexcept = default;
+
+	FramePassNode::FramePassNode( FramePass const & framePass )
+		: GraphNode{ MyKind, framePass.getId(), framePass.getGroupName(), framePass.getGroup() }
+		, pass{ &framePass }
 	{
 	}
 
@@ -55,9 +59,11 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RootNode::RootNode( FrameGraph const & pgraph )
-		: GraphNode{ MyKind, 0u, pgraph.getName(), pgraph.getDefaultGroup() }
-		, graph{ &pgraph }
+	RootNode::~RootNode()noexcept = default;
+
+	RootNode::RootNode( FrameGraph const & frameGraph )
+		: GraphNode{ MyKind, 0u, frameGraph.getName(), frameGraph.getDefaultGroup() }
+		, graph{ &frameGraph }
 	{
 	}
 

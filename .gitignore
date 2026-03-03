@@ -1,6 +1,6 @@
 /.vscode
 /binaries
-/build
+/build*
 /setup
 /doc/coverage
 /doc/RenderGraphCoverage

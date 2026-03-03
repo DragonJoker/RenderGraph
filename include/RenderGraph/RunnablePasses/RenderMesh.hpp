@@ -18,7 +18,7 @@ namespace crg
 			, RunnableGraph & graph
 			, ru::Config const & ruConfig
 			, rm::Config rmConfig );
-		CRG_API ~RenderMesh()noexcept override = default;
+		~RenderMesh()noexcept override = default;
 
 		CRG_API void resetPipelineLayout( std::vector< VkDescriptorSetLayout > const & layouts
 			, std::vector< VkPushConstantRange > const & ranges

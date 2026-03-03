@@ -25,11 +25,11 @@ namespace crg
 	{
 	}
 
-	BufferAttachment::BufferAttachment( FlagKind flags
+	BufferAttachment::BufferAttachment( FlagKind pflags
 		, BufferViewIdArray views
 		, AccessState access )
 		: buffers{ std::move( views ) }
-		, flags{ FlagKind( flags
+		, flags{ FlagKind( pflags
 			| FlagKind( buffers.front().data->info.format == PixelFormat::eUNDEFINED ? Flag::None : Flag::View ) ) }
 		, wantedAccess{ std::move( access ) }
 	{
@@ -362,8 +362,8 @@ namespace crg
 	{
 	}
 
-	Attachment::Attachment( FlagKind flags
-		, FramePass const & pass
+	Attachment::Attachment( FlagKind pflags
+		, FramePass const & framePass
 		, std::string name
 		, ImageAttachment::FlagKind imageFlags
 		, ImageViewIdArray views
@@ -375,7 +375,7 @@ namespace crg
 		, PipelineColorBlendAttachmentState blendState
 		, ImageLayout wantedLayout
 		, Token )
-		: pass{ &pass }
+		: pass{ &framePass }
 		, name{ std::move( name ) }
 		, imageAttach{ imageFlags
 			, std::move( views )
@@ -386,7 +386,7 @@ namespace crg
 			, std::move( clearValue )
 			, std::move( blendState )
 			, wantedLayout }
-		, flags{ FlagKind( flags
+		, flags{ FlagKind( pflags
 			| FlagKind( Flag::Image )
 			| ( loadOp == AttachmentLoadOp::eLoad
 				? FlagKind( Flag::Input )
@@ -403,42 +403,42 @@ namespace crg
 	{
 	}
 
-	Attachment::Attachment( FlagKind flags
-		, FramePass const & pass
+	Attachment::Attachment( FlagKind pflags
+		, FramePass const & framePass
 		, std::string name
 		, BufferAttachment::FlagKind bufferFlags
 		, BufferViewIdArray views
 		, AccessState wantedAccess
 		, Token )
-		: pass{ &pass }
+		: pass{ &framePass }
 		, name{ std::move( name ) }
 		, bufferAttach{ bufferFlags, std::move( views ), std::move( wantedAccess ) }
-		, flags{ FlagKind( flags
+		, flags{ FlagKind( pflags
 			| FlagKind( Flag::Buffer ) ) }
 	{
 	}
 
-	Attachment::Attachment( FlagKind flags
+	Attachment::Attachment( FlagKind pflags
 		, std::string name
-		, FramePass const * pass
+		, FramePass const * framePass
 		, ImageAttachment attach
 		, Token )
-		: pass{ pass }
+		: pass{ framePass }
 		, name{ std::move( name ) }
 		, imageAttach{ std::move( attach ) }
-		, flags{ flags }
+		, flags{ pflags }
 	{
 	}
 
-	Attachment::Attachment( FlagKind flags
+	Attachment::Attachment( FlagKind pflags
 		, std::string name
-		, FramePass const * pass
+		, FramePass const * framePass
 		, BufferAttachment attach
 		, Token )
-		: pass{ pass }
+		: pass{ framePass }
 		, name{ std::move( name ) }
 		, bufferAttach{ std::move( attach ) }
-		, flags{ flags }
+		, flags{ pflags }
 	{
 	}
 

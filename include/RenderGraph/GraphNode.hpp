@@ -26,10 +26,8 @@ namespace crg
 			FramePass,
 		};
 
-		GraphNode( GraphNode const & ) = delete;
-		GraphNode & operator=( GraphNode const & ) = delete;
-		CRG_API GraphNode & operator=( GraphNode && rhs )noexcept = default;
-		CRG_API virtual ~GraphNode()noexcept = default;
+		GraphNode & operator=( GraphNode && rhs )noexcept = default;
+		CRG_API virtual ~GraphNode()noexcept;
 		CRG_API GraphNode( GraphNode && rhs )noexcept;
 
 		CRG_API void attachNode( GraphNode & child );
@@ -102,6 +100,10 @@ namespace crg
 			, FramePassGroup const & group );
 
 	private:
+		GraphNode( GraphNode const & ) = delete;
+		GraphNode & operator=( GraphNode const & ) = delete;
+
+	private:
 		Kind kind{};
 		uint32_t id{};
 		std::string name{};
@@ -120,6 +122,10 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::FramePass;
 
+		FramePassNode & operator=( FramePassNode && rhs )noexcept = default;
+		FramePassNode( FramePassNode && rhs )noexcept = default;
+		CRG_API ~FramePassNode()noexcept override;
+
 		CRG_API explicit FramePassNode( FramePass const & pass );
 		CRG_API void accept( GraphVisitor * vis )const override;
 
@@ -127,6 +133,10 @@ namespace crg
 		{
 			return *pass;
 		}
+
+	private:
+		FramePassNode( FramePassNode const & ) = delete;
+		FramePassNode & operator=( FramePassNode const & ) = delete;
 
 	private:
 		FramePass const * pass;
@@ -142,6 +152,10 @@ namespace crg
 	{
 		static constexpr Kind MyKind = Kind::Root;
 
+		RootNode & operator=( RootNode && rhs )noexcept = default;
+		RootNode( RootNode && rhs )noexcept = default;
+		CRG_API ~RootNode()noexcept override;
+
 		CRG_API explicit RootNode( FrameGraph const & graph );
 		CRG_API void accept( GraphVisitor * vis )const override;
 
@@ -149,6 +163,10 @@ namespace crg
 		{
 			return *graph;
 		}
+
+	private:
+		RootNode( RootNode const & ) = delete;
+		RootNode & operator=( RootNode const & ) = delete;
 
 	private:
 		FrameGraph const * graph;
