@@ -31,8 +31,8 @@ namespace crg
 		FrameGraph( FrameGraph const & ) = delete;
 		FrameGraph & operator=( FrameGraph const & ) = delete;
 		FrameGraph & operator=( FrameGraph && )noexcept = delete;
-		CRG_API FrameGraph( FrameGraph && )noexcept = default;
-		CRG_API ~FrameGraph()noexcept = default;
+		FrameGraph( FrameGraph && )noexcept = default;
+		~FrameGraph()noexcept = default;
 		CRG_API explicit FrameGraph( ResourceHandler & handler
 			, std::string name = "FrameGraph" );
 		/**@}*/

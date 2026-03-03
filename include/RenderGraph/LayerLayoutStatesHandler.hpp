@@ -10,7 +10,7 @@ namespace crg
 {
 	struct LayerLayoutStatesHandler
 	{
-		CRG_API LayerLayoutStatesHandler() = default;
+		LayerLayoutStatesHandler() = default;
 		CRG_API explicit LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs );
 		CRG_API void addStates( LayerLayoutStatesHandler const & data );
 

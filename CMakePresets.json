@@ -96,6 +96,36 @@
 			}
 		},
 		{
+			"name": "dev-mingw-base",
+			"hidden": true,
+			"displayName": "Developer MinGW Config",
+			"description": "Developer build configuration using Ninja, on MinGW",
+			"generator": "Ninja",
+			"inherits": "default-base",
+			"cacheVariables": {
+				"PROJECTS_WARNINGS_AS_ERRORS": true,
+				"CRG_BUILD_TESTS": true
+			}
+		},
+		{
+			"name": "dev-mingw-debug",
+			"displayName": "Developer MinGW Config, Debug",
+			"description": "Developer build configuration using Ninja, on MinGW, Debug",
+			"inherits": "dev-mingw-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug"
+			}
+		},
+		{
+			"name": "dev-mingw-release",
+			"displayName": "Developer MinGW Config, Release",
+			"description": "Developer build configuration using Ninja, on MinGW, Release",
+			"inherits": "dev-mingw-base",
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release"
+			}
+		},
+		{
 			"name": "ci",
 			"installDir": "${sourceDir}/package/Castor3D",
 			"cacheVariables": {

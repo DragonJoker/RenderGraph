@@ -43,7 +43,7 @@ namespace crg
 		ResourceHandler( ResourceHandler && )noexcept = delete;
 		ResourceHandler & operator=( ResourceHandler const & ) = delete;
 		ResourceHandler & operator=( ResourceHandler && )noexcept = delete;
-		CRG_API ResourceHandler() = default;
+		ResourceHandler() = default;
 		CRG_API ~ResourceHandler()noexcept;
 
 		CRG_API BufferId createBufferId( BufferData const & img );

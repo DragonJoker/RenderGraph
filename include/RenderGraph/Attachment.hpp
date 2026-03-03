@@ -187,7 +187,7 @@ namespace crg
 		FlagKind flags{};
 
 	private:
-		CRG_API ImageAttachment() = default;
+		ImageAttachment() = default;
 		CRG_API explicit ImageAttachment( ImageViewIdArray view );
 		CRG_API ImageAttachment( FlagKind flags
 			, ImageViewIdArray views
@@ -307,7 +307,7 @@ namespace crg
 		AccessState wantedAccess{};
 
 	private:
-		CRG_API BufferAttachment() = default;
+		BufferAttachment() = default;
 		CRG_API explicit BufferAttachment( BufferViewIdArray view );
 		CRG_API BufferAttachment( FlagKind flags
 			, BufferViewIdArray views
@@ -342,19 +342,19 @@ namespace crg
 		{
 			Source( Attachment const * parent
 				, FramePass const * pass
-				, ImageAttachment const & attach )
+				, ImageAttachment const & imgAttach )
 				: parent{ parent }
 				, pass{ pass }
-				, imageAttach{ &attach }
+				, imageAttach{ &imgAttach }
 			{
 			}
 
 			Source( Attachment const * parent
 				, FramePass const * pass
-				, BufferAttachment const & attach )
+				, BufferAttachment const & bufAttach )
 				: parent{ parent }
 				, pass{ pass }
-				, bufferAttach{ &attach }
+				, bufferAttach{ &bufAttach }
 			{
 			}
 
@@ -391,8 +391,8 @@ namespace crg
 
 		CRG_API Attachment( Attachment const & rhs );
 		CRG_API Attachment & operator=( Attachment const & rhs );
-		CRG_API Attachment( Attachment && rhs )noexcept = default;
-		CRG_API Attachment & operator=( Attachment && rhs )noexcept = default;
+		Attachment( Attachment && rhs )noexcept = default;
+		Attachment & operator=( Attachment && rhs )noexcept = default;
 		/**
 		*\name
 		*	Getters.
