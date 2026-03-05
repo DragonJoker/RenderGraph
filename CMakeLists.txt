@@ -229,7 +229,6 @@ if ( MSVC OR NOT "${CMAKE_BUILD_TYPE}" STREQUAL "" )
 	target_add_compilation_flags( ${PROJECT_NAME} )
 	target_compile_options( ${PROJECT_NAME}
 		PUBLIC
-			$<$<CXX_COMPILER_ID:MSVC>:/Zm300>
 			$<$<CXX_COMPILER_ID:AppleClang>:-Wno-poison-system-directories>
 			$<$<CXX_COMPILER_ID:Clang>:-Wno-poison-system-directories>
 	)
