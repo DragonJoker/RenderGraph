@@ -104,6 +104,8 @@ namespace crg
 		*\name	Memory barriers
 		*/
 		//@{
+		CRG_API void beginBatchBarriers();
+		CRG_API void flushBatchBarriers( VkCommandBuffer commandBuffer );
 		/**
 		*\name	Images
 		*/
@@ -264,6 +266,11 @@ namespace crg
 			return m_nextPipelineState;
 		}
 
+		bool isBatching() const
+		{
+			return m_isBatching;
+		}
+
 	private:
 		ResourceHandler * m_handler;
 		ContextResourcesCache * m_resources;
@@ -276,5 +283,10 @@ namespace crg
 		PipelineState m_currPipelineState{};
 		PipelineState m_nextPipelineState{};
 		LayerLayoutStatesHandler m_nextImages;
+		std::vector< VkImageMemoryBarrier > m_batchedImageBarriers;
+		std::vector< VkBufferMemoryBarrier > m_batchedBufferBarriers;
+		VkPipelineStageFlags m_batchSrcStages{};
+		VkPipelineStageFlags m_batchDstStages{};
+		bool m_isBatching{ false };
 	};
 }

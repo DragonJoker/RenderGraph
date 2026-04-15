@@ -120,6 +120,12 @@ namespace crg
 
 				if ( attach.isClearableImage() )
 				{
+					auto wasBatching = recordContext.isBatching();
+					if ( wasBatching )
+					{
+						recordContext.flushBatchBarriers( commandBuffer );
+					}
+
 					recordContext.memoryBarrier( commandBuffer
 						, view
 						, currentLayout.layout
@@ -148,6 +154,11 @@ namespace crg
 					currentLayout.layout = ImageLayout::eTransferDst;
 					currentLayout.state.access = AccessFlags::eTransferWrite;
 					currentLayout.state.pipelineStage = PipelineStageFlags::eTransfer;
+
+					if ( wasBatching )
+					{
+						recordContext.beginBatchBarriers();
+					}
 				}
 
 				recordContext.memoryBarrier( commandBuffer
@@ -178,6 +189,12 @@ namespace crg
 
 				if ( attach.isClearableBuffer() )
 				{
+					auto wasBatching = recordContext.isBatching();
+					if ( wasBatching )
+					{
+						recordContext.flushBatchBarriers( commandBuffer );
+					}
+
 					recordContext.memoryBarrier( commandBuffer
 						, buffer
 						, range
@@ -190,6 +207,11 @@ namespace crg
 						, 0u );
 					currentState.access = AccessFlags::eTransferWrite;
 					currentState.pipelineStage = PipelineStageFlags::eTransfer;
+
+					if ( wasBatching )
+					{
+						recordContext.beginBatchBarriers();
+					}
 				}
 
 				recordContext.memoryBarrier( commandBuffer
@@ -208,6 +230,8 @@ namespace crg
 			, RunnablePass::Callbacks const & callbacks
 			, GraphContext const & graphContext )
 		{
+			recordContext.beginBatchBarriers();
+
 			for ( auto & [binding, attach] : pass.getSampled() )
 				prepareImage( commandBuffer, index, *attach.attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
 			for ( auto & [binding, attach] : pass.getUniforms() )
@@ -229,6 +253,8 @@ namespace crg
 					prepareBuffer( commandBuffer, index, *attach, callbacks.isComputePass(), graph, recordContext );
 			for ( auto & attach : pass.getTargets() )
 				prepareImage( commandBuffer, index, *attach, graphContext.separateDepthStencilLayouts, graph, recordContext );
+
+			recordContext.flushBatchBarriers( commandBuffer );
 		}
 	}
 
