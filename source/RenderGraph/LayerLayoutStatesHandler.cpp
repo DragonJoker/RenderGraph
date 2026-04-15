@@ -23,6 +23,11 @@ namespace crg
 		}
 	}
 
+	void LayerLayoutStatesHandler::clear()
+	{
+		images.clear();
+	}
+
 	void LayerLayoutStatesHandler::setLayoutState( ImageId image
 		, ImageViewType viewType
 		, ImageSubresourceRange const & subresourceRange

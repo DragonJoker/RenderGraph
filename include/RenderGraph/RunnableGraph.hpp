@@ -155,6 +155,16 @@ namespace crg
 		}
 
 	private:
+		RecordContext & getRecordContext()
+		{
+			if ( !m_recordContext )
+				m_recordContext = std::make_unique< RecordContext >( m_resources );
+			else
+				m_recordContext->reset();
+			return *m_recordContext;
+		}
+
+	private:
 		FrameGraph & m_graph;
 		GraphContext & m_context;
 		ContextResourcesCache m_resources;
@@ -169,5 +179,9 @@ namespace crg
 		VkSemaphore m_semaphore{};
 		Fence m_fence;
 		FramePassTimer m_timer;
+		std::unique_ptr< RecordContext > m_recordContext;
+		// Reusable buffers to avoid per-frame allocations
+		mutable std::vector< VkSemaphore > m_cachedSemaphores;
+		mutable std::vector< VkPipelineStageFlags > m_cachedDstStageMasks;
 	};
 }

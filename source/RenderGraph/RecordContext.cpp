@@ -49,19 +49,53 @@ namespace crg
 
 	//************************************************************************************************
 
-	RecordContext::RecordContext( ContextResourcesCache & resources )
-		: m_handler{ &resources.getHandler() }
-		, m_resources{ &resources }
+	RecordContext::RecordContext( ResourceHandler & handler
+		, ContextResourcesCache * resources )
+		: m_handler{ &handler }
+		, m_resources{ resources }
 		, m_prevPipelineState{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
 		, m_currPipelineState{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
 		, m_nextPipelineState{ AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe }
 	{
+		// Pre-allocate capacity to reduce reallocations during frame recording
+		m_implicitImageTransitions.reserve( 64 );
+		m_implicitBufferTransitions.reserve( 32 );
+		m_batchedImageBarriers.reserve( 32 );
+		m_batchedBufferBarriers.reserve( 16 );
+	}
+
+	RecordContext::RecordContext( ContextResourcesCache & resources )
+		: RecordContext{ resources.getHandler(), &resources }
+	{
 	}
 
 	RecordContext::RecordContext( ResourceHandler & handler )
-		: m_handler{ &handler }
-		, m_resources{ nullptr }
+		: RecordContext{ handler, nullptr }
 	{
+	}
+
+	void RecordContext::reset()
+	{
+		// Clear other state
+		m_images.clear();
+		m_buffers.clear();
+		m_state.clear();
+		m_nextImages.clear();
+
+		// Clear vectors but retain capacity to avoid reallocations
+		m_implicitImageTransitions.clear();
+		m_implicitBufferTransitions.clear();
+		m_batchedImageBarriers.clear();
+		m_batchedBufferBarriers.clear();
+
+		// Reset pipeline states
+		m_prevPipelineState = { AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe };
+		m_currPipelineState = { AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe };
+		m_nextPipelineState = { AccessFlags::eNone, PipelineStageFlags::eBottomOfPipe };
+
+		m_batchSrcStages = 0;
+		m_batchDstStages = 0;
+		m_isBatching = false;
 	}
 
 	void RecordContext::addStates( RecordContext const & data )
@@ -171,8 +205,10 @@ namespace crg
 		if ( it != m_implicitImageTransitions.end() )
 		{
 			auto pass = it->pass;
-			auto action = it->action;
-			m_implicitImageTransitions.erase( it );
+			auto action = std::move( it->action );
+			if ( it != m_implicitImageTransitions.end() - 1 )
+				*it = std::move( m_implicitImageTransitions.back() );
+			m_implicitImageTransitions.pop_back();
 
 			if ( !pass->isEnabled() )
 			{
@@ -195,8 +231,10 @@ namespace crg
 		if ( it != m_implicitBufferTransitions.end() )
 		{
 			auto pass = it->pass;
-			auto action = it->action;
-			m_implicitBufferTransitions.erase( it );
+			auto action = std::move( it->action );
+			if ( it != m_implicitBufferTransitions.end() - 1 )
+				*it = std::move( m_implicitBufferTransitions.back() );
+			m_implicitBufferTransitions.pop_back();
 
 			if ( !pass->isEnabled() )
 			{
