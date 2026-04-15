@@ -235,6 +235,42 @@ namespace crg
 		return dummy;
 	}
 
+	void RecordContext::beginBatchBarriers()
+	{
+		m_isBatching = true;
+		m_batchedImageBarriers.clear();
+		m_batchedBufferBarriers.clear();
+		m_batchedImageBarriers.reserve( 32 );
+		m_batchedBufferBarriers.reserve( 16 );
+		m_batchSrcStages = 0;
+		m_batchDstStages = 0;
+	}
+
+	void RecordContext::flushBatchBarriers( VkCommandBuffer commandBuffer )
+	{
+		if ( m_isBatching && ( !m_batchedImageBarriers.empty() || !m_batchedBufferBarriers.empty() ) )
+		{
+			auto & resources = getResources();
+			resources->vkCmdPipelineBarrier( commandBuffer
+				, m_batchSrcStages
+				, m_batchDstStages
+				, VK_DEPENDENCY_BY_REGION_BIT
+				, 0u
+				, nullptr
+				, static_cast< uint32_t >( m_batchedBufferBarriers.size() )
+				, m_batchedBufferBarriers.data()
+				, static_cast< uint32_t >( m_batchedImageBarriers.size() )
+				, m_batchedImageBarriers.data() );
+
+			m_batchedImageBarriers.clear();
+			m_batchedBufferBarriers.clear();
+			m_batchSrcStages = 0;
+			m_batchDstStages = 0;
+		}
+
+		m_isBatching = false;
+	}
+
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
 		, ImageViewId const & view
 		, ImageLayout initialLayout
@@ -303,16 +339,27 @@ namespace crg
 				, VK_QUEUE_FAMILY_IGNORED
 				, resources.createImage( image )
 				, convert( range ) };
-			resources->vkCmdPipelineBarrier( commandBuffer
-				, getPipelineStageFlags( from.state.pipelineStage )
-				, getPipelineStageFlags( wantedState.state.pipelineStage )
-				, VK_DEPENDENCY_BY_REGION_BIT
-				, 0u
-				, nullptr
-				, 0u
-				, nullptr
-				, 1u
-				, &barrier );
+
+			if ( m_isBatching )
+			{
+				m_batchedImageBarriers.push_back( barrier );
+				m_batchSrcStages |= getPipelineStageFlags( from.state.pipelineStage );
+				m_batchDstStages |= getPipelineStageFlags( wantedState.state.pipelineStage );
+			}
+			else
+			{
+				resources->vkCmdPipelineBarrier( commandBuffer
+					, getPipelineStageFlags( from.state.pipelineStage )
+					, getPipelineStageFlags( wantedState.state.pipelineStage )
+					, VK_DEPENDENCY_BY_REGION_BIT
+					, 0u
+					, nullptr
+					, 0u
+					, nullptr
+					, 1u
+					, &barrier );
+			}
+
 			setLayoutState( image
 				, viewType
 				, range
@@ -406,16 +453,27 @@ namespace crg
 				, resources.createBuffer( buffer )
 				, subresourceRange.offset
 				, subresourceRange.size };
-			resources->vkCmdPipelineBarrier( commandBuffer
-				, getPipelineStageFlags( from.pipelineStage )
-				, getPipelineStageFlags( wantedState.pipelineStage )
-				, VK_DEPENDENCY_BY_REGION_BIT
-				, 0u
-				, nullptr
-				, 1u
-				, &barrier
-				, 0u
-				, nullptr );
+
+			if ( m_isBatching )
+			{
+				m_batchedBufferBarriers.push_back( barrier );
+				m_batchSrcStages |= getPipelineStageFlags( from.pipelineStage );
+				m_batchDstStages |= getPipelineStageFlags( wantedState.pipelineStage );
+			}
+			else
+			{
+				resources->vkCmdPipelineBarrier( commandBuffer
+					, getPipelineStageFlags( from.pipelineStage )
+					, getPipelineStageFlags( wantedState.pipelineStage )
+					, VK_DEPENDENCY_BY_REGION_BIT
+					, 0u
+					, nullptr
+					, 1u
+					, &barrier
+					, 0u
+					, nullptr );
+			}
+
 			setAccessState( buffer
 				, subresourceRange
 				, wantedState );
