@@ -14,6 +14,8 @@ namespace crg
 		CRG_API explicit LayerLayoutStatesHandler( LayerLayoutStatesMap const & rhs );
 		CRG_API void addStates( LayerLayoutStatesHandler const & data );
 
+		CRG_API void clear();
+
 		CRG_API void setLayoutState( ImageId image
 			, ImageViewType viewType
 			, ImageSubresourceRange const & subresourceRange

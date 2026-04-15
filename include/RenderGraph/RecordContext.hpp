@@ -38,6 +38,12 @@ namespace crg
 		CRG_API explicit RecordContext( ContextResourcesCache & resources );
 		CRG_API explicit RecordContext( ResourceHandler & handler );
 		/**
+		*\name	Lifetime
+		*/
+		//@{
+		CRG_API void reset();
+		//@}
+		/**
 		*\name	States
 		*/
 		//@{
@@ -270,6 +276,10 @@ namespace crg
 		{
 			return m_isBatching;
 		}
+
+	private:
+		RecordContext( ResourceHandler & handler
+			, ContextResourcesCache * resources );
 
 	private:
 		ResourceHandler * m_handler;

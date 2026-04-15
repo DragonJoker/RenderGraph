@@ -358,7 +358,7 @@ namespace crg
 	{
 		auto block( m_timer.start() );
 		m_states.clear();
-		RecordContext recordContext{ m_resources };
+		RecordContext & recordContext = getRecordContext();
 
 		for ( auto & dependency : m_graph.getDependencies() )
 		{
@@ -433,9 +433,10 @@ namespace crg
 		, VkQueue queue )
 	{
 		record();
-		std::vector< VkSemaphore > semaphores;
-		std::vector< VkPipelineStageFlags > dstStageMasks;
-		convert( toWait, semaphores, dstStageMasks );
+		// Reuse member vectors instead of allocating new ones each frame
+		m_cachedSemaphores.clear();
+		m_cachedDstStageMasks.clear();
+		convert( toWait, m_cachedSemaphores, m_cachedDstStageMasks );
 		m_timer.notifyPassRender();
 
 		for ( auto const & pass : m_passes )
@@ -445,9 +446,9 @@ namespace crg
 
 		VkSubmitInfo submitInfo{ VK_STRUCTURE_TYPE_SUBMIT_INFO
 			, nullptr
-			, uint32_t( semaphores.size() )
-			, semaphores.data()
-			, dstStageMasks.data()
+			, uint32_t( m_cachedSemaphores.size() )
+			, m_cachedSemaphores.data()
+			, m_cachedDstStageMasks.data()
 			, 1u
 			, &m_commandBuffer
 			, 1u
