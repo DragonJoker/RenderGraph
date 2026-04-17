@@ -2,11 +2,15 @@
 <AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
 
 	<Type Name="crg::BufferData">
-		<DisplayString>{name,sb} fmt={info.size}</DisplayString>
+		<DisplayString Condition="maxPages &gt; 1">{name,sb} size={info.size * allocatedPages}/{info.size * maxPages}</DisplayString>
+		<DisplayString Condition="maxPages &lt; 2">{name,sb} size={info.size}</DisplayString>
 		<Expand>
 			<Item Name="name">name</Item>
 			<Item Name="flags">info.flags</Item>
-			<Item Name="size">info.size</Item>
+			<Item Condition="maxPages &gt; 1" Name="pageSize">info.size</Item>
+			<Item Condition="maxPages &gt; 1" Name="allocatedPages">allocatedPages</Item>
+			<Item Condition="maxPages &gt; 1" Name="maxPages">maxPages</Item>
+			<Item Condition="maxPages &lt; 2" Name="size">info.size</Item>
 			<Item Name="usage">info.usage</Item>
 		</Expand>
 	</Type>

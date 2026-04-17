@@ -48,18 +48,21 @@ namespace crg
 	struct LayoutState;
 	struct PipelineState;
 	struct RootNode;
+	struct Sampler;
 	struct SamplerDesc;
 	struct SemaphoreWait;
 	struct Texcoord;
 	struct VertexBuffer;
 	struct WriteDescriptorSet;
 
+	class Buffer;
 	class ContextResourcesCache;
 	class Exception;
 	class Fence;
 	class FrameGraph;
 	class FramePassTimer;
 	class GraphVisitor;
+	class Image;
 	class ImageCopy;
 	class PipelinePass;
 	class RecordContext;
@@ -91,6 +94,32 @@ namespace crg
 	using DependencyCache = std::unordered_map< size_t, bool >;
 	using PassDependencyCache = std::unordered_map< FramePass const *, DependencyCache >;
 	using DeviceSize = VkDeviceSize;
+
+	struct BufferMemory
+	{
+		BufferMemory( VkBuffer buf = {}
+			, VkDeviceMemory mem = {} )noexcept
+			: buffer{ buf }
+			, memory{ mem }
+		{
+		}
+
+		VkBuffer buffer{};
+		VkDeviceMemory memory{};
+	};
+
+	struct ImageMemory
+	{
+		ImageMemory( VkImage img = {}
+			, VkDeviceMemory mem = {} )noexcept
+			: image{ img }
+			, memory{ mem }
+		{
+		}
+
+		VkImage image{};
+		VkDeviceMemory memory{};
+	};
 
 	using AttachmentPtr = std::unique_ptr< Attachment >;
 	using FramePassPtr = std::unique_ptr< FramePass >;
@@ -127,19 +156,8 @@ namespace crg
 	using GraphNodePtrArray = std::vector< GraphNodePtr >;
 	using WriteDescriptorSetArray = std::vector< WriteDescriptorSet >;
 	using AttachmentsNodeMap = std::map< ConstGraphAdjacentNode, AttachmentTransitions >;
-	using BufferMemoryMap = std::map< BufferId, std::pair< VkBuffer, VkDeviceMemory > >;
-	using BufferViewMap = std::map< BufferViewId, VkBufferView >;
-	using ImageMemoryMap = std::map< ImageId, std::pair< VkImage, VkDeviceMemory > >;
-	using ImageViewMap = std::map< ImageViewId, VkImageView >;
 	using ImageViewIdArray = std::vector< ImageViewId >;
 	using SemaphoreWaitArray = std::vector< SemaphoreWait >;
-
-	template< typename DataT >
-	using IdDataOwnerCont = std::map< Id< DataT >, std::unique_ptr< DataT > >;
-	using BufferIdDataOwnerCont = IdDataOwnerCont< BufferData >;
-	using BufferViewIdDataOwnerCont = IdDataOwnerCont< BufferViewData >;
-	using ImageIdDataOwnerCont = IdDataOwnerCont< ImageData >;
-	using ImageViewIdDataOwnerCont = IdDataOwnerCont< ImageViewData >;
 
 	using VkAttachmentDescriptionArray = std::vector< VkAttachmentDescription >;
 	using VkAttachmentReferenceArray = std::vector< VkAttachmentReference >;

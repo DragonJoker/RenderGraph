@@ -54,6 +54,11 @@ namespace crg
 			}
 		}
 
+		uint32_t getDescriptorCount( Attachment const & attach )
+		{
+			return attach.isBuffer() ? attach.buffer().data->buffer.data->maxPages : 1u;
+		}
+
 		static void createDescriptorBindings( std::map< uint32_t, Attachment const * > const & attaches
 			, VkShaderStageFlags shaderStage
 			, RunnableGraph const & graph
@@ -64,7 +69,7 @@ namespace crg
 				if ( isDescriptor( *attach ) )
 					descriptorBindings.push_back( { binding
 						, graph.getDescriptorType( *attach )
-						, 1u, shaderStage, nullptr } );
+						, getDescriptorCount( *attach ), shaderStage, nullptr } );
 			}
 		}
 	}

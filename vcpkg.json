@@ -1,8 +1,8 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "rendergraph",
-  "version": "1.4.1",
-  "builtin-baseline": "e140b1fde236eb682b0d47f905e65008a191800f",
+  "version": "2.1.0",
+  "builtin-baseline": "c3867e714dd3a51c272826eea77267876517ed99",
   "dependencies": [
     "vulkan-headers"
   ],

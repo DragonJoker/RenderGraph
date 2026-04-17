@@ -50,16 +50,16 @@ namespace crg
 		{
 			auto srcAttach{ srcIt->second->view( index ) };
 			auto dstAttach{ dstIt->second->view( index ) };
-			auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
-			auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
+			auto srcImage{ &getGraph().createImage( srcAttach.data->image ) };
+			auto dstImage{ &getGraph().createImage( dstAttach.data->image ) };
 			VkImageBlit blitRegion{ getSubresourceLayers( getSubresourceRange( srcAttach ) )
 				, { m_srcOffset, VkOffset3D{ int32_t( m_srcSize.width ), int32_t( m_srcSize.height ), int32_t( m_srcSize.depth ) } }
 				, getSubresourceLayers( getSubresourceRange( dstAttach ) )
 				, { m_dstOffset, VkOffset3D{ int32_t( m_dstSize.width ), int32_t( m_dstSize.height ), int32_t( m_dstSize.depth ) } } };
 			context->vkCmdBlitImage( commandBuffer
-				, srcImage
+				, srcImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, dstImage
+				, dstImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, 1u
 				, &blitRegion

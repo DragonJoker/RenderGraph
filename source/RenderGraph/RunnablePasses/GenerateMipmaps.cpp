@@ -53,7 +53,7 @@ namespace crg
 		, ImageViewId viewId )const
 	{
 		auto imageId{ viewId.data->image };
-		auto image{ getGraph().createImage( imageId ) };
+		auto image{ &getGraph().createImage( imageId ) };
 		auto extent = getExtent( imageId );
 		auto format = getFormat( imageId );
 		auto baseArrayLayer = getSubresourceRange( viewId ).baseArrayLayer;
@@ -122,9 +122,9 @@ namespace crg
 
 				// Perform blit
 				context->vkCmdBlitImage( commandBuffer 
-					, image
+					, image->getImage()
 					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-					, image
+					, image->getImage()
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, 1u
 					, &imageBlit

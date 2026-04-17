@@ -4,6 +4,8 @@ See LICENSE file in root folder.
 */
 #include "RenderGraph/RunnablePasses/RenderMeshHolder.hpp"
 
+#include "RenderGraph/Log.hpp"
+
 namespace crg
 {
 	//*********************************************************************************************
@@ -132,16 +134,31 @@ namespace crg
 
 		if ( m_config.vertexBuffer.buffer != BufferViewId{} )
 		{
-			auto vkBuffer = m_graph.createBuffer( m_config.vertexBuffer.buffer.data->buffer );
+			if ( m_config.vertexBuffer.buffer.data->buffer.data->maxPages > 1 )
+			{
+				Logger::logWarning( "RenderMeshHolder - Vertex buffer [" + m_config.vertexBuffer.buffer.data->name + "] has more than one page, only the first one will be used." );
+			}
+
+			auto vkBuffer = m_graph.createBuffer( m_config.vertexBuffer.buffer.data->buffer ).getBuffer();
 			context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u, &vkBuffer, &getSubresourceRange( m_config.vertexBuffer.buffer ).offset );
 		}
 
 		if ( m_config.indirectBuffer != defaultV< IndirectBuffer > )
 		{
-			auto indirectBuffer = m_graph.createBuffer( m_config.indirectBuffer.buffer.data->buffer );
+			if ( m_config.indirectBuffer.buffer.data->buffer.data->maxPages > 1 )
+			{
+				Logger::logWarning( "RenderMeshHolder - Indirect buffer [" + m_config.indirectBuffer.buffer.data->name + "] has more than one page, only the first one will be used." );
+			}
+
+			auto indirectBuffer = m_graph.createBuffer( m_config.indirectBuffer.buffer.data->buffer ).getBuffer();
 			if ( m_config.indexBuffer != defaultV< IndexBuffer > )
 			{
-				auto indexBuffer = m_graph.createBuffer( m_config.indexBuffer.buffer.data->buffer );
+				if ( m_config.indexBuffer.buffer.data->buffer.data->maxPages > 1 )
+				{
+					Logger::logWarning( "RenderMeshHolder - Index buffer [" + m_config.indexBuffer.buffer.data->name + "] has more than one page, only the first one will be used." );
+				}
+
+				auto indexBuffer = m_graph.createBuffer( m_config.indexBuffer.buffer.data->buffer ).getBuffer();
 				context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, getSubresourceRange( m_config.indexBuffer.buffer ).offset, m_config.getIndexType() );
 				context->vkCmdDrawIndexedIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_config.indirectBuffer.buffer ).offset, 1u, m_config.indirectBuffer.stride );
 			}
@@ -152,7 +169,12 @@ namespace crg
 		}
 		else if ( m_config.indexBuffer != defaultV< IndexBuffer > )
 		{
-			auto indexBuffer = m_graph.createBuffer( m_config.indexBuffer.buffer.data->buffer );
+			if ( m_config.indexBuffer.buffer.data->buffer.data->maxPages > 1 )
+			{
+				Logger::logWarning( "RenderMeshHolder - Index buffer [" + m_config.indexBuffer.buffer.data->name + "] has more than one page, only the first one will be used." );
+			}
+
+			auto indexBuffer = m_graph.createBuffer( m_config.indexBuffer.buffer.data->buffer ).getBuffer();
 			context->vkCmdBindIndexBuffer( commandBuffer, indexBuffer, getSubresourceRange( m_config.indexBuffer.buffer ).offset, m_config.getIndexType() );
 			context->vkCmdDrawIndexed( commandBuffer, m_config.getPrimitiveCount(), 1u, 0u, 0u, 0u );
 		}

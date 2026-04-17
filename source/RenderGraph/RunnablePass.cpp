@@ -136,7 +136,7 @@ namespace crg
 					{
 						VkClearColorValue colour{};
 						recordContext->vkCmdClearColorImage( commandBuffer
-							, graph.createImage( view.data->image )
+							, graph.createImage( view.data->image ).getImage()
 							, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 							, &colour
 							, 1u, &subresourceRange );
@@ -145,7 +145,7 @@ namespace crg
 					{
 						VkClearDepthStencilValue depthStencil{};
 						recordContext->vkCmdClearDepthStencilImage( commandBuffer
-							, graph.createImage( view.data->image )
+							, graph.createImage( view.data->image ).getImage()
 							, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 							, &depthStencil
 							, 1u, &subresourceRange );
@@ -183,7 +183,7 @@ namespace crg
 			if ( !attach.isNoTransition()
 				&& ( attach.isStorageBuffer() || attach.isTransferBuffer() || attach.isTransitionBuffer() ) )
 			{
-				auto buffer = view.data->buffer;
+				auto bufferId = view.data->buffer;
 				auto & range = getSubresourceRange( view );
 				auto currentState = recordContext.getAccessState( view );
 
@@ -196,15 +196,27 @@ namespace crg
 					}
 
 					recordContext.memoryBarrier( commandBuffer
-						, buffer
+						, bufferId
 						, range
 						, currentState
 						, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
-					recordContext->vkCmdFillBuffer( commandBuffer
-						, graph.createBuffer( buffer )
-						, range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u )
-						, range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u )
-						, 0u );
+					auto [pageMin, pageCount] = getBufferPageRange( bufferId, range );
+					auto pageSize = details::getAlignedSize( bufferId.data->info.size, 4u );
+					auto offset = range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u );
+					auto remainingSize = range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u );
+					auto buffer = &graph.createBuffer( bufferId );
+
+					for ( uint32_t pageIndex = pageMin; pageIndex < std::min( pageMin + pageCount, buffer->getAllocatedPageCount() ); ++pageIndex )
+					{
+						auto currentPageSize = range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : std::min( pageSize - offset, remainingSize );
+						recordContext->vkCmdFillBuffer( commandBuffer
+							, buffer->getBuffer( pageIndex )
+							, 0, currentPageSize
+							, 0u );
+						offset = 0;
+						remainingSize -= ( range.size == VK_WHOLE_SIZE ? 0 : currentPageSize );
+					}
+
 					currentState.access = AccessFlags::eTransferWrite;
 					currentState.pipelineStage = PipelineStageFlags::eTransfer;
 
@@ -215,7 +227,7 @@ namespace crg
 				}
 
 				recordContext.memoryBarrier( commandBuffer
-					, buffer
+					, bufferId
 					, range
 					, currentState
 					, { attach.getAccessMask(), attach.getPipelineStageFlags( isComputePass ) } );

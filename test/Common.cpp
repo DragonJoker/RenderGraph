@@ -72,9 +72,11 @@ namespace test
 		}
 	}
 
-	crg::BufferData createBuffer( std::string name )
+	crg::BufferData createBuffer( std::string name
+		, uint32_t maxPages )
 	{
-		return crg::BufferData{ std::move( name )
+		return crg::BufferData{ maxPages
+			, std::move( name )
 			, crg::BufferCreateFlags::eNone
 			, 1024
 			, ( crg::BufferUsageFlags::eUniformBuffer
@@ -85,11 +87,12 @@ namespace test
 
 	crg::BufferViewData createView( std::string name
 		, crg::BufferId buffer
-		, crg::PixelFormat format )
+		, crg::PixelFormat format
+		, uint32_t pageCount )
 	{
 		return createView( std::move( name )
 			, buffer
-			, 0u, buffer.data->info.size
+			, 0u, buffer.data->info.size * pageCount
 			, format );
 	}
 
@@ -694,6 +697,30 @@ namespace test
 			, crg::PipelineStageFlags pipelineStageFlags
 			, CheckViews checkViews
 			, uint32_t index
+			, bool const * enabled
+			, crg::ru::Config config )
+			: crg::RunnablePass{ framePass
+				, context
+				, runGraph
+				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
+					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } )
+					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } )
+					, crg::RunnablePass::IsEnabledCallback( [enabled](){ return *enabled; } ) }
+				, std::move( config ) }
+			, m_testCounts{ testCounts }
+			, m_pipelineStageFlags{ pipelineStageFlags }
+			, m_checkViews{ std::move( checkViews ) }
+		{
+		}
+
+		DummyRunnable( crg::FramePass const & framePass
+			, crg::GraphContext & context
+			, crg::RunnableGraph & runGraph
+			, test::TestCounts & testCounts
+			, crg::PipelineStageFlags pipelineStageFlags
+			, CheckViews checkViews
+			, uint32_t index
 			, crg::ru::Config config )
 			: crg::RunnablePass{ framePass
 				, context
@@ -876,6 +903,27 @@ namespace test
 		, CheckViews checkViews
 		, uint32_t index
 		, bool enabled
+		, crg::ru::Config config )
+	{
+		return std::make_unique< DummyRunnable >( framePass
+			, context
+			, runGraph
+			, testCounts
+			, pipelineStageFlags
+			, checkViews
+			, index
+			, enabled
+			, std::move( config ) );
+	}
+
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, crg::PipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, uint32_t index
+		, bool const * enabled
 		, crg::ru::Config config )
 	{
 		return std::make_unique< DummyRunnable >( framePass

@@ -81,8 +81,8 @@ namespace crg
 		{
 			auto srcAttach{ srcIt->second->view( index ) };
 			auto dstAttach{ dstIt->second->view( index ) };
-			auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
-			auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
+			auto srcImage{ &getGraph().createImage( srcAttach.data->image ) };
+			auto dstImage{ &getGraph().createImage( dstAttach.data->image ) };
 			// Copy source to target.
 			VkImageCopy copyRegion{ getSubresourceLayers( getSubresourceRange( srcAttach ) )
 				, {}
@@ -90,9 +90,9 @@ namespace crg
 				, {}
 			, m_copySize };
 			context->vkCmdCopyImage( commandBuffer
-				, srcImage
+				, srcImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, dstImage
+				, dstImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, 1u
 				, &copyRegion );
@@ -116,21 +116,21 @@ namespace crg
 		std::vector< VkImageCopy > copyRegions;
 		auto dstIt = getPass().getOutputs().begin();
 		auto dstAttach{ dstIt->second->view( index ) };
-		auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
+		auto dstImage{ &getGraph().createImage( dstAttach.data->image ) };
 		auto dstSubresourceRange = getSubresourceLayers( getSubresourceRange( dstAttach ) );
-		auto prvSrcImage{ getGraph().createImage( getPass().getInputs().begin()->second->view( index ).data->image ) };
+		auto prvSrcImage{ &getGraph().createImage( getPass().getInputs().begin()->second->view( index ).data->image ) };
 
 		for ( auto const & [_, attach] : getPass().getInputs() )
 		{
 			auto srcAttach{ attach->view( index ) };
 
-			if ( auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
+			if ( auto srcImage{ &getGraph().createImage( srcAttach.data->image ) };
 				srcImage != prvSrcImage )
 			{
 				context->vkCmdCopyImage( commandBuffer
-					, prvSrcImage
+					, prvSrcImage->getImage()
 					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-					, dstImage
+					, dstImage->getImage()
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, uint32_t( copyRegions.size() )
 					, copyRegions.data() );
@@ -148,9 +148,9 @@ namespace crg
 		if ( !copyRegions.empty() )
 		{
 			context->vkCmdCopyImage( commandBuffer
-				, prvSrcImage
+				, prvSrcImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, dstImage
+				, dstImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, uint32_t( copyRegions.size() )
 				, copyRegions.data() );
@@ -171,21 +171,21 @@ namespace crg
 		std::vector< VkImageCopy > copyRegions;
 		auto srcIt = getPass().getInputs().begin();
 		auto srcAttach{ srcIt->second->view( index ) };
-		auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
+		auto srcImage{ &getGraph().createImage( srcAttach.data->image ) };
 		auto srcSubresourceRange = getSubresourceLayers( getSubresourceRange( srcAttach ) );
-		auto prvDstImage{ getGraph().createImage( getPass().getOutputs().begin()->second->view( index ).data->image ) };
+		auto prvDstImage{ &getGraph().createImage( getPass().getOutputs().begin()->second->view( index ).data->image ) };
 
 		for ( auto const & [_, attach] : getPass().getOutputs() )
 		{
 			auto dstAttach{ attach->view( index ) };
 
-			if ( auto dstImage{ getGraph().createImage( dstAttach.data->image ) };
+			if ( auto dstImage{ &getGraph().createImage( dstAttach.data->image ) };
 				dstImage != prvDstImage )
 			{
 				context->vkCmdCopyImage( commandBuffer
-					, srcImage
+					, srcImage->getImage()
 					, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-					, prvDstImage
+					, prvDstImage->getImage()
 					, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 					, uint32_t( copyRegions.size() )
 					, copyRegions.data() );
@@ -203,9 +203,9 @@ namespace crg
 		if ( !copyRegions.empty() )
 		{
 			context->vkCmdCopyImage( commandBuffer
-				, srcImage
+				, srcImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, prvDstImage
+				, prvDstImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 				, uint32_t( copyRegions.size() )
 				, copyRegions.data() );

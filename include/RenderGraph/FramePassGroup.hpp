@@ -67,21 +67,21 @@ namespace crg
 		CRG_API LayoutState getFinalLayoutState( ImageViewId view
 			, uint32_t passIndex = 0u )const;
 		/**
-		*\copydoc crg::FrameGraph::createBuffer
+		*\copydoc crg::FrameGraph::createBufferId
 		*/
-		CRG_API BufferId createBuffer( BufferData const & img )const;
+		CRG_API BufferId createBufferId( BufferData const & img )const;
 		/**
-		*\copydoc crg::FrameGraph::createView
+		*\copydoc crg::FrameGraph::createViewId
 		*/
-		CRG_API BufferViewId createView( BufferViewData const & view )const;
+		CRG_API BufferViewId createViewId( BufferViewData const & view )const;
 		/**
-		*\copydoc crg::FrameGraph::createImage
+		*\copydoc crg::FrameGraph::createImageId
 		*/
-		CRG_API ImageId createImage( ImageData const & img )const;
+		CRG_API ImageId createImageId( ImageData const & img )const;
 		/**
-		*\copydoc crg::FrameGraph::createView
+		*\copydoc crg::FrameGraph::createViewId
 		*/
-		CRG_API ImageViewId createView( ImageViewData const & view )const;
+		CRG_API ImageViewId createViewId( ImageViewData const & view )const;
 		/**
 		*\copydoc crg::FrameGraph::addInput
 		*/

@@ -9,10 +9,12 @@
 
 namespace test
 {
-	crg::BufferData createBuffer( std::string name );
+	crg::BufferData createBuffer( std::string name
+		, uint32_t maxPages = 1u );
 	crg::BufferViewData createView( std::string name
 		, crg::BufferId buffer
-		, crg::PixelFormat format = crg::PixelFormat::eUNDEFINED );
+		, crg::PixelFormat format = crg::PixelFormat::eUNDEFINED
+		, uint32_t pageCount = 1u );
 	crg::BufferViewData createView( std::string name
 		, crg::BufferId buffer
 		, crg::DeviceSize offset, crg::DeviceSize size
@@ -88,6 +90,15 @@ namespace test
 		, CheckViews checkViews
 		, uint32_t index
 		, bool enabled
+		, crg::ru::Config config = {} );
+	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
+		, crg::FramePass const & framePass
+		, crg::GraphContext & context
+		, crg::RunnableGraph & runGraph
+		, crg::PipelineStageFlags pipelineStageFlags
+		, CheckViews checkViews
+		, uint32_t index
+		, bool const * enabled
 		, crg::ru::Config config = {} );
 	crg::RunnablePassPtr createDummy( test::TestCounts & testCounts
 		, crg::FramePass const & framePass

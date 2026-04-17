@@ -3,7 +3,8 @@ See LICENSE file in root folder.
 */
 #pragma once
 
-#include "RenderGraph/FrameGraphPrerequisites.hpp"
+#include "RenderGraph/BufferData.hpp"
+#include "RenderGraph/ImageData.hpp"
 
 #pragma warning( push )
 #pragma warning( disable: 4365 )
@@ -21,14 +22,120 @@ namespace crg
 		std::string name;
 	};
 
+	class Buffer
+	{
+		friend class ResourceHandler;
+
+	public:
+		Buffer( Buffer const & ) = delete;
+		Buffer( Buffer && )noexcept = delete;
+		Buffer & operator=( Buffer const & ) = delete;
+		Buffer & operator=( Buffer && )noexcept = delete;
+		~Buffer()noexcept = default;
+
+		CRG_API Buffer( ResourceHandler & handler
+			, GraphContext & context
+			, BufferId bufferId
+			, BufferMemory firstPage )noexcept;
+
+		CRG_API DeviceSize getPageSize()const noexcept;
+		CRG_API DeviceSize getMaxSize()const noexcept;
+		CRG_API DeviceSize getAllocatedSize()const noexcept;
+		CRG_API uint32_t getAllocatedPageCount()const noexcept;
+		CRG_API uint32_t getMaxPageCount()const noexcept;
+		CRG_API void resize( DeviceSize newSize );
+		CRG_API void update();
+
+		VkBuffer getBuffer( uint32_t pageIndex = 0u )const noexcept
+		{
+			return m_pages[pageIndex].buffer;
+		}
+
+		BufferMemory getPage( uint32_t pageIndex = 0u )const noexcept
+		{
+			return m_pages[pageIndex];
+		}
+
+		BufferId getBufferId()const noexcept
+		{
+			return m_bufferId;
+		}
+
+	private:
+		friend bool operator==( Buffer const & lhs, Buffer const & rhs ) = default;
+
+	private:
+		ResourceHandler * m_handler{};
+		GraphContext * m_context{};
+		BufferId m_bufferId{};
+		std::vector< BufferMemory > m_pages;
+		DeviceSize m_neededSize{};
+	};
+
+	class Image
+	{
+	public:
+		Image( Image const & ) = delete;
+		Image( Image && )noexcept = delete;
+		Image & operator=( Image const & ) = delete;
+		Image & operator=( Image && )noexcept = delete;
+		~Image()noexcept = default;
+
+		CRG_API Image( ResourceHandler & handler
+			, GraphContext & context
+			, ImageId imageId
+			, ImageMemory imageMemory );
+
+		VkImage getImage()const noexcept
+		{
+			return m_imageMemory.image;
+		}
+
+		VkDeviceMemory getMemory()const noexcept
+		{
+			return m_imageMemory.memory;
+		}
+
+		ImageId getImageId()const noexcept
+		{
+			return m_imageId;
+		}
+
+	private:
+		friend bool operator==( Image const & lhs, Image const & rhs ) = default;
+
+	private:
+		ResourceHandler * m_handler{};
+		GraphContext * m_context{};
+		ImageId m_imageId{};
+		ImageMemory m_imageMemory{};
+	};
+
 	class ResourceHandler
 	{
+	private:
+		friend class Buffer;
+
+		template< typename DataT >
+		using IdDataOwnerCont = std::map< Id< DataT >, std::unique_ptr< DataT > >;
+
+		using BufferIdDataOwnerCont = IdDataOwnerCont< BufferData >;
+		using BufferViewIdDataOwnerCont = IdDataOwnerCont< BufferViewData >;
+		using BufferPtr = std::unique_ptr< Buffer >;
+		using BufferMap = std::map< BufferId, BufferPtr >;
+		using BufferViewMap = std::map< BufferViewId, VkBufferView >;
+
+		using ImageIdDataOwnerCont = IdDataOwnerCont< ImageData >;
+		using ImageViewIdDataOwnerCont = IdDataOwnerCont< ImageViewData >;
+		using ImagePtr = std::unique_ptr< Image >;
+		using ImageMap = std::map< ImageId, ImagePtr >;
+		using ImageViewMap = std::map< ImageViewId, VkImageView >;
+
 		template< typename ValueT >
 		struct CreatedT
 		{
 			bool created{};
-			ValueT resource{};
-			VkDeviceMemory memory{};
+			ValueT * resource{};
 		};
 
 		template< typename ValueT >
@@ -51,11 +158,11 @@ namespace crg
 		CRG_API ImageId createImageId( ImageData const & img );
 		CRG_API ImageViewId createViewId( ImageViewData const & view );
 
-		CRG_API CreatedT< VkBuffer > createBuffer( GraphContext & context
+		CRG_API CreatedT< Buffer > createBuffer( GraphContext & context
 			, BufferId bufferId );
 		CRG_API CreatedViewT< VkBufferView > createBufferView( GraphContext & context
 			, BufferViewId viewId );
-		CRG_API CreatedT< VkImage > createImage( GraphContext & context
+		CRG_API CreatedT< Image > createImage( GraphContext & context
 			, ImageId imageId );
 		CRG_API CreatedViewT< VkImageView > createImageView( GraphContext & context
 			, ImageViewId viewId );
@@ -79,27 +186,38 @@ namespace crg
 		CRG_API void destroyVertexBuffer( GraphContext & context
 			, VertexBuffer const * buffer );
 
+		std::vector< Buffer * > const & getPagedBuffers()const noexcept
+		{
+			return m_pagedBuffers;
+		}
+
 	private:
+		BufferMemory createBufferMemory( GraphContext & context, BufferId bufferId );
+		ImageMemory createImageMemory( GraphContext & context, ImageId imageId );
+
 		mutable std::mutex m_buffersMutex;
 		BufferIdDataOwnerCont m_bufferIds;
 		mutable std::mutex m_bufferViewsMutex;
 		BufferViewIdDataOwnerCont m_bufferViewIds;
-		BufferMemoryMap m_buffers;
+		BufferMap m_buffers;
 		BufferViewMap m_bufferViews;
 		mutable std::mutex m_imagesMutex;
 		ImageIdDataOwnerCont m_imageIds;
 		mutable std::mutex m_imageViewsMutex;
 		ImageViewIdDataOwnerCont m_imageViewIds;
-		ImageMemoryMap m_images;
+		ImageMap m_images;
 		ImageViewMap m_imageViews;
 		std::mutex m_samplersMutex;
 		std::unordered_map< VkSampler, Sampler > m_samplers;
 		std::mutex m_vertexBuffersMutex;
 		std::unordered_set< VertexBufferPtr > m_vertexBuffers;
+		std::vector< Buffer * > m_pagedBuffers;
 	};
 
 	class ContextResourcesCache
 	{
+		friend class Buffer;
+
 	public:
 		ContextResourcesCache( ContextResourcesCache const & ) = delete;
 		ContextResourcesCache & operator=( ContextResourcesCache const & ) = delete;
@@ -110,15 +228,15 @@ namespace crg
 			, GraphContext & context );
 		CRG_API ~ContextResourcesCache()noexcept;
 
-		CRG_API VkBuffer createBuffer( BufferId const & bufferId );
-		CRG_API VkBuffer createBuffer( BufferId const & bufferId, VkDeviceMemory & memory );
+		CRG_API Buffer & createBuffer( BufferId const & bufferId );
 		CRG_API VkBufferView createBufferView( BufferViewId const & viewId );
-		CRG_API bool destroyBuffer( BufferId const & imageId );
+		CRG_API bool destroyBuffer( Buffer const & buffer );
+		CRG_API bool destroyBuffer( BufferId const & bufferId );
 		CRG_API bool destroyBufferView( BufferViewId const & viewId );
 
-		CRG_API VkImage createImage( ImageId const & imageId );
-		CRG_API VkImage createImage( ImageId const & imageId, VkDeviceMemory & memory );
+		CRG_API Image & createImage( ImageId const & imageId );
 		CRG_API VkImageView createImageView( ImageViewId const & viewId );
+		CRG_API bool destroyImage( Image const & image );
 		CRG_API bool destroyImage( ImageId const & imageId );
 		CRG_API bool destroyImageView( ImageViewId const & viewId );
 
@@ -142,16 +260,16 @@ namespace crg
 		}
 
 	private:
-		using VkBufferIdMap = std::map< BufferId, VkBuffer >;
+		using BufferIdMap = std::map< BufferId, Buffer * >;
 		using VkBufferViewIdMap = std::map< BufferViewId, VkBufferView >;
-		using VkImageIdMap = std::map< ImageId, VkImage >;
+		using ImageIdMap = std::map< ImageId, Image * >;
 		using VkImageViewIdMap = std::map< ImageViewId, VkImageView >;
 
 		ResourceHandler & m_handler;
 		GraphContext & m_context;
-		VkBufferIdMap m_buffers;
+		BufferIdMap m_buffers;
 		VkBufferViewIdMap m_bufferViews;
-		VkImageIdMap m_images;
+		ImageIdMap m_images;
 		VkImageViewIdMap m_imageViews;
 		std::unordered_map< size_t, VkSampler > m_samplers;
 		std::unordered_map< size_t, VertexBuffer const * > m_vertexBuffers;
@@ -162,11 +280,10 @@ namespace crg
 	public:
 		CRG_API explicit ResourcesCache( ResourceHandler & handler );
 
-		CRG_API VkBuffer createBuffer( GraphContext & context
+		CRG_API void destroyContext( GraphContext & context );
+
+		CRG_API Buffer & createBuffer( GraphContext & context
 			, BufferId const & bufferId );
-		CRG_API VkBuffer createBuffer( GraphContext & context
-			, BufferId const & bufferId
-			, VkDeviceMemory & memory );
 		CRG_API VkBufferView createBufferView( GraphContext & context
 			, BufferViewId const & viewId );
 		CRG_API bool destroyBuffer( BufferId const & bufferId );
@@ -176,11 +293,8 @@ namespace crg
 		CRG_API bool destroyBufferView( GraphContext & context
 			, BufferViewId const & viewId );
 
-		CRG_API VkImage createImage( GraphContext & context
+		CRG_API Image & createImage( GraphContext & context
 			, ImageId const & imageId );
-		CRG_API VkImage createImage( GraphContext & context
-			, ImageId const & imageId
-			, VkDeviceMemory & memory );
 		CRG_API VkImageView createImageView( GraphContext & context
 			, ImageViewId const & viewId );
 		CRG_API bool destroyImage( ImageId const & imageId );

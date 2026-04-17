@@ -488,7 +488,7 @@ namespace crg
 
 	DeviceSize getSize( BufferId const & buffer )noexcept
 	{
-		return buffer.data->info.size;
+		return buffer.data->info.size * buffer.data->allocatedPages;
 	}
 
 	DeviceSize getSize( BufferViewId const & buffer )noexcept
@@ -563,6 +563,18 @@ namespace crg
 	BufferSubresourceRange const & getSubresourceRange( BufferViewId const & buffer )noexcept
 	{
 		return buffer.data->info.subresourceRange;
+	}
+
+	std::pair< uint32_t, uint32_t > getBufferPageRange( BufferId bufferId, BufferSubresourceRange const & range )
+	{
+		auto pageSize = bufferId.data->info.size;
+		auto basePage = uint32_t( range.offset / pageSize );
+
+		if ( range.size == VK_WHOLE_SIZE )
+			return { basePage, bufferId.data->allocatedPages - basePage };
+
+		auto pageCount = uint32_t( ( range.offset + range.size + pageSize - 1 ) / pageSize ) - basePage;
+		return { basePage, pageCount };
 	}
 
 	AccessFlags getAccessMask( ImageLayout layout )noexcept

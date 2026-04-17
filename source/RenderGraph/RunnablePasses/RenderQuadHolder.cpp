@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/RenderQuadHolder.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Log.hpp"
 
 namespace crg
 {
@@ -133,14 +134,19 @@ namespace crg
 
 		if ( m_vertexBuffer )
 		{
-			auto vkBuffer = m_graph.createBuffer( m_vertexBuffer->buffer.data->buffer );
+			auto vkBuffer = m_graph.createBuffer( m_vertexBuffer->buffer.data->buffer ).getBuffer();
 			context->vkCmdBindVertexBuffers( commandBuffer, 0u, 1u
 				, &vkBuffer, &getSubresourceRange( m_vertexBuffer->buffer ).offset );
 		}
 
 		if ( m_config.indirectBuffer != defaultV< IndirectBuffer > )
 		{
-			auto indirectBuffer = m_graph.createBuffer( m_config.indirectBuffer.buffer.data->buffer );
+			if ( m_config.indirectBuffer.buffer.data->buffer.data->maxPages > 1 )
+			{
+				Logger::logWarning( "RenderQuadHolder - Indirect buffer [" + m_config.indirectBuffer.buffer.data->name + "] has more than one page, only the first one will be used." );
+			}
+
+			auto indirectBuffer = m_graph.createBuffer( m_config.indirectBuffer.buffer.data->buffer ).getBuffer();
 			context->vkCmdDrawIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_config.indirectBuffer.buffer ).offset, 1u, m_config.indirectBuffer.stride );
 		}
 		else

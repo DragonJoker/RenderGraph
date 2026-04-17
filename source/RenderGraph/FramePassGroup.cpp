@@ -142,24 +142,24 @@ namespace crg
 		return m_graph.getFinalLayoutState( view, passIndex );
 	}
 
-	BufferId FramePassGroup::createBuffer( BufferData const & img )const
+	BufferId FramePassGroup::createBufferId( BufferData const & img )const
 	{
-		return m_graph.createBuffer( img );
+		return m_graph.createBufferId( img );
 	}
 
-	BufferViewId FramePassGroup::createView( BufferViewData const & view )const
+	BufferViewId FramePassGroup::createViewId( BufferViewData const & view )const
 	{
-		return m_graph.createView( view );
+		return m_graph.createViewId( view );
 	}
 
-	ImageId FramePassGroup::createImage( ImageData const & img )const
+	ImageId FramePassGroup::createImageId( ImageData const & img )const
 	{
-		return m_graph.createImage( img );
+		return m_graph.createImageId( img );
 	}
 
-	ImageViewId FramePassGroup::createView( ImageViewData const & view )const
+	ImageViewId FramePassGroup::createViewId( ImageViewData const & view )const
 	{
-		return m_graph.createView( view );
+		return m_graph.createViewId( view );
 	}
 
 	void FramePassGroup::addInput( ImageId image

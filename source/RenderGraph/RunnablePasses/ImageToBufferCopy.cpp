@@ -5,6 +5,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/ImageToBufferCopy.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -31,12 +32,21 @@ namespace crg
 		, m_copyOffset{ convert( copyOffset ) }
 		, m_copySize{ convert( copySize ) }
 	{
+		if ( getPass().getInputs().size() != getPass().getOutputs().size() )
+		{
+			Logger::logError( "BufferCopy - Inputs and outputs sizes are different." );
+		}
 	}
 
 	void ImageToBufferCopy::doRecordInto( RecordContext const & context
 		, VkCommandBuffer commandBuffer
 		, uint32_t index )const
 	{
+		if ( getPass().getInputs().size() != getPass().getOutputs().size() )
+		{
+			return;
+		}
+
 		auto srcIt = getPass().getInputs().begin();
 		auto dstIt = getPass().getOutputs().begin();
 
@@ -45,8 +55,14 @@ namespace crg
 		{
 			auto srcAttach{ srcIt->second->view( index ) };
 			auto dstAttach{ dstIt->second->buffer( index ) };
-			auto srcImage{ getGraph().createImage( srcAttach.data->image ) };
-			auto dstBuffer{ getGraph().createBuffer( dstAttach.data->buffer ) };
+			auto srcImage{ &getGraph().createImage( srcAttach.data->image ) };
+			auto dstBuffer{ &getGraph().createBuffer( dstAttach.data->buffer ) };
+
+			if ( dstAttach.data->buffer.data->maxPages > 1 )
+			{
+				Logger::logWarning( "ImageToBufferCopy - Destination buffer [" + dstAttach.data->name + "] has more than one page, only the first one will be used." );
+			}
+
 			// Copy source to target.
 			auto range = getSubresourceLayers( getSubresourceRange( srcAttach ) );
 			VkBufferImageCopy copyRegion{ 0ULL
@@ -56,9 +72,9 @@ namespace crg
 				, m_copyOffset
 				, m_copySize };
 			context->vkCmdCopyImageToBuffer( commandBuffer
-				, srcImage
+				, srcImage->getImage()
 				, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-				, dstBuffer
+				, dstBuffer->getBuffer()
 				, 1u
 				, &copyRegion );
 			++srcIt;
