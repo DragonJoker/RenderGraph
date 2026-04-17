@@ -375,7 +375,7 @@ namespace crg
 				, convert( wantedState.layout )
 				, VK_QUEUE_FAMILY_IGNORED
 				, VK_QUEUE_FAMILY_IGNORED
-				, resources.createImage( image )
+				, resources.createImage( image ).getImage()
 				, convert( range ) };
 
 			if ( m_isBatching )
@@ -463,13 +463,13 @@ namespace crg
 	}
 
 	void RecordContext::memoryBarrier( VkCommandBuffer commandBuffer
-		, BufferId buffer
+		, BufferId bufferId
 		, BufferSubresourceRange const & subresourceRange
 		, AccessState const & initialState
 		, AccessState const & wantedState
 		, bool force )
 	{
-		auto from = getAccessState( buffer
+		auto from = getAccessState( bufferId
 			, subresourceRange );
 
 		if ( checkFlag( from.pipelineStage, PipelineStageFlags::eBottomOfPipe ) )
@@ -482,37 +482,48 @@ namespace crg
 				|| from.pipelineStage != wantedState.pipelineStage ) )
 		{
 			auto & resources = getResources();
-			VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
-				, nullptr
-				, getAccessFlags( from.access )
-				, getAccessFlags( wantedState.access )
-				, VK_QUEUE_FAMILY_IGNORED
-				, VK_QUEUE_FAMILY_IGNORED
-				, resources.createBuffer( buffer )
-				, subresourceRange.offset
-				, subresourceRange.size };
+			auto buffer = &resources.createBuffer( bufferId );
+			auto [pageMin, pageCount] = getBufferPageRange( bufferId, subresourceRange );
+			auto offset = subresourceRange.offset - pageMin * buffer->getPageSize();
+			auto size = subresourceRange.size;
 
-			if ( m_isBatching )
+			for ( uint32_t pageIndex = pageMin; pageIndex < std::min( pageMin + pageCount, buffer->getAllocatedPageCount() ); ++pageIndex )
 			{
-				m_batchedBufferBarriers.push_back( barrier );
-				m_batchSrcStages |= getPipelineStageFlags( from.pipelineStage );
-				m_batchDstStages |= getPipelineStageFlags( wantedState.pipelineStage );
-			}
-			else
-			{
-				resources->vkCmdPipelineBarrier( commandBuffer
-					, getPipelineStageFlags( from.pipelineStage )
-					, getPipelineStageFlags( wantedState.pipelineStage )
-					, VK_DEPENDENCY_BY_REGION_BIT
-					, 0u
+				auto actualSize = std::min( size, buffer->getPageSize() - offset );
+				VkBufferMemoryBarrier barrier{ VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER
 					, nullptr
-					, 1u
-					, &barrier
-					, 0u
-					, nullptr );
+					, getAccessFlags( from.access )
+					, getAccessFlags( wantedState.access )
+					, VK_QUEUE_FAMILY_IGNORED
+					, VK_QUEUE_FAMILY_IGNORED
+					, buffer->getBuffer( pageIndex )
+					, offset
+					, actualSize };
+				size -= actualSize;
+				offset = 0u;
+
+				if ( m_isBatching )
+				{
+					m_batchedBufferBarriers.push_back( barrier );
+					m_batchSrcStages |= getPipelineStageFlags( from.pipelineStage );
+					m_batchDstStages |= getPipelineStageFlags( wantedState.pipelineStage );
+				}
+				else
+				{
+					resources->vkCmdPipelineBarrier( commandBuffer
+						, getPipelineStageFlags( from.pipelineStage )
+						, getPipelineStageFlags( wantedState.pipelineStage )
+						, VK_DEPENDENCY_BY_REGION_BIT
+						, 0u
+						, nullptr
+						, 1u
+						, &barrier
+						, 0u
+						, nullptr );
+				}
 			}
 
-			setAccessState( buffer
+			setAccessState( bufferId
 				, subresourceRange
 				, wantedState );
 		}
@@ -577,8 +588,8 @@ namespace crg
 		memoryBarrier( commandBuffer, dstView, makeLayoutState( ImageLayout::eTransferDst ) );
 		auto & resources = getResources();
 		resources->vkCmdCopyImage( commandBuffer
-			, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, resources.createImage( srcView.data->image ).getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			, resources.createImage( dstView.data->image ).getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, 1u, &region );
 
 		if ( finalLayout != ImageLayout::eUndefined )
@@ -603,8 +614,8 @@ namespace crg
 		VkImageBlit region{ getSubresourceLayer( srcSubresource ), { VkOffset3D{ srcRect.offset.x, srcRect.offset.y, 0u }, VkOffset3D{ int32_t( srcRect.extent.width ), int32_t( srcRect.extent.height ), 1 } }
 			, getSubresourceLayer( dstSubresource ), { VkOffset3D{ dstRect.offset.x, dstRect.offset.y, 0u }, VkOffset3D{ int32_t( dstRect.extent.width ), int32_t( dstRect.extent.height ), 1 } } };
 		resources->vkCmdBlitImage( commandBuffer
-			, resources.createImage( srcView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
-			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, resources.createImage( srcView.data->image ).getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+			, resources.createImage( dstView.data->image ).getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, 1u, &region, convert( filter ) );
 
 		if ( finalLayout != ImageLayout::eUndefined )
@@ -622,7 +633,7 @@ namespace crg
 		assert( isColourFormat( getFormat( dstView ) ) );
 		auto vkClearValue = convert( clearValue );
 		resources->vkCmdClearColorImage( commandBuffer
-			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, resources.createImage( dstView.data->image ).getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, &vkClearValue, 1u, &subresourceRange );
 
 		if ( finalLayout != ImageLayout::eUndefined )
@@ -640,7 +651,7 @@ namespace crg
 		assert( isDepthOrStencilFormat( getFormat( dstView ) ) );
 		auto vkClearValue = convert( clearValue );
 		resources->vkCmdClearDepthStencilImage( commandBuffer
-			, resources.createImage( dstView.data->image ), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+			, resources.createImage( dstView.data->image ).getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
 			, &vkClearValue, 1u, &subresourceRange );
 
 		if ( finalLayout != ImageLayout::eUndefined )
@@ -659,10 +670,25 @@ namespace crg
 		memoryBarrier( commandBuffer, srcView, { AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
 		memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
 		auto & resources = getResources();
-		VkBufferCopy region{ srcOffset, dstOffset, size };
+		auto srcSubresourceRange = getSubresourceRange( dstView );
+		auto dstSubresourceRange = getSubresourceRange( dstView );
+		auto [srcPageMin, srcPageCount] = getBufferPageRange( srcView.data->buffer, { srcOffset, size } );
+		auto [dstPageMin, dstPageCount] = getBufferPageRange( dstView.data->buffer, { dstOffset, size } );
+
+		if ( srcPageCount > 1 || dstPageCount > 1 )
+		{
+			Logger::logError( "RecordContext::copyBuffer - Source [" + srcView.data->name + "] or destination [" + dstView.data->name + "] buffer views have more than one page, this is currently unsupported." );
+			return;
+		}
+
+		auto srcPageSize = srcView.data->buffer.data->info.size;
+		auto dstPageSize = dstView.data->buffer.data->info.size;
+		auto srcBuffer = &resources.createBuffer( srcView.data->buffer );
+		auto dstBuffer = &resources.createBuffer( dstView.data->buffer );
+		VkBufferCopy region{ srcOffset - srcPageMin * srcPageSize, dstOffset - dstPageMin * dstPageSize, size };
 		resources->vkCmdCopyBuffer( commandBuffer
-			, resources.createBuffer( srcView.data->buffer )
-			, resources.createBuffer( dstView.data->buffer )
+			, srcBuffer->getBuffer( srcPageMin )
+			, dstBuffer->getBuffer( dstPageMin )
 			, 1u, &region );
 
 		if ( finalState != AccessState{} )
@@ -677,10 +703,21 @@ namespace crg
 		auto & resources = getResources();
 		memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
 		auto subresourceRange = getSubresourceRange( dstView );
-		resources->vkCmdFillBuffer( commandBuffer
-			, resources.createBuffer( dstView.data->buffer )
-			, subresourceRange.offset, subresourceRange.size
-			, clearValue );
+		auto [dstPageMin, dstPageCount] = getBufferPageRange( dstView.data->buffer, subresourceRange );
+		auto remainingSize = subresourceRange.size;
+		auto pageSize = dstView.data->buffer.data->info.size;
+		auto buffer = &resources.createBuffer( dstView.data->buffer );
+
+		for ( uint32_t pageIndex = dstPageMin; pageIndex < dstPageMin + dstPageCount; ++pageIndex )
+		{
+			auto currentPageSize = std::min( pageSize - subresourceRange.offset, remainingSize );
+			resources->vkCmdFillBuffer( commandBuffer
+				, buffer->getBuffer( pageIndex )
+				, subresourceRange.offset, currentPageSize
+				, clearValue );
+			subresourceRange.offset = 0u;
+			remainingSize -= currentPageSize;
+		}
 
 		if ( finalState != AccessState{} )
 			memoryBarrier( commandBuffer, dstView, finalState );

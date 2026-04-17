@@ -16,14 +16,27 @@ namespace crg
 	{
 		std::string name;
 		BufferCreateInfo info;
+		uint32_t maxPages{ 1u };
+		uint32_t allocatedPages{};
+
+		explicit BufferData( std::string name = {}
+			, BufferCreateFlags flags = {}
+			, DeviceSize size = {}
+			, uint32_t maxPages = 1u
+			, BufferUsageFlags usage = {}
+			, MemoryPropertyFlags memory = MemoryPropertyFlags::eDeviceLocal )
+			: name{ std::move( name ) }
+			, info{ flags, size, usage, memory }
+			, maxPages{ maxPages }
+		{
+		}
 
 		explicit BufferData( std::string name = {}
 			, BufferCreateFlags flags = {}
 			, DeviceSize size = {}
 			, BufferUsageFlags usage = {}
 			, MemoryPropertyFlags memory = MemoryPropertyFlags::eDeviceLocal )
-			: name{ std::move( name ) }
-			, info{ flags, size, usage, memory }
+			: BufferData{ std::move( name ), flags, size, 1u, usage, memory }
 		{
 		}
 

@@ -16,13 +16,18 @@ namespace
 		eStorage,
 	};
 
+	crg::GraphContext & getContext()
+	{
+		return test::getDummyContext();
+	}
+
 	TEST( Attachment, SampledAttachment )
 	{
 		testBegin( "testSampledAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto tmpAttach1 = crg::Attachment::createDefault( view );
 		auto tmpAttach2 = crg::Attachment::createDefault( view );
@@ -62,8 +67,8 @@ namespace
 		testBegin( "testSampledAttachmentT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto tmpAttach1 = crg::Attachment::createDefault( view );
 		auto tmpAttach2 = crg::Attachment::createDefault( view );
@@ -103,8 +108,8 @@ namespace
 		testBegin( "testSampledImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputSampledImage( view, 1u );
 		require( pass.getSampled().size() == 1u )
@@ -139,8 +144,8 @@ namespace
 		testBegin( "testSampledImageT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputSampledImageT( view, Binding::eSampled );
 		require( pass.getSampled().size() == 1u )
@@ -175,10 +180,10 @@ namespace
 		testBegin( "testImplicitColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( crg::ImageData{ "Test", crg::ImageCreateFlags::eNone, crg::ImageType::e3D, crg::PixelFormat::eR32G32B32A32_SFLOAT, { 1024, 1024, 1024 }, crg::ImageUsageFlags::eSampled, 1u, 1u } );
+		auto image = graph.createImageId( crg::ImageData{ "Test", crg::ImageCreateFlags::eNone, crg::ImageType::e3D, crg::PixelFormat::eR32G32B32A32_SFLOAT, { 1024, 1024, 1024 }, crg::ImageUsageFlags::eSampled, 1u, 1u } );
 		auto range = crg::getVirtualRange( image, crg::ImageViewType::e3D, { crg::ImageAspectFlags::eColor, 0u, 1u, 0u, 1u } );
 		check( range.baseArrayLayer == 0 )
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		auto imageLayout = crg::ImageLayout::eShaderReadOnly;
@@ -213,8 +218,8 @@ namespace
 		testBegin( "testImplicitDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		auto imageLayout = crg::ImageLayout::ePreinitialized;
@@ -249,8 +254,8 @@ namespace
 		testBegin( "testImplicitDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		auto imageLayout = crg::ImageLayout::eShaderReadOnly;
@@ -285,8 +290,8 @@ namespace
 		testBegin( "testInStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputStorage( viewAttach, 1u );
@@ -321,8 +326,8 @@ namespace
 		testBegin( "testInStorageAttachmentT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputStorageT( viewAttach, Binding::eStorage );
@@ -357,8 +362,8 @@ namespace
 		testBegin( "testInStorageImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageImage( view, 1u );
 		require( pass.getInputs().size() == 1u )
@@ -392,8 +397,8 @@ namespace
 		testBegin( "testInStorageImageT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageImageT( view, Binding::eStorage );
 		require( pass.getInputs().size() == 1u )
@@ -427,8 +432,8 @@ namespace
 		testBegin( "testInStorageBuffer" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto view = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto view = graph.createViewId( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageBuffer( view, 1u );
 		require( pass.getInputs().size() == 1u )
@@ -453,8 +458,8 @@ namespace
 		testBegin( "testInStorageBufferT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto view = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto view = graph.createViewId( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStorageBufferT( view, Binding::eStorage );
 		require( pass.getInputs().size() == 1u )
@@ -479,8 +484,8 @@ namespace
 		testBegin( "testUniformAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto view = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto view = graph.createViewId( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		check( &pass.getGraph() == &graph )
 		auto tmpAttach1 = crg::Attachment::createDefault( view );
@@ -512,8 +517,8 @@ namespace
 		testBegin( "testUniformAttachmentT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto view = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto view = graph.createViewId( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto tmpAttach1 = crg::Attachment::createDefault( view );
 		auto tmpAttach2 = crg::Attachment::createDefault( view );
@@ -544,8 +549,8 @@ namespace
 		testBegin( "testOutStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStorageImage( view, 1u );
 		require( pass.getOutputs().size() == 1u )
@@ -579,8 +584,8 @@ namespace
 		testBegin( "testOutStorageAttachmentT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStorageImageT( view, Binding::eStorage );
 		require( pass.getOutputs().size() == 1u )
@@ -614,8 +619,8 @@ namespace
 		testBegin( "testClearOutStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addClearableOutputStorageImage( view, 1u );
 		require( pass.getOutputs().size() == 1u )
@@ -649,8 +654,8 @@ namespace
 		testBegin( "testClearOutStorageAttachmentT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addClearableOutputStorageImageT( view, Binding::eStorage );
 		require( pass.getOutputs().size() == 1u )
@@ -684,8 +689,8 @@ namespace
 		testBegin( "testInOutStorageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutStorage( viewAttach, 1u );
@@ -720,8 +725,8 @@ namespace
 		testBegin( "testInOutStorageAttachmentT" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutStorageT( viewAttach, Binding::eStorage );
@@ -756,8 +761,8 @@ namespace
 		testBegin( "testInTransferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputTransfer( viewAttach );
@@ -791,8 +796,8 @@ namespace
 		testBegin( "testInTransferImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputTransferImage( view );
 		require( pass.getInputs().size() == 1u )
@@ -825,8 +830,8 @@ namespace
 		testBegin( "testInTransferBuffer" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto view = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto view = graph.createViewId( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputTransferBuffer( view );
 		require( pass.getInputs().size() == 1u )
@@ -849,8 +854,8 @@ namespace
 		testBegin( "testOutTransferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputTransferImage( view );
 		require( pass.getOutputs().size() == 1u )
@@ -883,8 +888,8 @@ namespace
 		testBegin( "testInOutTransferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutTransfer( viewAttach );
@@ -918,8 +923,8 @@ namespace
 		testBegin( "testInColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputColourTarget( viewAttach );
@@ -957,8 +962,8 @@ namespace
 		testBegin( "testInColourImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputColourTargetImage( view );
 		require( pass.getTargets().size() == 1u )
@@ -995,8 +1000,8 @@ namespace
 		testBegin( "testOutColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputColourTarget( view );
 		require( pass.getTargets().size() == 1u )
@@ -1033,8 +1038,8 @@ namespace
 		testBegin( "testInOutColourAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eR32G32B32A32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutColourTarget( viewAttach );
@@ -1072,8 +1077,8 @@ namespace
 		testBegin( "testInDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputDepthTarget( viewAttach );
@@ -1111,8 +1116,8 @@ namespace
 		testBegin( "testInDepthImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthTargetImage( view );
 		require( !pass.getTargets().empty() )
@@ -1149,8 +1154,8 @@ namespace
 		testBegin( "testOutDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthTarget( view );
 		require( !pass.getTargets().empty() )
@@ -1187,8 +1192,8 @@ namespace
 		testBegin( "testInOutDepthAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutDepthTarget( viewAttach );
@@ -1226,8 +1231,8 @@ namespace
 		testBegin( "testInDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputDepthStencilTarget( viewAttach );
@@ -1265,8 +1270,8 @@ namespace
 		testBegin( "testInDepthStencilImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputDepthStencilTargetImage( view );
 		require( !pass.getTargets().empty() )
@@ -1303,8 +1308,8 @@ namespace
 		testBegin( "testOutDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputDepthStencilTarget( view );
 		require( !pass.getTargets().empty() )
@@ -1341,8 +1346,8 @@ namespace
 		testBegin( "testInOutDepthStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eD32_SFLOAT_S8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutDepthStencilTarget( viewAttach );
@@ -1380,8 +1385,8 @@ namespace
 		testBegin( "testInStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInputStencilTarget( viewAttach );
@@ -1419,8 +1424,8 @@ namespace
 		testBegin( "testInStencilImage" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addInputStencilTargetImage( view );
 		require( !pass.getTargets().empty() )
@@ -1457,8 +1462,8 @@ namespace
 		testBegin( "testOutStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		pass.addOutputStencilTarget( view );
 		require( !pass.getTargets().empty() )
@@ -1495,8 +1500,8 @@ namespace
 		testBegin( "testInOutStencilAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto viewAttach = crg::Attachment::createDefault( view );
 		pass.addInOutStencilTarget( viewAttach );
@@ -1534,8 +1539,8 @@ namespace
 		testBegin( "testImageAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto image = graph.createImage( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
-		auto view = graph.createView( test::createView( "Test", image ) );
+		auto image = graph.createImageId( test::createImage( "Test", crg::PixelFormat::eS8_UINT ) );
+		auto view = graph.createViewId( test::createView( "Test", image ) );
 		auto const attachment = crg::Attachment::createDefault( view );
 		check( attachment.isImage() )
 		check( !attachment.isInput() )
@@ -1568,8 +1573,8 @@ namespace
 		testBegin( "testImplicitBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		crg::AccessState accessState{};
@@ -1577,6 +1582,8 @@ namespace
 		require( pass.getInputs().size() == 1u )
 		auto attachIt = pass.getInputs().begin();
 		auto const & attachment = attachIt->second;
+		checkEqual( getSize( buffer ), 0u )
+		handler.createBuffer( getContext(), buffer );
 		checkEqual( getSize( buffer ), 1024u )
 		checkEqual( getSize( bufferv ), 1024u )
 		check( attachment->isBuffer() )
@@ -1605,8 +1612,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addInputUniformBuffer( bufferv, 1u );
 		require( pass.getUniforms().size() == 1u )
 		auto attachIt = pass.getUniforms().begin();
@@ -1636,8 +1643,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addInputUniformBufferT( bufferv, Binding::eUniform );
 		require( pass.getUniforms().size() == 1u )
 		auto attachIt = pass.getUniforms().begin();
@@ -1667,8 +1674,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputStorage( bufferAttach, 1u );
 		require( pass.getInputs().size() == 1u )
@@ -1699,8 +1706,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputStorageT( bufferAttach, Binding::eStorage );
 		require( pass.getInputs().size() == 1u )
@@ -1731,8 +1738,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addOutputStorageBuffer( bufferv, 1u );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -1762,8 +1769,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addOutputStorageBufferT( bufferv, Binding::eStorage );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -1793,8 +1800,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addClearableOutputStorageBuffer( bufferv, 1u );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -1824,8 +1831,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addClearableOutputStorageBufferT( bufferv, Binding::eStorage );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -1855,8 +1862,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutStorage( bufferAttach, 1u );
 		require( pass.getInouts().size() == 1u )
@@ -1887,8 +1894,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutStorageT( bufferAttach, Binding::eStorage );
 		require( pass.getInouts().size() == 1u )
@@ -1919,8 +1926,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addImplicit( bufferAttach, crg::AccessState{} );
 		require( pass.getInputs().size() == 1u )
@@ -1950,8 +1957,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addInputUniformBuffer( bufferv, 1u );
 		require( !pass.getUniforms().empty() )
 		auto attachIt = pass.getUniforms().begin();
@@ -1981,8 +1988,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addInputUniformBufferT( bufferv, Binding::eUniform );
 		require( !pass.getUniforms().empty() )
 		auto attachIt = pass.getUniforms().begin();
@@ -2012,8 +2019,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputStorage( bufferAttach, 1u );
 		require( pass.getInputs().size() == 1u )
@@ -2044,8 +2051,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputStorageT( bufferAttach, Binding::eStorage );
 		require( pass.getInputs().size() == 1u )
@@ -2076,8 +2083,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addOutputStorageBuffer( bufferv, 1u );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -2107,8 +2114,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addOutputStorageBufferT( bufferv, Binding::eStorage );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -2138,8 +2145,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addClearableOutputStorageBuffer( bufferv, 1u );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -2169,8 +2176,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		pass.addClearableOutputStorageBufferT( bufferv, Binding::eStorage );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -2200,8 +2207,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutStorage( bufferAttach, 1u );
 		require( pass.getInouts().size() == 1u )
@@ -2232,8 +2239,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutStorageT( bufferAttach, Binding::eStorage );
 		require( pass.getInouts().size() == 1u )
@@ -2264,8 +2271,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInputTransfer( bufferAttach );
 		require( pass.getInputs().size() == 1u )
@@ -2295,8 +2302,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		pass.addOutputTransferBuffer( bufferv );
 		require( pass.getOutputs().size() == 1u )
 		auto attachIt = pass.getOutputs().begin();
@@ -2325,8 +2332,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 		crg::FramePass & pass = graph.createPass( "test", crg::RunnablePassCreator{} );
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto bufferAttach = crg::Attachment::createDefault( bufferv );
 		pass.addInOutTransfer( bufferAttach );
 		require( pass.getInouts().size() == 1u )
@@ -2355,8 +2362,8 @@ namespace
 		testBegin( "testBufferAttachment" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "Test" ) );
-		auto bufferv = graph.createView( test::createView( "Test", buffer ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "Test" ) );
+		auto bufferv = graph.createViewId( test::createView( "Test", buffer ) );
 		auto attachment = crg::Attachment::createDefault( bufferv );
 		check( attachment.isBuffer() )
 		check( !attachment.isInput() )
@@ -2380,12 +2387,12 @@ namespace
 		testBegin( "testAttachmentMerge" )
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
-		auto buffer = graph.createBuffer( test::createBuffer( "buffer1" ) );
-		auto buffer1v = graph.createView( test::createView( "buffer1v", buffer, 0u, 512u ) );
-		auto buffer2v = graph.createView( test::createView( "buffer2v", buffer, 512u, 512u ) );
-		auto image = graph.createImage( test::createImage( "image1", crg::PixelFormat::eR32G32B32A32_SFLOAT, 2u, 2u ) );
-		auto image1v = graph.createView( test::createView( "image1v", image, 0u, 1u, 0u, 1u ) );
-		auto image2v = graph.createView( test::createView( "image2v", image, 1u, 1u, 1u, 1u ) );
+		auto buffer = graph.createBufferId( test::createBuffer( "buffer1" ) );
+		auto buffer1v = graph.createViewId( test::createView( "buffer1v", buffer, 0u, 512u ) );
+		auto buffer2v = graph.createViewId( test::createView( "buffer2v", buffer, 512u, 512u ) );
+		auto image = graph.createImageId( test::createImage( "image1", crg::PixelFormat::eR32G32B32A32_SFLOAT, 2u, 2u ) );
+		auto image1v = graph.createViewId( test::createView( "image1v", image, 0u, 1u, 0u, 1u ) );
+		auto image2v = graph.createViewId( test::createView( "image2v", image, 1u, 1u, 1u, 1u ) );
 		{
 			// Empty attachment list
 			check( graph.mergeAttachments( {} ) == nullptr )

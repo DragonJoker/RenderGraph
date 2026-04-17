@@ -185,28 +185,28 @@ namespace crg
 		return m_defaultGroup->createPassGroup( groupName );
 	}
 
-	BufferId FrameGraph::createBuffer( BufferData const & img )
+	BufferId FrameGraph::createBufferId( BufferData const & img )
 	{
 		auto result = m_handler.createBufferId( img );
 		m_buffers.insert( result );
 		return result;
 	}
 
-	BufferViewId FrameGraph::createView( BufferViewData const & view )
+	BufferViewId FrameGraph::createViewId( BufferViewData const & view )
 	{
 		auto result = m_handler.createViewId( view );
 		m_bufferViews.insert( result );
 		return result;
 	}
 
-	ImageId FrameGraph::createImage( ImageData const & img )
+	ImageId FrameGraph::createImageId( ImageData const & img )
 	{
 		auto result = m_handler.createImageId( img );
 		m_images.insert( result );
 		return result;
 	}
 
-	ImageViewId FrameGraph::createView( ImageViewData const & view )
+	ImageViewId FrameGraph::createViewId( ImageViewData const & view )
 	{
 		auto result = m_handler.createViewId( view );
 		m_imageViews.insert( result );
@@ -247,7 +247,7 @@ namespace crg
 			}
 		}
 
-		return createView( data );
+		return createViewId( data );
 	}
 
 	BufferViewId FrameGraph::mergeViews( BufferViewIdArray const & views )
@@ -255,7 +255,7 @@ namespace crg
 		BufferViewData data;
 		for ( auto & view : views )
 			fgph::mergeViewData( view, data );
-		return createView( data );
+		return createViewId( data );
 	}
 
 	Attachment const * FrameGraph::mergeAttachments( AttachmentArray const & attachments

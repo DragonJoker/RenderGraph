@@ -34,6 +34,7 @@ namespace crg
 	CRG_API ImageAspectFlags getAspectFlags( ImageViewId const & image )noexcept;
 	CRG_API ImageSubresourceRange const & getSubresourceRange( ImageViewId const & image )noexcept;
 	CRG_API BufferSubresourceRange const & getSubresourceRange( BufferViewId const & buffer )noexcept;
+	CRG_API std::pair< uint32_t, uint32_t > getBufferPageRange( BufferId bufferId, BufferSubresourceRange const & range );
 	CRG_API AccessFlags getAccessMask( ImageLayout layout )noexcept;
 	CRG_API PipelineStageFlags getStageMask( ImageLayout layout )noexcept;
 	CRG_API PipelineState getPipelineState( PipelineStageFlags flags )noexcept;

@@ -4,9 +4,10 @@ See LICENSE file in root folder.
 #include "RenderGraph/ResourceHandler.hpp"
 
 #include "RenderGraph/Attachment.hpp"
-#include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/BufferData.hpp"
 #include "RenderGraph/BufferViewData.hpp"
+#include "RenderGraph/Exception.hpp"
+#include "RenderGraph/GraphContext.hpp"
 #include "RenderGraph/Hash.hpp"
 #include "RenderGraph/ImageData.hpp"
 #include "RenderGraph/ImageViewData.hpp"
@@ -90,6 +91,75 @@ namespace crg
 
 	//*********************************************************************************************
 
+	Buffer::Buffer( ResourceHandler & handler
+		, GraphContext & context
+		, BufferId bufferId
+		, BufferMemory firstPage )noexcept
+		: m_handler{ &handler }
+		, m_context{ &context }
+		, m_bufferId{ bufferId }
+	{
+		m_pages.emplace_back( std::move( firstPage ) );
+	}
+
+	DeviceSize Buffer::getPageSize()const noexcept
+	{
+		return m_bufferId.data->info.size;
+	}
+
+	DeviceSize Buffer::getMaxSize()const noexcept
+	{
+		return m_bufferId.data->maxPages * getPageSize();
+	}
+
+	DeviceSize Buffer::getAllocatedSize()const noexcept
+	{
+		return m_bufferId.data->allocatedPages * getPageSize();
+	}
+
+	uint32_t Buffer::getAllocatedPageCount()const noexcept
+	{
+		return uint32_t( m_pages.size() );
+	}
+
+	uint32_t Buffer::getMaxPageCount()const noexcept
+	{
+		return m_bufferId.data->maxPages;
+	}
+
+	void Buffer::resize( DeviceSize newSize )
+	{
+		if ( newSize > getMaxSize() )
+		{
+			Logger::logError( "Can't resize to a sizer larger than maximum allocatable size for buffer [" + m_bufferId.data->name + "]" );
+		}
+
+		m_neededSize = std::min( std::max( m_neededSize, newSize ), getMaxSize() );
+	}
+
+	void Buffer::update()
+	{
+		while ( m_neededSize > getAllocatedSize() )
+		{
+			m_pages.push_back( m_handler->createBufferMemory( *m_context, m_bufferId ) );
+		}
+	}
+
+	//*********************************************************************************************
+
+	Image::Image( ResourceHandler & handler
+		, GraphContext & context
+		, ImageId imageId
+		, ImageMemory imageMemory )
+		: m_handler{ &handler }
+		, m_context{ &context }
+		, m_imageId{ imageId }
+		, m_imageMemory{ imageMemory }
+	{
+	}
+
+	//*********************************************************************************************
+
 	ResourceHandler::~ResourceHandler()noexcept
 	{
 		for ( auto const & [data, _] : m_bufferViews )
@@ -128,10 +198,16 @@ namespace crg
 		}
 	}
 
-	BufferId ResourceHandler::createBufferId( BufferData const & img )
+	BufferId ResourceHandler::createBufferId( BufferData const & buf )
 	{
+		if ( buf.maxPages < 1u )
+		{
+			Logger::logError( "createBufferId - At least one page is needed to create a buffer" );
+			CRG_Exception( "createBufferId - At least one page is needed to create a buffer" );
+		}
+
 		lock_type lock( m_buffersMutex );
-		auto data = std::make_unique< BufferData >( img );
+		auto data = std::make_unique< BufferData >( buf );
 		BufferId result{ uint32_t( m_bufferIds.size() + 1u ), data.get() };
 		m_bufferIds.try_emplace( result, std::move( data ) );
 		return result;
@@ -162,62 +238,25 @@ namespace crg
 		return result;
 	}
 
-	ResourceHandler::CreatedT< VkBuffer > ResourceHandler::createBuffer( GraphContext & context
+	ResourceHandler::CreatedT< Buffer > ResourceHandler::createBuffer( GraphContext & context
 		, BufferId bufferId )
 	{
-		ResourceHandler::CreatedT< VkBuffer > result{};
+		CreatedT< Buffer > result{};
+		lock_type lock( m_buffersMutex );
+		auto [it, ins] = m_buffers.try_emplace( bufferId, nullptr );
 
-		if ( context.vkCreateBuffer )
+		if ( ins )
 		{
-			lock_type lock( m_buffersMutex );
-			auto [it, ins] = m_buffers.try_emplace( bufferId, std::pair< VkBuffer, VkDeviceMemory >{} );
+			it->second = std::make_unique< Buffer >( *this, context, bufferId, createBufferMemory( context, bufferId ) );
+			result.created = true;
 
-			if ( ins && context.device )
+			if ( bufferId.data->maxPages > 1u )
 			{
-				// Create buffer
-				auto createInfo = reshdl::convert( *bufferId.data );
-				auto res = context.vkCreateBuffer( context.device
-					, &createInfo
-					, context.allocator
-					, &it->second.first );
-				result.resource = it->second.first;
-				checkVkResult( res, "Buffer creation" );
-				crgRegisterObjectName( context, bufferId.data->name, result.resource );
-
-				// Create Buffer memory
-				VkMemoryRequirements requirements{};
-				context.vkGetBufferMemoryRequirements( context.device
-					, result.resource
-					, &requirements );
-				uint32_t deduced = context.deduceMemoryType( requirements.memoryTypeBits
-					, getMemoryPropertyFlags( bufferId.data->info.memory ) );
-				VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
-					, nullptr
-					, requirements.size
-					, deduced };
-				res = context.vkAllocateMemory( context.device
-					, &allocateInfo
-					, context.allocator
-					, &it->second.second );
-				result.memory = it->second.second;
-				checkVkResult( res, "Buffer memory allocation" );
-				crgRegisterObjectName( context, bufferId.data->name, result.memory );
-
-				// Bind buffer and memory
-				res = context.vkBindBufferMemory( context.device
-					, result.resource
-					, result.memory
-					, 0u );
-				checkVkResult( res, "Buffer memory binding" );
-				result.created = true;
-			}
-			else
-			{
-				result.resource = it->second.first;
-				result.memory = it->second.second;
+				m_pagedBuffers.push_back( it->second.get() );
 			}
 		}
 
+		result.resource = it->second.get();
 		return result;
 	}
 
@@ -226,6 +265,12 @@ namespace crg
 	{
 		ResourceHandler::CreatedViewT< VkBufferView > result{};
 
+		if ( view.data->buffer.data->maxPages > 1 )
+		{
+			Logger::logError( "Can't create a vertex buffer from a paged buffer" );
+			return result;
+		}
+
 		if ( context.vkCreateBufferView )
 		{
 			lock_type lock( m_bufferViewsMutex );
@@ -233,7 +278,7 @@ namespace crg
 
 			if ( ins )
 			{
-				auto buffer = createBuffer( context, view.data->buffer ).resource;
+				auto buffer = createBuffer( context, view.data->buffer ).resource->getBuffer();
 				auto createInfo = reshdl::convert( *view.data, buffer );
 				auto res = context.vkCreateBufferView( context.device
 					, &createInfo
@@ -287,62 +332,20 @@ namespace crg
 		return result;
 	}
 
-	ResourceHandler::CreatedT< VkImage > ResourceHandler::createImage( GraphContext & context
+	ResourceHandler::CreatedT< Image > ResourceHandler::createImage( GraphContext & context
 		, ImageId imageId )
 	{
-		ResourceHandler::CreatedT< VkImage > result{};
+		CreatedT< Image > result{};
+		lock_type lock( m_imagesMutex );
+		auto [it, ins] = m_images.try_emplace( imageId, nullptr );
 
-		if ( context.vkCreateImage )
+		if ( ins )
 		{
-			lock_type lock( m_imagesMutex );
-			auto [it, ins] = m_images.try_emplace( imageId, std::pair< VkImage, VkDeviceMemory >{} );
-
-			if ( ins && context.device )
-			{
-				// Create image
-				auto createInfo = reshdl::convert( *imageId.data );
-				auto res = context.vkCreateImage( context.device
-					, &createInfo
-					, context.allocator
-					, &it->second.first );
-				result.resource = it->second.first;
-				checkVkResult( res, "Image creation" );
-				crgRegisterObjectName( context, imageId.data->name, result.resource );
-
-				// Create Image memory
-				VkMemoryRequirements requirements{};
-				context.vkGetImageMemoryRequirements( context.device
-					, result.resource
-					, &requirements );
-				uint32_t deduced = context.deduceMemoryType( requirements.memoryTypeBits
-					, getMemoryPropertyFlags( imageId.data->info.memory ) );
-				VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
-					, nullptr
-					, requirements.size
-					, deduced };
-				res = context.vkAllocateMemory( context.device
-					, &allocateInfo
-					, context.allocator
-					, &it->second.second );
-				result.memory = it->second.second;
-				checkVkResult( res, "Image memory allocation" );
-				crgRegisterObjectName( context, imageId.data->name, result.memory );
-
-				// Bind image and memory
-				res = context.vkBindImageMemory( context.device
-					, result.resource
-					, result.memory
-					, 0u );
-				checkVkResult( res, "Image memory binding" );
-				result.created = true;
-			}
-			else
-			{
-				result.resource = it->second.first;
-				result.memory = it->second.second;
-			}
+			it->second = std::make_unique< Image >( *this, context, imageId, createImageMemory( context, imageId ) );
+			result.created = true;
 		}
 
+		result.resource = it->second.get();
 		return result;
 	}
 
@@ -358,7 +361,7 @@ namespace crg
 
 			if ( ins )
 			{
-				auto image = createImage( context, view.data->image ).resource;
+				auto image = createImage( context, view.data->image ).resource->getImage();
 				auto createInfo = reshdl::convert( *view.data, image );
 				auto res = context.vkCreateImageView( context.device
 					, &createInfo
@@ -437,20 +440,20 @@ namespace crg
 				, bufferId
 				, { 0u, bufferId.data->info.size } } ) );
 			vertexBuffer = result.get();
+			auto buffer = createBuffer( context, vertexBuffer->buffer.data->buffer ).resource->m_pages[0];
 
 			if ( context.device )
 			{
-				auto created = createBuffer( context, vertexBuffer->buffer.data->buffer );
-				reshdl::Quad::Vertex * buffer{};
+				reshdl::Quad::Vertex * bufferData{};
 				auto res = context.vkMapMemory( context.device
-					, created.memory
+					, buffer.memory
 					, 0u
 					, VK_WHOLE_SIZE
 					, 0u
-					, reinterpret_cast< void ** >( &buffer ) );
+					, reinterpret_cast< void ** >( &bufferData ) );
 				checkVkResult( res, "Buffer memory mapping" );
 
-				if ( buffer )
+				if ( bufferData )
 				{
 					auto rangeU = 1.0;
 					auto minU = 0.0;
@@ -466,33 +469,33 @@ namespace crg
 						{ reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, -3.0f }, reshdl::Quad::Data{ realMinU, realMinV } }
 						, reshdl::Quad::Vertex{ reshdl::Quad::Data{ -1.0f, +1.0f }, reshdl::Quad::Data{ realMinU, realMaxV } }
 						, reshdl::Quad::Vertex{ reshdl::Quad::Data{ +3.0f, +1.0f }, reshdl::Quad::Data{ realMaxU, realMaxV } } };
-					std::copy( vertexData.begin(), vertexData.end(), buffer );
+					std::copy( vertexData.begin(), vertexData.end(), bufferData );
 
 					VkMappedMemoryRange memoryRange{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE
 						, nullptr
-						, created.memory
+						, buffer.memory
 						, 0u
 						, VK_WHOLE_SIZE };
 					context.vkFlushMappedMemoryRanges( context.device, 1u, &memoryRange );
-					context.vkUnmapMemory( context.device, created.memory );
+					context.vkUnmapMemory( context.device, buffer.memory );
 				}
-
-				vertexBuffer->vertexAttribs.push_back( { 0u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( reshdl::Quad::Vertex, position ) } );
-
-				if ( texCoords )
-				{
-					vertexBuffer->vertexAttribs.push_back( { 1u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( reshdl::Quad::Vertex, texture ) } );
-				}
-
-				vertexBuffer->vertexBindings.push_back( { 0u, sizeof( reshdl::Quad::Vertex ), VK_VERTEX_INPUT_RATE_VERTEX } );
-				vertexBuffer->inputState = VkPipelineVertexInputStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
-					, nullptr
-					, 0u
-					, uint32_t( vertexBuffer->vertexBindings.size() )
-					, vertexBuffer->vertexBindings.data()
-					, uint32_t( vertexBuffer->vertexAttribs.size() )
-					, vertexBuffer->vertexAttribs.data() };
 			}
+
+			vertexBuffer->vertexAttribs.push_back( { 0u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( reshdl::Quad::Vertex, position ) } );
+
+			if ( texCoords )
+			{
+				vertexBuffer->vertexAttribs.push_back( { 1u, 0u, VK_FORMAT_R32G32_SFLOAT, offsetof( reshdl::Quad::Vertex, texture ) } );
+			}
+
+			vertexBuffer->vertexBindings.push_back( { 0u, sizeof( reshdl::Quad::Vertex ), VK_VERTEX_INPUT_RATE_VERTEX } );
+			vertexBuffer->inputState = VkPipelineVertexInputStateCreateInfo{ VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO
+				, nullptr
+				, 0u
+				, uint32_t( vertexBuffer->vertexBindings.size() )
+				, vertexBuffer->vertexBindings.data()
+				, uint32_t( vertexBuffer->vertexAttribs.size() )
+				, vertexBuffer->vertexAttribs.data() };
 
 			m_vertexBuffers.emplace( std::move( result ) );
 		}
@@ -508,14 +511,28 @@ namespace crg
 
 		if ( it != m_buffers.end() )
 		{
-			if ( context.vkDestroyBuffer && it->second.first )
+			if ( bufferId.data->maxPages > 1u )
 			{
-				context.vkDestroyBuffer( context.device, it->second.first, context.allocator );
+				if ( auto itPaged = std::find( m_pagedBuffers.begin(), m_pagedBuffers.end(), it->second.get() );
+					itPaged != m_pagedBuffers.end() )
+				{
+					m_pagedBuffers.erase( itPaged );
+				}
 			}
 
-			if ( context.vkFreeMemory && it->second.second )
+			for ( uint32_t pageIndex = 0u; pageIndex < it->second->getAllocatedPageCount(); ++pageIndex )
 			{
-				context.vkFreeMemory( context.device, it->second.second, context.allocator );
+				auto page = it->second->getPage( pageIndex );
+
+				if ( context.vkDestroyBuffer && page.buffer )
+				{
+					context.vkDestroyBuffer( context.device, page.buffer, context.allocator );
+				}
+
+				if ( context.vkFreeMemory && page.memory )
+				{
+					context.vkFreeMemory( context.device, page.memory, context.allocator );
+				}
 			}
 
 			m_buffers.erase( it );
@@ -547,14 +564,16 @@ namespace crg
 
 		if ( it != m_images.end() )
 		{
-			if ( context.vkDestroyImage && it->second.first )
+			if ( auto image = it->second->getImage();
+				context.vkDestroyImage && image )
 			{
-				context.vkDestroyImage( context.device, it->second.first, context.allocator );
+				context.vkDestroyImage( context.device, image, context.allocator );
 			}
 
-			if ( context.vkFreeMemory && it->second.second )
+			if ( auto memory = it->second->getMemory();
+				context.vkFreeMemory && memory )
 			{
-				context.vkFreeMemory( context.device, it->second.second, context.allocator );
+				context.vkFreeMemory( context.device, memory, context.allocator );
 			}
 
 			m_images.erase( it );
@@ -617,6 +636,121 @@ namespace crg
 		}
 	}
 
+	BufferMemory ResourceHandler::createBufferMemory( GraphContext & context
+		, BufferId bufferId )
+	{
+		auto itId = m_bufferIds.find( bufferId );
+
+		if ( itId == m_bufferIds.end() )
+		{
+			Logger::logError( "Can't create a buffer from a buffer ID not handled by this resource handler" );
+			CRG_Exception( "Can't create a buffer from a buffer ID not handled by this resource handler" );
+		}
+
+		BufferMemory result{};
+
+		if ( context.vkCreateBuffer
+			&& context.vkGetBufferMemoryRequirements
+			&& context.vkAllocateMemory
+			&& context.vkBindBufferMemory )
+		{
+			// Create buffer
+			auto createInfo = reshdl::convert( *bufferId.data );
+			auto res = context.vkCreateBuffer( context.device
+				, &createInfo
+				, context.allocator
+				, &result.buffer );
+			checkVkResult( res, "Buffer creation" );
+			crgRegisterObjectName( context, bufferId.data->name, result.buffer );
+
+			// Create Buffer memory
+			VkMemoryRequirements requirements{};
+			context.vkGetBufferMemoryRequirements( context.device
+				, result.buffer
+				, &requirements );
+			uint32_t deduced = context.deduceMemoryType( requirements.memoryTypeBits
+				, getMemoryPropertyFlags( bufferId.data->info.memory ) );
+			VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
+				, nullptr
+				, requirements.size
+				, deduced };
+			res = context.vkAllocateMemory( context.device
+				, &allocateInfo
+				, context.allocator
+				, &result.memory );
+			checkVkResult( res, "Buffer memory allocation" );
+			crgRegisterObjectName( context, bufferId.data->name, result.memory );
+
+			// Bind buffer and memory
+			res = context.vkBindBufferMemory( context.device
+				, result.buffer
+				, result.memory
+				, 0u );
+			checkVkResult( res, "Buffer memory binding" );
+
+			// Update allocated pages count
+			auto bufferData = itId->second.get();
+			++bufferData->allocatedPages;
+		}
+
+		return result;
+	}
+
+	ImageMemory ResourceHandler::createImageMemory( GraphContext & context
+		, ImageId imageId )
+	{
+		if ( auto itId = m_imageIds.find( imageId );
+			itId == m_imageIds.end() )
+		{
+			Logger::logError( "Can't create an image from an image ID not handled by this resource handler" );
+			CRG_Exception( "Can't create an image from an image ID not handled by this resource handler" );
+		}
+
+		ImageMemory result{};
+
+		if ( context.vkCreateImage
+			&& context.vkGetImageMemoryRequirements
+			&& context.vkAllocateMemory
+			&& context.vkBindImageMemory )
+		{
+			// Create image
+			auto createInfo = reshdl::convert( *imageId.data );
+			auto res = context.vkCreateImage( context.device
+				, &createInfo
+				, context.allocator
+				, &result.image );
+			checkVkResult( res, "Image creation" );
+			crgRegisterObjectName( context, imageId.data->name, result.image );
+
+			// Create Image memory
+			VkMemoryRequirements requirements{};
+			context.vkGetImageMemoryRequirements( context.device
+				, result.image
+				, &requirements );
+			uint32_t deduced = context.deduceMemoryType( requirements.memoryTypeBits
+				, getMemoryPropertyFlags( imageId.data->info.memory ) );
+			VkMemoryAllocateInfo allocateInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO
+				, nullptr
+				, requirements.size
+				, deduced };
+			res = context.vkAllocateMemory( context.device
+				, &allocateInfo
+				, context.allocator
+				, &result.memory );
+			checkVkResult( res, "Image memory allocation" );
+			crgRegisterObjectName( context, imageId.data->name, result.memory );
+
+			// Bind image and memory
+			res = context.vkBindImageMemory( context.device
+				, result.image
+				, result.memory
+				, 0u );
+			checkVkResult( res, "Image memory binding" );
+		}
+
+		return result;
+	}
+
 	//*********************************************************************************************
 
 	ContextResourcesCache::ContextResourcesCache( ResourceHandler & handler
@@ -659,23 +793,16 @@ namespace crg
 		}
 	}
 
-	VkBuffer ContextResourcesCache::createBuffer( BufferId const & buffer )
+	Buffer & ContextResourcesCache::createBuffer( BufferId const & bufferId )
 	{
-		VkDeviceMemory memory{};
-		return createBuffer( buffer, memory );
-	}
-
-	VkBuffer ContextResourcesCache::createBuffer( BufferId const & buffer, VkDeviceMemory & memory )
-	{
-		auto [created, result, mem] = m_handler.createBuffer( m_context, buffer );
+		auto [created, buffer] = m_handler.createBuffer( m_context, bufferId );
 
 		if ( created )
 		{
-			m_buffers[buffer] = result;
+			m_buffers.try_emplace( bufferId, buffer );
 		}
 
-		memory = mem;
-		return result;
+		return *buffer;
 	}
 
 	VkBufferView ContextResourcesCache::createBufferView( BufferViewId const & view )
@@ -684,19 +811,25 @@ namespace crg
 
 		if ( created )
 		{
-			m_bufferViews[view] = result;
+			m_bufferViews.try_emplace( view, result );
 		}
 
 		return result;
 	}
 
+	bool ContextResourcesCache::destroyBuffer( Buffer const & buffer )
+	{
+		return destroyBuffer( buffer.getBufferId() );
+	}
+
 	bool ContextResourcesCache::destroyBuffer( BufferId const & bufferId )
 	{
-		auto it = m_buffers.find( bufferId );
-		auto result = it != m_buffers.end();
+		bool result{};
 
-		if ( result )
+		if ( auto it = m_buffers.find( bufferId );
+			it != m_buffers.end() )
 		{
+			result = true;
 			m_handler.destroyBuffer( m_context, bufferId );
 		}
 
@@ -716,23 +849,16 @@ namespace crg
 		return result;
 	}
 
-	VkImage ContextResourcesCache::createImage( ImageId const & image )
+	Image & ContextResourcesCache::createImage( ImageId const & imageId )
 	{
-		VkDeviceMemory memory{};
-		return createImage( image, memory );
-	}
-
-	VkImage ContextResourcesCache::createImage( ImageId const & image, VkDeviceMemory & memory )
-	{
-		auto [created, result, mem] = m_handler.createImage( m_context, image );
+		auto [created, image] = m_handler.createImage( m_context, imageId );
 
 		if ( created )
 		{
-			m_images[image] = result;
+			m_images.try_emplace( imageId, image );
 		}
 
-		memory = mem;
-		return result;
+		return *image;
 	}
 
 	VkImageView ContextResourcesCache::createImageView( ImageViewId const & view )
@@ -745,6 +871,11 @@ namespace crg
 		}
 
 		return result;
+	}
+
+	bool ContextResourcesCache::destroyImage( Image const & image )
+	{
+		return destroyImage( image.getImageId() );
 	}
 
 	bool ContextResourcesCache::destroyImage( ImageId const & imageId )
@@ -812,15 +943,16 @@ namespace crg
 	{
 	}
 
-	VkBuffer ResourcesCache::createBuffer( GraphContext & context
-		, BufferId const & bufferId
-		, VkDeviceMemory & memory )
+	void ResourcesCache::destroyContext( GraphContext & context )
 	{
-		auto & cache = getContextCache( context );
-		return cache.createBuffer( bufferId, memory );
+		if ( auto it = m_caches.find( &context );
+			it != m_caches.end() )
+		{
+			m_caches.erase( it );
+		}
 	}
 
-	VkBuffer ResourcesCache::createBuffer( GraphContext & context
+	Buffer & ResourcesCache::createBuffer( GraphContext & context
 		, BufferId const & bufferId )
 	{
 		auto & cache = getContextCache( context );
@@ -870,15 +1002,7 @@ namespace crg
 		return cache.destroyBufferView( viewId );
 	}
 
-	VkImage ResourcesCache::createImage( GraphContext & context
-		, ImageId const & imageId
-		, VkDeviceMemory & memory )
-	{
-		auto & cache = getContextCache( context );
-		return cache.createImage( imageId, memory );
-	}
-
-	VkImage ResourcesCache::createImage( GraphContext & context
+	Image & ResourcesCache::createImage( GraphContext & context
 		, ImageId const & imageId )
 	{
 		auto & cache = getContextCache( context );

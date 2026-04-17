@@ -41,10 +41,10 @@ namespace crg
 		*	Resource creation.
 		*/
 		/**@{*/
-		CRG_API BufferId createBuffer( BufferData const & img );
-		CRG_API BufferViewId createView( BufferViewData const & view );
-		CRG_API ImageId createImage( ImageData const & img );
-		CRG_API ImageViewId createView( ImageViewData const & view );
+		CRG_API BufferId createBufferId( BufferData const & img );
+		CRG_API BufferViewId createViewId( BufferViewData const & view );
+		CRG_API ImageId createImageId( ImageData const & img );
+		CRG_API ImageViewId createViewId( ImageViewData const & view );
 		/**@}*/
 		/**
 		*\name

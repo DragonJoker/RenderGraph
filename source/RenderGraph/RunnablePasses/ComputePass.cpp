@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/ComputePass.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Log.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 
 #include <array>
@@ -97,7 +98,12 @@ namespace crg
 
 		if ( m_cpConfig.indirectBuffer != defaultV< IndirectBuffer > )
 		{
-			auto indirectBuffer = getGraph().createBuffer( m_cpConfig.indirectBuffer.buffer.data->buffer );
+			if ( m_cpConfig.indirectBuffer.buffer.data->buffer.data->maxPages > 1 )
+			{
+				Logger::logWarning( "ComputePass - Indirect buffer [" + m_cpConfig.indirectBuffer.buffer.data->name + "] has more than one page, only the first one will be used." );
+			}
+
+			auto indirectBuffer = getGraph().createBuffer( m_cpConfig.indirectBuffer.buffer.data->buffer ).getBuffer();
 			context->vkCmdDispatchIndirect( commandBuffer, indirectBuffer, getSubresourceRange( m_cpConfig.indirectBuffer.buffer ).offset );
 		}
 		else

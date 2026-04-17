@@ -181,23 +181,45 @@ namespace crg
 			, uint32_t index
 			, RunnableGraph & graph )
 		{
+			auto bufferViewId = attach.buffer( index );
 			WriteDescriptorSet result{ binding
 				, 0u
-				, count
+				, count * bufferViewId.data->buffer.data->maxPages
 				, getDescriptorType( attach ) };
-			auto bufferViewId = attach.buffer( index );
-			VkDescriptorBufferInfo info{ graph.createBuffer( bufferViewId.data->buffer )
-				, getSubresourceRange( bufferViewId ).offset
-				, getSubresourceRange( bufferViewId ).size };
+			auto subresourceRange = getSubresourceRange( bufferViewId );
+			auto & buffer = graph.createBuffer( bufferViewId.data->buffer );
 
 			if ( attach.isView() )
 			{
+				VkDescriptorBufferInfo info{ buffer.getBuffer()
+					, subresourceRange.offset
+					, subresourceRange.size };
 				result.bufferViewInfo.push_back( info );
 				result.texelBufferView.push_back( graph.createBufferView( bufferViewId ) );
 			}
 			else
 			{
-				result.bufferInfo.push_back( info );
+				uint32_t remainingSize = uint32_t( subresourceRange.size );
+				uint32_t pageSize = uint32_t( bufferViewId.data->buffer.data->info.size );
+
+				// Bind the allocated pages
+				for ( uint32_t pageIndex = 0u; pageIndex < bufferViewId.data->buffer.data->allocatedPages; ++pageIndex )
+				{
+					uint32_t currentSize = std::min( remainingSize, pageSize - uint32_t( subresourceRange.offset ) );
+					VkDescriptorBufferInfo info{ buffer.getBuffer( pageIndex )
+						, subresourceRange.offset, currentSize };
+					result.bufferInfo.push_back( info );
+					subresourceRange.offset = 0;
+					remainingSize -= currentSize;
+				}
+
+				// To prevent validation errors when we don't have enough allocated pages, we need to add dummy descriptors for the remaining pages.
+				for ( uint32_t pageIndex = bufferViewId.data->buffer.data->allocatedPages; pageIndex < bufferViewId.data->buffer.data->maxPages; ++pageIndex )
+				{
+					VkDescriptorBufferInfo info{ buffer.getBuffer( 0u )
+						, 0u, pageSize };
+					result.bufferInfo.push_back( info );
+				}
 			}
 
 			return result;
@@ -432,6 +454,12 @@ namespace crg
 	SemaphoreWaitArray RunnableGraph::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
+		auto & handler = m_graph.getHandler();
+		for ( auto & pagedBuffer : handler.getPagedBuffers() )
+		{
+			pagedBuffer->update();
+		}
+
 		record();
 		// Reuse member vectors instead of allocating new ones each frame
 		m_cachedSemaphores.clear();
@@ -463,7 +491,7 @@ namespace crg
 			, m_graph.getFinalStates().getCurrPipelineState().pipelineStage } };
 	}
 
-	VkBuffer RunnableGraph::createBuffer( BufferId const & buffer )
+	Buffer & RunnableGraph::createBuffer( BufferId const & buffer )
 	{
 		return m_resources.createBuffer( buffer );
 	}
@@ -473,7 +501,7 @@ namespace crg
 		return m_resources.createBufferView( view );
 	}
 
-	VkImage RunnableGraph::createImage( ImageId const & image )
+	Image & RunnableGraph::createImage( ImageId const & image )
 	{
 		return m_resources.createImage( image );
 	}
