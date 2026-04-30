@@ -41,9 +41,12 @@ namespace crg
 		, m_name{ name }
 		, m_colour{ context.getNextRainbowColour() }
 		, m_timerQueries{ timerQueries }
-		, m_queries{ { { baseQueryOffset, false, false }, { baseQueryOffset + 2u, false, false } } }
+		, m_queries{ { { baseQueryOffset + 0u, false, false }
+			, { baseQueryOffset + 2u, false, false }
+			, { baseQueryOffset + 4u, false, false }
+			, { baseQueryOffset + 6u, false, false } } }
 	{
-		baseQueryOffset += 4u;
+		baseQueryOffset += 8u;
 	}
 
 	FramePassTimer::FramePassTimer( GraphContext & context
@@ -53,9 +56,12 @@ namespace crg
 		, m_scope{ scope }
 		, m_name{ name }
 		, m_colour{ context.getNextRainbowColour() }
-		, m_timerQueries{ createQueryPool( context, name, 4u ) }
+		, m_timerQueries{ createQueryPool( context, name, 8u ) }
 		, m_ownPool{ true }
-		, m_queries{ { { 0u, false, false }, { 2u, false, false } } }
+		, m_queries{ { { 0u, false, false }
+			, { 2u, false, false }
+			, { 4u, false, false }
+			, { 6u, false, false } } }
 	{
 	}
 
@@ -87,7 +93,7 @@ namespace crg
 
 	void FramePassTimer::notifyPassRender( [[maybe_unused]] uint32_t passIndex )noexcept
 	{
-		auto & query = m_queries.front();
+		auto & query = m_queries[m_queryIndex];
 		query.started = true;
 	}
 
@@ -113,8 +119,8 @@ namespace crg
 			, { "[" + std::to_string( passId ) + "] " + groupName
 			, m_colour } );
 #pragma GCC diagnostic pop
-		std::swap( m_queries.front(), m_queries.back() );
-		auto const & query = m_queries.front();
+		m_queryIndex = ( m_queryIndex + 1u ) % uint32_t( m_queries.size() );
+		auto const & query = m_queries[m_queryIndex];
 		m_context.vkCmdResetQueryPool( commandBuffer
 			, m_timerQueries
 			, query.offset
@@ -127,7 +133,7 @@ namespace crg
 
 	void FramePassTimer::endPass( VkCommandBuffer commandBuffer )noexcept
 	{
-		auto & query = m_queries.front();
+		auto & query = m_queries[m_queryIndex];
 		m_context.vkCmdWriteTimestamp( commandBuffer
 			, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT
 			, m_timerQueries
@@ -143,7 +149,8 @@ namespace crg
 		auto before = Clock::now();
 		m_gpuTime = 0ns;
 
-		if ( auto & query = m_queries.front(); query.started && query.written )
+		if ( auto & query = m_queries[m_queryIndex];
+			query.started && query.written )
 		{
 			std::array< uint64_t, 2u > values{ 0u, 0u };
 			m_context.vkGetQueryPoolResults( m_context.device
