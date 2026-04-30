@@ -177,7 +177,8 @@ namespace crg
 			bool written{};
 			bool started{};
 		};
-		std::array< Query, 2u > m_queries;
+		std::array< Query, 4u > m_queries;
+		uint32_t m_queryIndex{ 0 };
 	};
 }
 
