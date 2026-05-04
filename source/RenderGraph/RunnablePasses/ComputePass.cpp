@@ -27,26 +27,27 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { [this]( uint32_t index ){ doInitialise( index ); }
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eComputeShader ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, GetPassIndexCallback( [this](){ return doGetPassIndex(); } )
-				, IsEnabledCallback( [this](){ return doIsEnabled(); } )
-				, IsComputePassCallback( [](){ return true; } ) }
+			, RunnablePass::Callbacks{}
+				.onInitialise( [this]( uint32_t index ){ doInitialise( index ); } )
+				.onGetPipelineState( [](){ return crg::getPipelineState( PipelineStageFlags::eComputeShader ); } )
+				.onRecord( [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+				.onGetPassIndex( [this](){ return doGetPassIndex(); } )
+				.onIsEnabled( [this](){ return doIsEnabled(); } )
+				.onIsComputePass( [](){ return true; } )
 			, ruConfig }
-		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : getDefaultV< RunnablePass::InitialiseCallback >()
-			, cpConfig.m_enabled.has_value() ? std::move( *cpConfig.m_enabled ) : getDefaultV< bool const * >()
+		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : defaultV< RunnablePass::InitialiseCallback >
+			, cpConfig.m_enabled.has_value() ? std::move( *cpConfig.m_enabled ) : defaultV< bool const * >
 			, cpConfig.m_isEnabled
-			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
-			, cpConfig.m_recordInto ? std::move( *cpConfig.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
-			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
+			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
+			, cpConfig.m_recordInto ? std::move( *cpConfig.m_recordInto ) : defaultV< RunnablePass::RecordCallback >
+			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : defaultV< RunnablePass::RecordCallback >
 			, cpConfig.m_groupCountX.has_value() ? *cpConfig.m_groupCountX : 1u
 			, cpConfig.m_groupCountY.has_value() ? *cpConfig.m_groupCountY : 1u
 			, cpConfig.m_groupCountZ.has_value() ? *cpConfig.m_groupCountZ : 1u
 			, cpConfig.m_getGroupCountX ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountX ) ) : std::nullopt
 			, cpConfig.m_getGroupCountY ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountY ) ) : std::nullopt
 			, cpConfig.m_getGroupCountZ ? std::optional< cp::GetGroupCountCallback >( std::move( *cpConfig.m_getGroupCountZ ) ) : std::nullopt
-			, cpConfig.m_indirectBuffer ? *cpConfig.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
+			, cpConfig.m_indirectBuffer ? *cpConfig.m_indirectBuffer : defaultV < IndirectBuffer > }
 		, m_pipeline{ pass
 			, context
 			, graph

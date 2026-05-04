@@ -22,16 +22,16 @@ namespace crg
 		, RunnableGraph & graph
 		, rq::Config config
 		, uint32_t maxPassCount )
-		: m_config{ config.m_texcoordConfig ? std::move( *config.m_texcoordConfig ) : getDefaultV< Texcoord >()
-			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< Offset2D >()
-			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
-			, config.m_passIndex.has_value() ? *config.m_passIndex : getDefaultV< uint32_t const * >()
-			, config.m_enabled.has_value() ? *config.m_enabled : getDefaultV< bool const * >()
+		: m_config{ config.m_texcoordConfig ? std::move( *config.m_texcoordConfig ) : defaultV< Texcoord >
+			, config.m_renderPosition ? std::move( *config.m_renderPosition ) : defaultV< Offset2D >
+			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
+			, config.m_passIndex.has_value() ? *config.m_passIndex : defaultV< uint32_t const * >
+			, config.m_enabled.has_value() ? *config.m_enabled : defaultV< bool const * >
 			, config.m_isEnabled
-			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
+			, config.m_recordInto ? std::move( *config.m_recordInto ) : defaultV< RunnablePass::RecordCallback >
+			, config.m_end ? std::move( *config.m_end ) : defaultV< RunnablePass::RecordCallback >
 			, config.m_instances.has_value() ? *config.m_instances : 1u
-			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV < IndirectBuffer >() }
+			, config.m_indirectBuffer ? *config.m_indirectBuffer : defaultV< IndirectBuffer > }
 		, m_graph{ graph }
 		, m_pipeline{ pass
 			, context

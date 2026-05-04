@@ -801,8 +801,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addInputSampledImage( sampledv, 0u );
 			testPass.addOutputColourTarget( resultv );
@@ -827,9 +826,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback >
-								, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addOutputColourTarget( resultv );
 
@@ -856,9 +853,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback >
-								, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addOutputColourTarget( resultv );
 
@@ -896,9 +891,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback >
-								, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addOutputColourTarget( resultv );
 
@@ -928,9 +921,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback >
-								, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addOutputStorageBuffer( bufferv, 0u );
 			testPass.addOutputColourTarget( resultv );
@@ -957,9 +948,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback >
-								, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			auto intermediate1a = testPass1.addOutputColourTarget( intermediate1v );
 			auto intermediate2a = testPass1.addOutputColourTarget( intermediate2v );
@@ -972,9 +961,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 						return std::make_unique< crg::RenderPass >( pass, context, runGraph
-							, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-								, crg::defaultV< crg::RunnablePass::RecordCallback >
-								, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+							, crg::RenderPass::Callbacks{} );
 				} );
 			auto intermediatea = graph.mergeAttachments( { intermediate1a, intermediate2a } );
 			testPass2.addInputSampled( *intermediatea, 0u );
@@ -1019,9 +1006,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					return std::make_unique< crg::RenderPass >( pass, context, runGraph
-						, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-							, crg::defaultV< crg::RunnablePass::RecordCallback >
-							, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback  > } );
+						, crg::RenderPass::Callbacks{} );
 				} );
 			auto buffera = graph.mergeAttachments( { buffer1a, buffer2a } );
 			testPass2.addInputStorage( *buffera, 0u );
@@ -1048,8 +1033,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					return std::make_unique< crg::RenderPass >( pass, context, runGraph
-						, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-							, crg::defaultV< crg::RunnablePass::RecordCallback > } );
+						, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addOutputDepthTarget ( depthv );
 
@@ -1077,10 +1061,8 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					return std::make_unique< crg::RenderPass >( pass, context, runGraph
-						, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-							, crg::defaultV< crg::RunnablePass::RecordCallback >
-							, crg::defaultV< crg::RenderPass::GetSubpassContentsCallback >
-							, crg::RenderPass::GetPassIndexCallback( [passIndex](){ return passIndex; } ) }
+						, crg::RenderPass::Callbacks{}
+							.onGetPassIndex( crg::RenderPass::GetPassIndexCallback( [passIndex](){ return passIndex; } ) )
 						, extent
 						, crg::ru::Config{ 2u } );
 				} );
@@ -1111,8 +1093,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					return std::make_unique< crg::RenderPass >( pass, context, runGraph
-						, crg::RenderPass::Callbacks{ crg::defaultV< crg::RunnablePass::InitialiseCallback >
-							, crg::defaultV< crg::RunnablePass::RecordCallback > } );
+						, crg::RenderPass::Callbacks{} );
 				} );
 			testPass.addOutputColourTarget( graph.mergeViews( { result1v, result2v } ) );
 			testPass.addOutputColourTarget( graph.mergeViews( { result1v, result2v }, false, true ) );

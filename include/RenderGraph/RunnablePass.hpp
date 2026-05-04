@@ -188,26 +188,43 @@ namespace crg
 
 		struct Callbacks
 		{
-			CRG_API Callbacks( InitialiseCallback initialise
-				, GetPipelineStateCallback getPipelineState );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, GetPipelineStateCallback getPipelineState
-				, RecordCallback record );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, GetPipelineStateCallback getPipelineState
-				, RecordCallback record
-				, GetPassIndexCallback getPassIndex );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, GetPipelineStateCallback getPipelineState
-				, RecordCallback record
-				, GetPassIndexCallback getPassIndex
-				, IsEnabledCallback isEnabled );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, GetPipelineStateCallback getPipelineState
-				, RecordCallback record
-				, GetPassIndexCallback getPassIndex
-				, IsEnabledCallback isEnabled
-				, IsComputePassCallback isComputePass );
+			CRG_API Callbacks();
+
+			Callbacks & onInitialise( std::function< void( uint32_t passIndex ) > config )
+			{
+				initialise = std::move( config );
+				return *this;
+			}
+
+			Callbacks & onGetPipelineState( std::function< PipelineState() > config )
+			{
+				getPipelineState = GetPipelineStateCallback( config );
+				return *this;
+			}
+
+			Callbacks & onRecord( std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) > config )
+			{
+				record = std::move( config );
+				return *this;
+			}
+
+			Callbacks & onGetPassIndex( std::function< uint32_t() > config )
+			{
+				getPassIndex = GetPassIndexCallback( config );
+				return *this;
+			}
+
+			Callbacks & onIsEnabled( std::function< bool() > config )
+			{
+				isEnabled = IsEnabledCallback( config );
+				return *this;
+			}
+
+			Callbacks & onIsComputePass( std::function< bool() > config )
+			{
+				isComputePass = IsComputePassCallback( config );
+				return *this;
+			}
 
 			InitialiseCallback initialise;
 			GetPipelineStateCallback getPipelineState;
