@@ -36,49 +36,12 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
-		, RecordCallback record )
-		: Callbacks{ std::move( initialise )
-			, std::move( record )
-			, getDefaultV< GetSubpassContentsCallback >()
-			, getDefaultV< GetPassIndexCallback >()
-			, getDefaultV< IsEnabledCallback >() }
-	{
-	}
-
-	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
-		, RecordCallback record
-		, GetSubpassContentsCallback getSubpassContents )
-		: Callbacks{ std::move( initialise )
-			, std::move( record )
-			, std::move( getSubpassContents )
-			, getDefaultV< GetPassIndexCallback >()
-			, getDefaultV< IsEnabledCallback >() }
-	{
-	}
-
-	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
-		, RecordCallback record
-		, GetSubpassContentsCallback getSubpassContents
-		, GetPassIndexCallback getPassIndex )
-		: Callbacks{ std::move( initialise )
-			, std::move( record )
-			, std::move( getSubpassContents )
-			, std::move( getPassIndex )
-			, getDefaultV< IsEnabledCallback >() }
-	{
-	}
-
-	RenderPass::Callbacks::Callbacks( InitialiseCallback initialise
-		, RecordCallback record
-		, GetSubpassContentsCallback getSubpassContents
-		, GetPassIndexCallback getPassIndex
-		, IsEnabledCallback isEnabled )
-		: initialise{ std::move( initialise ) }
-		, record{ std::move( record ) }
-		, getSubpassContents{ std::move( getSubpassContents ) }
-		, getPassIndex{ std::move( getPassIndex ) }
-		, isEnabled{ std::move( isEnabled ) }
+	RenderPass::Callbacks::Callbacks()
+		: initialise{ defaultV< InitialiseCallback > }
+		, record{ defaultV< RecordCallback > }
+		, getSubpassContents{ defaultV< GetSubpassContentsCallback > }
+		, getPassIndex{ defaultV< GetPassIndexCallback > }
+		, isEnabled{ defaultV< IsEnabledCallback > }
 	{
 	}
 
@@ -93,11 +56,11 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eColorAttachmentOutput ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, std::move( callbacks.getPassIndex )
-				, std::move( callbacks.isEnabled ) }
+			, RunnablePass::Callbacks{}
+				.onRecord( [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+				.onGetPipelineState( [](){ return crg::getPipelineState( PipelineStageFlags::eColorAttachmentOutput ); } )
+				.onGetPassIndex( std::move( callbacks.getPassIndex ) )
+				.onIsEnabled( std::move( callbacks.isEnabled ) )
 			, ruConfig }
 		, m_rpCallbacks{ std::move( callbacks ) }
 		, m_holder{ pass

@@ -36,20 +36,37 @@ namespace crg
 
 		struct Callbacks
 		{
-			CRG_API Callbacks( InitialiseCallback initialise
-				, RecordCallback record );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, RecordCallback record
-				, GetSubpassContentsCallback getSubpassContents );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, RecordCallback record
-				, GetSubpassContentsCallback getSubpassContents
-				, GetPassIndexCallback getPassIndex );
-			CRG_API Callbacks( InitialiseCallback initialise
-				, RecordCallback record
-				, GetSubpassContentsCallback getSubpassContents
-				, GetPassIndexCallback getPassIndex
-				, IsEnabledCallback isEnabled );
+			CRG_API Callbacks();
+
+			Callbacks & onInitialise( std::function< void( uint32_t passIndex ) > config )
+			{
+				initialise = InitialiseCallback( config );
+				return *this;
+			}
+
+			Callbacks & onRecord( std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) > config )
+			{
+				record = RecordCallback( config );
+				return *this;
+			}
+
+			Callbacks & onGetSubpassContents( std::function< VkSubpassContents() > config )
+			{
+				getSubpassContents = GetSubpassContentsCallback( config );
+				return *this;
+			}
+
+			Callbacks & onGetPassIndex( std::function< uint32_t() > config )
+			{
+				getPassIndex = GetPassIndexCallback( config );
+				return *this;
+			}
+
+			Callbacks & onIsEnabled( std::function< bool() > config )
+			{
+				isEnabled = IsEnabledCallback( config );
+				return *this;
+			}
 
 			// RenderPass specifics
 			RunnablePass::InitialiseCallback initialise;

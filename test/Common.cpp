@@ -75,10 +75,9 @@ namespace test
 	crg::BufferData createBuffer( std::string name
 		, uint32_t maxPages )
 	{
-		return crg::BufferData{ maxPages
-			, std::move( name )
+		return crg::BufferData{ std::move( name )
 			, crg::BufferCreateFlags::eNone
-			, 1024
+			, 1024, maxPages
 			, ( crg::BufferUsageFlags::eUniformBuffer
 				| crg::BufferUsageFlags::eStorageBuffer
 				| crg::BufferUsageFlags::eUniformTexelBuffer
@@ -678,11 +677,11 @@ namespace test
 			: crg::RunnablePass{ framePass
 				, context
 				, runGraph
-				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } )
-					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } )
-					, crg::RunnablePass::IsEnabledCallback( [enabled](){ return enabled; } ) }
+				, RunnablePass::Callbacks{}
+					.onGetPipelineState( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					.onRecord( [this]( crg::RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+					.onGetPassIndex( [index](){ return index; } )
+					.onIsEnabled( [enabled](){ return enabled; } )
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -702,11 +701,11 @@ namespace test
 			: crg::RunnablePass{ framePass
 				, context
 				, runGraph
-				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } )
-					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } )
-					, crg::RunnablePass::IsEnabledCallback( [enabled](){ return *enabled; } ) }
+				, RunnablePass::Callbacks{}
+					.onGetPipelineState( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					.onRecord( [this]( crg::RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+					.onGetPassIndex( [index](){ return index; } )
+					.onIsEnabled( [enabled](){ return *enabled; } )
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -725,10 +724,10 @@ namespace test
 			: crg::RunnablePass{ framePass
 				, context
 				, runGraph
-				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } )
-					, crg::RunnablePass::GetPassIndexCallback( [index](){ return index; } ) }
+				, RunnablePass::Callbacks{}
+					.onGetPipelineState( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					.onRecord( [this]( crg::RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+					.onGetPassIndex( [index](){ return index; } )
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -746,9 +745,9 @@ namespace test
 			: crg::RunnablePass{ framePass
 				, context
 				, runGraph
-				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordInto( ctx, cb, i ); } ) }
+				, RunnablePass::Callbacks{}
+					.onGetPipelineState( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					.onRecord( [this]( crg::RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -765,9 +764,9 @@ namespace test
 			: crg::RunnablePass{ framePass
 				, context
 				, runGraph
-				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
-					, crg::RunnablePass::RecordCallback( [this]( crg::RecordContext & ctx, VkCommandBuffer cb, uint32_t i ){ doRecordTargetsInto( ctx, cb, i ); } ) }
+				, RunnablePass::Callbacks{}
+					.onGetPipelineState( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
+					.onRecord( [this]( crg::RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordTargetsInto( recContext, cb, i ); } )
 				, std::move( config ) }
 			, m_testCounts{ testCounts }
 			, m_pipelineStageFlags{ pipelineStageFlags }
@@ -885,8 +884,8 @@ namespace test
 			: crg::RunnablePass{ framePass
 				, context
 				, runGraph
-				, { crg::defaultV< crg::RunnablePass::InitialiseCallback >
-					, crg::RunnablePass::GetPipelineStateCallback( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } ) }
+				, RunnablePass::Callbacks{}
+					.onGetPipelineState( [this](){ return crg::getPipelineState( m_pipelineStageFlags ); } )
 				, std::move( config ) }
 			, m_pipelineStageFlags{ pipelineStageFlags }
 		{

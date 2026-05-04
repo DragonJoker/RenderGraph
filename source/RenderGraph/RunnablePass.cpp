@@ -303,68 +303,13 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetPipelineStateCallback getPipelineState )
-		: Callbacks{ std::move( initialise )
-			, std::move( getPipelineState )
-			, getDefaultV< RecordCallback >()
-			, getDefaultV< GetPassIndexCallback >()
-			, getDefaultV< IsEnabledCallback >()
-			, getDefaultV< IsComputePassCallback >() }
-	{
-	}
-
-	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetPipelineStateCallback getPipelineState
-		, RecordCallback record )
-		: Callbacks{ std::move( initialise )
-			, std::move( getPipelineState )
-			, std::move( record )
-			, getDefaultV< GetPassIndexCallback >()
-			, getDefaultV< IsEnabledCallback >()
-			, getDefaultV< IsComputePassCallback >() }
-	{
-	}
-
-	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetPipelineStateCallback getPipelineState
-		, RecordCallback record
-		, GetPassIndexCallback getPassIndex )
-		: Callbacks{ std::move( initialise )
-			, std::move( getPipelineState )
-			, std::move( record )
-			, std::move( getPassIndex )
-			, getDefaultV< IsEnabledCallback >()
-			, getDefaultV< IsComputePassCallback >() }
-	{
-	}
-
-	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetPipelineStateCallback getPipelineState
-		, RecordCallback record
-		, GetPassIndexCallback getPassIndex
-		, IsEnabledCallback isEnabled )
-		: Callbacks{ std::move( initialise )
-			, std::move( getPipelineState )
-			, std::move( record )
-			, std::move( getPassIndex )
-			, std::move( isEnabled )
-			, getDefaultV< IsComputePassCallback >() }
-	{
-	}
-
-	RunnablePass::Callbacks::Callbacks( InitialiseCallback initialise
-		, GetPipelineStateCallback getPipelineState
-		, RecordCallback record
-		, GetPassIndexCallback getPassIndex
-		, IsEnabledCallback isEnabled
-		, IsComputePassCallback isComputePass )
-		: initialise{ std::move( initialise ) }
-		, getPipelineState{ std::move( getPipelineState ) }
-		, record{ std::move( record ) }
-		, getPassIndex{ std::move( getPassIndex ) }
-		, isEnabled{ std::move( isEnabled ) }
-		, isComputePass{ std::move( isComputePass ) }
+	RunnablePass::Callbacks::Callbacks()
+		: initialise{ defaultV< InitialiseCallback > }
+		, getPipelineState{ defaultV< GetPipelineStateCallback > }
+		, record{ defaultV< RecordCallback > }
+		, getPassIndex{ defaultV< GetPassIndexCallback > }
+		, isEnabled{ defaultV< IsEnabledCallback > }
+		, isComputePass{ defaultV< IsComputePassCallback > }
 	{
 	}
 

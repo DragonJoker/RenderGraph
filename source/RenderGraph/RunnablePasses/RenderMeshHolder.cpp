@@ -16,26 +16,26 @@ namespace crg
 		, rm::Config config
 		, uint32_t maxPassCount )
 		: m_graph{ graph }
-		, m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : getDefaultV< Offset2D >()
-			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : getDefaultV< VkPipelineDepthStencilStateCreateInfo >()
-			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : getDefaultV< RunnablePass::GetPassIndexCallback >()
-			, config.m_isEnabled ? std::move( *config.m_isEnabled ) : getDefaultV< RunnablePass::IsEnabledCallback >()
-			, config.m_recordInto ? std::move( *config.m_recordInto ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_end ? std::move( *config.m_end ) : getDefaultV< RunnablePass::RecordCallback >()
-			, config.m_getPrimitiveCount ? std::move( *config.m_getPrimitiveCount ) : getDefaultV< GetPrimitiveCountCallback >()
-			, config.m_getVertexCount ? std::move( *config.m_getVertexCount ) : getDefaultV< GetVertexCountCallback >()
-			, config.m_getIndexType ? std::move( *config.m_getIndexType ) : getDefaultV< GetIndexTypeCallback >()
-			, config.m_getCullMode ? std::move( *config.m_getCullMode ) : getDefaultV< GetCullModeCallback >()
-			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : getDefaultV< VertexBuffer >()
-			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : getDefaultV< IndexBuffer >()
-			, config.m_indirectBuffer ? *config.m_indirectBuffer : getDefaultV< IndirectBuffer >() }
+		, m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : defaultV< Offset2D >
+			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
+			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
+			, config.m_isEnabled ? std::move( *config.m_isEnabled ) : defaultV< RunnablePass::IsEnabledCallback >
+			, config.m_recordInto ? std::move( *config.m_recordInto ) : defaultV< RunnablePass::RecordCallback >
+			, config.m_end ? std::move( *config.m_end ) : defaultV< RunnablePass::RecordCallback >
+			, config.m_getPrimitiveCount ? std::move( *config.m_getPrimitiveCount ) : defaultV< GetPrimitiveCountCallback >
+			, config.m_getVertexCount ? std::move( *config.m_getVertexCount ) : defaultV< GetVertexCountCallback >
+			, config.m_getIndexType ? std::move( *config.m_getIndexType ) : defaultV< GetIndexTypeCallback >
+			, config.m_getCullMode ? std::move( *config.m_getCullMode ) : defaultV< GetCullModeCallback >
+			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : defaultV< VertexBuffer >
+			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : defaultV< IndexBuffer >
+			, config.m_indirectBuffer ? *config.m_indirectBuffer : defaultV< IndirectBuffer > }
 		, m_pipeline{ pass
 			, context
 			, graph
 			, config.m_baseConfig
 			, VK_PIPELINE_BIND_POINT_GRAPHICS
 			, maxPassCount }
-		, m_renderSize{ config.m_renderSize ? *config.m_renderSize : getDefaultV< Extent2D >() }
+		, m_renderSize{ config.m_renderSize ? *config.m_renderSize : defaultV< Extent2D > }
 	{
 		m_iaState = { VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO
 			, nullptr

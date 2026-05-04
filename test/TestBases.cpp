@@ -831,6 +831,20 @@ TEST( Bases, ResourcesCache )
 	crgUnregisterObject( context, VkBuffer( 1 ) );
 	checkThrow( context.deduceMemoryType( 0u, 0u ), crg::Exception )
 	{
+		crg::ResourceHandler handler;
+		crg::ResourcesCache resources{ handler };
+		auto bufferId = handler.createBufferId( test::createBuffer( "buffer" ) );
+		auto imageId = handler.createImageId( test::createImage( "image", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
+		auto & buffer = resources.createBuffer( context, bufferId );
+		auto & image = resources.createImage( context, imageId );
+		{
+			auto & contextCache = resources.getContextCache( context );
+			contextCache.destroyBuffer( buffer );
+			contextCache.destroyImage( image );
+		}
+		resources.destroyContext( context );
+	}
+	{
 		crg::ResourceHandler handler1;
 		crg::ResourceHandler handler2;
 		crg::ResourcesCache resources1{ handler1 };
@@ -838,13 +852,14 @@ TEST( Bases, ResourcesCache )
 		auto buffer = handler1.createBufferId( test::createBuffer( "buffer" ) );
 		checkThrow( resources2.createBuffer( context, buffer ), crg::Exception )
 		auto & buf = resources1.createBuffer( context, buffer );
+		checkEqual( buf.getMaxPageCount(), 1u )
 		auto image = handler1.createImageId( test::createImage( "image", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		checkThrow( resources2.createImage( context, image ), crg::Exception )
 		auto & img = resources1.createImage( context, image );
-		checkEqual( resources2.destroyBuffer( buf ), false )
-		checkEqual( resources2.destroyImage( img ), false )
-		checkEqual( resources1.destroyBuffer( buf ), true )
-		checkEqual( resources1.destroyImage( img ), true )
+		checkEqual( resources2.destroyBuffer( buf.getBufferId() ), false )
+		checkEqual( resources2.destroyImage( img.getImageId() ), false )
+		checkEqual( resources1.destroyBuffer( buf.getBufferId() ), true )
+		checkEqual( resources1.destroyImage( img.getImageId() ), true )
 	}
 	{
 		crg::ResourceHandler handler;

@@ -14,11 +14,11 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eColorAttachmentOutput ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, GetPassIndexCallback( [this](){ return m_renderMesh.getPassIndex(); } )
-				, IsEnabledCallback( [this](){ return m_renderMesh.isEnabled(); } ) }
+			, RunnablePass::Callbacks{}
+				.onGetPipelineState( [](){ return crg::getPipelineState( PipelineStageFlags::eColorAttachmentOutput ); } )
+				.onRecord( [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+				.onGetPassIndex( GetPassIndexCallback( [this](){ return m_renderMesh.getPassIndex(); } ) )
+				.onIsEnabled( IsEnabledCallback( [this](){ return m_renderMesh.isEnabled(); } ) )
 			, { ruConfig.maxPassCount
 				, true /*resettable*/
 				, ruConfig.prePassActions

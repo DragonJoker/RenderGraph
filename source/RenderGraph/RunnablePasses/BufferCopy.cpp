@@ -23,11 +23,11 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, std::move( passIndex )
-				, std::move( isEnabled ) }
+			, RunnablePass::Callbacks{}
+				.onGetPipelineState( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
+				.onRecord( [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+				.onGetPassIndex( std::move( passIndex ) )
+				.onIsEnabled( std::move( isEnabled ) )
 			, std::move( ruConfig ) }
 		, m_copyOffset{ copyOffset }
 		, m_copyRange{ copyRange }

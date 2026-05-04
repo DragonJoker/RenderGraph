@@ -14,11 +14,11 @@ namespace crg
 		: RunnablePass{ pass
 			, context
 			, graph
-			, { defaultV< InitialiseCallback >
-				, GetPipelineStateCallback( [](){ return crg::getPipelineState( PipelineStageFlags::eColorAttachmentOutput ); } )
-				, [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); }
-				, GetPassIndexCallback( [this](){ return m_renderQuad.getPassIndex(); } )
-				, IsEnabledCallback( [this](){ return m_renderQuad.isEnabled(); } ) }
+			, RunnablePass::Callbacks{}
+				.onGetPipelineState( [](){ return crg::getPipelineState( PipelineStageFlags::eColorAttachmentOutput ); } )
+				.onRecord( [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+				.onGetPassIndex( [this](){ return m_renderQuad.getPassIndex(); } )
+				.onIsEnabled( [this](){ return m_renderQuad.isEnabled(); } )
 			, { ruConfig.maxPassCount
 				, true /*resettable*/
 				, ruConfig.prePassActions
@@ -34,7 +34,7 @@ namespace crg
 			, context
 			, graph
 			, ruConfig.maxPassCount
-			, rqConfig.m_renderSize ? *rqConfig.m_renderSize : getDefaultV< Extent2D >() }
+			, rqConfig.m_renderSize ? *rqConfig.m_renderSize : defaultV< Extent2D > }
 	{
 	}
 

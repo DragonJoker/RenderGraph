@@ -13,12 +13,6 @@ namespace crg
 	template< typename TypeT >
 	static inline const TypeT defaultV = DefaultValueGetterT< TypeT >::get();
 
-	template< typename TypeT >
-	static inline TypeT getDefaultV()
-	{
-		return DefaultValueGetterT< TypeT >::get();
-	}
-
 	template<>
 	struct DefaultValueGetterT< VkPipelineVertexInputStateCreateInfo >
 	{
