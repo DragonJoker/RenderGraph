@@ -78,6 +78,7 @@ namespace crg
 		{
 			WriteDescriptorSetArray writes{};
 			VkDescriptorSet set{};
+			size_t hash{};
 		};
 
 	private:

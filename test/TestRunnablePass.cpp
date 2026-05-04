@@ -1746,6 +1746,8 @@ namespace
 		crg::ResourceHandler handler;
 		crg::FrameGraph graph{ handler, testCounts.testName };
 
+		auto bufferId = graph.createBufferId( test::createBuffer( "buffer", 16u ) );
+		auto bufferv = graph.createViewId( test::createView( "bufferv", bufferId, crg::PixelFormat::eUNDEFINED, 16u ) );
 		auto sampled = graph.createImageId( test::createImage( "sampled", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto sampledv = graph.createViewId( test::createView( "sampledv", sampled, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
 		crg::RenderQuad * renderQuad{};
@@ -1767,6 +1769,7 @@ namespace
 				return res;
 			} );
 		auto sampledAttach = testQuad.addOutputColourTarget( sampledv );
+		auto bufferAttach = testQuad.addOutputStorageBuffer( bufferv, 0u );
 
 		auto result = graph.createImageId( test::createImage( "result", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		auto resultv = graph.createViewId( test::createView( "resultv", result, crg::PixelFormat::eR16G16B16A16_SFLOAT, 0u, 1u, 0u, 1u ) );
@@ -1790,6 +1793,7 @@ namespace
 			} );
 		testMesh.addOutputColourTarget( resultv );
 		testMesh.addInputSampled( *sampledAttach, 0u );
+		testMesh.addInputStorage( *bufferAttach, 1u );
 
 		auto runnable = graph.compile( getContext() );
 		test::checkRunnable( testCounts, runnable );
@@ -1803,6 +1807,9 @@ namespace
 		checkNoThrow( runnable->run( crg::SemaphoreWait{ VkSemaphore( 1 ), crg::PipelineStageFlags::eAllGraphics }, VkQueue{} ) )
 		checkEqual( graph.getFinalLayoutState( sampledv, 0u ).layout,  crg::ImageLayout::eShaderReadOnly )
 		checkEqual( graph.getDefaultGroup().getFinalLayoutState( sampledv, 0u ).layout,  crg::ImageLayout::eShaderReadOnly )
+		auto & buffer = runnable->createBuffer( bufferId );
+		buffer.resize( buffer.getMaxSize() );
+		checkNoThrow( runnable->run( crg::SemaphoreWait{ VkSemaphore( 1 ), crg::PipelineStageFlags::eAllGraphics }, VkQueue{} ) )
 		testEnd()
 	}
 }
