@@ -4,6 +4,7 @@ See LICENSE file in root folder.
 #include "RenderGraph/RunnablePasses/PipelineHolder.hpp"
 
 #include "RenderGraph/GraphContext.hpp"
+#include "RenderGraph/Hash.hpp"
 #include "RenderGraph/RunnableGraph.hpp"
 #include "RenderGraph/RunnablePasses/RenderPass.hpp"
 
@@ -13,6 +14,41 @@ namespace crg
 {
 	namespace pphdr
 	{
+		enum class DescriptorType : uint8_t
+		{
+			eStorageImage,
+			eCombinedImageSampler,
+			eUniformTexelBuffer,
+			eStorageTexelBuffer,
+			eUniformBuffer,
+			eStorageBuffer,
+		};
+
+		static DescriptorType getDescriptorType( BufferAttachment const & attach )
+		{
+			if ( attach.isUniformView() )
+				return DescriptorType::eUniformTexelBuffer;
+			if ( attach.isStorageView() )
+				return DescriptorType::eStorageTexelBuffer;
+			if ( attach.isUniform() )
+				return DescriptorType::eUniformBuffer;
+			return DescriptorType::eStorageBuffer;
+		}
+
+		static DescriptorType getDescriptorType( ImageAttachment const & attach )
+		{
+			if ( attach.isStorageView() )
+				return DescriptorType::eStorageImage;
+			return DescriptorType::eCombinedImageSampler;
+		}
+
+		static DescriptorType getDescriptorType( Attachment const & attach )
+		{
+			if ( attach.isImage() )
+				return getDescriptorType( attach.imageAttach );
+			return getDescriptorType( attach.bufferAttach );
+		}
+
 		static bool isDescriptor( Attachment const & attach )
 		{
 			return attach.isStorageImageView() || attach.isSampledImageView()
@@ -54,9 +90,14 @@ namespace crg
 			}
 		}
 
-		uint32_t getDescriptorCount( Attachment const & attach )
+		static uint32_t getDescriptorTotalCount( Attachment const & attach )
 		{
 			return attach.isBuffer() ? attach.buffer().data->buffer.data->maxPages : 1u;
+		}
+
+		static uint32_t getDescriptorAllocatedCount( Attachment const & attach )
+		{
+			return attach.isBuffer() ? attach.buffer().data->buffer.data->allocatedPages : 1u;
 		}
 
 		static void createDescriptorBindings( std::map< uint32_t, Attachment const * > const & attaches
@@ -69,8 +110,65 @@ namespace crg
 				if ( isDescriptor( *attach ) )
 					descriptorBindings.push_back( { binding
 						, graph.getDescriptorType( *attach )
-						, getDescriptorCount( *attach ), shaderStage, nullptr } );
+						, getDescriptorTotalCount( *attach ), shaderStage, nullptr } );
 			}
+		}
+
+		static uint32_t getDescriptorId( Attachment const & attach
+			, uint32_t index )
+		{
+			if ( attach.isImage() )
+				return attach.view( index ).id;
+			return attach.buffer( index ).id;
+		}
+
+		static_assert( sizeof( size_t ) >= sizeof( uint64_t ) );
+
+		static size_t getDescriptorHash( uint32_t binding
+			, Attachment const & attach
+			, uint32_t index
+			, RunnableGraph const & graph )
+		{
+			return ( ( uint64_t( getDescriptorId( attach, index ) ) & 0xFFFFFFFFull ) << 32u ) // 32 bits for resource ID
+				| ( ( uint64_t( getDescriptorType( attach ) ) & 0xFFull ) << 24u ) // 8 bits for descriptor type
+				| ( ( uint64_t( getDescriptorAllocatedCount( attach ) ) & 0xFFull ) << 16u ) // 8 bits for descriptor count
+				| ( ( uint64_t( binding ) & 0xFFFFull ) << 0u ); // 16 bits for descriptor binding
+		}
+
+		static size_t getDescriptorsHash( std::map< uint32_t, FramePass::SampledAttachment > const & attaches
+			, uint32_t index
+			, RunnableGraph const & graph )
+		{
+			size_t result{};
+			for ( auto & [binding, attach] : attaches )
+				result = hashCombine( result, getDescriptorHash( binding, *attach.attach, index, graph ) );
+			return result;
+		}
+
+		static size_t getDescriptorsHash( std::map< uint32_t, Attachment const * > const & attaches
+			, uint32_t index
+			, RunnableGraph const & graph )
+		{
+			size_t result{};
+			for ( auto & [binding, attach] : attaches )
+			{
+				if ( isDescriptor( *attach ) )
+					result = hashCombine( result, getDescriptorHash( binding, *attach, index, graph ) );
+			}
+			return result;
+		}
+
+		static size_t makeDescriptorSetHash( crg::FramePass const & pass
+			, uint32_t index
+			, RunnableGraph const & graph )
+		{
+			size_t result{};
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getUniforms(), index, graph ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getSampled(), index, graph ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getInputs(), index, graph ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getInouts(), index, graph ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getOutputs(), index, graph ) );
+			return result;
 		}
 	}
 
@@ -326,11 +424,27 @@ namespace crg
 	void PipelineHolder::createDescriptorSet( uint32_t index )
 	{
 		auto & descriptorSet = m_descriptorSets[index];
+		auto hash = pphdr::makeDescriptorSetHash( m_pass, index, m_graph );
 
-		if ( descriptorSet.set != VkDescriptorSet{} )
+		if ( descriptorSet.set != VkDescriptorSet{}
+			&& descriptorSet.hash == hash )
 		{
 			return;
 		}
+
+		if ( descriptorSet.set != VkDescriptorSet{} )
+		{
+			auto ds = descriptorSet.set;
+			auto pool = m_descriptorSetPool;
+			m_context.delQueue.push( [ds, pool]( GraphContext & context )
+				{
+					context.vkFreeDescriptorSets( context.device, pool, 1u, &ds );
+				} );
+			descriptorSet.writes.clear();
+			descriptorSet.set = {};
+		}
+
+		descriptorSet.hash = hash;
 
 		pphdr::createDescriptorWrites( m_pass.getUniforms(), index, m_graph, descriptorSet.writes );
 		pphdr::createDescriptorWrites( m_pass.getSampled(), index, m_graph, descriptorSet.writes );
@@ -428,11 +542,13 @@ namespace crg
 		if ( m_context.vkCreateDescriptorPool )
 		{
 			assert( m_descriptorSetLayout );
-			auto sizes = getBindingsSizes( m_descriptorBindings, uint32_t( m_descriptorSets.size() ) );
+			// x2 to account for descriptor set changes (the deallocation is deferred)
+			uint32_t maxSets = uint32_t( m_descriptorSets.size() * 2u );
+			auto sizes = getBindingsSizes( m_descriptorBindings, maxSets );
 			VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
 				, nullptr
 				, 0u
-				, uint32_t( m_descriptorSets.size() )
+				, maxSets
 				, uint32_t( sizes.size() )
 				, sizes.data() };
 			auto res = m_context.vkCreateDescriptorPool( m_context.device
