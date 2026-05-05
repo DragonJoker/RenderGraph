@@ -187,7 +187,7 @@ namespace crg
 				, count * bufferViewId.data->buffer.data->maxPages
 				, getDescriptorType( attach ) };
 			auto subresourceRange = getSubresourceRange( bufferViewId );
-			auto & buffer = graph.createBuffer( bufferViewId.data->buffer );
+			Buffer const & buffer = graph.createBuffer( bufferViewId.data->buffer );
 
 			if ( attach.isView() )
 			{
@@ -199,8 +199,8 @@ namespace crg
 			}
 			else
 			{
-				uint32_t remainingSize = uint32_t( subresourceRange.size );
-				uint32_t pageSize = uint32_t( bufferViewId.data->buffer.data->info.size );
+				auto remainingSize = uint32_t( subresourceRange.size );
+				auto pageSize = uint32_t( bufferViewId.data->buffer.data->info.size );
 
 				// Bind the allocated pages
 				for ( uint32_t pageIndex = 0u; pageIndex < bufferViewId.data->buffer.data->allocatedPages; ++pageIndex )
@@ -454,7 +454,7 @@ namespace crg
 	SemaphoreWaitArray RunnableGraph::run( SemaphoreWaitArray const & toWait
 		, VkQueue queue )
 	{
-		auto & handler = m_graph.getHandler();
+		ResourceHandler const & handler = m_graph.getHandler();
 		for ( auto & pagedBuffer : handler.getPagedBuffers() )
 		{
 			pagedBuffer->update();

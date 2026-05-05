@@ -1062,7 +1062,7 @@ namespace
 				{
 					return std::make_unique< crg::RenderPass >( pass, context, runGraph
 						, crg::RenderPass::Callbacks{}
-							.onGetPassIndex( crg::RenderPass::GetPassIndexCallback( [passIndex](){ return passIndex; } ) )
+							.onGetPassIndex( crg::GetPassIndexCallback( [passIndex](){ return passIndex; } ) )
 						, extent
 						, crg::ru::Config{ 2u } );
 				} );
@@ -1236,7 +1236,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					crg::rm::Config cfg;
-					cfg.getPassIndex( crg::RunnablePass::GetPassIndexCallback( [&passIndex](){ return passIndex; } ) );
+					cfg.getPassIndex( crg::GetPassIndexCallback( [&passIndex](){ return passIndex; } ) );
 					cfg.baseConfig( crg::pp::Config{}
 						.programCreator( crg::ProgramCreator{ 2u
 							, []( uint32_t ){ return crg::VkPipelineShaderStageCreateInfoArray{ VkPipelineShaderStageCreateInfo{} }; } } ) );
@@ -1351,8 +1351,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					crg::rm::Config cfg;
-					auto vb = crg::VertexBuffer{ vertexv };
-					cfg.vertexBuffer( std::move( vb ) );
+					cfg.vertexBuffer( crg::VertexBuffer{ vertexv } );
 					cfg.indexBuffer( crg::IndexBuffer{ indexv } );
 					cfg.baseConfig( crg::pp::Config{}
 						.programCreator( crg::ProgramCreator{ 1u
@@ -1393,8 +1392,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					crg::rm::Config cfg;
-					auto vb = crg::VertexBuffer{ vertexv };
-					cfg.vertexBuffer( std::move( vb ) );
+					cfg.vertexBuffer( crg::VertexBuffer{ vertexv } );
 					cfg.indexBuffer( crg::IndexBuffer{ indexv } );
 					cfg.baseConfig( crg::pp::Config{}
 						.programCreator( crg::ProgramCreator{ 1u
@@ -1435,8 +1433,7 @@ namespace
 					, crg::RunnableGraph & runGraph )
 				{
 					crg::rm::Config cfg;
-					auto vb = crg::VertexBuffer{ vertexv };
-					cfg.vertexBuffer( std::move( vb ) );
+					cfg.vertexBuffer( crg::VertexBuffer{ vertexv } );
 					cfg.indexBuffer( crg::IndexBuffer{ indexv } );
 					cfg.baseConfig( crg::pp::Config{}
 						.programCreator( crg::ProgramCreator{ 1u

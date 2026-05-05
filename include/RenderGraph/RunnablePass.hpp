@@ -143,6 +143,77 @@ namespace crg
 		}
 	};
 
+
+	using InitialiseCallback = std::function< void( uint32_t /*passIndex*/ ) >;
+	template<>
+	struct DefaultValueGetterT< InitialiseCallback >
+	{
+		static InitialiseCallback get()
+		{
+			InitialiseCallback const result{ []( uint32_t ){} };
+			return result;
+		}
+	};
+
+	using RecordCallback = std::function< void( RecordContext &, VkCommandBuffer, uint32_t /*passIndex*/ ) >;
+	template<>
+	struct DefaultValueGetterT< RecordCallback >
+	{
+		static RecordCallback get()
+		{
+			RecordCallback const result{ []( RecordContext &, VkCommandBuffer, uint32_t ){} };
+			return result;
+		}
+	};
+
+	struct PipelineStateT;
+	using GetPipelineStateCallback = GetValueCallbackT< PipelineStateT, PipelineState >;
+	template<>
+	struct DefaultValueGetterT< GetPipelineStateCallback >
+	{
+		static GetPipelineStateCallback get()
+		{
+			GetPipelineStateCallback const result{ [](){ return PipelineState{ AccessFlags::eShaderRead, PipelineStageFlags::eFragmentShader }; } };
+			return result;
+		}
+	};
+
+	struct PassIndexT;
+	using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
+	template<>
+	struct DefaultValueGetterT< GetPassIndexCallback >
+	{
+		static GetPassIndexCallback get()
+		{
+			GetPassIndexCallback const result{ [](){ return 0u; } };
+			return result;
+		}
+	};
+
+	struct EnabledT;
+	using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
+	template<>
+	struct DefaultValueGetterT< IsEnabledCallback >
+	{
+		static IsEnabledCallback get()
+		{
+			IsEnabledCallback const result{ [](){ return true; } };
+			return result;
+		}
+	};
+
+	struct ComputePassT;
+	using IsComputePassCallback = GetValueCallbackT< ComputePassT, bool >;
+	template<>
+	struct DefaultValueGetterT< IsComputePassCallback >
+	{
+		static IsComputePassCallback get()
+		{
+			IsComputePassCallback const result{ [](){ return false; } };
+			return result;
+		}
+	};
+
 	class RunnablePass
 	{
 	public:
@@ -166,26 +237,6 @@ namespace crg
 			AccessState to;
 		};
 
-		struct PassIndexT
-		{
-		};
-		struct PipelineStateT
-		{
-		};
-		struct EnabledT
-		{
-		};
-		struct ComputePassT
-		{
-		};
-
-		using InitialiseCallback = std::function< void( uint32_t passIndex ) >;
-		using RecordCallback = std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) >;
-		using GetPipelineStateCallback = GetValueCallbackT< PipelineStateT, PipelineState >;
-		using GetPassIndexCallback = GetValueCallbackT< PassIndexT, uint32_t >;
-		using IsEnabledCallback = GetValueCallbackT< EnabledT, bool >;
-		using IsComputePassCallback = GetValueCallbackT< ComputePassT, bool >;
-
 		struct Callbacks
 		{
 			CRG_API Callbacks();
@@ -198,7 +249,7 @@ namespace crg
 
 			Callbacks & onGetPipelineState( std::function< PipelineState() > config )
 			{
-				getPipelineState = GetPipelineStateCallback( config );
+				getPipelineState = GetPipelineStateCallback{ std::move( config ) };
 				return *this;
 			}
 
@@ -210,28 +261,28 @@ namespace crg
 
 			Callbacks & onGetPassIndex( std::function< uint32_t() > config )
 			{
-				getPassIndex = GetPassIndexCallback( config );
+				getPassIndex = GetPassIndexCallback{ std::move( config ) };
 				return *this;
 			}
 
 			Callbacks & onIsEnabled( std::function< bool() > config )
 			{
-				isEnabled = IsEnabledCallback( config );
+				isEnabled = IsEnabledCallback{ std::move( config ) };
 				return *this;
 			}
 
 			Callbacks & onIsComputePass( std::function< bool() > config )
 			{
-				isComputePass = IsComputePassCallback( config );
+				isComputePass = IsComputePassCallback{ std::move( config ) };
 				return *this;
 			}
 
-			InitialiseCallback initialise;
-			GetPipelineStateCallback getPipelineState;
-			RecordCallback record;
-			GetPassIndexCallback getPassIndex;
-			IsEnabledCallback isEnabled;
-			IsComputePassCallback isComputePass;
+			InitialiseCallback initialise = defaultV< InitialiseCallback >;
+			GetPipelineStateCallback getPipelineState = defaultV < GetPipelineStateCallback >;
+			RecordCallback record = defaultV < RecordCallback >;
+			GetPassIndexCallback getPassIndex = defaultV < GetPassIndexCallback >;
+			IsEnabledCallback isEnabled = defaultV < IsEnabledCallback >;
+			IsComputePassCallback isComputePass = defaultV < IsComputePassCallback >;
 		};
 
 		static constexpr uint32_t InvalidIndex = ~0u;
@@ -391,65 +442,5 @@ namespace crg
 		std::vector< RecordContext > m_passContexts;
 		LayerLayoutStatesHandler m_imageLayouts;
 		AccessStateMap m_bufferAccesses;
-	};
-
-	template<>
-	struct DefaultValueGetterT< RunnablePass::InitialiseCallback >
-	{
-		static RunnablePass::InitialiseCallback get()
-		{
-			RunnablePass::InitialiseCallback const result{ []( uint32_t ){} };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< RunnablePass::GetPipelineStateCallback >
-	{
-		static RunnablePass::GetPipelineStateCallback get()
-		{
-			RunnablePass::GetPipelineStateCallback const result{ [](){ return PipelineState{ AccessFlags::eShaderRead, PipelineStageFlags::eFragmentShader }; } };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< RunnablePass::RecordCallback >
-	{
-		static RunnablePass::RecordCallback get()
-		{
-			RunnablePass::RecordCallback const result{ []( RecordContext &, VkCommandBuffer, uint32_t ){} };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< RunnablePass::GetPassIndexCallback >
-	{
-		static RunnablePass::GetPassIndexCallback get()
-		{
-			RunnablePass::GetPassIndexCallback const result{ [](){ return 0u; } };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< RunnablePass::IsEnabledCallback >
-	{
-		static RunnablePass::IsEnabledCallback get()
-		{
-			RunnablePass::IsEnabledCallback const result{ [](){ return true; } };
-			return result;
-		}
-	};
-
-	template<>
-	struct DefaultValueGetterT< RunnablePass::IsComputePassCallback >
-	{
-		static RunnablePass::IsComputePassCallback get()
-		{
-			RunnablePass::IsComputePassCallback const result{ [](){ return false; } };
-			return result;
-		}
 	};
 }

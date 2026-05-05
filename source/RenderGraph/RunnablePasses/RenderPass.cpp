@@ -36,14 +36,7 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RenderPass::Callbacks::Callbacks()
-		: initialise{ defaultV< InitialiseCallback > }
-		, record{ defaultV< RecordCallback > }
-		, getSubpassContents{ defaultV< GetSubpassContentsCallback > }
-		, getPassIndex{ defaultV< GetPassIndexCallback > }
-		, isEnabled{ defaultV< IsEnabledCallback > }
-	{
-	}
+	RenderPass::Callbacks::Callbacks() = default;
 
 	//*********************************************************************************************
 

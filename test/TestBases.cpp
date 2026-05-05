@@ -795,26 +795,26 @@ TEST( Bases, PagedBuffers )
 	crg::ResourceHandler handler;
 	crg::ResourcesCache resources{ handler };
 	{
-		checkThrow( handler.createBufferId( test::createBuffer( "buffer", 0u ) ), crg::Exception );
+		checkThrow( handler.createBufferId( test::createBuffer( "buffer", 0u ) ), crg::Exception )
 		auto bufferId = handler.createBufferId( test::createBuffer( "buffer", 2u ) );
 		auto bufferv1 = handler.createViewId( test::createView( "bufferv1", bufferId, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
-		checkEqual( handler.createBufferView( context, bufferv1 ).created, false );
+		checkEqual( handler.createBufferView( context, bufferv1 ).created, false )
 		auto & buffer = resources.createBuffer( context, bufferId );
 		auto pageSize = buffer.getPageSize();
-		checkEqual( pageSize * 2u, buffer.getMaxSize() );
-		checkEqual( buffer.getAllocatedPageCount(), 1u );
+		checkEqual( pageSize * 2u, buffer.getMaxSize() )
+		checkEqual( buffer.getAllocatedPageCount(), 1u )
 		buffer.resize( pageSize * 2u );
 		buffer.update();
-		checkEqual( buffer.getAllocatedPageCount(), 2u );
+		checkEqual( buffer.getAllocatedPageCount(), 2u )
 		buffer.resize( pageSize * 3u );
 		buffer.update();
-		checkEqual( buffer.getAllocatedPageCount(), 2u );
+		checkEqual( buffer.getAllocatedPageCount(), 2u )
 
 		auto bufferv2 = handler.createViewId( test::createView( "bufferv2", bufferId, crg::PixelFormat::eR16G16B16A16_SFLOAT, 2u ) );
-		checkEqual( crg::getBufferPageRange( bufferId, crg::getSubresourceRange( bufferv2 ) ), std::make_pair( 0u, 2u ) );
-		checkEqual( crg::getBufferPageRange( bufferId, crg::BufferSubresourceRange{ 0u, VK_WHOLE_SIZE } ), std::make_pair( 0u, 2u ) );
-		checkEqual( crg::getBufferPageRange( bufferId, crg::BufferSubresourceRange{ getSize( bufferId ), VK_WHOLE_SIZE } ), std::make_pair( 2u, 0u ) );
-		checkEqual( crg::getBufferPageRange( bufferId, crg::BufferSubresourceRange{ bufferId.data->info.size, VK_WHOLE_SIZE } ), std::make_pair( 1u, 1u ) );
+		checkEqual( crg::getBufferPageRange( bufferId, crg::getSubresourceRange( bufferv2 ) ), std::make_pair( 0u, 2u ) )
+		checkEqual( crg::getBufferPageRange( bufferId, crg::BufferSubresourceRange{ 0u, VK_WHOLE_SIZE } ), std::make_pair( 0u, 2u ) )
+		checkEqual( crg::getBufferPageRange( bufferId, crg::BufferSubresourceRange{ getSize( bufferId ), VK_WHOLE_SIZE } ), std::make_pair( 2u, 0u ) )
+		checkEqual( crg::getBufferPageRange( bufferId, crg::BufferSubresourceRange{ bufferId.data->info.size, VK_WHOLE_SIZE } ), std::make_pair( 1u, 1u ) )
 	}
 	testEnd()
 }
@@ -835,8 +835,8 @@ TEST( Bases, ResourcesCache )
 		crg::ResourcesCache resources{ handler };
 		auto bufferId = handler.createBufferId( test::createBuffer( "buffer" ) );
 		auto imageId = handler.createImageId( test::createImage( "image", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
-		auto & buffer = resources.createBuffer( context, bufferId );
-		auto & image = resources.createImage( context, imageId );
+		crg::Buffer const & buffer = resources.createBuffer( context, bufferId );
+		crg::Image const & image = resources.createImage( context, imageId );
 		{
 			auto & contextCache = resources.getContextCache( context );
 			contextCache.destroyBuffer( buffer );
@@ -851,11 +851,11 @@ TEST( Bases, ResourcesCache )
 		crg::ResourcesCache resources2{ handler2 };
 		auto buffer = handler1.createBufferId( test::createBuffer( "buffer" ) );
 		checkThrow( resources2.createBuffer( context, buffer ), crg::Exception )
-		auto & buf = resources1.createBuffer( context, buffer );
+		crg::Buffer const & buf = resources1.createBuffer( context, buffer );
 		checkEqual( buf.getMaxPageCount(), 1u )
 		auto image = handler1.createImageId( test::createImage( "image", crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
 		checkThrow( resources2.createImage( context, image ), crg::Exception )
-		auto & img = resources1.createImage( context, image );
+		crg::Image const & img = resources1.createImage( context, image );
 		checkEqual( resources2.destroyBuffer( buf.getBufferId() ), false )
 		checkEqual( resources2.destroyImage( img.getImageId() ), false )
 		checkEqual( resources1.destroyBuffer( buf.getBufferId() ), true )
@@ -886,8 +886,8 @@ TEST( Bases, ResourcesCache )
 		resources.destroyImage( context, sampled );
 		auto buffer = handler.createBufferId( test::createBuffer( "buffer" ) );
 		auto bufferv = handler.createViewId( test::createView( "bufferv", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
-		auto & buf = resources.createBuffer( context, buffer );
-		checkEqual( buf.getAllocatedSize(), buf.getMaxSize() );
+		crg::Buffer const & buf = resources.createBuffer( context, buffer );
+		checkEqual( buf.getAllocatedSize(), buf.getMaxSize() )
 		resources.createBufferView( context, bufferv );
 		resources.destroyBufferView( context, bufferv );
 		resources.destroyBuffer( context, buffer );
@@ -901,7 +901,6 @@ TEST( Bases, ResourcesCache )
 		resources.destroyImage( result );
 		auto buffer = handler.createBufferId( test::createBuffer( "resbuffer" ) );
 		auto bufferv = handler.createViewId( test::createView( "resbufferv", buffer, crg::PixelFormat::eR16G16B16A16_SFLOAT ) );
-		auto & buf = resources.createBuffer( context, buffer );
 		resources.createBufferView( context, bufferv );
 		resources.destroyBufferView( bufferv );
 		resources.destroyBuffer( buffer );

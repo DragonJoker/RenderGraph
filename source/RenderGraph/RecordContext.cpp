@@ -288,7 +288,7 @@ namespace crg
 	{
 		if ( m_isBatching && ( !m_batchedImageBarriers.empty() || !m_batchedBufferBarriers.empty() ) )
 		{
-			auto & resources = getResources();
+			ContextResourcesCache const & resources = getResources();
 			resources->vkCmdPipelineBarrier( commandBuffer
 				, m_batchSrcStages
 				, m_batchDstStages
@@ -670,8 +670,6 @@ namespace crg
 		memoryBarrier( commandBuffer, srcView, { AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
 		memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
 		auto & resources = getResources();
-		auto srcSubresourceRange = getSubresourceRange( dstView );
-		auto dstSubresourceRange = getSubresourceRange( dstView );
 		auto [srcPageMin, srcPageCount] = getBufferPageRange( srcView.data->buffer, { srcOffset, size } );
 		auto [dstPageMin, dstPageCount] = getBufferPageRange( dstView.data->buffer, { dstOffset, size } );
 

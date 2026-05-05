@@ -145,7 +145,7 @@ namespace crg
 			*\param[in] config
 			*	The callback checking the enable status of the pass.
 			*/
-			auto & isEnabled( RunnablePass::IsEnabledCallback const & config )
+			auto & isEnabled( IsEnabledCallback const & config )
 			{
 				m_isEnabled = config;
 				return *this;
@@ -154,7 +154,7 @@ namespace crg
 			*\param[in] config
 			*	The callback recording the pass.
 			*/
-			auto & recordInto( RunnablePass::RecordCallback const & config )
+			auto & recordInto( RecordCallback const & config )
 			{
 				m_recordInto = config;
 				return *this;
@@ -163,7 +163,7 @@ namespace crg
 			*\param[in] config
 			*	The callback ending the pass.
 			*/
-			auto & end( RunnablePass::RecordCallback const & config )
+			auto & end( RecordCallback const & config )
 			{
 				m_end = config;
 				return *this;
@@ -193,9 +193,9 @@ namespace crg
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState{};
 			WrapperT< uint32_t const * > m_passIndex{};
 			WrapperT< bool const * > m_enabled{};
-			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
-			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
-			WrapperT< RunnablePass::RecordCallback > m_end{};
+			WrapperT< IsEnabledCallback > m_isEnabled{};
+			WrapperT< RecordCallback > m_recordInto{};
+			WrapperT< RecordCallback > m_end{};
 			WrapperT< uint32_t > m_instances{};
 			WrapperT< Extent2D > m_renderSize{};
 			WrapperT< IndirectBuffer > m_indirectBuffer{};
@@ -209,9 +209,9 @@ namespace crg
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState;
 			RawTypeT< uint32_t const * > passIndex;
 			RawTypeT< bool const * > enabled;
-			std::optional< RunnablePass::IsEnabledCallback > isEnabled;
-			RawTypeT< RunnablePass::RecordCallback > recordInto;
-			RawTypeT< RunnablePass::RecordCallback > end;
+			std::optional< IsEnabledCallback > isEnabled;
+			RawTypeT< RecordCallback > recordInto;
+			RawTypeT< RecordCallback > end;
 			RawTypeT< uint32_t > m_instances;
 			RawTypeT< IndirectBuffer > indirectBuffer{ BufferViewId{}, 0u };
 		};

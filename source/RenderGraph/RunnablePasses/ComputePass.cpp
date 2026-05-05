@@ -35,12 +35,12 @@ namespace crg
 				.onIsEnabled( [this](){ return doIsEnabled(); } )
 				.onIsComputePass( [](){ return true; } )
 			, ruConfig }
-		, m_cpConfig{ cpConfig.m_initialise ? std::move( *cpConfig.m_initialise ) : defaultV< RunnablePass::InitialiseCallback >
+		, m_cpConfig{ cpConfig.m_initialise ? *cpConfig.m_initialise : defaultV< InitialiseCallback >
 			, cpConfig.m_enabled.has_value() ? std::move( *cpConfig.m_enabled ) : defaultV< bool const * >
 			, cpConfig.m_isEnabled
-			, cpConfig.m_getPassIndex ? std::move( *cpConfig.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
-			, cpConfig.m_recordInto ? std::move( *cpConfig.m_recordInto ) : defaultV< RunnablePass::RecordCallback >
-			, cpConfig.m_end ? std::move( *cpConfig.m_end ) : defaultV< RunnablePass::RecordCallback >
+			, cpConfig.m_getPassIndex ? *cpConfig.m_getPassIndex : defaultV< GetPassIndexCallback >
+			, cpConfig.m_recordInto ? *cpConfig.m_recordInto : defaultV< RecordCallback >
+			, cpConfig.m_end ? *cpConfig.m_end : defaultV< RecordCallback >
 			, cpConfig.m_groupCountX.has_value() ? *cpConfig.m_groupCountX : 1u
 			, cpConfig.m_groupCountY.has_value() ? *cpConfig.m_groupCountY : 1u
 			, cpConfig.m_groupCountZ.has_value() ? *cpConfig.m_groupCountZ : 1u

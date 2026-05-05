@@ -25,7 +25,7 @@ namespace crg
 			, graph
 			, RunnablePass::Callbacks{}
 				.onGetPipelineState( [](){ return crg::getPipelineState( PipelineStageFlags::eTransfer ); } )
-				.onRecord( [this]( RecordContext & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
+				.onRecord( [this]( RecordContext const & recContext, VkCommandBuffer cb, uint32_t i ){ doRecordInto( recContext, cb, i ); } )
 				.onGetPassIndex( std::move( passIndex ) )
 				.onIsEnabled( std::move( isEnabled ) )
 			, std::move( ruConfig ) }
