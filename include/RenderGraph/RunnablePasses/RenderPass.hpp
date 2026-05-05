@@ -24,6 +24,18 @@ namespace crg
 		return result;
 	}
 
+	struct SubpassContentsT;
+	using GetSubpassContentsCallback = GetValueCallbackT< SubpassContentsT, VkSubpassContents >;
+	template<>
+	struct DefaultValueGetterT< GetSubpassContentsCallback >
+	{
+		static GetSubpassContentsCallback get()
+		{
+			GetSubpassContentsCallback const result{ [](){ return VK_SUBPASS_CONTENTS_INLINE; } };
+			return result;
+		}
+	};
+
 	class RenderPass
 		: public RunnablePass
 	{
@@ -31,50 +43,47 @@ namespace crg
 		template< typename ConfigT, typename BuilderT >
 		friend class RenderQuadBuilderT;
 
-		struct SubpassContentsT;
-		using GetSubpassContentsCallback = GetValueCallbackT< SubpassContentsT, VkSubpassContents >;
-
 		struct Callbacks
 		{
 			CRG_API Callbacks();
 
 			Callbacks & onInitialise( std::function< void( uint32_t passIndex ) > config )
 			{
-				initialise = InitialiseCallback( config );
+				initialise = InitialiseCallback{ std::move( config ) };
 				return *this;
 			}
 
 			Callbacks & onRecord( std::function< void( RecordContext &, VkCommandBuffer, uint32_t ) > config )
 			{
-				record = RecordCallback( config );
+				record = RecordCallback{ std::move( config ) };
 				return *this;
 			}
 
 			Callbacks & onGetSubpassContents( std::function< VkSubpassContents() > config )
 			{
-				getSubpassContents = GetSubpassContentsCallback( config );
+				getSubpassContents = GetSubpassContentsCallback{ std::move( config ) };
 				return *this;
 			}
 
 			Callbacks & onGetPassIndex( std::function< uint32_t() > config )
 			{
-				getPassIndex = GetPassIndexCallback( config );
+				getPassIndex = GetPassIndexCallback{ std::move( config ) };
 				return *this;
 			}
 
 			Callbacks & onIsEnabled( std::function< bool() > config )
 			{
-				isEnabled = IsEnabledCallback( config );
+				isEnabled = IsEnabledCallback{ std::move( config ) };
 				return *this;
 			}
 
 			// RenderPass specifics
-			RunnablePass::InitialiseCallback initialise;
-			RunnablePass::RecordCallback record;
-			GetSubpassContentsCallback getSubpassContents;
+			InitialiseCallback initialise{ defaultV< InitialiseCallback > };
+			RecordCallback record{ defaultV< RecordCallback > };
+			GetSubpassContentsCallback getSubpassContents{ defaultV< GetSubpassContentsCallback > };
 			// Passed to RunnablePass
-			RunnablePass::GetPassIndexCallback getPassIndex;
-			RunnablePass::IsEnabledCallback isEnabled;
+			GetPassIndexCallback getPassIndex{ defaultV< GetPassIndexCallback > };
+			IsEnabledCallback isEnabled{ defaultV< IsEnabledCallback > };
 		};
 
 	public:
@@ -114,15 +123,5 @@ namespace crg
 	private:
 		Callbacks m_rpCallbacks;
 		RenderPassHolder m_holder;
-	};
-
-	template<>
-	struct DefaultValueGetterT< RenderPass::GetSubpassContentsCallback >
-	{
-		static RenderPass::GetSubpassContentsCallback get()
-		{
-			RenderPass::GetSubpassContentsCallback const result{ [](){ return VK_SUBPASS_CONTENTS_INLINE; } };
-			return result;
-		}
 	};
 }

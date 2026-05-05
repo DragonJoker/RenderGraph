@@ -168,6 +168,39 @@ namespace crg
 			}
 		}
 
+		static AccessState clearBuffer( VkCommandBuffer commandBuffer
+			, BufferId bufferId
+			, BufferSubresourceRange const & range
+			, AccessState const & currentState
+			, RunnableGraph & graph
+			, RecordContext & recordContext )
+		{
+			recordContext.memoryBarrier( commandBuffer
+				, bufferId
+				, range
+				, currentState
+				, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
+			auto [pageMin, pageCount] = getBufferPageRange( bufferId, range );
+			auto pageSize = details::getAlignedSize( bufferId.data->info.size, 4u );
+			auto offset = DeviceSize( range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u ) );
+			auto remainingSize = DeviceSize( range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u ) );
+			auto buffer = &graph.createBuffer( bufferId );
+
+			for ( uint32_t pageIndex = pageMin; pageIndex < std::min( pageMin + pageCount, buffer->getAllocatedPageCount() ); ++pageIndex )
+			{
+				auto currentPageSize = range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : std::min( pageSize - offset, remainingSize );
+				recordContext->vkCmdFillBuffer( commandBuffer
+					, buffer->getBuffer( pageIndex )
+					, 0, currentPageSize
+					, 0u );
+				offset = 0;
+				remainingSize -= ( range.size == VK_WHOLE_SIZE ? 0 : currentPageSize );
+			}
+
+			return AccessState{ .access = AccessFlags::eTransferWrite
+				, .pipelineStage = PipelineStageFlags::eTransfer };
+		}
+
 		static void prepareBuffer( VkCommandBuffer commandBuffer
 			, uint32_t index
 			, Attachment const & attach
@@ -195,30 +228,7 @@ namespace crg
 						recordContext.flushBatchBarriers( commandBuffer );
 					}
 
-					recordContext.memoryBarrier( commandBuffer
-						, bufferId
-						, range
-						, currentState
-						, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
-					auto [pageMin, pageCount] = getBufferPageRange( bufferId, range );
-					auto pageSize = details::getAlignedSize( bufferId.data->info.size, 4u );
-					auto offset = range.offset == 0u ? 0u : details::getAlignedSize( range.offset, 4u );
-					auto remainingSize = range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : details::getAlignedSize( range.size, 4u );
-					auto buffer = &graph.createBuffer( bufferId );
-
-					for ( uint32_t pageIndex = pageMin; pageIndex < std::min( pageMin + pageCount, buffer->getAllocatedPageCount() ); ++pageIndex )
-					{
-						auto currentPageSize = range.size == VK_WHOLE_SIZE ? VK_WHOLE_SIZE : std::min( pageSize - offset, remainingSize );
-						recordContext->vkCmdFillBuffer( commandBuffer
-							, buffer->getBuffer( pageIndex )
-							, 0, currentPageSize
-							, 0u );
-						offset = 0;
-						remainingSize -= ( range.size == VK_WHOLE_SIZE ? 0 : currentPageSize );
-					}
-
-					currentState.access = AccessFlags::eTransferWrite;
-					currentState.pipelineStage = PipelineStageFlags::eTransfer;
+					currentState = clearBuffer( commandBuffer, bufferId, range, currentState, graph, recordContext );
 
 					if ( wasBatching )
 					{
@@ -303,15 +313,7 @@ namespace crg
 
 	//*********************************************************************************************
 
-	RunnablePass::Callbacks::Callbacks()
-		: initialise{ defaultV< InitialiseCallback > }
-		, getPipelineState{ defaultV< GetPipelineStateCallback > }
-		, record{ defaultV< RecordCallback > }
-		, getPassIndex{ defaultV< GetPassIndexCallback > }
-		, isEnabled{ defaultV< IsEnabledCallback > }
-		, isComputePass{ defaultV< IsComputePassCallback > }
-	{
-	}
+	RunnablePass::Callbacks::Callbacks() = default;
 
 	//*********************************************************************************************
 

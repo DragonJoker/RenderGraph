@@ -126,8 +126,7 @@ namespace crg
 
 		static size_t getDescriptorHash( uint32_t binding
 			, Attachment const & attach
-			, uint32_t index
-			, RunnableGraph const & graph )
+			, uint32_t index )
 		{
 			return ( ( uint64_t( getDescriptorId( attach, index ) ) & 0xFFFFFFFFull ) << 32u ) // 32 bits for resource ID
 				| ( ( uint64_t( getDescriptorType( attach ) ) & 0xFFull ) << 24u ) // 8 bits for descriptor type
@@ -136,38 +135,35 @@ namespace crg
 		}
 
 		static size_t getDescriptorsHash( std::map< uint32_t, FramePass::SampledAttachment > const & attaches
-			, uint32_t index
-			, RunnableGraph const & graph )
+			, uint32_t index )
 		{
 			size_t result{};
 			for ( auto & [binding, attach] : attaches )
-				result = hashCombine( result, getDescriptorHash( binding, *attach.attach, index, graph ) );
+				result = hashCombine( result, getDescriptorHash( binding, *attach.attach, index ) );
 			return result;
 		}
 
 		static size_t getDescriptorsHash( std::map< uint32_t, Attachment const * > const & attaches
-			, uint32_t index
-			, RunnableGraph const & graph )
+			, uint32_t index )
 		{
 			size_t result{};
 			for ( auto & [binding, attach] : attaches )
 			{
 				if ( isDescriptor( *attach ) )
-					result = hashCombine( result, getDescriptorHash( binding, *attach, index, graph ) );
+					result = hashCombine( result, getDescriptorHash( binding, *attach, index ) );
 			}
 			return result;
 		}
 
 		static size_t makeDescriptorSetHash( crg::FramePass const & pass
-			, uint32_t index
-			, RunnableGraph const & graph )
+			, uint32_t index )
 		{
 			size_t result{};
-			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getUniforms(), index, graph ) );
-			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getSampled(), index, graph ) );
-			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getInputs(), index, graph ) );
-			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getInouts(), index, graph ) );
-			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getOutputs(), index, graph ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getUniforms(), index ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getSampled(), index ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getInputs(), index ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getInouts(), index ) );
+			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getOutputs(), index ) );
 			return result;
 		}
 	}
@@ -424,7 +420,7 @@ namespace crg
 	void PipelineHolder::createDescriptorSet( uint32_t index )
 	{
 		auto & descriptorSet = m_descriptorSets[index];
-		auto hash = pphdr::makeDescriptorSetHash( m_pass, index, m_graph );
+		auto hash = pphdr::makeDescriptorSetHash( m_pass, index );
 
 		if ( descriptorSet.set != VkDescriptorSet{}
 			&& descriptorSet.hash == hash )
@@ -543,7 +539,7 @@ namespace crg
 		{
 			assert( m_descriptorSetLayout );
 			// x2 to account for descriptor set changes (the deallocation is deferred)
-			uint32_t maxSets = uint32_t( m_descriptorSets.size() * 2u );
+			auto maxSets = uint32_t( m_descriptorSets.size() * 2u );
 			auto sizes = getBindingsSizes( m_descriptorBindings, maxSets );
 			VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
 				, nullptr

@@ -97,7 +97,7 @@ namespace crg
 
 	struct BufferMemory
 	{
-		BufferMemory( VkBuffer buf = {}
+		explicit BufferMemory( VkBuffer buf = {}
 			, VkDeviceMemory mem = {} )noexcept
 			: buffer{ buf }
 			, memory{ mem }
@@ -106,11 +106,14 @@ namespace crg
 
 		VkBuffer buffer{};
 		VkDeviceMemory memory{};
+
+	private:
+		friend bool operator==( BufferMemory const & lhs, BufferMemory const & rhs ) = default;
 	};
 
 	struct ImageMemory
 	{
-		ImageMemory( VkImage img = {}
+		explicit ImageMemory( VkImage img = {}
 			, VkDeviceMemory mem = {} )noexcept
 			: image{ img }
 			, memory{ mem }
@@ -119,6 +122,9 @@ namespace crg
 
 		VkImage image{};
 		VkDeviceMemory memory{};
+
+	private:
+		friend bool operator==( ImageMemory const & lhs, ImageMemory const & rhs ) = default;
 	};
 
 	using AttachmentPtr = std::unique_ptr< Attachment >;

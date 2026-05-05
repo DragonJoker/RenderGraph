@@ -117,7 +117,7 @@ namespace crg
 			*\param[in] config
 			*	The pass index callback.
 			*/
-			auto & getPassIndex( RunnablePass::GetPassIndexCallback const & config )
+			auto & getPassIndex( GetPassIndexCallback const & config )
 			{
 				m_getPassIndex = config;
 				return *this;
@@ -126,7 +126,7 @@ namespace crg
 			*\param[in] config
 			*	The callback checking the enable status of the pass.
 			*/
-			auto & isEnabled( RunnablePass::IsEnabledCallback const & config )
+			auto & isEnabled( IsEnabledCallback const & config )
 			{
 				m_isEnabled = config;
 				return *this;
@@ -135,7 +135,7 @@ namespace crg
 			*\param[in] config
 			*	The callback recording the pass.
 			*/
-			auto & recordInto( RunnablePass::RecordCallback const & config )
+			auto & recordInto( RecordCallback const & config )
 			{
 				m_recordInto = config;
 				return *this;
@@ -144,7 +144,7 @@ namespace crg
 			*\param[in] config
 			*	The callback ending the pass.
 			*/
-			auto & end( RunnablePass::RecordCallback const & config )
+			auto & end( RecordCallback const & config )
 			{
 				m_end = config;
 				return *this;
@@ -216,10 +216,10 @@ namespace crg
 			pp::ConfigT< WrapperT > m_baseConfig{};
 			WrapperT< Offset2D > m_renderPosition{};
 			WrapperT< VkPipelineDepthStencilStateCreateInfo > m_depthStencilState{};
-			WrapperT< RunnablePass::GetPassIndexCallback > m_getPassIndex{};
-			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
-			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
-			WrapperT< RunnablePass::RecordCallback > m_end{};
+			WrapperT< GetPassIndexCallback > m_getPassIndex{};
+			WrapperT< IsEnabledCallback > m_isEnabled{};
+			WrapperT< RecordCallback > m_recordInto{};
+			WrapperT< RecordCallback > m_end{};
 			WrapperT< GetPrimitiveCountCallback > m_getPrimitiveCount{};
 			WrapperT< GetVertexCountCallback > m_getVertexCount{};
 			WrapperT< GetIndexTypeCallback > m_getIndexType{};
@@ -235,10 +235,10 @@ namespace crg
 		{
 			RawTypeT< Offset2D > renderPosition{};
 			RawTypeT< VkPipelineDepthStencilStateCreateInfo > depthStencilState{};
-			RawTypeT< RunnablePass::GetPassIndexCallback > getPassIndex{};
-			RawTypeT< RunnablePass::IsEnabledCallback > isEnabled{};
-			RawTypeT< RunnablePass::RecordCallback > recordInto{};
-			RawTypeT< RunnablePass::RecordCallback > end{};
+			RawTypeT< GetPassIndexCallback > getPassIndex{};
+			RawTypeT< IsEnabledCallback > isEnabled{};
+			RawTypeT< RecordCallback > recordInto{};
+			RawTypeT< RecordCallback > end{};
 			RawTypeT< GetPrimitiveCountCallback > getPrimitiveCount{};
 			RawTypeT< GetVertexCountCallback > getVertexCount{};
 			RawTypeT< GetIndexTypeCallback > getIndexType{};

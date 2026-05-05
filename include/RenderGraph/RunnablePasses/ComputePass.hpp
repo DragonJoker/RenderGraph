@@ -116,7 +116,7 @@ namespace crg
 			*\param[in] config
 			*	The pass index callback.
 			*/
-			auto & getPassIndex( RunnablePass::GetPassIndexCallback const & config )
+			auto & getPassIndex( GetPassIndexCallback const & config )
 			{
 				m_getPassIndex = config;
 				return *this;
@@ -125,7 +125,7 @@ namespace crg
 			*\param[in] config
 			*	The callback checking the enable status of the pass.
 			*/
-			auto & isEnabled( RunnablePass::IsEnabledCallback const & config )
+			auto & isEnabled( IsEnabledCallback const & config )
 			{
 				m_isEnabled = config;
 				return *this;
@@ -134,7 +134,7 @@ namespace crg
 			*\param[in] config
 			*	The callback recording the pass.
 			*/
-			auto & recordInto( RunnablePass::RecordCallback const & config )
+			auto & recordInto( RecordCallback const & config )
 			{
 				m_recordInto = config;
 				return *this;
@@ -143,7 +143,7 @@ namespace crg
 			*\param[in] config
 			*	The callback initialising the pass.
 			*/
-			auto & initialise( RunnablePass::InitialiseCallback const & config )
+			auto & initialise( InitialiseCallback const & config )
 			{
 				m_initialise = config;
 				return *this;
@@ -152,7 +152,7 @@ namespace crg
 			*\param[in] config
 			*	The callback ending the pass.
 			*/
-			auto & end( RunnablePass::RecordCallback const & config )
+			auto & end( RecordCallback const & config )
 			{
 				m_end = config;
 				return *this;
@@ -222,12 +222,12 @@ namespace crg
 			}
 
 			pp::ConfigT< WrapperT > m_baseConfig{};
-			WrapperT< RunnablePass::InitialiseCallback > m_initialise{};
+			WrapperT< InitialiseCallback > m_initialise{};
 			WrapperT< bool const * > m_enabled{};
-			WrapperT< RunnablePass::IsEnabledCallback > m_isEnabled{};
-			WrapperT< RunnablePass::GetPassIndexCallback > m_getPassIndex{};
-			WrapperT< RunnablePass::RecordCallback > m_recordInto{};
-			WrapperT< RunnablePass::RecordCallback > m_end{};
+			WrapperT< IsEnabledCallback > m_isEnabled{};
+			WrapperT< GetPassIndexCallback > m_getPassIndex{};
+			WrapperT< RecordCallback > m_recordInto{};
+			WrapperT< RecordCallback > m_end{};
 			WrapperT< uint32_t > m_groupCountX{};
 			WrapperT< uint32_t > m_groupCountY{};
 			WrapperT< uint32_t > m_groupCountZ{};
@@ -240,12 +240,12 @@ namespace crg
 		template<>
 		struct ConfigT< RawTypeT >
 		{
-			RawTypeT< RunnablePass::InitialiseCallback > initialise{};
+			RawTypeT< InitialiseCallback > initialise{};
 			RawTypeT< bool const * > enabled{ nullptr };
-			std::optional< RunnablePass::IsEnabledCallback > isEnabled{};
-			RawTypeT< RunnablePass::GetPassIndexCallback > getPassIndex{};
-			RawTypeT< RunnablePass::RecordCallback > recordInto{};
-			RawTypeT< RunnablePass::RecordCallback > end{};
+			std::optional< IsEnabledCallback > isEnabled{};
+			RawTypeT< GetPassIndexCallback > getPassIndex{};
+			RawTypeT< RecordCallback > recordInto{};
+			RawTypeT< RecordCallback > end{};
 			RawTypeT< uint32_t > groupCountX{ 1u };
 			RawTypeT< uint32_t > groupCountY{ 1u };
 			RawTypeT< uint32_t > groupCountZ{ 1u };

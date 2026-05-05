@@ -19,24 +19,24 @@ namespace crg
 		uint32_t maxPages{ 1u };
 		uint32_t allocatedPages{};
 
-		explicit BufferData( std::string name = {}
-			, BufferCreateFlags flags = {}
-			, DeviceSize size = {}
-			, uint32_t maxPages = 1u
-			, BufferUsageFlags usage = {}
-			, MemoryPropertyFlags memory = MemoryPropertyFlags::eDeviceLocal )
-			: name{ std::move( name ) }
-			, info{ flags, size, usage, memory }
-			, maxPages{ maxPages }
+		explicit BufferData( std::string pname = {}
+			, BufferCreateFlags pflags = {}
+			, DeviceSize psize = {}
+			, uint32_t pmaxPages = 1u
+			, BufferUsageFlags pusage = {}
+			, MemoryPropertyFlags pmemory = MemoryPropertyFlags::eDeviceLocal )
+			: name{ std::move( pname ) }
+			, info{ pflags, psize, pusage, pmemory }
+			, maxPages{ pmaxPages }
 		{
 		}
 
-		explicit BufferData( std::string name = {}
-			, BufferCreateFlags flags = {}
-			, DeviceSize size = {}
-			, BufferUsageFlags usage = {}
-			, MemoryPropertyFlags memory = MemoryPropertyFlags::eDeviceLocal )
-			: BufferData{ std::move( name ), flags, size, 1u, usage, memory }
+		explicit BufferData( std::string pname = {}
+			, BufferCreateFlags pflags = {}
+			, DeviceSize psize = {}
+			, BufferUsageFlags pusage = {}
+			, MemoryPropertyFlags pmemory = MemoryPropertyFlags::eDeviceLocal )
+			: BufferData{ std::move( pname ), pflags, psize, 1u, pusage, pmemory }
 		{
 		}
 

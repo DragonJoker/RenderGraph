@@ -16,18 +16,18 @@ namespace crg
 		, rm::Config config
 		, uint32_t maxPassCount )
 		: m_graph{ graph }
-		, m_config{ config.m_renderPosition ? std::move( *config.m_renderPosition ) : defaultV< Offset2D >
-			, config.m_depthStencilState ? std::move( *config.m_depthStencilState ) : defaultV< VkPipelineDepthStencilStateCreateInfo >
-			, config.m_getPassIndex ? std::move( *config.m_getPassIndex ) : defaultV< RunnablePass::GetPassIndexCallback >
-			, config.m_isEnabled ? std::move( *config.m_isEnabled ) : defaultV< RunnablePass::IsEnabledCallback >
-			, config.m_recordInto ? std::move( *config.m_recordInto ) : defaultV< RunnablePass::RecordCallback >
-			, config.m_end ? std::move( *config.m_end ) : defaultV< RunnablePass::RecordCallback >
-			, config.m_getPrimitiveCount ? std::move( *config.m_getPrimitiveCount ) : defaultV< GetPrimitiveCountCallback >
-			, config.m_getVertexCount ? std::move( *config.m_getVertexCount ) : defaultV< GetVertexCountCallback >
-			, config.m_getIndexType ? std::move( *config.m_getIndexType ) : defaultV< GetIndexTypeCallback >
-			, config.m_getCullMode ? std::move( *config.m_getCullMode ) : defaultV< GetCullModeCallback >
-			, config.m_vertexBuffer ? std::move( *config.m_vertexBuffer ) : defaultV< VertexBuffer >
-			, config.m_indexBuffer ? std::move( *config.m_indexBuffer ) : defaultV< IndexBuffer >
+		, m_config{ config.m_renderPosition ? *config.m_renderPosition : defaultV< Offset2D >
+			, config.m_depthStencilState ? *config.m_depthStencilState : defaultV< VkPipelineDepthStencilStateCreateInfo >
+			, config.m_getPassIndex ? *config.m_getPassIndex : defaultV< GetPassIndexCallback >
+			, config.m_isEnabled ? *config.m_isEnabled : defaultV< IsEnabledCallback >
+			, config.m_recordInto ? *config.m_recordInto : defaultV< RecordCallback >
+			, config.m_end ? *config.m_end : defaultV< RecordCallback >
+			, config.m_getPrimitiveCount ? *config.m_getPrimitiveCount : defaultV< GetPrimitiveCountCallback >
+			, config.m_getVertexCount ? *config.m_getVertexCount : defaultV< GetVertexCountCallback >
+			, config.m_getIndexType ? *config.m_getIndexType : defaultV< GetIndexTypeCallback >
+			, config.m_getCullMode ? *config.m_getCullMode : defaultV< GetCullModeCallback >
+			, config.m_vertexBuffer ? *config.m_vertexBuffer : defaultV< VertexBuffer >
+			, config.m_indexBuffer ? *config.m_indexBuffer : defaultV< IndexBuffer >
 			, config.m_indirectBuffer ? *config.m_indirectBuffer : defaultV< IndirectBuffer > }
 		, m_pipeline{ pass
 			, context
