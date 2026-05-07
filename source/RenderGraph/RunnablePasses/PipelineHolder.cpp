@@ -166,6 +166,26 @@ namespace crg
 			result = hashCombine( result, pphdr::getDescriptorsHash( pass.getOutputs(), index ) );
 			return result;
 		}
+
+		static bool hasPagedBuffers( std::map< uint32_t, Attachment const * > const & attaches )
+		{
+			return std::any_of( attaches.begin(), attaches.end()
+				, []( std::map< uint32_t, Attachment const * >::value_type const & lookup )
+				{
+					bool result = lookup.second->isBuffer();
+					if ( result )
+						result = lookup.second->buffer().data->buffer.data->maxPages > 1u;
+					return result;
+				} );
+		}
+
+		static bool hasPagedBuffers( crg::FramePass const & pass )
+		{
+			return pphdr::hasPagedBuffers( pass.getUniforms() )
+				|| pphdr::hasPagedBuffers( pass.getInputs() )
+				|| pphdr::hasPagedBuffers( pass.getInouts() )
+				|| pphdr::hasPagedBuffers( pass.getOutputs() );
+		}
 	}
 
 	PipelineHolder::PipelineHolder( FramePass const & pass
@@ -216,18 +236,21 @@ namespace crg
 	{
 		m_descriptorBindings.clear();
 
-		for ( auto & descriptorSet : m_descriptorSets )
-		{
-			if ( descriptorSet.set )
-			{
-				crgUnregisterObject( m_context, descriptorSet.set );
-				descriptorSet.writes.clear();
-				descriptorSet.set = {};
-			}
-		}
-
 		if ( m_descriptorSetPool )
 		{
+			bool hasPagedBuffers = pphdr::hasPagedBuffers( m_pass );
+			for ( auto & descriptorSet : m_descriptorSets )
+			{
+				if ( descriptorSet.set )
+				{
+					crgUnregisterObject( m_context, descriptorSet.set );
+					if ( hasPagedBuffers )
+						m_context.vkFreeDescriptorSets( m_context.device, m_descriptorSetPool, 1u, &descriptorSet.set );
+					descriptorSet.writes.clear();
+					descriptorSet.set = {};
+				}
+			}
+
 			crgUnregisterObject( m_context, m_descriptorSetPool );
 			m_context.vkDestroyDescriptorPool( m_context.device
 				, m_descriptorSetPool
@@ -538,12 +561,15 @@ namespace crg
 		if ( m_context.vkCreateDescriptorPool )
 		{
 			assert( m_descriptorSetLayout );
+			VkDescriptorPoolCreateFlags flags{};
+			if ( pphdr::hasPagedBuffers( m_pass ) )
+				flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 			// x2 to account for descriptor set changes (the deallocation is deferred)
 			auto maxSets = uint32_t( m_descriptorSets.size() * 2u );
 			auto sizes = getBindingsSizes( m_descriptorBindings, maxSets );
 			VkDescriptorPoolCreateInfo createInfo{ VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO
 				, nullptr
-				, 0u
+				, flags
 				, maxSets
 				, uint32_t( sizes.size() )
 				, sizes.data() };
