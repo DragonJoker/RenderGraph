@@ -667,8 +667,16 @@ namespace crg
 		, AccessState const & finalState )
 	{
 		runImplicitTransition( commandBuffer, index, srcView );
-		memoryBarrier( commandBuffer, srcView, { AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
-		memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
+		if ( srcView != dstView )
+		{
+			memoryBarrier( commandBuffer, srcView, { AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
+			memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite, PipelineStageFlags::eTransfer } );
+		}
+		else
+		{
+			memoryBarrier( commandBuffer, dstView, { AccessFlags::eTransferWrite | AccessFlags::eTransferRead, PipelineStageFlags::eTransfer } );
+		}
+
 		auto & resources = getResources();
 		auto [srcPageMin, srcPageCount] = getBufferPageRange( srcView.data->buffer, { srcOffset, size } );
 		auto [dstPageMin, dstPageCount] = getBufferPageRange( dstView.data->buffer, { dstOffset, size } );
