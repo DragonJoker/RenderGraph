@@ -380,7 +380,7 @@ TEST( Bases, ImplicitActions )
 	buf6->update();
 	auto buffer6v = graph.createViewId( test::createView( "buffer6v", buffer6, crg::PixelFormat::eUNDEFINED, buf6->getAllocatedPageCount() ) );
 	auto & testPass1 = graph.createPass( "Mesh"
-		, [&testCounts, depth2v, colour1v, colour2v, colour3v, colour4v, buffer1v, buffer2v, buffer3v, buffer5v, buffer6v]( crg::FramePass const & framePass
+		, [&testCounts, depth2v, colour1v, colour2v, colour3v, colour4v, buffer1v, buffer2v, buffer3v, buffer4v, buffer5v, buffer6v]( crg::FramePass const & framePass
 			, crg::GraphContext & context
 			, crg::RunnableGraph & runGraph )
 		{
@@ -403,6 +403,7 @@ TEST( Bases, ImplicitActions )
 					.implicitAction( buffer1v, crg::RecordContext::clearBuffer( buffer1v, { crg::AccessFlags::eShaderWrite, crg::PipelineStageFlags::eFragmentShader } ) )
 					.implicitAction( buffer2v, crg::RecordContext::clearBuffer( buffer2v, 18u, { crg::AccessFlags::eShaderWrite, crg::PipelineStageFlags::eFragmentShader } ) )
 					.implicitAction( buffer3v, crg::RecordContext::copyBuffer( buffer1v, buffer3v, 0u, 0u, 48u, { crg::AccessFlags::eShaderWrite, crg::PipelineStageFlags::eFragmentShader } ) )
+					.implicitAction( buffer4v, crg::RecordContext::copyBuffer( buffer4v, buffer4v, 0u, 48u, 48u, { crg::AccessFlags::eShaderWrite, crg::PipelineStageFlags::eFragmentShader } ) )
 					.implicitAction( buffer5v, crg::RecordContext::copyBuffer( buffer1v, buffer5v, 0u, 0u, getSize( buffer5v ), { crg::AccessFlags::eShaderWrite, crg::PipelineStageFlags::eFragmentShader } ) )
 					.implicitAction( buffer6v, crg::RecordContext::copyBuffer( buffer1v, buffer6v, 0u, 0u, getSize( buffer6v ), { crg::AccessFlags::eShaderWrite, crg::PipelineStageFlags::eFragmentShader } ) ) );
 		} );
