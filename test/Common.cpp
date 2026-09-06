@@ -81,7 +81,8 @@ namespace test
 			, ( crg::BufferUsageFlags::eUniformBuffer
 				| crg::BufferUsageFlags::eStorageBuffer
 				| crg::BufferUsageFlags::eUniformTexelBuffer
-				| crg::BufferUsageFlags::eStorageTexelBuffer ) };
+				| crg::BufferUsageFlags::eStorageTexelBuffer
+				| crg::BufferUsageFlags::eShaderDeviceAddress ) };
 	}
 
 	crg::BufferViewData createView( std::string name
