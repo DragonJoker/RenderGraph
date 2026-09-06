@@ -674,6 +674,15 @@ namespace crg
 				, nullptr
 				, requirements.size
 				, deduced };
+
+			// Handle VK_KHR_buffer_device_address
+			VkMemoryAllocateFlagsInfo flagInfo{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO, nullptr, 0u, 0u };
+			if ( checkFlag( bufferId.data->info.usage, BufferUsageFlags::eShaderDeviceAddress ) )
+			{
+				flagInfo.flags |= VK_MEMORY_ALLOCATE_DEVICE_ADDRESS_BIT;
+				allocateInfo.pNext = &flagInfo;
+			}
+
 			res = context.vkAllocateMemory( context.device
 				, &allocateInfo
 				, context.allocator
